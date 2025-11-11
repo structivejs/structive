@@ -74,16 +74,16 @@ describe("BindContent", () => {
   const lastMounted = bindContent.getLastNode(host);
   expect(lastMounted).toBe(bindContent.lastChildNode);
 
+  // applyChange は各 binding に委譲（マウント中に実行）
+  const renderer: any = { updatedBindings: new Set() };
+  bindContent.applyChange(renderer);
+  expect(mockBinding.applyChange).toHaveBeenCalledWith(renderer);
+
   bindContent.unmount();
   expect(host.childNodes.length).toBe(0);
 
   // 2度目の unmount は parentNode が null でも例外なし
   expect(() => bindContent.unmount()).not.toThrow();
-
-  // applyChange は各 binding に委譲
-  const renderer: any = { updatedBindings: new Set() };
-  bindContent.applyChange(renderer);
-  expect(mockBinding.applyChange).toHaveBeenCalledWith(renderer);
 
   // アンマウント後は親が一致しないため null
   const lastUnmounted = bindContent.getLastNode(host);
@@ -408,5 +408,72 @@ describe("BindContent", () => {
     (bc as any).childNodes = [binding.node];
     expect(binding.node).toBe(bc.lastChildNode);
     expect(() => bc.getLastNode(host)).toThrow("Child bindContent not found");
+  });
+
+  it("clear: 全ての bindings の clear() を呼び出す", () => {
+    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t1", "t2"], creatorByText: new Map([["t1", {}], ["t2", {}]]) }];
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValue(attrs as any);
+    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValue(template.content.firstElementChild!);
+    
+    const b1 = { init: vi.fn(), clear: vi.fn(), node: template.content.firstElementChild!, bindContents: [], bindingNode: { isBlock: false } } as any;
+    const b2 = { init: vi.fn(), clear: vi.fn(), node: template.content.firstElementChild!, bindContents: [], bindingNode: { isBlock: false } } as any;
+    vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce(b1).mockReturnValueOnce(b2);
+
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    bc.clear();
+    
+    expect(b1.clear).toHaveBeenCalled();
+    expect(b2.clear).toHaveBeenCalled();
+  });
+
+  it("applyChange: parentNode が null の場合は何もしない", () => {
+    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t"], creatorByText: new Map([["t", {}]]) }];
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValue(attrs as any);
+    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValue(template.content.firstElementChild!);
+    
+    const mockBinding = { 
+      init: vi.fn(), 
+      applyChange: vi.fn(), 
+      node: template.content.firstElementChild!, 
+      bindContents: [], 
+      bindingNode: { isBlock: false } 
+    } as any;
+    vi.spyOn(bindingMod, "createBinding").mockReturnValue(mockBinding);
+
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    
+    // childNodes[0] の parentNode を null にする（DOMから削除された状態をシミュレート）
+    Object.defineProperty(bc.childNodes[0], 'parentNode', {
+      value: null,
+      configurable: true
+    });
+
+    const renderer: any = { updatedBindings: new Set() };
+    bc.applyChange(renderer);
+    
+    // applyChange が呼ばれないことを確認
+    expect(mockBinding.applyChange).not.toHaveBeenCalled();
+  });
+
+  it("createBindContent: listIndex が null でない場合は loopContext を作成", () => {
+    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t"], creatorByText: new Map([["t", {}]]) }];
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValue(attrs as any);
+    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValue(template.content.firstElementChild!);
+    
+    const mockBinding = { 
+      init: vi.fn(), 
+      node: template.content.firstElementChild!, 
+      bindContents: [], 
+      bindingNode: { isBlock: false } 
+    } as any;
+    vi.spyOn(bindingMod, "createBinding").mockReturnValue(mockBinding);
+
+    // listIndex が null でない場合（分岐カバレッジのテスト）
+    const mockListIndex = { sid: "test", at: vi.fn() } as any;
+    const loopRef: any = { listIndex: mockListIndex };
+    const bc = createBindContent(null, templateId, engine, loopRef);
+    
+    // loopContext が作成されることを確認（null でないこと）
+    expect((bc as any).loopContext).not.toBeNull();
   });
 });

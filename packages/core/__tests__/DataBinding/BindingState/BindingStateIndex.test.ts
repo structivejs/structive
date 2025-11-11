@@ -180,6 +180,134 @@ describe("BindingStateIndex", () => {
     expect(() => bs.init()).toThrowError(/Binding for list is null/);
   });
 
+  it("bindContent.parentBinding が undefined の場合も init でエラー", () => {
+    const engine = createEngine();
+    const listIndex = { index: 0 };
+    
+    // undefined を明示的に設定するケース
+    const bindContent = { parentBinding: undefined };
+    const loopContext = {
+      serialize: () => [{
+        listIndex,
+        ref: { key: "REF" },
+        bindContent
+      }]
+    };
+    
+    const binding = {
+      engine,
+      parentBindContent: { currentLoopContext: loopContext }
+    } as any;
+
+    const factory = createBindingStateIndex("$1", []);
+    const bs = factory(binding, engine.outputFilters);
+
+    expect(() => bs.init()).toThrowError(/Binding for list is null/);
+  });
+
+  it("直接的にparentBinding が null の場合の初期化エラー", () => {
+    const engine = createEngine();
+    const listIndex = { index: 0 };
+    
+    // createBindingヘルパーを使わず、直接構築
+    const bindContent = { parentBinding: null };  // 明示的にnull
+    const loopContext = {
+      serialize: () => [{
+        listIndex,
+        ref: { key: "REF" },
+        bindContent
+      }]
+    };
+    
+    const binding = {
+      engine,
+      parentBindContent: { currentLoopContext: loopContext }
+    } as any;
+
+    const factory = createBindingStateIndex("$1", []);
+    const bs = factory(binding, engine.outputFilters);
+
+    expect(() => bs.init()).toThrowError(/Binding for list is null/);
+  });
+
+  it("bindContentにparentBindingプロパティが存在しない場合の初期化エラー", () => {
+    const engine = createEngine();
+    const listIndex = { index: 0 };
+    
+    // parentBindingプロパティ自体を持たないオブジェクト
+    const bindContent = Object.create(null);  // プロトタイプチェーンを持たないオブジェクト
+    
+    const loopContext = {
+      serialize: () => [{
+        listIndex,
+        ref: { key: "REF" },
+        bindContent
+      }]
+    };
+    
+    const binding = {
+      engine,
+      parentBindContent: { currentLoopContext: loopContext }
+    } as any;
+
+    const factory = createBindingStateIndex("$1", []);
+    const bs = factory(binding, engine.outputFilters);
+
+    expect(() => bs.init()).toThrowError(/Binding for list is null/);
+  });
+
+  it("デバッグ: 直接的なテストケース", () => {
+    const engine = createEngine();
+
+    // 最もシンプルな状況でテストする
+    const factory = createBindingStateIndex("$1", []);
+    
+    // bindingオブジェクトを完全に制御
+    const binding = {
+      engine,
+      parentBindContent: {
+        currentLoopContext: {
+          serialize: () => [{
+            listIndex: { index: 0 },
+            ref: { key: "REF" },
+            bindContent: {
+              parentBinding: null  // 確実にnull
+            }
+          }]
+        }
+      }
+    };
+
+    const bs = factory(binding as any, engine.outputFilters);
+    
+    // 期待: "Binding for list is null" エラーで145-146行が実行される
+    expect(() => bs.init()).toThrowError(/Binding for list is null/);
+  });
+
+  it("明示的なnullケースでのエラー処理", () => {
+    const engine = createEngine();
+    const factory = createBindingStateIndex("$1", []);
+    
+    // この特定のケースを複数回テストして確実にカバーする
+    for (let i = 0; i < 3; i++) {
+      const binding = {
+        engine,
+        parentBindContent: {
+          currentLoopContext: {
+            serialize: () => [{
+              listIndex: { index: 0 },
+              ref: { key: "REF" + i },
+              bindContent: { parentBinding: null }  // 毎回null
+            }]
+          }
+        }
+      };
+
+      const bs = factory(binding as any, engine.outputFilters);
+      expect(() => bs.init()).toThrowError(/Binding for list is null/);
+    }
+  });
+
   it("既存エントリがある場合は Set に追記する", () => {
     const engine = createEngine();
     const listIndex = { index: 5 };
@@ -208,5 +336,30 @@ describe("BindingStateIndex", () => {
 
     expect(existingSet.size).toBe(2);
     expect(existingSet.has(binding)).toBe(true);
+  });
+
+  it("parentBinding が null の場合は init でエラー (coverage test)", () => {
+    const engine = createEngine();
+    
+    // Create a mock loop context with null parentBinding to cover lines with raiseError
+    const mockLoopContext = {
+      serialize: () => [{
+        listIndex: { index: 0 },
+        ref: { key: "REF" },
+        bindContent: { parentBinding: null }
+      }]
+    };
+
+    const binding = {
+      engine,
+      parentBindContent: { 
+        currentLoopContext: mockLoopContext 
+      }
+    } as any;
+
+    const factory = createBindingStateIndex("$1", []);
+    const bs = factory(binding, engine.outputFilters);
+
+    expect(() => bs.init()).toThrow("Binding for list is null");
   });
 });

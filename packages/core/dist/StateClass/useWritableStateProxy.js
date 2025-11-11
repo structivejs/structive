@@ -1,6 +1,6 @@
 import { set as trapSet } from "./traps/set.js";
 import { setLoopContext } from "./methods/setLoopContext";
-import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol } from "./symbols";
+import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, HasUpdatedCallbackSymbol, SetByRefSymbol, UpdatedCallbackSymbol } from "./symbols";
 import { get as trapGet } from "./traps/get.js";
 const STACK_DEPTH = 32;
 class StateHandler {
@@ -11,7 +11,11 @@ class StateHandler {
     loopContext = null;
     updater;
     renderer = null;
-    symbols = new Set([GetByRefSymbol, SetByRefSymbol, GetListIndexesByRefSymbol, ConnectedCallbackSymbol, DisconnectedCallbackSymbol]);
+    symbols = new Set([
+        GetByRefSymbol, SetByRefSymbol, GetListIndexesByRefSymbol,
+        ConnectedCallbackSymbol, DisconnectedCallbackSymbol,
+        UpdatedCallbackSymbol, HasUpdatedCallbackSymbol
+    ]);
     apis = new Set(["$resolve", "$getAll", "$trackDependency", "$navigate", "$component"]);
     constructor(engine, updater) {
         this.engine = engine;

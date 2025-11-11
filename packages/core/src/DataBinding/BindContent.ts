@@ -272,6 +272,8 @@ class BindContent implements IBindContent {
    * 親が既に無い場合は no-op。
    */
   unmount() {
+    // 
+    this.#currentLoopContext = undefined;
     // コメント/テキストノードでも確実に取得できるよう parentNode を使用する
     const parentNode = this.childNodes[0]?.parentNode ?? null;
     if (parentNode === null) {
@@ -311,10 +313,19 @@ class BindContent implements IBindContent {
    * renderer.updatedBindings に載っているものは二重適用を避ける。
    */
   applyChange(renderer: IRenderer): void {
+    const parentNode = this.childNodes[0]?.parentNode ?? null;
+    if (parentNode === null) {
+      return; // すでにDOMから削除されている場合は何もしない
+    }
     for(let i = 0; i < this.bindings.length; i++) {
       const binding = this.bindings[i];
       if (renderer.updatedBindings.has(binding)) continue;
       binding.applyChange(renderer);
+    }
+  }
+  clear() {
+    for(let i = 0; i < this.bindings.length; i++) {
+      this.bindings[i].clear();
     }
   }
 }

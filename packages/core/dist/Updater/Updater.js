@@ -1,5 +1,6 @@
 import { findPathNodeByPath } from "../PathTree/PathNode";
 import { createReadonlyStateHandler, createReadonlyStateProxy } from "../StateClass/createReadonlyStateProxy";
+import { HasUpdatedCallbackSymbol, UpdatedCallbackSymbol } from "../StateClass/symbols";
 import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { raiseError } from "../utils";
 import { render } from "./Renderer";
@@ -15,6 +16,7 @@ class Updater {
     #version;
     #revision = 0;
     #swapInfoByRef = new Map();
+    #saveQueue = [];
     constructor(engine) {
         this.#engine = engine;
         this.#version = engine.versionUp();
@@ -36,12 +38,14 @@ class Updater {
     enqueueRef(ref) {
         this.#revision++;
         this.queue.push(ref);
+        this.#saveQueue.push(ref);
         this.collectMaybeUpdates(this.#engine, ref.info.pattern, this.#engine.versionRevisionByPath, this.#revision);
         // レンダリング中はスキップ
         if (this.#rendering)
             return;
         this.#rendering = true;
         queueMicrotask(() => {
+            // 非同期処理で中断するか、更新処理が完了した後にレンダリングを実行
             this.rendering();
         });
     }
@@ -51,10 +55,21 @@ class Updater {
      * @param callback
      */
     async update(loopContext, callback) {
+        let hasUpdatedCallback = false;
         await useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, async (state, handler) => {
             // 状態更新処理
             await callback(state, handler);
+            hasUpdatedCallback = state[HasUpdatedCallbackSymbol]();
         });
+        if (hasUpdatedCallback && this.#saveQueue.length > 0) {
+            const saveQueue = this.#saveQueue;
+            this.#saveQueue = [];
+            queueMicrotask(() => {
+                this.update(null, (state, handler) => {
+                    state[UpdatedCallbackSymbol](saveQueue);
+                });
+            });
+        }
     }
     /**
      * レンダリング処理

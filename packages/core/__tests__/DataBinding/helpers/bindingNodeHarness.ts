@@ -10,6 +10,7 @@ export function createEngineStub() {
     getListIndexes: vi.fn(),
     saveListAndListIndexes: vi.fn(),
     getListAndListIndexes: vi.fn(() => ({ list: null, listIndexes: null, listClone: null })),
+    versionUp: vi.fn(() => 1),
   } as any;
 }
 

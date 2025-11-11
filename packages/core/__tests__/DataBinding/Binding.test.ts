@@ -18,6 +18,7 @@ describe("Binding", () => {
     init: vi.fn(),
     assignValue: vi.fn(),
     getFilteredValue: vi.fn(),
+    clear: vi.fn(),
     isLoopIndex: false,
     ref: { info: { pattern: "state.path" } } as any,
   };
@@ -42,6 +43,7 @@ describe("Binding", () => {
     mockBindingNode.applyChange.mockClear();
     mockBindingState.init.mockClear();
     mockBindingState.assignValue.mockClear();
+    mockBindingState.clear.mockClear();
   mockBindingState.ref = { info: { pattern: "state.path" } } as any;
   mockBindingState.isLoopIndex = false;
   mockBindingState.getFilteredValue.mockClear();
@@ -95,5 +97,11 @@ describe("Binding", () => {
     mockBindingNode.applyChange.mockClear();
     binding.applyChange(renderer);
     expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
+  });
+
+  it("clear は bindingState.clear を呼び出す", () => {
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    binding.clear();
+    expect(mockBindingState.clear).toHaveBeenCalledTimes(1);
   });
 });

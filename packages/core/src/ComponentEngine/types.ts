@@ -43,6 +43,7 @@ export interface IComponentEngine {
   setCacheEntry(ref: IStatePropertyRef, entry: ICacheEntry): void;
   getBindings(ref: IStatePropertyRef): IBinding[];
   saveBinding(ref: IStatePropertyRef, binding: IBinding): void;
+  removeBinding(ref: IStatePropertyRef, binding: IBinding): void;
 
 //  bindingsByListIndex: WeakMap<IListIndex, Set<IBinding>>; // リストインデックスからバインディングを取得する
 

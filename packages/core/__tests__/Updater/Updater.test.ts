@@ -14,8 +14,15 @@ vi.mock("../../src/StateClass/useWritableStateProxy", () => {
     useWritableStateProxy: vi.fn(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void>) => {
       capturedUpdater = updater;
       const dummyHandler = {} as any;
+      
+      // HasUpdatedCallbackSymbol を適切にモック
+      const { HasUpdatedCallbackSymbol } = await import("../../src/StateClass/symbols");
+      const mockState = {
+        [HasUpdatedCallbackSymbol]: () => false  // デフォルトでfalseを返す
+      };
+      
       // ダミーの writable state/handler を渡す
-      await cb({} as any, dummyHandler);
+      await cb(mockState, dummyHandler);
     }),
   };
 });
@@ -145,6 +152,54 @@ describe("Updater.update", () => {
     });
     await Promise.resolve();
     expect(renderMock).not.toHaveBeenCalled();
+  });
+
+  it("HasUpdatedCallbackSymbol が true で saveQueue にアイテムがある場合、UpdatedCallbackSymbol が呼ばれる", async () => {
+    // useWritableStateProxyを一時的に別の実装に変更
+    const { useWritableStateProxy: originalMock } = await import("../../src/StateClass/useWritableStateProxy");
+    
+    // UpdatedCallbackSymbolをモック
+    const updatedCallbackMock = vi.fn();
+    const { HasUpdatedCallbackSymbol, UpdatedCallbackSymbol } = await import("../../src/StateClass/symbols");
+    
+    // useWritableStateProxyの動作を変更
+    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void>) => {
+      capturedUpdater = updater;
+      const dummyHandler = {} as any;
+      
+      const mockState = {
+        [HasUpdatedCallbackSymbol]: () => true,  // trueを返す
+        [UpdatedCallbackSymbol]: updatedCallbackMock
+      };
+      
+      await cb(mockState, dummyHandler);
+    });
+
+    // 2回目の呼び出し（queueMicrotask内）用のモック
+    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void>) => {
+      const dummyHandler = {} as any;
+      
+      const mockState = {
+        [HasUpdatedCallbackSymbol]: () => false,
+        [UpdatedCallbackSymbol]: updatedCallbackMock
+      };
+      
+      await cb(mockState, dummyHandler);
+    });
+
+    const engine = createEngineStub();
+    const ref = createRef("foo");
+
+    await withUpdater(engine, null, async (updater) => {
+      // saveQueueにアイテムを追加するためにenqueueRefを呼ぶ
+      updater.enqueueRef(ref);
+    });
+
+    // queueMicrotaskの実行を待つ
+    await new Promise(resolve => setTimeout(resolve, 0));
+    await Promise.resolve();
+
+    expect(updatedCallbackMock).toHaveBeenCalledWith([ref]);
   });
 });
 

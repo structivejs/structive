@@ -3,6 +3,7 @@ import { createBindingState } from "../../../src/DataBinding/BindingState/Bindin
 import * as getByRefMod from "../../../src/StateClass/methods/getByRef";
 import * as setByRefMod from "../../../src/StateClass/methods/setByRef";
 import * as getStructuredPathInfoMod from "../../../src/StateProperty/getStructuredPathInfo";
+import * as getStatePropertyRefMod from "../../../src/StatePropertyRef/StatepropertyRef";
 
 describe("BindingState", () => {
   let engine: any;
@@ -19,6 +20,7 @@ describe("BindingState", () => {
         add: (opts: string[]) => (v: any) => Number(v) + Number(opts[0] ?? 0),
       },
       saveBinding: vi.fn(),
+      removeBinding: vi.fn(),
       state: {},
     };
     getByRefSpy = vi.spyOn(getByRefMod, "getByRef").mockImplementation((_state: any, ref: any) => valueByRef.get(ref));
@@ -143,11 +145,11 @@ describe("BindingState", () => {
 
   it("エラー: ワイルドカード・未init で ref が null", () => {
     // ワイルドカードの場合、コンストラクタで #nullRef は null になる
-    // init() を呼ばずに getValue すると、loopContext === null かつ nullRef === null で 'ref is null'
+    // init() を呼ばずに getValue すると、loopContext === null かつ nullRef === null で 'LoopContext is null'
     const binding = { parentBindContent: { currentLoopContext: null }, engine } as any;
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);
-    expect(() => bindingState.getValue({} as any, {} as any)).toThrow(/ref is null/i);
+    expect(() => bindingState.getValue({} as any, {} as any)).toThrow(/LoopContext is null/i);
   });
 
   it("エラー: lastWildcardPath が null の場合", () => {
@@ -166,5 +168,46 @@ describe("BindingState", () => {
     expect(() => bindingState.init()).toThrow(/Wildcard last parentPath is null/);
 
     spy.mockRestore();
+  });
+
+  it("clear()メソッド: ワイルドカードの場合のrefがnullでない時のremoveBinding呼び出し", () => {
+    const listIndex = { sid: "LI#1" } as any;
+    const loopContext = {
+      path: "items.*",
+      listIndex,
+      find: (name: string) => (name === "items.*" ? loopContext : null),
+    } as any;
+
+    const mockBindContent = { currentLoopContext: loopContext } as any;
+    const binding = { parentBindContent: mockBindContent, engine } as any;
+
+    const factory = createBindingState("items.*.name", []);
+    const bindingState = factory(binding, engine.outputFilters);
+    
+    // init() を呼んでrefを設定（ワイルドカードの場合はrefが作成される）
+    bindingState.init();
+    expect(engine.saveBinding).toHaveBeenCalledTimes(1);
+    const savedRef = engine.saveBinding.mock.calls[0][0];
+    
+    // clear() を呼ぶと removeBinding が呼ばれる
+    bindingState.clear();
+    expect(engine.removeBinding).toHaveBeenCalledWith(savedRef, binding);
+  });
+
+  it("ref getter: nullRefがnullでない場合にnullRefがundefinedの時のエラー処理", () => {
+    const mockBindContent = { currentLoopContext: null } as any;
+    const binding = { parentBindContent: mockBindContent, engine } as any;
+
+    // getStatePropertyRefがundefinedを返すようにモック
+    const getStatePropertyRefSpy = vi.spyOn(getStatePropertyRefMod, "getStatePropertyRef")
+      .mockReturnValue(undefined as any);
+
+    const factory = createBindingState("user.name", []);
+    const bindingState = factory(binding, engine.outputFilters);
+    
+    // この状態でrefにアクセスすると、"ref is null"エラーが発生する
+    expect(() => bindingState.ref).toThrow(/ref is null/i);
+    
+    getStatePropertyRefSpy.mockRestore();
   });
 });

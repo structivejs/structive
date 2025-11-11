@@ -72,6 +72,9 @@ class Binding implements IBinding {
       }
     }
   }
+  clear(): void {
+    this.bindingState.clear();
+  }
 }
 
 /**

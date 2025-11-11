@@ -37,7 +37,16 @@ class BindingState {
         return this.ref.listIndex;
     }
     get ref() {
-        if (this.#loopContext !== null) {
+        if (this.#nullRef === null) {
+            if (this.#loopContext === null) {
+                raiseError({
+                    code: 'BIND-201',
+                    message: 'LoopContext is null',
+                    context: { pattern: this.#pattern },
+                    docsUrl: '/docs/error-codes.md#bind',
+                    severity: 'error',
+                });
+            }
             if (this.#ref === null) {
                 this.#ref = getStatePropertyRef(this.#info, this.#loopContext.listIndex);
             }
@@ -103,7 +112,16 @@ class BindingState {
     }
     assignValue(writeState, handler, value) {
         setByRef(this.binding.engine.state, this.ref, value, writeState, handler);
-        //    writeState[SetByRefSymbol](this.ref, value);
+    }
+    // ifブロックを外すときのためのクリア処理
+    // forブロックを外すときには使わないように
+    // init()で再設定できる
+    clear() {
+        if (this.#ref !== null) {
+            this.binding.engine.removeBinding(this.#ref, this.binding);
+        }
+        this.#ref = null;
+        this.#loopContext = null;
     }
 }
 export const createBindingState = (name, filterTexts) => (binding, filters) => {

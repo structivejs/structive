@@ -20,7 +20,7 @@ import { getRouter } from "../../Router/Router.js";
 import { getResolvedPathInfo } from "../../StateProperty/getResolvedPathInfo.js";
 import { raiseError } from "../../utils.js";
 import { getListIndex } from "../methods/getListIndex.js";
-import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol } from "../symbols.js";
+import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, HasUpdatedCallbackSymbol, SetByRefSymbol, UpdatedCallbackSymbol } from "../symbols.js";
 import { trackDependency } from "../apis/trackDependency.js";
 import { indexByIndexName } from "./indexByIndexName.js";
 import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef.js";
@@ -31,6 +31,8 @@ import { connectedCallback } from "../apis/connectedCallback.js";
 import { disconnectedCallback } from "../apis/disconnectedCallback.js";
 import { getAll } from "../apis/getAll.js";
 import { getListIndexesByRef } from "../methods/getListIndexesByRef.js";
+import { updatedCallback } from "../apis/updatedCallback.js";
+import { hasUpdatedCallback } from "../apis/hasUpdateCallback.js";
 export function get(target, prop, receiver, handler) {
     const index = indexByIndexName[prop];
     if (typeof index !== "undefined") {
@@ -76,6 +78,10 @@ export function get(target, prop, receiver, handler) {
                     return () => connectedCallback(target, prop, receiver, handler);
                 case DisconnectedCallbackSymbol:
                     return () => disconnectedCallback(target, prop, receiver, handler);
+                case UpdatedCallbackSymbol:
+                    return (refs) => updatedCallback(target, refs, receiver, handler);
+                case HasUpdatedCallbackSymbol:
+                    return () => hasUpdatedCallback(target, prop, receiver, handler);
             }
         }
         else {

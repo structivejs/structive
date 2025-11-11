@@ -26,6 +26,7 @@ export interface IBindingState {
   readonly filters      : Filters;
   readonly isLoopIndex  : boolean;
   init(): void;
+  clear(): void;
   assignValue(writeState:IWritableStateProxy, handler:IWritableStateHandler, value:any): void;
   getValue(state: IStateProxy, handler: IStateHandler): any; // 現在の値を返す
   getFilteredValue(state: IStateProxy, handler: IStateHandler): any; // フィルタを適用して値を返す

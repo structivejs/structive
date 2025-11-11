@@ -3,7 +3,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { get } from "../../src/StateClass/traps/get.js";
-import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol } from "../../src/StateClass/symbols";
+import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol, UpdatedCallbackSymbol, HasUpdatedCallbackSymbol } from "../../src/StateClass/symbols";
 
 const raiseErrorMock = vi.fn((detail: any) => {
   const message = typeof detail === "string" ? detail : detail?.message ?? "error";
@@ -73,6 +73,16 @@ vi.mock("../../src/StateClass/apis/disconnectedCallback.js", () => ({
   disconnectedCallback: (...args: any[]) => disconnectedCallbackMock(...args),
 }));
 
+const hasUpdatedCallbackMock = vi.fn();
+vi.mock("../../src/StateClass/apis/hasUpdateCallback.js", () => ({
+  hasUpdatedCallback: (...args: any[]) => hasUpdatedCallbackMock(...args),
+}));
+
+const updatedCallbackMock = vi.fn();
+vi.mock("../../src/StateClass/apis/updatedCallback.js", () => ({
+  updatedCallback: (...args: any[]) => updatedCallbackMock(...args),
+}));
+
 vi.mock("../../src/StateClass/traps/indexByIndexName.js", () => ({
   indexByIndexName: { $1: 0, $2: 1 },
 }));
@@ -99,6 +109,8 @@ beforeEach(() => {
   trackDependencyMock.mockReset();
   connectedCallbackMock.mockReset();
   disconnectedCallbackMock.mockReset();
+  hasUpdatedCallbackMock.mockReset();
+  updatedCallbackMock.mockReset();
 });
 
 describe("StateClass/traps get", () => {
@@ -203,6 +215,29 @@ describe("StateClass/traps get", () => {
     getListIndexesFn(ref);
 
     expect(getListIndexesByRefMock).toHaveBeenCalledWith(target, ref, receiver, handler);
+  });
+
+  it("UpdatedCallbackSymbol は updatedCallback を呼ぶ", () => {
+    const handler = makeHandler([UpdatedCallbackSymbol]);
+    const refs = [{ info: { pattern: "x" } } as any, { info: { pattern: "y" } } as any];
+    const target = {};
+    const receiver = {};
+
+    const updatedFn = get(target, UpdatedCallbackSymbol, receiver as any, handler);
+    updatedFn(refs);
+
+    expect(updatedCallbackMock).toHaveBeenCalledWith(target, refs, receiver, handler);
+  });
+
+  it("HasUpdatedCallbackSymbol は hasUpdatedCallback を呼ぶ", () => {
+    const handler = makeHandler([HasUpdatedCallbackSymbol]);
+    const target = {};
+    const receiver = {};
+
+    const hasUpdatedFn = get(target, HasUpdatedCallbackSymbol, receiver as any, handler);
+    hasUpdatedFn();
+
+    expect(hasUpdatedCallbackMock).toHaveBeenCalledWith(target, HasUpdatedCallbackSymbol, receiver, handler);
   });
 
   it("登録されていないシンボルは Reflect.get の結果を返す", () => {

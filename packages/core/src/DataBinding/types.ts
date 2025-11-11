@@ -48,6 +48,7 @@ export interface IBindContent {
   bindings: IBinding[];
   blockBindings: IBinding[]; // bindingsの中でblockバインディングのみを抽出した配列
   init(): void;
+  clear(): void;
   assignListIndex(listIndex: IListIndex): void;
   getLastNode(parentNode: Node): Node | null;
   applyChange(renderer: IRenderer): void; // バインディングの変更を適用する
@@ -64,6 +65,7 @@ export interface IBinding {
   bindContents     : IBindContent[];
   bindingsByListIndex: WeakMap<IListIndex, Set<IBinding>>;
   init(): void;
+  clear(): void;
   updateStateValue(writeState: IWritableStateProxy, handler: IWritableStateHandler, value: any): void;
   notifyRedraw(refs: IStatePropertyRef[]): void;
   applyChange(renderer: IRenderer): void; // バインディングの変更を適用する

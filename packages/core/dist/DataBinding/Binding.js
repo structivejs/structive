@@ -53,6 +53,9 @@ class Binding {
             }
         }
     }
+    clear() {
+        this.bindingState.clear();
+    }
 }
 /**
  * バインディング生成用ファクトリ関数

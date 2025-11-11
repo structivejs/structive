@@ -794,111 +794,6 @@ const createBindingNodeAttribute = (name, filterTexts, decorates) => (binding, n
     return new BindingNodeAttribute(binding, node, name, filterFns, decorates);
 };
 
-/**
- * チェックボックス（input[type="checkbox"]）のバインディング。
- *
- * - 値（配列）に input.value が含まれるかで checked を制御
- *
- * Throws:
- * - BIND-201 Value is not array: 配列以外が渡された
- */
-class BindingNodeCheckbox extends BindingNode {
-    assignValue(value) {
-        if (!Array.isArray(value)) {
-            raiseError({
-                code: 'BIND-201',
-                message: 'Value is not array',
-                context: { where: 'BindingNodeCheckbox.update', receivedType: typeof value },
-                docsUrl: '/docs/error-codes.md#bind',
-                severity: 'error',
-            });
-        }
-        const element = this.node;
-        element.checked = value.map(_val => _val.toString()).includes(element.value);
-    }
-}
-/**
- * チェックボックス用バインディングノード生成ファクトリ関数
- * - name, フィルタ、デコレータ情報からBindingNodeCheckboxインスタンスを生成
- */
-const createBindingNodeCheckbox = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
-    return new BindingNodeCheckbox(binding, node, name, filterFns, decorates);
-};
-
-/**
- * class 属性（classList）バインディング。
- *
- * - 値（配列）を空白区切りで結合して className へ反映
- *
- * Throws:
- * - BIND-201 Value is not array: 配列以外が渡された
- */
-class BindingNodeClassList extends BindingNode {
-    assignValue(value) {
-        if (!Array.isArray(value)) {
-            raiseError({
-                code: 'BIND-201',
-                message: 'Value is not array',
-                context: { where: 'BindingNodeClassList.update', receivedType: typeof value },
-                docsUrl: '/docs/error-codes.md#bind',
-                severity: 'error',
-            });
-        }
-        const element = this.node;
-        element.className = value.join(" ");
-    }
-}
-/**
- * classList用バインディングノード生成ファクトリ関数
- * - name, フィルタ、デコレータ情報からBindingNodeClassListインスタンスを生成
- */
-const createBindingNodeClassList = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
-    return new BindingNodeClassList(binding, node, name, filterFns, decorates);
-};
-
-/**
- * class の個別クラス名（例: class.active）に対するバインディング。
- *
- * - name から subName を抽出し、boolean 値で add/remove を切り替え
- *
- * Throws:
- * - BIND-201 Value is not boolean: boolean 以外が渡された
- */
-class BindingNodeClassName extends BindingNode {
-    #subName;
-    get subName() {
-        return this.#subName;
-    }
-    constructor(binding, node, name, filters, decorates) {
-        super(binding, node, name, filters, decorates);
-        const [, subName] = this.name.split(".");
-        this.#subName = subName;
-    }
-    assignValue(value) {
-        if (typeof value !== "boolean") {
-            raiseError({
-                code: 'BIND-201',
-                message: 'Value is not boolean',
-                context: { where: 'BindingNodeClassName.update', receivedType: typeof value },
-                docsUrl: '/docs/error-codes.md#bind',
-                severity: 'error',
-            });
-        }
-        const element = this.node;
-        element.classList.toggle(this.subName, value);
-    }
-}
-/**
- * class名バインディングノード生成用ファクトリ関数
- * - name, フィルタ、デコレータ情報からBindingNodeClassNameインスタンスを生成
- */
-const createBindingNodeClassName = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
-    return new BindingNodeClassName(binding, node, name, filterFns, decorates);
-};
-
 const DATA_BIND_ATTRIBUTE = "data-bind";
 const COMMENT_EMBED_MARK = "@@:"; // 埋め込み変数のマーク
 const COMMENT_TEMPLATE_MARK = "@@|"; // テンプレートのマーク
@@ -1114,6 +1009,8 @@ const GetByRefSymbol = Symbol.for(`${symbolName$1}.GetByRef`);
 const SetByRefSymbol = Symbol.for(`${symbolName$1}.SetByRef`);
 const ConnectedCallbackSymbol = Symbol.for(`${symbolName$1}.ConnectedCallback`);
 const DisconnectedCallbackSymbol = Symbol.for(`${symbolName$1}.DisconnectedCallback`);
+const UpdatedCallbackSymbol = Symbol.for(`${symbolName$1}.UpdatedCallback`);
+const HasUpdatedCallbackSymbol = Symbol.for(`${symbolName$1}.HasUpdatedCallback`);
 const GetListIndexesByRefSymbol = Symbol.for(`${symbolName$1}.GetListIndexesByRef`);
 
 /**
@@ -1982,6 +1879,36 @@ function getListIndexesByRef(target, ref, receiver, handler) {
     return listIndexes;
 }
 
+const UPDATED_CALLBACK$1 = "$updatedCallback";
+async function updatedCallback(target, refs, receiver, handler) {
+    const callback = Reflect.get(target, UPDATED_CALLBACK$1);
+    if (typeof callback === "function") {
+        const paths = new Set();
+        const indexesByPath = {};
+        for (const ref of refs) {
+            const path = ref.info.pattern;
+            paths.add(path);
+            if (ref.info.wildcardCount > 0) {
+                const index = ref.listIndex.index;
+                let indexes = indexesByPath[path];
+                if (typeof indexes === "undefined") {
+                    indexesByPath[path] = [index];
+                }
+                else {
+                    indexes.push(index);
+                }
+            }
+        }
+        await callback.call(receiver, Array.from(paths), indexesByPath);
+    }
+}
+
+const UPDATED_CALLBACK = "$updatedCallback";
+function hasUpdatedCallback(target, prop, receiver, handler) {
+    const callback = Reflect.get(target, UPDATED_CALLBACK);
+    return (typeof callback === "function");
+}
+
 /**
  * get.ts
  *
@@ -2045,6 +1972,10 @@ function get(target, prop, receiver, handler) {
                     return () => connectedCallback(target, prop, receiver);
                 case DisconnectedCallbackSymbol:
                     return () => disconnectedCallback(target, prop, receiver);
+                case UpdatedCallbackSymbol:
+                    return (refs) => updatedCallback(target, refs, receiver);
+                case HasUpdatedCallbackSymbol:
+                    return () => hasUpdatedCallback(target);
             }
         }
         else {
@@ -2168,7 +2099,11 @@ class StateHandler {
     loopContext = null;
     updater;
     renderer = null;
-    symbols = new Set([GetByRefSymbol, SetByRefSymbol, GetListIndexesByRefSymbol, ConnectedCallbackSymbol, DisconnectedCallbackSymbol]);
+    symbols = new Set([
+        GetByRefSymbol, SetByRefSymbol, GetListIndexesByRefSymbol,
+        ConnectedCallbackSymbol, DisconnectedCallbackSymbol,
+        UpdatedCallbackSymbol, HasUpdatedCallbackSymbol
+    ]);
     apis = new Set(["$resolve", "$getAll", "$trackDependency", "$navigate", "$component"]);
     constructor(engine, updater) {
         this.engine = engine;
@@ -2517,6 +2452,7 @@ class Updater {
     #version;
     #revision = 0;
     #swapInfoByRef = new Map();
+    #saveQueue = [];
     constructor(engine) {
         this.#engine = engine;
         this.#version = engine.versionUp();
@@ -2538,12 +2474,14 @@ class Updater {
     enqueueRef(ref) {
         this.#revision++;
         this.queue.push(ref);
+        this.#saveQueue.push(ref);
         this.collectMaybeUpdates(this.#engine, ref.info.pattern, this.#engine.versionRevisionByPath, this.#revision);
         // レンダリング中はスキップ
         if (this.#rendering)
             return;
         this.#rendering = true;
         queueMicrotask(() => {
+            // 非同期処理で中断するか、更新処理が完了した後にレンダリングを実行
             this.rendering();
         });
     }
@@ -2553,10 +2491,21 @@ class Updater {
      * @param callback
      */
     async update(loopContext, callback) {
+        let hasUpdatedCallback = false;
         await useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, async (state, handler) => {
             // 状態更新処理
             await callback(state, handler);
+            hasUpdatedCallback = state[HasUpdatedCallbackSymbol]();
         });
+        if (hasUpdatedCallback && this.#saveQueue.length > 0) {
+            const saveQueue = this.#saveQueue;
+            this.#saveQueue = [];
+            queueMicrotask(() => {
+                this.update(null, (state, handler) => {
+                    state[UpdatedCallbackSymbol](saveQueue);
+                });
+            });
+        }
     }
     /**
      * レンダリング処理
@@ -2656,6 +2605,157 @@ function createUpdater(engine, callback) {
     const updater = new Updater(engine);
     return callback(updater);
 }
+
+/**
+ * チェックボックス（input[type="checkbox"]）のバインディング。
+ *
+ * - 値（配列）に input.value が含まれるかで checked を制御
+ *
+ * Throws:
+ * - BIND-201 Value is not array: 配列以外が渡された
+ */
+class BindingNodeCheckbox extends BindingNode {
+    get value() {
+        const element = this.node;
+        return element.value;
+    }
+    get filteredValue() {
+        let value = this.value;
+        for (let i = 0; i < this.filters.length; i++) {
+            value = this.filters[i](value);
+        }
+        return value;
+    }
+    constructor(binding, node, name, filters, decorates) {
+        super(binding, node, name, filters, decorates);
+        const isInputElement = this.node instanceof HTMLInputElement;
+        if (!isInputElement)
+            return;
+        const inputElement = this.node;
+        if (inputElement.type !== "checkbox")
+            return;
+        if (decorates.length > 1) {
+            raiseError({
+                code: "BIND-201",
+                message: "Has multiple decorators",
+                context: { where: "BindingNodeCheckbox.constructor", name: this.name, decoratesCount: decorates.length },
+                docsUrl: "/docs/error-codes.md#bind",
+                severity: "error",
+            });
+        }
+        const event = (decorates[0]?.startsWith("on") ? decorates[0]?.slice(2) : decorates[0]) ?? null;
+        const eventName = event ?? "input";
+        if (eventName === "readonly" || eventName === "ro")
+            return;
+        // 双方向バインディング: イベント発火時にstateを更新
+        const engine = this.binding.engine;
+        this.node.addEventListener(eventName, async (e) => {
+            const loopContext = this.binding.parentBindContent.currentLoopContext;
+            const value = this.filteredValue;
+            await createUpdater(engine, async (updater) => {
+                await updater.update(loopContext, async (state, handler) => {
+                    binding.bindingState.getValue;
+                    binding.updateStateValue(state, handler, value);
+                });
+            });
+        });
+    }
+    assignValue(value) {
+        if (!Array.isArray(value)) {
+            raiseError({
+                code: 'BIND-201',
+                message: 'Value is not array',
+                context: { where: 'BindingNodeCheckbox.update', receivedType: typeof value },
+                docsUrl: '/docs/error-codes.md#bind',
+                severity: 'error',
+            });
+        }
+        const filteredValue = this.filteredValue;
+        const element = this.node;
+        element.checked = value.includes(filteredValue);
+    }
+}
+/**
+ * チェックボックス用バインディングノード生成ファクトリ関数
+ * - name, フィルタ、デコレータ情報からBindingNodeCheckboxインスタンスを生成
+ */
+const createBindingNodeCheckbox = (name, filterTexts, decorates) => (binding, node, filters) => {
+    const filterFns = createFilters(filters, filterTexts);
+    return new BindingNodeCheckbox(binding, node, name, filterFns, decorates);
+};
+
+/**
+ * class 属性（classList）バインディング。
+ *
+ * - 値（配列）を空白区切りで結合して className へ反映
+ *
+ * Throws:
+ * - BIND-201 Value is not array: 配列以外が渡された
+ */
+class BindingNodeClassList extends BindingNode {
+    assignValue(value) {
+        if (!Array.isArray(value)) {
+            raiseError({
+                code: 'BIND-201',
+                message: 'Value is not array',
+                context: { where: 'BindingNodeClassList.update', receivedType: typeof value },
+                docsUrl: '/docs/error-codes.md#bind',
+                severity: 'error',
+            });
+        }
+        const element = this.node;
+        element.className = value.join(" ");
+    }
+}
+/**
+ * classList用バインディングノード生成ファクトリ関数
+ * - name, フィルタ、デコレータ情報からBindingNodeClassListインスタンスを生成
+ */
+const createBindingNodeClassList = (name, filterTexts, decorates) => (binding, node, filters) => {
+    const filterFns = createFilters(filters, filterTexts);
+    return new BindingNodeClassList(binding, node, name, filterFns, decorates);
+};
+
+/**
+ * class の個別クラス名（例: class.active）に対するバインディング。
+ *
+ * - name から subName を抽出し、boolean 値で add/remove を切り替え
+ *
+ * Throws:
+ * - BIND-201 Value is not boolean: boolean 以外が渡された
+ */
+class BindingNodeClassName extends BindingNode {
+    #subName;
+    get subName() {
+        return this.#subName;
+    }
+    constructor(binding, node, name, filters, decorates) {
+        super(binding, node, name, filters, decorates);
+        const [, subName] = this.name.split(".");
+        this.#subName = subName;
+    }
+    assignValue(value) {
+        if (typeof value !== "boolean") {
+            raiseError({
+                code: 'BIND-201',
+                message: 'Value is not boolean',
+                context: { where: 'BindingNodeClassName.update', receivedType: typeof value },
+                docsUrl: '/docs/error-codes.md#bind',
+                severity: 'error',
+            });
+        }
+        const element = this.node;
+        element.classList.toggle(this.subName, value);
+    }
+}
+/**
+ * class名バインディングノード生成用ファクトリ関数
+ * - name, フィルタ、デコレータ情報からBindingNodeClassNameインスタンスを生成
+ */
+const createBindingNodeClassName = (name, filterTexts, decorates) => (binding, node, filters) => {
+    const filterFns = createFilters(filters, filterTexts);
+    return new BindingNodeClassName(binding, node, name, filterFns, decorates);
+};
 
 /**
  * BindingNodeEventクラスは、イベントバインディング（onClick, onInputなど）を担当するバインディングノードの実装です。
@@ -2831,12 +2931,14 @@ class BindingNodeIf extends BindingNodeBlock {
             });
         }
         if (filteredValue) {
+            this.#bindContent.init();
             this.#bindContent.mountAfter(parentNode, this.node);
             this.#bindContent.applyChange(renderer);
             this.#bindContents = this.#trueBindContents;
         }
         else {
             this.#bindContent.unmount();
+            this.#bindContent.clear();
             this.#bindContents = this.#falseBindContents;
         }
     }
@@ -3296,12 +3398,56 @@ const createBindingNodeProperty = (name, filterTexts, decorates) => (binding, no
  * - 柔軟なバインディング記法・フィルタ適用に対応
  */
 class BindingNodeRadio extends BindingNode {
+    get value() {
+        const element = this.node;
+        return element.value;
+    }
+    get filteredValue() {
+        let value = this.value;
+        for (let i = 0; i < this.filters.length; i++) {
+            value = this.filters[i](value);
+        }
+        return value;
+    }
+    constructor(binding, node, name, filters, decorates) {
+        super(binding, node, name, filters, decorates);
+        const isInputElement = this.node instanceof HTMLInputElement;
+        if (!isInputElement)
+            return;
+        const inputElement = this.node;
+        if (inputElement.type !== "radio")
+            return;
+        if (decorates.length > 1) {
+            raiseError({
+                code: "BIND-201",
+                message: "Has multiple decorators",
+                context: { where: "BindingNodeRadio.constructor", name: this.name, decoratesCount: decorates.length },
+                docsUrl: "/docs/error-codes.md#bind",
+                severity: "error",
+            });
+        }
+        const event = (decorates[0]?.startsWith("on") ? decorates[0]?.slice(2) : decorates[0]) ?? null;
+        const eventName = event ?? "input";
+        if (eventName === "readonly" || eventName === "ro")
+            return;
+        // 双方向バインディング: イベント発火時にstateを更新
+        const engine = this.binding.engine;
+        this.node.addEventListener(eventName, async (e) => {
+            const loopContext = this.binding.parentBindContent.currentLoopContext;
+            const value = this.filteredValue;
+            await createUpdater(engine, async (updater) => {
+                await updater.update(loopContext, async (state, handler) => {
+                    binding.updateStateValue(state, handler, value);
+                });
+            });
+        });
+    }
     assignValue(value) {
-        if (value === null || value === undefined || Number.isNaN(value)) {
+        if (value === null || value === undefined) {
             value = "";
         }
         const element = this.node;
-        element.checked = value.toString() === element.value.toString();
+        element.checked = value === this.filteredValue;
     }
 }
 /**
@@ -3563,7 +3709,16 @@ class BindingState {
         return this.ref.listIndex;
     }
     get ref() {
-        if (this.#loopContext !== null) {
+        if (this.#nullRef === null) {
+            if (this.#loopContext === null) {
+                raiseError({
+                    code: 'BIND-201',
+                    message: 'LoopContext is null',
+                    context: { pattern: this.#pattern },
+                    docsUrl: '/docs/error-codes.md#bind',
+                    severity: 'error',
+                });
+            }
             if (this.#ref === null) {
                 this.#ref = getStatePropertyRef(this.#info, this.#loopContext.listIndex);
             }
@@ -3629,7 +3784,16 @@ class BindingState {
     }
     assignValue(writeState, handler, value) {
         setByRef(this.binding.engine.state, this.ref, value, writeState, handler);
-        //    writeState[SetByRefSymbol](this.ref, value);
+    }
+    // ifブロックを外すときのためのクリア処理
+    // forブロックを外すときには使わないように
+    // init()で再設定できる
+    clear() {
+        if (this.#ref !== null) {
+            this.binding.engine.removeBinding(this.#ref, this.binding);
+        }
+        this.#ref = null;
+        this.#loopContext = null;
     }
 }
 const createBindingState = (name, filterTexts) => (binding, filters) => {
@@ -3764,6 +3928,12 @@ class BindingStateIndex {
         else {
             bindings.add(this.binding);
         }
+    }
+    // ifブロックを外すときのためのクリア処理
+    // forブロックを外すときには使わないように
+    // init()で再設定できる
+    clear() {
+        this.#loopContext = null;
     }
     assignValue(writeState, handler, value) {
         raiseError({
@@ -4214,6 +4384,9 @@ class Binding {
             }
         }
     }
+    clear() {
+        this.bindingState.clear();
+    }
 }
 /**
  * バインディング生成用ファクトリ関数
@@ -4551,6 +4724,8 @@ class BindContent {
      * 親が既に無い場合は no-op。
      */
     unmount() {
+        // 
+        this.#currentLoopContext = undefined;
         // コメント/テキストノードでも確実に取得できるよう parentNode を使用する
         const parentNode = this.childNodes[0]?.parentNode ?? null;
         if (parentNode === null) {
@@ -4591,11 +4766,20 @@ class BindContent {
      * renderer.updatedBindings に載っているものは二重適用を避ける。
      */
     applyChange(renderer) {
+        const parentNode = this.childNodes[0]?.parentNode ?? null;
+        if (parentNode === null) {
+            return; // すでにDOMから削除されている場合は何もしない
+        }
         for (let i = 0; i < this.bindings.length; i++) {
             const binding = this.bindings[i];
             if (renderer.updatedBindings.has(binding))
                 continue;
             binding.applyChange(renderer);
+        }
+    }
+    clear() {
+        for (let i = 0; i < this.bindings.length; i++) {
+            this.bindings[i].clear();
         }
     }
 }
@@ -5226,6 +5410,15 @@ class ComponentEngine {
         }
         else {
             info.bindings.push(binding);
+        }
+    }
+    removeBinding(ref, binding) {
+        const info = this.#propertyRefInfoByRef.get(ref);
+        if (typeof info !== "undefined") {
+            const index = info.bindings.indexOf(binding);
+            if (index >= 0) {
+                info.bindings.splice(index, 1);
+            }
         }
     }
 }

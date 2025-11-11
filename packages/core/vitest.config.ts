@@ -8,6 +8,7 @@ export default {
     coverage: {
       provider: 'v8',
       reporter: ['text', 'json', 'html'],
+      reportOnFailure: true,
       exclude: [
         'coverage/**',
         'dist/**',
@@ -23,7 +24,12 @@ export default {
       ],
       include: [
         'src/**/*.{js,ts}'
-      ]
+      ],
+      all: true,
+      statements: 80,
+      branches: 80,
+      functions: 80,
+      lines: 80
     }
   }
 }

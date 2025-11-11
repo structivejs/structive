@@ -486,4 +486,61 @@ describe("ComponentEngine", () => {
     expect(info1.list).toEqual([9, 9]);
     expect(info1.listIndexes?.[0]?.sid).toBe("B");
   });
+
+  it("removeBinding: バインディングを削除する", () => {
+    const info = getStructuredPathInfo("foo");
+    const ref = getStatePropertyRef(info, null);
+
+    // バインディングを追加
+    const binding1 = { id: "binding1" } as any;
+    const binding2 = { id: "binding2" } as any;
+    const binding3 = { id: "binding3" } as any;
+    
+    engine.saveBinding(ref, binding1);
+    engine.saveBinding(ref, binding2);
+    engine.saveBinding(ref, binding3);
+    
+    expect(engine.getBindings(ref)).toEqual([binding1, binding2, binding3]);
+
+    // 中央のバインディングを削除
+    engine.removeBinding(ref, binding2);
+    expect(engine.getBindings(ref)).toEqual([binding1, binding3]);
+
+    // 最初のバインディングを削除
+    engine.removeBinding(ref, binding1);
+    expect(engine.getBindings(ref)).toEqual([binding3]);
+
+    // 最後のバインディングを削除
+    engine.removeBinding(ref, binding3);
+    expect(engine.getBindings(ref)).toEqual([]);
+  });
+
+  it("removeBinding: 存在しない ref の場合は何もしない", () => {
+    const info = getStructuredPathInfo("nonexistent");
+    const ref = getStatePropertyRef(info, null);
+    const binding = { id: "binding" } as any;
+
+    // 存在しない ref からバインディングを削除しようとしても例外は発生しない
+    expect(() => {
+      engine.removeBinding(ref, binding);
+    }).not.toThrow();
+  });
+
+  it("removeBinding: 存在しないバインディングを削除しようとしても何もしない", () => {
+    const info = getStructuredPathInfo("foo");
+    const ref = getStatePropertyRef(info, null);
+
+    const binding1 = { id: "binding1" } as any;
+    const binding2 = { id: "binding2" } as any;
+    const nonExistentBinding = { id: "nonexistent" } as any;
+    
+    engine.saveBinding(ref, binding1);
+    engine.saveBinding(ref, binding2);
+    
+    expect(engine.getBindings(ref)).toEqual([binding1, binding2]);
+
+    // 存在しないバインディングを削除しようとしても配列は変わらない
+    engine.removeBinding(ref, nonExistentBinding);
+    expect(engine.getBindings(ref)).toEqual([binding1, binding2]);
+  });
 });

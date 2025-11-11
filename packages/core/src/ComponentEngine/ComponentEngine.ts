@@ -289,6 +289,15 @@ class ComponentEngine implements IComponentEngine {
       info.bindings.push(binding);
     }
   }
+  removeBinding(ref: IStatePropertyRef, binding: IBinding): void {
+    const info = this.#propertyRefInfoByRef.get(ref);
+    if (typeof info !== "undefined") {
+      const index = info.bindings.indexOf(binding);
+      if (index >= 0) {
+        info.bindings.splice(index, 1);
+      }
+    }
+  }
   
 }
 

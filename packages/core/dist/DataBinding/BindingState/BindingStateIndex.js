@@ -128,6 +128,12 @@ class BindingStateIndex {
             bindings.add(this.binding);
         }
     }
+    // ifブロックを外すときのためのクリア処理
+    // forブロックを外すときには使わないように
+    // init()で再設定できる
+    clear() {
+        this.#loopContext = null;
+    }
     assignValue(writeState, handler, value) {
         raiseError({
             code: 'BIND-301',
