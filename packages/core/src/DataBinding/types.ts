@@ -30,7 +30,14 @@ import { IRenderer } from "../Updater/types";
  * - 柔軟な拡張や最適化にも対応できる設計
  */
 
-export interface IBindContent {
+export interface IRenderBinding {
+  applyChange(renderer: IRenderer): void; // バインディングの変更を適用する
+  activate(renderer: IRenderer): void;
+  inactivate(): void;
+  readonly isActive: boolean;
+}
+
+export interface IBindContentBase {
   loopContext  : ILoopContext | null;
   parentBinding: IBinding | null;
   readonly isMounted         : boolean; // childNodes.length > 0 && childNodes[0].parentNode !== fragment
@@ -38,7 +45,6 @@ export interface IBindContent {
   readonly firstChildNode    : Node | null;
   readonly lastChildNode     : Node | null;
   readonly currentLoopContext: ILoopContext | null;
-  readonly hasBlockBinding    : boolean; // bindingsの中にblockバインディングが含まれるか
   mount(parentNode:Node):void;
   mountBefore(parentNode:Node, beforeNode:Node | null):void;
   mountAfter(parentNode:Node, afterNode:Node | null):void
@@ -46,29 +52,26 @@ export interface IBindContent {
   fragment: DocumentFragment; // unmount時にchildNodesをfragmentに移動する
   childNodes: Node[];
   bindings: IBinding[];
-  blockBindings: IBinding[]; // bindingsの中でblockバインディングのみを抽出した配列
-  init(): void;
-  clear(): void;
   assignListIndex(listIndex: IListIndex): void;
   getLastNode(parentNode: Node): Node | null;
-  applyChange(renderer: IRenderer): void; // バインディングの変更を適用する
 }
+
+export type IBindContent = IBindContentBase & IRenderBinding;
 
 // バインドプロパティ情報
 // ノードプロパティとステートプロパティの紐づけ
-export interface IBinding {
+export interface IBindingBase {
   parentBindContent: IBindContent;
-  engine           : IComponentEngine;
-  node             : Node;
-  bindingNode      : IBindingNode;
-  bindingState     : IBindingState;
-  bindContents     : IBindContent[];
-  bindingsByListIndex: WeakMap<IListIndex, Set<IBinding>>;
-  init(): void;
-  clear(): void;
+  readonly engine           : IComponentEngine;
+  readonly node             : Node;
+  readonly bindingNode      : IBindingNode;
+  readonly bindingState     : IBindingState;
+  bindContents              : IBindContent[];
+  readonly bindingsByListIndex: WeakMap<IListIndex, Set<IBinding>>;
   updateStateValue(writeState: IWritableStateProxy, handler: IWritableStateHandler, value: any): void;
   notifyRedraw(refs: IStatePropertyRef[]): void;
-  applyChange(renderer: IRenderer): void; // バインディングの変更を適用する
 }
+
+export type IBinding = IBindingBase & IRenderBinding;
 
 export type StateBindSummary = Map<string, WeakMap<ILoopContext, IBindContent>>;

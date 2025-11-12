@@ -11,7 +11,7 @@ import { raiseError } from "../../utils.js";
  *
  * 設計ポイント:
  * - assignValue, updateElementsは未実装（サブクラスでオーバーライド必須）
- * - isSelectElement, value, filteredValue, isForなどはサブクラスで用途に応じて拡張
+ * - isSelectElement, value, filteredValueなどはサブクラスで用途に応じて拡張
  * - フィルタやデコレータ、バインド内容の管理も柔軟に対応
  */
 export class BindingNode {
@@ -75,6 +75,12 @@ export class BindingNode {
         const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
         this.assignValue(filteredValue);
     }
+    activate(renderer) {
+        // サブクラスでバインディングノードの有効化処理を実装可能
+    }
+    inactivate() {
+        // サブクラスでバインディングノードの無効化処理を実装可能
+    }
     get isSelectElement() {
         return this.node instanceof HTMLSelectElement;
     }
@@ -83,11 +89,5 @@ export class BindingNode {
     }
     get filteredValue() {
         return null;
-    }
-    get isFor() {
-        return false;
-    }
-    get isBlock() {
-        return false;
     }
 }

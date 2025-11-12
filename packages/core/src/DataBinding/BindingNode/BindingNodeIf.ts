@@ -96,13 +96,12 @@ class BindingNodeIf extends BindingNodeBlock {
       });
     }
     if (filteredValue) {
-      this.#bindContent.init();
+      this.#bindContent.activate(renderer);
       this.#bindContent.mountAfter(parentNode, this.node);
-      this.#bindContent.applyChange(renderer);
       this.#bindContents = this.#trueBindContents;
     } else {
       this.#bindContent.unmount();
-      this.#bindContent.clear();
+      this.#bindContent.inactivate();
       this.#bindContents = this.#falseBindContents;
     }
   }

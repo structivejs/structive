@@ -187,15 +187,13 @@ class ComponentEngine implements IComponentEngine {
       this.bindContent.mountAfter(parentNode, this.#blockPlaceholder);
     }
     await createUpdater(this, async (updater) => {
-      await updater.update(null, async (stateProxy, handler) => {
+      updater.initialRender((renderer) => {
         // 状態の初期レンダリングを行う
-        for(const path of this.pathManager.alls) {
-          const info = getStructuredPathInfo(path);
-          if (info.pathSegments.length !== 1) continue; // ルートプロパティのみ
-          if (this.pathManager.funcs.has(path)) continue; // 関数は除外
-          const ref = getStatePropertyRef(info, null);
-          updater.enqueueRef(ref);
-        }
+        renderer.createReadonlyState( (readonlyState, readonlyHandler) => {
+          this.bindContent.activate(renderer);
+        } );
+      });
+      await updater.update(null, async (stateProxy, handler) => {
         await stateProxy[ConnectedCallbackSymbol]();
       });
     });

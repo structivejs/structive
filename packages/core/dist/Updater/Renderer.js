@@ -123,7 +123,15 @@ class Renderer {
     createReadonlyState(callback) {
         const handler = createReadonlyStateHandler(this.#engine, this.#updater, this);
         const stateProxy = createReadonlyStateProxy(this.#engine.state, handler);
-        return callback(stateProxy, handler);
+        this.#readonlyState = stateProxy;
+        this.#readonlyHandler = handler;
+        try {
+            return callback(stateProxy, handler);
+        }
+        finally {
+            this.#readonlyState = null;
+            this.#readonlyHandler = null;
+        }
     }
     /**
      * レンダリングのエントリポイント。ReadonlyState を生成し、
@@ -141,74 +149,66 @@ class Renderer {
         this.#updatingRefSet = new Set(items);
         // 実際のレンダリングロジックを実装
         this.createReadonlyState((readonlyState, readonlyHandler) => {
-            this.#readonlyState = readonlyState;
-            this.#readonlyHandler = readonlyHandler;
-            try {
-                // まずはリストの並び替えを処理
-                const remainItems = [];
-                const itemsByListRef = new Map();
-                const refSet = new Set();
-                for (let i = 0; i < items.length; i++) {
-                    const ref = items[i];
-                    refSet.add(ref);
-                    if (!this.#engine.pathManager.elements.has(ref.info.pattern)) {
-                        remainItems.push(ref);
+            // まずはリストの並び替えを処理
+            const remainItems = [];
+            const itemsByListRef = new Map();
+            const refSet = new Set();
+            for (let i = 0; i < items.length; i++) {
+                const ref = items[i];
+                refSet.add(ref);
+                if (!this.#engine.pathManager.elements.has(ref.info.pattern)) {
+                    remainItems.push(ref);
+                    continue;
+                }
+                const listRef = ref.parentRef ?? raiseError({
+                    code: "UPD-004",
+                    message: `ParentInfo is null for ref: ${ref.key}`,
+                    context: { refKey: ref.key, pattern: ref.info.pattern },
+                    docsUrl: "./docs/error-codes.md#upd",
+                });
+                if (!itemsByListRef.has(listRef)) {
+                    itemsByListRef.set(listRef, new Set());
+                }
+                itemsByListRef.get(listRef).add(ref);
+            }
+            for (const [listRef, refs] of itemsByListRef) {
+                if (refSet.has(listRef)) {
+                    for (const ref of refs) {
+                        this.#processedRefs.add(ref); // 終了済み
+                    }
+                    continue; // 親リストが存在する場合はスキップ
+                }
+                const bindings = this.#engine.getBindings(listRef);
+                for (let i = 0; i < bindings.length; i++) {
+                    if (this.#updatedBindings.has(bindings[i]))
                         continue;
-                    }
-                    const listRef = ref.parentRef ?? raiseError({
-                        code: "UPD-004",
-                        message: `ParentInfo is null for ref: ${ref.key}`,
-                        context: { refKey: ref.key, pattern: ref.info.pattern },
-                        docsUrl: "./docs/error-codes.md#upd",
+                    bindings[i].applyChange(this);
+                }
+                this.processedRefs.add(listRef);
+            }
+            for (let i = 0; i < remainItems.length; i++) {
+                const ref = remainItems[i];
+                const node = findPathNodeByPath(this.#engine.pathManager.rootNode, ref.info.pattern);
+                if (node === null) {
+                    raiseError({
+                        code: "PATH-101",
+                        message: `PathNode not found: ${ref.info.pattern}`,
+                        context: { pattern: ref.info.pattern },
+                        docsUrl: "./docs/error-codes.md#path",
                     });
-                    if (!itemsByListRef.has(listRef)) {
-                        itemsByListRef.set(listRef, new Set());
-                    }
-                    itemsByListRef.get(listRef).add(ref);
                 }
-                for (const [listRef, refs] of itemsByListRef) {
-                    if (refSet.has(listRef)) {
-                        for (const ref of refs) {
-                            this.#processedRefs.add(ref); // 終了済み
-                        }
-                        continue; // 親リストが存在する場合はスキップ
-                    }
-                    const bindings = this.#engine.getBindings(listRef);
-                    for (let i = 0; i < bindings.length; i++) {
-                        if (this.#updatedBindings.has(bindings[i]))
-                            continue;
-                        bindings[i].applyChange(this);
-                    }
-                    this.processedRefs.add(listRef);
-                }
-                for (let i = 0; i < remainItems.length; i++) {
-                    const ref = remainItems[i];
-                    const node = findPathNodeByPath(this.#engine.pathManager.rootNode, ref.info.pattern);
-                    if (node === null) {
-                        raiseError({
-                            code: "PATH-101",
-                            message: `PathNode not found: ${ref.info.pattern}`,
-                            context: { pattern: ref.info.pattern },
-                            docsUrl: "./docs/error-codes.md#path",
-                        });
-                    }
-                    if (!this.processedRefs.has(ref)) {
-                        this.renderItem(ref, node);
-                    }
-                }
-                // 子コンポーネントへの再描画通知
-                if (this.#engine.structiveChildComponents.size > 0) {
-                    for (const structiveComponent of this.#engine.structiveChildComponents) {
-                        const structiveComponentBindings = this.#engine.bindingsByComponent.get(structiveComponent) ?? new Set();
-                        for (const binding of structiveComponentBindings) {
-                            binding.notifyRedraw(remainItems);
-                        }
-                    }
+                if (!this.processedRefs.has(ref)) {
+                    this.renderItem(ref, node);
                 }
             }
-            finally {
-                this.#readonlyState = null;
-                this.#readonlyHandler = null;
+            // 子コンポーネントへの再描画通知
+            if (this.#engine.structiveChildComponents.size > 0) {
+                for (const structiveComponent of this.#engine.structiveChildComponents) {
+                    const structiveComponentBindings = this.#engine.bindingsByComponent.get(structiveComponent) ?? new Set();
+                    for (const binding of structiveComponentBindings) {
+                        binding.notifyRedraw(remainItems);
+                    }
+                }
             }
         });
     }
@@ -316,4 +316,7 @@ class Renderer {
 export function render(refs, engine, updater) {
     const renderer = new Renderer(engine, updater);
     renderer.render(refs);
+}
+export function createRenderer(engine, updater) {
+    return new Renderer(engine, updater);
 }

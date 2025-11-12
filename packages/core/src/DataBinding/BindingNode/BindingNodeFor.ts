@@ -59,14 +59,10 @@ class BindingNodeFor extends BindingNodeBlock {
     return this.#bindContents;
   }
 
-  get isFor(): boolean {
-    return true;
-  }
-
   init() {
   }
 
-  createBindContent(listIndex: IListIndex): IBindContent {
+  createBindContent(renderer: IRenderer, listIndex: IListIndex): IBindContent {
     let bindContent: IBindContent;
     if (this.#bindContentLastIndex >= 0) {
       // プールの最後の要素を取得して、プールの長さをあとで縮減する
@@ -86,6 +82,7 @@ class BindingNodeFor extends BindingNodeBlock {
     }
     // 登録
     this.#bindContentByListIndex.set(listIndex, bindContent);
+    bindContent.activate(renderer);
     return bindContent;
   }
 
@@ -94,7 +91,7 @@ class BindingNodeFor extends BindingNodeBlock {
    */
   deleteBindContent(bindContent: IBindContent): void {
     bindContent.unmount();
-    bindContent.loopContext?.clearListIndex();
+    bindContent.inactivate();
   }
 
   get bindContentLastIndex():number {
@@ -219,8 +216,7 @@ class BindingNodeFor extends BindingNodeBlock {
       parentNode.textContent = "";
       parentNode.append(this.node);
       for(let i = 0; i < this.#bindContents.length; i++) {
-        const bindContent = this.#bindContents[i];
-        bindContent.loopContext?.clearListIndex();
+        this.#bindContents[i].inactivate();
       }
       this.#bindContentPool.push(...this.#bindContents);
     } else {
@@ -264,9 +260,8 @@ class BindingNodeFor extends BindingNodeBlock {
         const lastNode = lastBindContent?.getLastNode(fragmentParentNode) ?? fragmentFirstNode;
         let bindContent;
         if (addsSet.has(listIndex)) {
-          bindContent = this.createBindContent(listIndex);
+          bindContent = this.createBindContent(renderer, listIndex);
           bindContent.mountAfter(fragmentParentNode, lastNode);
-          bindContent.applyChange(renderer);
         } else {
           bindContent = this.#bindContentByListIndex.get(listIndex);
           if (typeof bindContent === "undefined") {

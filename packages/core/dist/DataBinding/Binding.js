@@ -20,6 +20,7 @@ class Binding {
     bindingState;
     version;
     bindingsByListIndex = new WeakMap();
+    isActive = false;
     constructor(parentBindContent, node, engine, createBindingNode, createBindingState) {
         this.parentBindContent = parentBindContent;
         this.node = node;
@@ -29,10 +30,6 @@ class Binding {
     }
     get bindContents() {
         return this.bindingNode.bindContents;
-    }
-    init() {
-        this.bindingNode.init();
-        this.bindingState.init();
     }
     updateStateValue(writeState, handler, value) {
         return this.bindingState.assignValue(writeState, handler, value);
@@ -53,8 +50,15 @@ class Binding {
             }
         }
     }
-    clear() {
-        this.bindingState.clear();
+    activate(renderer) {
+        this.isActive = true;
+        this.bindingState.activate(renderer);
+        this.bindingNode.activate(renderer);
+        this.bindingNode.applyChange(renderer);
+    }
+    inactivate() {
+        this.isActive = false;
+        // NodeとStateのバインディングを無効化
     }
 }
 /**

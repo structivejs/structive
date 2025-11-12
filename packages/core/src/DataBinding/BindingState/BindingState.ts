@@ -9,6 +9,7 @@ import { getStructuredPathInfo } from "../../StateProperty/getStructuredPathInfo
 import { IStructuredPathInfo } from "../../StateProperty/types";
 import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef.js";
 import { IStatePropertyRef } from "../../StatePropertyRef/types.js";
+import { IRenderer } from "../../Updater/types.js";
 import { raiseError } from "../../utils.js";
 import { IBinding } from "../types";
 import { CreateBindingStateFn, IBindingState } from "./types";
@@ -29,84 +30,77 @@ import { CreateBindingStateFn, IBindingState } from "./types";
  * - createBindingStateファクトリでフィルタ適用済みインスタンスを生成
  */
 class BindingState implements IBindingState {
-  #binding     : IBinding;
-  #pattern     : string;
-  #info        : IStructuredPathInfo;
-  #filters     : Filters;
-  #loopContext : ILoopContext | null = null;
-  #nullRef     : IStatePropertyRef | null = null;
-  #ref         : IStatePropertyRef | null = null;
-  get pattern(): string {
-    return this.#pattern;
-  }
-  get info() {
-    return this.#info;
-  }
+  binding     : IBinding;
+  pattern     : string;
+  info        : IStructuredPathInfo;
+  filters     : Filters;
+  isLoopIndex : boolean = false;
+  #nullRef    : IStatePropertyRef | null = null;
+  #ref        : IStatePropertyRef | null = null;
+  #loopContext: ILoopContext | null = null;
+
   get listIndex() {
     return this.ref.listIndex;
   }
+
   get ref() {
     if (this.#nullRef === null) {
       if (this.#loopContext === null) {
         raiseError({
           code: 'BIND-201',
           message: 'LoopContext is null',
-          context: { pattern: this.#pattern },
+          context: { pattern: this.pattern },
           docsUrl: '/docs/error-codes.md#bind',
           severity: 'error',
         });
       }
       if (this.#ref === null) {
-        this.#ref = getStatePropertyRef(this.#info, this.#loopContext.listIndex);
+        this.#ref = getStatePropertyRef(this.info, this.#loopContext.listIndex);
       }
       return this.#ref;
     } else {
       return this.#nullRef ?? raiseError({
         code: 'BIND-201',
         message: 'ref is null',
-        context: { pattern: this.#pattern },
+        context: { pattern: this.pattern },
         docsUrl: '/docs/error-codes.md#bind',
         severity: 'error',
       });
     }
   }
-  get filters() {
-    return this.#filters;
-  }
-  get binding() {
-    return this.#binding;
-  }
-  get isLoopIndex() {
-    return false;
-  }
+
   constructor(
     binding: IBinding, 
     pattern: string, 
     filters: Filters
   ) {
-    this.#binding = binding;
-    this.#pattern = pattern;
-    this.#info = getStructuredPathInfo(pattern);
-    this.#nullRef = (this.#info.wildcardCount === 0) ? getStatePropertyRef(this.#info, null) : null;
-    this.#filters = filters;
+    this.binding = binding;
+    this.pattern = pattern;
+    this.info = getStructuredPathInfo(pattern);
+    this.filters = filters;
+    this.#nullRef = (this.info.wildcardCount === 0) ? getStatePropertyRef(this.info, null) : null;
   }
   getValue(state:IStateProxy, handler:IStateHandler): any {
     return getByRef(this.binding.engine.state, this.ref, state, handler);
   }
   getFilteredValue(state:IStateProxy, handler:IStateHandler): any {
     let value = getByRef(this.binding.engine.state, this.ref, state, handler);
-    for(let i = 0; i < this.#filters.length; i++) {
-      value = this.#filters[i](value);
+    for(let i = 0; i < this.filters.length; i++) {
+      value = this.filters[i](value);
     }
     return value;
   }
-  init(): void {
+  assignValue(writeState: IWritableStateProxy, handler: IWritableStateHandler, value: any) {
+    setByRef(this.binding.engine.state, this.ref, value, writeState, handler);
+  }
+
+  activate(renderer: IRenderer): void {
     if (this.info.wildcardCount > 0) {
       const lastWildcardPath = this.info.lastWildcardPath ?? 
         raiseError({
           code: 'BIND-201',
           message: 'Wildcard last parentPath is null',
-          context: { where: 'BindingState.init', pattern: this.#pattern },
+          context: { where: 'BindingState.init', pattern: this.pattern },
           docsUrl: '/docs/error-codes.md#bind',
           severity: 'error',
         });
@@ -122,16 +116,9 @@ class BindingState implements IBindingState {
     }
     this.binding.engine.saveBinding(this.ref, this.binding);
   }
-  assignValue(writeState: IWritableStateProxy, handler: IWritableStateHandler, value: any) {
-    setByRef(this.binding.engine.state, this.ref, value, writeState, handler);
-  }
-  // ifブロックを外すときのためのクリア処理
-  // forブロックを外すときには使わないように
-  // init()で再設定できる
-  clear() {
-    if (this.#ref !== null) {
-      this.binding.engine.removeBinding(this.#ref, this.binding);
-    }
+  
+  inactivate() {
+    this.binding.engine.removeBinding(this.ref, this.binding);
     this.#ref = null;
     this.#loopContext = null;
   }

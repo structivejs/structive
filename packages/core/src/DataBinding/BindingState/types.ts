@@ -4,7 +4,7 @@ import { IListIndex } from "../../ListIndex/types";
 import { IReadonlyStateHandler, IReadonlyStateProxy, IStateHandler, IStateProxy, IWritableStateHandler, IWritableStateProxy } from "../../StateClass/types";
 import { IStructuredPathInfo } from "../../StateProperty/types";
 import { IStatePropertyRef } from "../../StatePropertyRef/types";
-import { IBinding } from "../types";
+import { IBinding, IRenderBinding } from "../types";
 
 /**
  * BindingState関連の型定義ファイル。
@@ -18,19 +18,19 @@ import { IBinding } from "../types";
  * - バインディング状態（Stateプロパティとバインディング情報の1対1対応）の共通インターフェース
  * - 値の取得（value, filteredValue）、初期化（init）、値の割り当て（assignValue）などのメソッドを提供
  */
-export interface IBindingState {
+export interface IBindingStateBase {
   readonly pattern      : string | never;
   readonly info         : IStructuredPathInfo | never;
   readonly listIndex    : IListIndex | null;
   readonly ref          : IStatePropertyRef | never;
   readonly filters      : Filters;
   readonly isLoopIndex  : boolean;
-  init(): void;
-  clear(): void;
   assignValue(writeState:IWritableStateProxy, handler:IWritableStateHandler, value:any): void;
   getValue(state: IStateProxy, handler: IStateHandler): any; // 現在の値を返す
   getFilteredValue(state: IStateProxy, handler: IStateHandler): any; // フィルタを適用して値を返す
 }
+
+export type IBindingState = IBindingStateBase & Pick<IRenderBinding, "activate" | "inactivate">;
 
 /**
  * バインディング状態生成ファクトリ型

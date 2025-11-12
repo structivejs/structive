@@ -23,10 +23,6 @@ export class BindingNodeBlock extends BindingNode {
     return this.#id;
   }
 
-  get isBlock(): boolean {
-    return true;
-  }
-  
   constructor(
     binding   : IBinding, 
     node      : Node, 

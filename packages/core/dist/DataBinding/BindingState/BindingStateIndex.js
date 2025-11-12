@@ -16,9 +16,9 @@ import { raiseError } from "../../utils.js";
  * - createBindingStateIndexファクトリでフィルタ適用済みインスタンスを生成
  */
 class BindingStateIndex {
-    #binding;
-    #indexNumber;
-    #filters;
+    binding;
+    indexNumber;
+    filters;
     #loopContext = null;
     get pattern() {
         return raiseError({
@@ -52,17 +52,11 @@ class BindingStateIndex {
             docsUrl: '/docs/error-codes.md#state',
         });
     }
-    get filters() {
-        return this.#filters;
-    }
-    get binding() {
-        return this.#binding;
-    }
     get isLoopIndex() {
         return true;
     }
     constructor(binding, pattern, filters) {
-        this.#binding = binding;
+        this.binding = binding;
         const indexNumber = Number(pattern.slice(1));
         if (isNaN(indexNumber)) {
             raiseError({
@@ -72,8 +66,8 @@ class BindingStateIndex {
                 docsUrl: '/docs/error-codes.md#bind',
             });
         }
-        this.#indexNumber = indexNumber;
-        this.#filters = filters;
+        this.indexNumber = indexNumber;
+        this.filters = filters;
     }
     getValue(state, handler) {
         return this.listIndex?.index ?? raiseError({
@@ -90,12 +84,20 @@ class BindingStateIndex {
             context: { where: 'BindingStateIndex.getFilteredValue' },
             docsUrl: '/docs/error-codes.md#list',
         });
-        for (let i = 0; i < this.#filters.length; i++) {
-            value = this.#filters[i](value);
+        for (let i = 0; i < this.filters.length; i++) {
+            value = this.filters[i](value);
         }
         return value;
     }
-    init() {
+    assignValue(writeState, handler, value) {
+        raiseError({
+            code: 'BIND-301',
+            message: 'Not implemented',
+            context: { where: 'BindingStateIndex.assignValue' },
+            docsUrl: '/docs/error-codes.md#bind',
+        });
+    }
+    activate(renderer) {
         const loopContext = this.binding.parentBindContent.currentLoopContext ??
             raiseError({
                 code: 'BIND-201',
@@ -104,11 +106,11 @@ class BindingStateIndex {
                 docsUrl: '/docs/error-codes.md#bind',
             });
         const loopContexts = loopContext.serialize();
-        this.#loopContext = loopContexts[this.#indexNumber - 1] ??
+        this.#loopContext = loopContexts[this.indexNumber - 1] ??
             raiseError({
                 code: 'BIND-201',
                 message: 'Current loopContext is null',
-                context: { where: 'BindingStateIndex.init', indexNumber: this.#indexNumber },
+                context: { where: 'BindingStateIndex.init', indexNumber: this.indexNumber },
                 docsUrl: '/docs/error-codes.md#bind',
             });
         const bindingForList = this.#loopContext.bindContent.parentBinding;
@@ -128,19 +130,8 @@ class BindingStateIndex {
             bindings.add(this.binding);
         }
     }
-    // ifブロックを外すときのためのクリア処理
-    // forブロックを外すときには使わないように
-    // init()で再設定できる
-    clear() {
+    inactivate() {
         this.#loopContext = null;
-    }
-    assignValue(writeState, handler, value) {
-        raiseError({
-            code: 'BIND-301',
-            message: 'Not implemented',
-            context: { where: 'BindingStateIndex.assignValue' },
-            docsUrl: '/docs/error-codes.md#bind',
-        });
     }
 }
 export const createBindingStateIndex = (name, filterTexts) => (binding, filters) => {

@@ -29,6 +29,7 @@ class Binding implements IBinding {
   bindingState     : IBindingState;
   version          : number | undefined;
   bindingsByListIndex: WeakMap<IListIndex, Set<IBinding>> = new WeakMap();
+  isActive         : boolean = false;
   constructor(
     parentBindContent : IBindContent,
     node              : Node,
@@ -45,11 +46,6 @@ class Binding implements IBinding {
 
   get bindContents(): IBindContent[] {
     return this.bindingNode.bindContents;
-  }
-
-  init() {
-    this.bindingNode.init();
-    this.bindingState.init();
   }
 
   updateStateValue(writeState:IWritableStateProxy, handler: IWritableStateHandler, value: any) {
@@ -72,8 +68,16 @@ class Binding implements IBinding {
       }
     }
   }
-  clear(): void {
-    this.bindingState.clear();
+
+  activate(renderer: IRenderer): void {
+    this.isActive = true;
+    this.bindingState.activate(renderer);
+    this.bindingNode.activate(renderer);
+    this.bindingNode.applyChange(renderer);
+  }
+  inactivate(): void {
+    this.isActive = false;
+    // NodeとStateのバインディングを無効化
   }
 }
 

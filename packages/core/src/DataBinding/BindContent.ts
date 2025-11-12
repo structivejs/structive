@@ -66,7 +66,7 @@ function createBindings(
   id         : number, 
   engine     : IComponentEngine, 
   content    : DocumentFragment
-): [IBinding[], IBinding[]] {
+): IBinding[] {
   const attributes = getDataBindAttributesById(id) ?? 
     raiseError({
       code: "BIND-101",
@@ -75,7 +75,6 @@ function createBindings(
       docsUrl: "./docs/error-codes.md#bind",
     });
   const bindings: IBinding[] = [];
-  const blockBindings: IBinding[] = [];
   for(let i = 0; i < attributes.length; i++) {
     const attribute = attributes[i];
     const node = resolveNodeFromPath(content, attribute.nodePath) ?? 
@@ -101,13 +100,10 @@ function createBindings(
         creator.createBindingNode, 
         creator.createBindingState
       );
-      if (binding.bindingNode.isBlock) {
-        blockBindings.push(binding);
-      }
       bindings.push(binding);
     }
   }
-  return [bindings, blockBindings];
+  return bindings;
 }
 
 /**
@@ -134,34 +130,17 @@ class BindContent implements IBindContent {
   childNodes   : Node[];
   fragment     : DocumentFragment;
   engine       : IComponentEngine | undefined;
-  bindings: IBinding[] = [];
-  blockBindings: IBinding[] = [];
-  #id;
-  get id() {
-    return this.#id;
-  }
+  bindings     : IBinding[] = [];
+  isActive     : boolean = false;
+  id           : number;
+  firstChildNode: Node | null;
+  lastChildNode : Node | null;
   /**
    * この BindContent が既に DOM にマウントされているかどうか。
    * 判定は childNodes[0] の親が fragment 以外かで行う。
    */
   get isMounted() {
     return this.childNodes.length > 0 && this.childNodes[0].parentNode !== this.fragment;
-  }
-  /**
-   * 先頭の子ノードを返す。存在しなければ null。
-   */
-  get firstChildNode() {
-    return this.childNodes[0] ?? null;
-  }
-  /**
-   * 末尾の子ノードを返す。存在しなければ null。
-   */
-  get lastChildNode() {
-    return this.childNodes[this.childNodes.length - 1] ?? null;
-  }
-
-  get hasBlockBinding() {
-    return this.blockBindings.length > 0;
   }
   /**
    * 再帰的に最終ノード（末尾のバインディング配下も含む）を取得する。
@@ -183,7 +162,7 @@ class BindContent implements IBindContent {
         const childBindContent = lastBinding.bindContents.at(-1) ?? raiseError({
           code: "BIND-104",
           message: "Child bindContent not found",
-          context: { where: 'BindContent.getLastNode', templateId: this.#id },
+          context: { where: 'BindContent.getLastNode', templateId: this.id },
           docsUrl: "./docs/error-codes.md#bind",
         });
         const lastNode = childBindContent.getLastNode(parentNode);
@@ -226,19 +205,20 @@ class BindContent implements IBindContent {
     loopRef      : IStatePropertyRef,
   ) {
     this.parentBinding = parentBinding;
-    this.#id = id;
+    this.id = id;
     this.fragment = createContent(id);
     this.childNodes = Array.from(this.fragment.childNodes);
+    this.firstChildNode = this.childNodes[0] ?? null;
+    this.lastChildNode = this.childNodes[this.childNodes.length - 1] ?? null;
     this.engine = engine;
     this.loopContext = (loopRef.listIndex !== null) ? createLoopContext(loopRef, this) : null;
-    const [ bindings, blockBindings ] = createBindings(
+    const bindings = createBindings(
       this, 
       id, 
       engine, 
       this.fragment
     );
     this.bindings = bindings;
-    this.blockBindings = blockBindings;
   }
   /**
    * 末尾にマウント（appendChild）。
@@ -284,15 +264,6 @@ class BindContent implements IBindContent {
     }
   }
   /**
-   * 生成済みの全 Binding を初期化。
-   * createBindContent 直後および assignListIndex 後に呼び出される。
-   */
-  init() {
-    for(let i = 0; i < this.bindings.length; i++) {
-      this.bindings[i].init();
-    }
-  }
-  /**
    * ループ中の ListIndex を再割当てし、Bindings を再初期化する。
    * Throws:
    * - BIND-201 LoopContext が未初期化
@@ -301,11 +272,10 @@ class BindContent implements IBindContent {
     if (this.loopContext == null) raiseError({
       code: "BIND-201",
       message: "LoopContext is null",
-      context: { where: 'BindContent.assignListIndex', templateId: this.#id },
+      context: { where: 'BindContent.assignListIndex', templateId: this.id },
       docsUrl: "./docs/error-codes.md#bind",
     });
     this.loopContext.assignListIndex(listIndex);
-    this.init();
   }
   /**
    * 変更適用エントリポイント。
@@ -323,9 +293,17 @@ class BindContent implements IBindContent {
       binding.applyChange(renderer);
     }
   }
-  clear() {
+  activate(renderer: IRenderer): void {
+    this.isActive = true;
     for(let i = 0; i < this.bindings.length; i++) {
-      this.bindings[i].clear();
+      this.bindings[i].activate(renderer);
+    }
+  }
+  inactivate(): void {
+    this.isActive = false;
+    this.loopContext?.clearListIndex();
+    for(let i = 0; i < this.bindings.length; i++) {
+      this.bindings[i].inactivate();
     }
   }
 }
@@ -354,6 +332,5 @@ export function createBindContent(
     engine, 
     loopRef,
   );
-  bindContent.init();
   return bindContent;
 }

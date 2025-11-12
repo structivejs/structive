@@ -30,6 +30,8 @@ export interface IUpdater {
   swapInfoByRef: Map<IStatePropertyRef, IListInfo>;
 
   createReadonlyState<T = any>(callback: ReadonlyStateCallback<T>): T;
+
+  initialRender(callback: (renderer: IRenderer) => void): void;
 }
 
 export interface IListInfo {

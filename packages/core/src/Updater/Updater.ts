@@ -8,8 +8,8 @@ import { IWritableStateHandler, IWritableStateProxy } from "../StateClass/types"
 import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { raiseError } from "../utils";
-import { render } from "./Renderer";
-import { IListInfo, IUpdater, ReadonlyStateCallback, UpdateCallback } from "./types";
+import { createRenderer, render } from "./Renderer";
+import { IListInfo, IRenderer, IUpdater, ReadonlyStateCallback, UpdateCallback } from "./types";
 
 
 /**
@@ -103,6 +103,10 @@ class Updater implements IUpdater {
     }
   }
 
+  initialRender(callback: (renderer: IRenderer) => void): void {
+    const renderer = createRenderer(this.#engine, this);
+    callback(renderer);
+  }
   /**
    * 更新したパスに対して影響があるパスを再帰的に収集する
    * @param engine 

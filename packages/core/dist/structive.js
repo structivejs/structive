@@ -673,7 +673,7 @@ function createFilters(filters, texts) {
  *
  * 設計ポイント:
  * - assignValue, updateElementsは未実装（サブクラスでオーバーライド必須）
- * - isSelectElement, value, filteredValue, isForなどはサブクラスで用途に応じて拡張
+ * - isSelectElement, value, filteredValueなどはサブクラスで用途に応じて拡張
  * - フィルタやデコレータ、バインド内容の管理も柔軟に対応
  */
 class BindingNode {
@@ -737,6 +737,12 @@ class BindingNode {
         const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
         this.assignValue(filteredValue);
     }
+    activate(renderer) {
+        // サブクラスでバインディングノードの有効化処理を実装可能
+    }
+    inactivate() {
+        // サブクラスでバインディングノードの無効化処理を実装可能
+    }
     get isSelectElement() {
         return this.node instanceof HTMLSelectElement;
     }
@@ -745,12 +751,6 @@ class BindingNode {
     }
     get filteredValue() {
         return null;
-    }
-    get isFor() {
-        return false;
-    }
-    get isBlock() {
-        return false;
     }
 }
 
@@ -2245,7 +2245,15 @@ class Renderer {
     createReadonlyState(callback) {
         const handler = createReadonlyStateHandler(this.#engine, this.#updater, this);
         const stateProxy = createReadonlyStateProxy(this.#engine.state, handler);
-        return callback(stateProxy, handler);
+        this.#readonlyState = stateProxy;
+        this.#readonlyHandler = handler;
+        try {
+            return callback(stateProxy, handler);
+        }
+        finally {
+            this.#readonlyState = null;
+            this.#readonlyHandler = null;
+        }
     }
     /**
      * レンダリングのエントリポイント。ReadonlyState を生成し、
@@ -2263,74 +2271,66 @@ class Renderer {
         this.#updatingRefSet = new Set(items);
         // 実際のレンダリングロジックを実装
         this.createReadonlyState((readonlyState, readonlyHandler) => {
-            this.#readonlyState = readonlyState;
-            this.#readonlyHandler = readonlyHandler;
-            try {
-                // まずはリストの並び替えを処理
-                const remainItems = [];
-                const itemsByListRef = new Map();
-                const refSet = new Set();
-                for (let i = 0; i < items.length; i++) {
-                    const ref = items[i];
-                    refSet.add(ref);
-                    if (!this.#engine.pathManager.elements.has(ref.info.pattern)) {
-                        remainItems.push(ref);
+            // まずはリストの並び替えを処理
+            const remainItems = [];
+            const itemsByListRef = new Map();
+            const refSet = new Set();
+            for (let i = 0; i < items.length; i++) {
+                const ref = items[i];
+                refSet.add(ref);
+                if (!this.#engine.pathManager.elements.has(ref.info.pattern)) {
+                    remainItems.push(ref);
+                    continue;
+                }
+                const listRef = ref.parentRef ?? raiseError({
+                    code: "UPD-004",
+                    message: `ParentInfo is null for ref: ${ref.key}`,
+                    context: { refKey: ref.key, pattern: ref.info.pattern },
+                    docsUrl: "./docs/error-codes.md#upd",
+                });
+                if (!itemsByListRef.has(listRef)) {
+                    itemsByListRef.set(listRef, new Set());
+                }
+                itemsByListRef.get(listRef).add(ref);
+            }
+            for (const [listRef, refs] of itemsByListRef) {
+                if (refSet.has(listRef)) {
+                    for (const ref of refs) {
+                        this.#processedRefs.add(ref); // 終了済み
+                    }
+                    continue; // 親リストが存在する場合はスキップ
+                }
+                const bindings = this.#engine.getBindings(listRef);
+                for (let i = 0; i < bindings.length; i++) {
+                    if (this.#updatedBindings.has(bindings[i]))
                         continue;
-                    }
-                    const listRef = ref.parentRef ?? raiseError({
-                        code: "UPD-004",
-                        message: `ParentInfo is null for ref: ${ref.key}`,
-                        context: { refKey: ref.key, pattern: ref.info.pattern },
-                        docsUrl: "./docs/error-codes.md#upd",
+                    bindings[i].applyChange(this);
+                }
+                this.processedRefs.add(listRef);
+            }
+            for (let i = 0; i < remainItems.length; i++) {
+                const ref = remainItems[i];
+                const node = findPathNodeByPath(this.#engine.pathManager.rootNode, ref.info.pattern);
+                if (node === null) {
+                    raiseError({
+                        code: "PATH-101",
+                        message: `PathNode not found: ${ref.info.pattern}`,
+                        context: { pattern: ref.info.pattern },
+                        docsUrl: "./docs/error-codes.md#path",
                     });
-                    if (!itemsByListRef.has(listRef)) {
-                        itemsByListRef.set(listRef, new Set());
-                    }
-                    itemsByListRef.get(listRef).add(ref);
                 }
-                for (const [listRef, refs] of itemsByListRef) {
-                    if (refSet.has(listRef)) {
-                        for (const ref of refs) {
-                            this.#processedRefs.add(ref); // 終了済み
-                        }
-                        continue; // 親リストが存在する場合はスキップ
-                    }
-                    const bindings = this.#engine.getBindings(listRef);
-                    for (let i = 0; i < bindings.length; i++) {
-                        if (this.#updatedBindings.has(bindings[i]))
-                            continue;
-                        bindings[i].applyChange(this);
-                    }
-                    this.processedRefs.add(listRef);
-                }
-                for (let i = 0; i < remainItems.length; i++) {
-                    const ref = remainItems[i];
-                    const node = findPathNodeByPath(this.#engine.pathManager.rootNode, ref.info.pattern);
-                    if (node === null) {
-                        raiseError({
-                            code: "PATH-101",
-                            message: `PathNode not found: ${ref.info.pattern}`,
-                            context: { pattern: ref.info.pattern },
-                            docsUrl: "./docs/error-codes.md#path",
-                        });
-                    }
-                    if (!this.processedRefs.has(ref)) {
-                        this.renderItem(ref, node);
-                    }
-                }
-                // 子コンポーネントへの再描画通知
-                if (this.#engine.structiveChildComponents.size > 0) {
-                    for (const structiveComponent of this.#engine.structiveChildComponents) {
-                        const structiveComponentBindings = this.#engine.bindingsByComponent.get(structiveComponent) ?? new Set();
-                        for (const binding of structiveComponentBindings) {
-                            binding.notifyRedraw(remainItems);
-                        }
-                    }
+                if (!this.processedRefs.has(ref)) {
+                    this.renderItem(ref, node);
                 }
             }
-            finally {
-                this.#readonlyState = null;
-                this.#readonlyHandler = null;
+            // 子コンポーネントへの再描画通知
+            if (this.#engine.structiveChildComponents.size > 0) {
+                for (const structiveComponent of this.#engine.structiveChildComponents) {
+                    const structiveComponentBindings = this.#engine.bindingsByComponent.get(structiveComponent) ?? new Set();
+                    for (const binding of structiveComponentBindings) {
+                        binding.notifyRedraw(remainItems);
+                    }
+                }
             }
         });
     }
@@ -2439,6 +2439,9 @@ function render(refs, engine, updater) {
     const renderer = new Renderer(engine, updater);
     renderer.render(refs);
 }
+function createRenderer(engine, updater) {
+    return new Renderer(engine, updater);
+}
 
 /**
  * Updaterクラスは、状態管理と更新の中心的な役割を果たします。
@@ -2523,6 +2526,10 @@ class Updater {
         finally {
             this.#rendering = false;
         }
+    }
+    initialRender(callback) {
+        const renderer = createRenderer(this.#engine, this);
+        callback(renderer);
     }
     /**
      * 更新したパスに対して影響があるパスを再帰的に収集する
@@ -2844,9 +2851,6 @@ class BindingNodeBlock extends BindingNode {
     get id() {
         return this.#id;
     }
-    get isBlock() {
-        return true;
-    }
     constructor(binding, node, name, filters, decorates) {
         super(binding, node, name, filters, decorates);
         const id = this.node.textContent?.slice(COMMENT_TEMPLATE_MARK_LEN$1) ?? raiseError({
@@ -2931,14 +2935,13 @@ class BindingNodeIf extends BindingNodeBlock {
             });
         }
         if (filteredValue) {
-            this.#bindContent.init();
+            this.#bindContent.activate(renderer);
             this.#bindContent.mountAfter(parentNode, this.node);
-            this.#bindContent.applyChange(renderer);
             this.#bindContents = this.#trueBindContents;
         }
         else {
             this.#bindContent.unmount();
-            this.#bindContent.clear();
+            this.#bindContent.inactivate();
             this.#bindContents = this.#falseBindContents;
         }
     }
@@ -2993,12 +2996,9 @@ class BindingNodeFor extends BindingNodeBlock {
     get bindContents() {
         return this.#bindContents;
     }
-    get isFor() {
-        return true;
-    }
     init() {
     }
-    createBindContent(listIndex) {
+    createBindContent(renderer, listIndex) {
         let bindContent;
         if (this.#bindContentLastIndex >= 0) {
             // プールの最後の要素を取得して、プールの長さをあとで縮減する
@@ -3014,6 +3014,7 @@ class BindingNodeFor extends BindingNodeBlock {
         }
         // 登録
         this.#bindContentByListIndex.set(listIndex, bindContent);
+        bindContent.activate(renderer);
         return bindContent;
     }
     /**
@@ -3021,7 +3022,7 @@ class BindingNodeFor extends BindingNodeBlock {
      */
     deleteBindContent(bindContent) {
         bindContent.unmount();
-        bindContent.loopContext?.clearListIndex();
+        bindContent.inactivate();
     }
     get bindContentLastIndex() {
         return this.#bindContentLastIndex;
@@ -3139,8 +3140,7 @@ class BindingNodeFor extends BindingNodeBlock {
             parentNode.textContent = "";
             parentNode.append(this.node);
             for (let i = 0; i < this.#bindContents.length; i++) {
-                const bindContent = this.#bindContents[i];
-                bindContent.loopContext?.clearListIndex();
+                this.#bindContents[i].inactivate();
             }
             this.#bindContentPool.push(...this.#bindContents);
         }
@@ -3183,9 +3183,8 @@ class BindingNodeFor extends BindingNodeBlock {
                 const lastNode = lastBindContent?.getLastNode(fragmentParentNode) ?? fragmentFirstNode;
                 let bindContent;
                 if (addsSet.has(listIndex)) {
-                    bindContent = this.createBindContent(listIndex);
+                    bindContent = this.createBindContent(renderer, listIndex);
                     bindContent.mountAfter(fragmentParentNode, lastNode);
-                    bindContent.applyChange(renderer);
                 }
                 else {
                     bindContent = this.#bindContentByListIndex.get(listIndex);
@@ -3510,6 +3509,9 @@ function findStructiveParent(el) {
 function registerStructiveComponent(parentComponent, component) {
     parentStructiveComponentByStructiveComponent.set(component, parentComponent);
 }
+function removeStructiveComponent(component) {
+    parentStructiveComponentByStructiveComponent.delete(component);
+}
 
 /**
  * BindingNodeComponentクラスは、StructiveComponent（カスタムコンポーネント）への
@@ -3536,15 +3538,6 @@ class BindingNodeComponent extends BindingNode {
         const [, subName] = this.name.split(".");
         this.#subName = subName;
     }
-    init() {
-        const engine = this.binding.engine;
-        registerStructiveComponent(engine.owner, this.node);
-        let bindings = engine.bindingsByComponent.get(this.node);
-        if (typeof bindings === "undefined") {
-            engine.bindingsByComponent.set(this.node, bindings = new Set());
-        }
-        bindings.add(this.binding);
-    }
     _notifyRedraw(refs) {
         const component = this.node;
         // コンポーネントが定義されるのを待ち、初期化完了後に notifyRedraw を呼び出す
@@ -3554,9 +3547,6 @@ class BindingNodeComponent extends BindingNode {
                 component.state[NotifyRedrawSymbol](refs);
             });
         });
-    }
-    applyChange(renderer) {
-        this._notifyRedraw([this.binding.bindingState.ref]);
     }
     notifyRedraw(refs) {
         const notifyRefs = [];
@@ -3582,6 +3572,26 @@ class BindingNodeComponent extends BindingNode {
             return;
         }
         this._notifyRedraw(notifyRefs);
+    }
+    applyChange(renderer) {
+        this._notifyRedraw([this.binding.bindingState.ref]);
+    }
+    activate(renderer) {
+        const engine = this.binding.engine;
+        registerStructiveComponent(engine.owner, this.node);
+        let bindings = engine.bindingsByComponent.get(this.node);
+        if (typeof bindings === "undefined") {
+            engine.bindingsByComponent.set(this.node, bindings = new Set());
+        }
+        bindings.add(this.binding);
+    }
+    inactivate() {
+        const engine = this.binding.engine;
+        removeStructiveComponent(this.node);
+        let bindings = engine.bindingsByComponent.get(this.node);
+        if (typeof bindings !== "undefined") {
+            bindings.delete(this.binding);
+        }
     }
 }
 /**
@@ -3692,19 +3702,14 @@ function getBindingNodeCreator(node, propertyName, filterTexts, decorates) {
  * - createBindingStateファクトリでフィルタ適用済みインスタンスを生成
  */
 class BindingState {
-    #binding;
-    #pattern;
-    #info;
-    #filters;
-    #loopContext = null;
+    binding;
+    pattern;
+    info;
+    filters;
+    isLoopIndex = false;
     #nullRef = null;
     #ref = null;
-    get pattern() {
-        return this.#pattern;
-    }
-    get info() {
-        return this.#info;
-    }
+    #loopContext = null;
     get listIndex() {
         return this.ref.listIndex;
     }
@@ -3714,13 +3719,13 @@ class BindingState {
                 raiseError({
                     code: 'BIND-201',
                     message: 'LoopContext is null',
-                    context: { pattern: this.#pattern },
+                    context: { pattern: this.pattern },
                     docsUrl: '/docs/error-codes.md#bind',
                     severity: 'error',
                 });
             }
             if (this.#ref === null) {
-                this.#ref = getStatePropertyRef(this.#info, this.#loopContext.listIndex);
+                this.#ref = getStatePropertyRef(this.info, this.#loopContext.listIndex);
             }
             return this.#ref;
         }
@@ -3728,45 +3733,39 @@ class BindingState {
             return this.#nullRef ?? raiseError({
                 code: 'BIND-201',
                 message: 'ref is null',
-                context: { pattern: this.#pattern },
+                context: { pattern: this.pattern },
                 docsUrl: '/docs/error-codes.md#bind',
                 severity: 'error',
             });
         }
     }
-    get filters() {
-        return this.#filters;
-    }
-    get binding() {
-        return this.#binding;
-    }
-    get isLoopIndex() {
-        return false;
-    }
     constructor(binding, pattern, filters) {
-        this.#binding = binding;
-        this.#pattern = pattern;
-        this.#info = getStructuredPathInfo(pattern);
-        this.#nullRef = (this.#info.wildcardCount === 0) ? getStatePropertyRef(this.#info, null) : null;
-        this.#filters = filters;
+        this.binding = binding;
+        this.pattern = pattern;
+        this.info = getStructuredPathInfo(pattern);
+        this.filters = filters;
+        this.#nullRef = (this.info.wildcardCount === 0) ? getStatePropertyRef(this.info, null) : null;
     }
     getValue(state, handler) {
         return getByRef(this.binding.engine.state, this.ref, state, handler);
     }
     getFilteredValue(state, handler) {
         let value = getByRef(this.binding.engine.state, this.ref, state, handler);
-        for (let i = 0; i < this.#filters.length; i++) {
-            value = this.#filters[i](value);
+        for (let i = 0; i < this.filters.length; i++) {
+            value = this.filters[i](value);
         }
         return value;
     }
-    init() {
+    assignValue(writeState, handler, value) {
+        setByRef(this.binding.engine.state, this.ref, value, writeState, handler);
+    }
+    activate(renderer) {
         if (this.info.wildcardCount > 0) {
             const lastWildcardPath = this.info.lastWildcardPath ??
                 raiseError({
                     code: 'BIND-201',
                     message: 'Wildcard last parentPath is null',
-                    context: { where: 'BindingState.init', pattern: this.#pattern },
+                    context: { where: 'BindingState.init', pattern: this.pattern },
                     docsUrl: '/docs/error-codes.md#bind',
                     severity: 'error',
                 });
@@ -3782,16 +3781,8 @@ class BindingState {
         }
         this.binding.engine.saveBinding(this.ref, this.binding);
     }
-    assignValue(writeState, handler, value) {
-        setByRef(this.binding.engine.state, this.ref, value, writeState, handler);
-    }
-    // ifブロックを外すときのためのクリア処理
-    // forブロックを外すときには使わないように
-    // init()で再設定できる
-    clear() {
-        if (this.#ref !== null) {
-            this.binding.engine.removeBinding(this.#ref, this.binding);
-        }
+    inactivate() {
+        this.binding.engine.removeBinding(this.ref, this.binding);
         this.#ref = null;
         this.#loopContext = null;
     }
@@ -3817,9 +3808,9 @@ const createBindingState = (name, filterTexts) => (binding, filters) => {
  * - createBindingStateIndexファクトリでフィルタ適用済みインスタンスを生成
  */
 class BindingStateIndex {
-    #binding;
-    #indexNumber;
-    #filters;
+    binding;
+    indexNumber;
+    filters;
     #loopContext = null;
     get pattern() {
         return raiseError({
@@ -3853,17 +3844,11 @@ class BindingStateIndex {
             docsUrl: '/docs/error-codes.md#state',
         });
     }
-    get filters() {
-        return this.#filters;
-    }
-    get binding() {
-        return this.#binding;
-    }
     get isLoopIndex() {
         return true;
     }
     constructor(binding, pattern, filters) {
-        this.#binding = binding;
+        this.binding = binding;
         const indexNumber = Number(pattern.slice(1));
         if (isNaN(indexNumber)) {
             raiseError({
@@ -3873,8 +3858,8 @@ class BindingStateIndex {
                 docsUrl: '/docs/error-codes.md#bind',
             });
         }
-        this.#indexNumber = indexNumber;
-        this.#filters = filters;
+        this.indexNumber = indexNumber;
+        this.filters = filters;
     }
     getValue(state, handler) {
         return this.listIndex?.index ?? raiseError({
@@ -3891,12 +3876,20 @@ class BindingStateIndex {
             context: { where: 'BindingStateIndex.getFilteredValue' },
             docsUrl: '/docs/error-codes.md#list',
         });
-        for (let i = 0; i < this.#filters.length; i++) {
-            value = this.#filters[i](value);
+        for (let i = 0; i < this.filters.length; i++) {
+            value = this.filters[i](value);
         }
         return value;
     }
-    init() {
+    assignValue(writeState, handler, value) {
+        raiseError({
+            code: 'BIND-301',
+            message: 'Not implemented',
+            context: { where: 'BindingStateIndex.assignValue' },
+            docsUrl: '/docs/error-codes.md#bind',
+        });
+    }
+    activate(renderer) {
         const loopContext = this.binding.parentBindContent.currentLoopContext ??
             raiseError({
                 code: 'BIND-201',
@@ -3905,11 +3898,11 @@ class BindingStateIndex {
                 docsUrl: '/docs/error-codes.md#bind',
             });
         const loopContexts = loopContext.serialize();
-        this.#loopContext = loopContexts[this.#indexNumber - 1] ??
+        this.#loopContext = loopContexts[this.indexNumber - 1] ??
             raiseError({
                 code: 'BIND-201',
                 message: 'Current loopContext is null',
-                context: { where: 'BindingStateIndex.init', indexNumber: this.#indexNumber },
+                context: { where: 'BindingStateIndex.init', indexNumber: this.indexNumber },
                 docsUrl: '/docs/error-codes.md#bind',
             });
         const bindingForList = this.#loopContext.bindContent.parentBinding;
@@ -3929,19 +3922,8 @@ class BindingStateIndex {
             bindings.add(this.binding);
         }
     }
-    // ifブロックを外すときのためのクリア処理
-    // forブロックを外すときには使わないように
-    // init()で再設定できる
-    clear() {
+    inactivate() {
         this.#loopContext = null;
-    }
-    assignValue(writeState, handler, value) {
-        raiseError({
-            code: 'BIND-301',
-            message: 'Not implemented',
-            context: { where: 'BindingStateIndex.assignValue' },
-            docsUrl: '/docs/error-codes.md#bind',
-        });
     }
 }
 const createBindingStateIndex = (name, filterTexts) => (binding, filters) => {
@@ -4351,6 +4333,7 @@ class Binding {
     bindingState;
     version;
     bindingsByListIndex = new WeakMap();
+    isActive = false;
     constructor(parentBindContent, node, engine, createBindingNode, createBindingState) {
         this.parentBindContent = parentBindContent;
         this.node = node;
@@ -4360,10 +4343,6 @@ class Binding {
     }
     get bindContents() {
         return this.bindingNode.bindContents;
-    }
-    init() {
-        this.bindingNode.init();
-        this.bindingState.init();
     }
     updateStateValue(writeState, handler, value) {
         return this.bindingState.assignValue(writeState, handler, value);
@@ -4384,8 +4363,15 @@ class Binding {
             }
         }
     }
-    clear() {
-        this.bindingState.clear();
+    activate(renderer) {
+        this.isActive = true;
+        this.bindingState.activate(renderer);
+        this.bindingNode.activate(renderer);
+        this.bindingNode.applyChange(renderer);
+    }
+    inactivate() {
+        this.isActive = false;
+        // NodeとStateのバインディングを無効化
     }
 }
 /**
@@ -4544,7 +4530,6 @@ function createBindings(bindContent, id, engine, content) {
             docsUrl: "./docs/error-codes.md#bind",
         });
     const bindings = [];
-    const blockBindings = [];
     for (let i = 0; i < attributes.length; i++) {
         const attribute = attributes[i];
         const node = resolveNodeFromPath(content, attribute.nodePath) ??
@@ -4564,13 +4549,10 @@ function createBindings(bindContent, id, engine, content) {
                     docsUrl: "./docs/error-codes.md#bind",
                 });
             const binding = createBinding(bindContent, node, engine, creator.createBindingNode, creator.createBindingState);
-            if (binding.bindingNode.isBlock) {
-                blockBindings.push(binding);
-            }
             bindings.push(binding);
         }
     }
-    return [bindings, blockBindings];
+    return bindings;
 }
 /**
  * BindContent は、テンプレートから生成された DOM 断片（DocumentFragment）と
@@ -4597,32 +4579,16 @@ class BindContent {
     fragment;
     engine;
     bindings = [];
-    blockBindings = [];
-    #id;
-    get id() {
-        return this.#id;
-    }
+    isActive = false;
+    id;
+    firstChildNode;
+    lastChildNode;
     /**
      * この BindContent が既に DOM にマウントされているかどうか。
      * 判定は childNodes[0] の親が fragment 以外かで行う。
      */
     get isMounted() {
         return this.childNodes.length > 0 && this.childNodes[0].parentNode !== this.fragment;
-    }
-    /**
-     * 先頭の子ノードを返す。存在しなければ null。
-     */
-    get firstChildNode() {
-        return this.childNodes[0] ?? null;
-    }
-    /**
-     * 末尾の子ノードを返す。存在しなければ null。
-     */
-    get lastChildNode() {
-        return this.childNodes[this.childNodes.length - 1] ?? null;
-    }
-    get hasBlockBinding() {
-        return this.blockBindings.length > 0;
     }
     /**
      * 再帰的に最終ノード（末尾のバインディング配下も含む）を取得する。
@@ -4644,7 +4610,7 @@ class BindContent {
                 const childBindContent = lastBinding.bindContents.at(-1) ?? raiseError({
                     code: "BIND-104",
                     message: "Child bindContent not found",
-                    context: { where: 'BindContent.getLastNode', templateId: this.#id },
+                    context: { where: 'BindContent.getLastNode', templateId: this.id },
                     docsUrl: "./docs/error-codes.md#bind",
                 });
                 const lastNode = childBindContent.getLastNode(parentNode);
@@ -4683,14 +4649,15 @@ class BindContent {
      */
     constructor(parentBinding, id, engine, loopRef) {
         this.parentBinding = parentBinding;
-        this.#id = id;
+        this.id = id;
         this.fragment = createContent(id);
         this.childNodes = Array.from(this.fragment.childNodes);
+        this.firstChildNode = this.childNodes[0] ?? null;
+        this.lastChildNode = this.childNodes[this.childNodes.length - 1] ?? null;
         this.engine = engine;
         this.loopContext = (loopRef.listIndex !== null) ? createLoopContext(loopRef, this) : null;
-        const [bindings, blockBindings] = createBindings(this, id, engine, this.fragment);
+        const bindings = createBindings(this, id, engine, this.fragment);
         this.bindings = bindings;
-        this.blockBindings = blockBindings;
     }
     /**
      * 末尾にマウント（appendChild）。
@@ -4736,15 +4703,6 @@ class BindContent {
         }
     }
     /**
-     * 生成済みの全 Binding を初期化。
-     * createBindContent 直後および assignListIndex 後に呼び出される。
-     */
-    init() {
-        for (let i = 0; i < this.bindings.length; i++) {
-            this.bindings[i].init();
-        }
-    }
-    /**
      * ループ中の ListIndex を再割当てし、Bindings を再初期化する。
      * Throws:
      * - BIND-201 LoopContext が未初期化
@@ -4754,11 +4712,10 @@ class BindContent {
             raiseError({
                 code: "BIND-201",
                 message: "LoopContext is null",
-                context: { where: 'BindContent.assignListIndex', templateId: this.#id },
+                context: { where: 'BindContent.assignListIndex', templateId: this.id },
                 docsUrl: "./docs/error-codes.md#bind",
             });
         this.loopContext.assignListIndex(listIndex);
-        this.init();
     }
     /**
      * 変更適用エントリポイント。
@@ -4777,9 +4734,17 @@ class BindContent {
             binding.applyChange(renderer);
         }
     }
-    clear() {
+    activate(renderer) {
+        this.isActive = true;
         for (let i = 0; i < this.bindings.length; i++) {
-            this.bindings[i].clear();
+            this.bindings[i].activate(renderer);
+        }
+    }
+    inactivate() {
+        this.isActive = false;
+        this.loopContext?.clearListIndex();
+        for (let i = 0; i < this.bindings.length; i++) {
+            this.bindings[i].inactivate();
         }
     }
 }
@@ -4797,7 +4762,6 @@ class BindContent {
  */
 function createBindContent(parentBinding, id, engine, loopRef) {
     const bindContent = new BindContent(parentBinding, id, engine, loopRef);
-    bindContent.init();
     return bindContent;
 }
 
@@ -5309,17 +5273,13 @@ class ComponentEngine {
             this.bindContent.mountAfter(parentNode, this.#blockPlaceholder);
         }
         await createUpdater(this, async (updater) => {
-            await updater.update(null, async (stateProxy, handler) => {
+            updater.initialRender((renderer) => {
                 // 状態の初期レンダリングを行う
-                for (const path of this.pathManager.alls) {
-                    const info = getStructuredPathInfo(path);
-                    if (info.pathSegments.length !== 1)
-                        continue; // ルートプロパティのみ
-                    if (this.pathManager.funcs.has(path))
-                        continue; // 関数は除外
-                    const ref = getStatePropertyRef(info, null);
-                    updater.enqueueRef(ref);
-                }
+                renderer.createReadonlyState((readonlyState, readonlyHandler) => {
+                    this.bindContent.activate(renderer);
+                });
+            });
+            await updater.update(null, async (stateProxy, handler) => {
                 await stateProxy[ConnectedCallbackSymbol]();
             });
         });

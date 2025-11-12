@@ -1,6 +1,6 @@
 import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { NotifyRedrawSymbol } from "../../ComponentStateInput/symbols.js";
-import { registerStructiveComponent } from "../../WebComponents/findStructiveParent.js";
+import { registerStructiveComponent, removeStructiveComponent } from "../../WebComponents/findStructiveParent.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * BindingNodeComponentクラスは、StructiveComponent（カスタムコンポーネント）への
@@ -27,15 +27,6 @@ class BindingNodeComponent extends BindingNode {
         const [, subName] = this.name.split(".");
         this.#subName = subName;
     }
-    init() {
-        const engine = this.binding.engine;
-        registerStructiveComponent(engine.owner, this.node);
-        let bindings = engine.bindingsByComponent.get(this.node);
-        if (typeof bindings === "undefined") {
-            engine.bindingsByComponent.set(this.node, bindings = new Set());
-        }
-        bindings.add(this.binding);
-    }
     _notifyRedraw(refs) {
         const component = this.node;
         // コンポーネントが定義されるのを待ち、初期化完了後に notifyRedraw を呼び出す
@@ -45,9 +36,6 @@ class BindingNodeComponent extends BindingNode {
                 component.state[NotifyRedrawSymbol](refs);
             });
         });
-    }
-    applyChange(renderer) {
-        this._notifyRedraw([this.binding.bindingState.ref]);
     }
     notifyRedraw(refs) {
         const notifyRefs = [];
@@ -73,6 +61,26 @@ class BindingNodeComponent extends BindingNode {
             return;
         }
         this._notifyRedraw(notifyRefs);
+    }
+    applyChange(renderer) {
+        this._notifyRedraw([this.binding.bindingState.ref]);
+    }
+    activate(renderer) {
+        const engine = this.binding.engine;
+        registerStructiveComponent(engine.owner, this.node);
+        let bindings = engine.bindingsByComponent.get(this.node);
+        if (typeof bindings === "undefined") {
+            engine.bindingsByComponent.set(this.node, bindings = new Set());
+        }
+        bindings.add(this.binding);
+    }
+    inactivate() {
+        const engine = this.binding.engine;
+        removeStructiveComponent(this.node);
+        let bindings = engine.bindingsByComponent.get(this.node);
+        if (typeof bindings !== "undefined") {
+            bindings.delete(this.binding);
+        }
     }
 }
 /**

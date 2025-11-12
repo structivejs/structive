@@ -9,3 +9,7 @@ export function findStructiveParent(el:StructiveComponent): StructiveComponent |
 export function registerStructiveComponent(parentComponent: StructiveComponent, component: StructiveComponent): void {
   parentStructiveComponentByStructiveComponent.set(component, parentComponent);
 }
+
+export function removeStructiveComponent(component: StructiveComponent): void {
+  parentStructiveComponentByStructiveComponent.delete(component);
+}

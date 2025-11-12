@@ -46,12 +46,9 @@ class BindingNodeFor extends BindingNodeBlock {
     get bindContents() {
         return this.#bindContents;
     }
-    get isFor() {
-        return true;
-    }
     init() {
     }
-    createBindContent(listIndex) {
+    createBindContent(renderer, listIndex) {
         let bindContent;
         if (this.#bindContentLastIndex >= 0) {
             // プールの最後の要素を取得して、プールの長さをあとで縮減する
@@ -67,6 +64,7 @@ class BindingNodeFor extends BindingNodeBlock {
         }
         // 登録
         this.#bindContentByListIndex.set(listIndex, bindContent);
+        bindContent.activate(renderer);
         return bindContent;
     }
     /**
@@ -74,7 +72,7 @@ class BindingNodeFor extends BindingNodeBlock {
      */
     deleteBindContent(bindContent) {
         bindContent.unmount();
-        bindContent.loopContext?.clearListIndex();
+        bindContent.inactivate();
     }
     get bindContentLastIndex() {
         return this.#bindContentLastIndex;
@@ -192,8 +190,7 @@ class BindingNodeFor extends BindingNodeBlock {
             parentNode.textContent = "";
             parentNode.append(this.node);
             for (let i = 0; i < this.#bindContents.length; i++) {
-                const bindContent = this.#bindContents[i];
-                bindContent.loopContext?.clearListIndex();
+                this.#bindContents[i].inactivate();
             }
             this.#bindContentPool.push(...this.#bindContents);
         }
@@ -236,9 +233,8 @@ class BindingNodeFor extends BindingNodeBlock {
                 const lastNode = lastBindContent?.getLastNode(fragmentParentNode) ?? fragmentFirstNode;
                 let bindContent;
                 if (addsSet.has(listIndex)) {
-                    bindContent = this.createBindContent(listIndex);
+                    bindContent = this.createBindContent(renderer, listIndex);
                     bindContent.mountAfter(fragmentParentNode, lastNode);
-                    bindContent.applyChange(renderer);
                 }
                 else {
                     bindContent = this.#bindContentByListIndex.get(listIndex);

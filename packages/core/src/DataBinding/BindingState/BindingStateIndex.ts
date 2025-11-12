@@ -3,6 +3,7 @@ import { IFilterText } from "../../BindingBuilder/types";
 import { Filters, FilterWithOptions } from "../../Filter/types";
 import { ILoopContext } from "../../LoopContext/types.js";
 import { IStateHandler, IStateProxy, IWritableStateHandler, IWritableStateProxy } from "../../StateClass/types";
+import { IRenderer } from "../../Updater/types.js";
 import { raiseError } from "../../utils.js";
 import { IBinding } from "../types";
 import { CreateBindingStateFn, IBindingState } from "./types";
@@ -23,9 +24,9 @@ import { CreateBindingStateFn, IBindingState } from "./types";
  * - createBindingStateIndexファクトリでフィルタ適用済みインスタンスを生成
  */
 class BindingStateIndex implements IBindingState {
-  #binding     : IBinding;
-  #indexNumber : number;
-  #filters     : Filters;
+  binding     : IBinding;
+  indexNumber : number;
+  filters     : Filters;
   #loopContext : ILoopContext | null = null;
   get pattern(): string {
     return raiseError({
@@ -59,12 +60,6 @@ class BindingStateIndex implements IBindingState {
       docsUrl: '/docs/error-codes.md#state',
     });
   }
-  get filters() {
-    return this.#filters;
-  }
-  get binding() {
-    return this.#binding;
-  }
   get isLoopIndex() {
     return true;
   }
@@ -73,7 +68,7 @@ class BindingStateIndex implements IBindingState {
     pattern: string, 
     filters: Filters
   ) {
-    this.#binding = binding;
+    this.binding = binding;
     const indexNumber = Number(pattern.slice(1));
     if (isNaN(indexNumber)) {
       raiseError({
@@ -83,8 +78,8 @@ class BindingStateIndex implements IBindingState {
         docsUrl: '/docs/error-codes.md#bind',
       });
     }
-    this.#indexNumber = indexNumber;
-    this.#filters = filters;
+    this.indexNumber = indexNumber;
+    this.filters = filters;
   }
   getValue(state: IStateProxy, handler: IStateHandler) {
     return this.listIndex?.index ?? raiseError({
@@ -101,12 +96,22 @@ class BindingStateIndex implements IBindingState {
       context: { where: 'BindingStateIndex.getFilteredValue' },
       docsUrl: '/docs/error-codes.md#list',
     });
-    for(let i = 0; i < this.#filters.length; i++) {
-      value = this.#filters[i](value);
+    for(let i = 0; i < this.filters.length; i++) {
+      value = this.filters[i](value);
     }
     return value;
   }
-  init(): void {
+
+  assignValue(writeState:IWritableStateProxy, handler:IWritableStateHandler, value:any): void {
+    raiseError({
+      code: 'BIND-301',
+      message: 'Not implemented',
+      context: { where: 'BindingStateIndex.assignValue' },
+      docsUrl: '/docs/error-codes.md#bind',
+    });
+  }
+
+  activate(renderer: IRenderer): void {
     const loopContext = this.binding.parentBindContent.currentLoopContext ??
       raiseError({
         code: 'BIND-201',
@@ -115,11 +120,11 @@ class BindingStateIndex implements IBindingState {
         docsUrl: '/docs/error-codes.md#bind',
       });
     const loopContexts = loopContext.serialize();
-    this.#loopContext = loopContexts[this.#indexNumber - 1] ??
+    this.#loopContext = loopContexts[this.indexNumber - 1] ??
       raiseError({
         code: 'BIND-201',
         message: 'Current loopContext is null',
-        context: { where: 'BindingStateIndex.init', indexNumber: this.#indexNumber },
+        context: { where: 'BindingStateIndex.init', indexNumber: this.indexNumber },
         docsUrl: '/docs/error-codes.md#bind',
       });
     const bindingForList = this.#loopContext.bindContent.parentBinding;
@@ -138,19 +143,9 @@ class BindingStateIndex implements IBindingState {
       bindings.add(this.binding);
     }
   }
-  // ifブロックを外すときのためのクリア処理
-  // forブロックを外すときには使わないように
-  // init()で再設定できる
-  clear() {
+
+  inactivate(): void {
     this.#loopContext = null;
-  }
-  assignValue(writeState:IWritableStateProxy, handler:IWritableStateHandler, value:any): void {
-    raiseError({
-      code: 'BIND-301',
-      message: 'Not implemented',
-      context: { where: 'BindingStateIndex.assignValue' },
-      docsUrl: '/docs/error-codes.md#bind',
-    });
   }
 }
 

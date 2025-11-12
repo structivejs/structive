@@ -4,7 +4,7 @@ import { IListIndex } from "../../ListIndex/types";
 import { IReadonlyStateProxy } from "../../StateClass/types";
 import { IStatePropertyRef } from "../../StatePropertyRef/types";
 import { IRenderer } from "../../Updater/types";
-import { IBindContent, IBinding } from "../types";
+import { IBindContent, IBinding, IRenderBinding } from "../types";
 
 /**
  * BindingNode関連の型定義ファイル。
@@ -18,7 +18,7 @@ import { IBindContent, IBinding } from "../types";
  * - バインディングノード（DOMノードとバインディング情報の1対1対応）の共通インターフェース
  * - 値の更新・初期化・値の割り当て・リスト要素の更新などのメソッドを提供
  */
-export interface IBindingNode {
+export interface IBindingNodeBase {
   readonly node           : Node;
   readonly name           : string;
   readonly subName        : string;
@@ -26,8 +26,6 @@ export interface IBindingNode {
   readonly binding        : IBinding;
   readonly filters        : Filters;
   readonly isSelectElement: boolean;
-  readonly isBlock        : boolean;
-  readonly isFor          : boolean;
   readonly bindContents   : IBindContent[];
   readonly value        : any;
   readonly filteredValue: any;
@@ -35,9 +33,9 @@ export interface IBindingNode {
   assignValue(value: any): void;
   updateElements(listIndexes: IListIndex[], values: any[]): void;
   notifyRedraw(refs: IStatePropertyRef[]): void; // 親子関係を考慮してバインディングの更新を通知する
-
-  applyChange(renderer: IRenderer): void; // バインディングの変更を適用する
 }
+
+export type IBindingNode = IBindingNodeBase & Pick<IRenderBinding, "applyChange" | "activate" | "inactivate">;
 
 /**
  * バインディングノード生成ファクトリ型

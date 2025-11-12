@@ -3,7 +3,7 @@ import { createReadonlyStateHandler, createReadonlyStateProxy } from "../StateCl
 import { HasUpdatedCallbackSymbol, UpdatedCallbackSymbol } from "../StateClass/symbols";
 import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { raiseError } from "../utils";
-import { render } from "./Renderer";
+import { createRenderer, render } from "./Renderer";
 /**
  * Updaterクラスは、状態管理と更新の中心的な役割を果たします。
  * 状態更新が必要な場合に、都度インスタンスを作成して使用します。
@@ -87,6 +87,10 @@ class Updater {
         finally {
             this.#rendering = false;
         }
+    }
+    initialRender(callback) {
+        const renderer = createRenderer(this.#engine, this);
+        callback(renderer);
     }
     /**
      * 更新したパスに対して影響があるパスを再帰的に収集する

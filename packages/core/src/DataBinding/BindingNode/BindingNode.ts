@@ -19,7 +19,7 @@ import { IBindingNode } from "./types";
  *
  * 設計ポイント:
  * - assignValue, updateElementsは未実装（サブクラスでオーバーライド必須）
- * - isSelectElement, value, filteredValue, isForなどはサブクラスで用途に応じて拡張
+ * - isSelectElement, value, filteredValueなどはサブクラスで用途に応じて拡張
  * - フィルタやデコレータ、バインド内容の管理も柔軟に対応
  */
 export class BindingNode implements IBindingNode {
@@ -89,6 +89,12 @@ export class BindingNode implements IBindingNode {
     const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
     this.assignValue(filteredValue);
   }
+  activate(renderer: IRenderer): void {
+    // サブクラスでバインディングノードの有効化処理を実装可能
+  }
+  inactivate(): void {
+    // サブクラスでバインディングノードの無効化処理を実装可能
+  }
 
   get isSelectElement(): boolean {
     return this.node instanceof HTMLSelectElement;
@@ -99,11 +105,5 @@ export class BindingNode implements IBindingNode {
   get filteredValue():any {
     return null;
   }
-  get isFor(): boolean {
-    return false;
-  }
 
-  get isBlock(): boolean {
-    return false;
-  }
 }

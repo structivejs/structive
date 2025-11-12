@@ -5,3 +5,6 @@ export function findStructiveParent(el) {
 export function registerStructiveComponent(parentComponent, component) {
     parentStructiveComponentByStructiveComponent.set(component, parentComponent);
 }
+export function removeStructiveComponent(component) {
+    parentStructiveComponentByStructiveComponent.delete(component);
+}
