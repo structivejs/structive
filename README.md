@@ -35,4 +35,4 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## Version
 
-Current version: 1.0.0
+Current version: 1.1.0
