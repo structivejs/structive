@@ -11,7 +11,7 @@ describe("WebComponents/createSingleFileComponent", () => {
         <div class="x">Hello {{name}}</div>
       </template>
     `;
-    const res = await createSingleFileComponent(sfc);
+    const res = await createSingleFileComponent("test.html", sfc);
     expect(res.html.trim()).toBe('<div class="x">Hello {{name}}</div>');
     expect(res.css).toBe("");
     expect(typeof res.stateClass).toBe("function");
@@ -26,7 +26,7 @@ describe("WebComponents/createSingleFileComponent", () => {
         .x{color:red}
       </style>
     `;
-    const res = await createSingleFileComponent(sfc);
+    const res = await createSingleFileComponent("test.html", sfc);
     expect(res.html.trim()).toBe('<p>text</p>');
     expect(res.css.replace(/\s+/g, "")).toBe('.x{color:red}');
   });
@@ -40,7 +40,7 @@ describe("WebComponents/createSingleFileComponent", () => {
         export default class MyState { static $config = { enabled: true } }
       </script>
     `;
-    const res = await createSingleFileComponent(sfc);
+    const res = await createSingleFileComponent("test.html", sfc);
     expect(res.html.trim()).toBe('<section>ok</section>');
     expect(typeof res.stateClass).toBe("function");
     // static プロパティが参照できること
@@ -52,7 +52,7 @@ describe("WebComponents/createSingleFileComponent", () => {
       <style>.no-template{display:none}</style>
       <script type="module">export const value = 1;</script>
     `;
-    const res = await createSingleFileComponent(sfc);
+    const res = await createSingleFileComponent("test.html", sfc);
     expect(res.html).toBe("");
     expect(res.css.replace(/\s+/g, "")).toBe('.no-template{display:none}');
     // default export が無い場合は空クラスが返る

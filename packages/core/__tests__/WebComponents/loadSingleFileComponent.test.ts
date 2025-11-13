@@ -3,8 +3,8 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-const createSingleFileComponentMock = vi.fn(async (text:string) => ({ html: "<p>", css: "", stateClass: class {} }));
-vi.mock("../../src/WebComponents/createSingleFileComponent", () => ({ createSingleFileComponent: (t:string) => createSingleFileComponentMock(t) }));
+const createSingleFileComponentMock = vi.fn(async (path: string, text: string) => ({ html: "<p>", css: "", stateClass: class {} }));
+vi.mock("../../src/WebComponents/createSingleFileComponent", () => ({ createSingleFileComponent: (p: string, t: string) => createSingleFileComponentMock(p, t) }));
 
 // fetch をモック
 const fetchMock = vi.fn(async (url:string) => ({ text: async () => `// sfc from ${url}` }));
@@ -29,7 +29,7 @@ describe("WebComponents/loadSingleFileComponent", () => {
     const expectedResolved = nativeResolve ? nativeResolve(path) : path;
     const data = await loadSingleFileComponent(path);
     expect(fetch).toHaveBeenCalledWith(expectedResolved);
-    expect(createSingleFileComponentMock).toHaveBeenCalledWith(expect.stringContaining(`// sfc from ${expectedResolved}`));
+    expect(createSingleFileComponentMock).toHaveBeenCalledWith(path, expect.stringContaining(`// sfc from ${expectedResolved}`));
     expect(data.html).toBe("<p>");
   });
 });

@@ -31,7 +31,7 @@ function unescapeEmbed(html:string):string {
 
 let id = 0;
 
-export async function createSingleFileComponent(text: string): Promise<IUserComponentData> {
+export async function createSingleFileComponent(path: string, text: string): Promise<IUserComponentData> {
   const template = document.createElement("template");
   template.innerHTML = escapeEmbed(text);
 
@@ -41,11 +41,20 @@ export async function createSingleFileComponent(text: string): Promise<IUserComp
   const script = template.content.querySelector("script[type=module]") as HTMLScriptElement | null;
   let scriptModule: any = {};
   if (script) {
-    const uniq_comment = `\r\n/*__UNIQ_ID_${id++}__*/`;
-    const b64 = btoa(String.fromCodePoint(...new TextEncoder().encode(script.text + uniq_comment)));
-    scriptModule = await import("data:application/javascript;base64," + b64);
+    const uniq_comment = `\n// uniq id: ${id++}\n//# sourceURL=${path}\n`;
+    // blob URLを使用（ブラウザ環境）
+    // テスト環境（jsdom）ではURL.createObjectURLが存在しないためフォールバック
+    if (typeof URL.createObjectURL === 'function') {
+      const blob = new Blob([script.text + uniq_comment], { type: "application/javascript" });
+      const url = URL.createObjectURL(blob);
+      scriptModule = await import(url);
+      URL.revokeObjectURL(url);
+    } else {
+      // フォールバック: Base64エンコード方式（テスト環境用）
+      const b64 = btoa(String.fromCodePoint(...new TextEncoder().encode(script.text + uniq_comment)));
+      scriptModule = await import("data:application/javascript;base64," + b64);
+    }
   }
-//  const scriptModule = script ? await import("data:text/javascript;charset=utf-8," + script.text) : {};
   script?.remove();
 
   const style = template.content.querySelector("style");

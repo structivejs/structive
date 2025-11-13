@@ -20,5 +20,5 @@ export async function loadSingleFileComponent(path: string): Promise<IUserCompon
   const resolved = (import.meta as any).resolve ? (import.meta as any).resolve(path) : path;
   const response = await fetch(resolved);
   const text = await response.text();
-  return createSingleFileComponent(text);
+  return createSingleFileComponent(path, text);
 }

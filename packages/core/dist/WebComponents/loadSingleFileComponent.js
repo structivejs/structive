@@ -18,5 +18,5 @@ export async function loadSingleFileComponent(path) {
     const resolved = import.meta.resolve ? import.meta.resolve(path) : path;
     const response = await fetch(resolved);
     const text = await response.text();
-    return createSingleFileComponent(text);
+    return createSingleFileComponent(path, text);
 }
