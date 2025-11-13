@@ -64,6 +64,9 @@ describe("BindingNodeComponent", () => {
   });
 
   beforeEach(() => {
+    // モックをクリア
+    vi.clearAllMocks();
+    
     parentComponent = document.createElement("div") as any;
     parentComponent.isStructive = true;
     parentComponent.state = { [NotifyRedrawSymbol]: vi.fn() } as any;
@@ -268,7 +271,20 @@ describe("BindingNodeComponent", () => {
   });
 
   it("inactivate: bindingsByComponent に存在しない場合でもエラーにならない", () => {
-    // activate せずに直接 inactivate を呼び出す（bindingsが undefined の場合）
+    // activate せずに直接 inactivate を呼び出す（isActive が false の場合）
+    expect(() => binding.inactivate()).not.toThrow();
+    
+    // isActive が false の場合は bindingNode.inactivate が呼ばれないため、
+    // removeStructiveComponent も呼び出されない
+    expect(removeStructiveComponent).not.toHaveBeenCalled();
+  });
+
+  it("inactivate: bindingsが存在しない状態でactivateしたバインディングをinactivateしてもエラーにならない", () => {
+    // engineのbindingsByComponentをクリアして存在しない状態にする
+    engine.bindingsByComponent = new WeakMap();
+    
+    // activate してから inactivate を呼び出す
+    binding.activate(); 
     expect(() => binding.inactivate()).not.toThrow();
     
     // removeStructiveComponent は呼び出される
