@@ -4371,9 +4371,11 @@ class Binding {
         this.bindingNode.activate();
     }
     inactivate() {
-        this.isActive = false;
-        this.bindingNode.inactivate();
-        this.bindingState.inactivate();
+        if (this.isActive) {
+            this.bindingNode.inactivate();
+            this.bindingState.inactivate();
+            this.isActive = false;
+        }
     }
 }
 /**

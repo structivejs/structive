@@ -75,9 +75,11 @@ class Binding implements IBinding {
     this.bindingNode.activate();
   }
   inactivate(): void {
-    this.isActive = false;
-    this.bindingNode.inactivate();
-    this.bindingState.inactivate();
+    if (this.isActive) {
+      this.bindingNode.inactivate();
+      this.bindingState.inactivate();
+      this.isActive = false;
+    }
   }
 }
 

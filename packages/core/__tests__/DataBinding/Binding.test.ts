@@ -60,9 +60,12 @@ describe("Binding", () => {
     expect(binding.bindContents).toBe(childBindContents);
   });
 
-  it("activate は bindingNode と bindingState の activate を呼ぶ", () => {
+  it("activate は bindingNode と bindingState の activate を呼び、isActive を true にする", () => {
     const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    expect((binding as any).isActive).toBe(false); // 初期状態は false
+    
     binding.activate();
+    expect((binding as any).isActive).toBe(true); // activate 後は true
     expect(mockBindingNode.activate).toHaveBeenCalledTimes(1);
     expect(mockBindingState.activate).toHaveBeenCalledTimes(1);
   });
@@ -82,7 +85,7 @@ describe("Binding", () => {
     expect(mockBindingNode.notifyRedraw).toHaveBeenCalledWith(refs);
   });
 
-  it("applyChange は renderer.updatedBindings に含まれていない場合のみ bindingNode.applyChange を呼ぶ", () => {
+  it("applyChange は renderer.updatedBindings に含まれていない場合のみ bindingNode.applyChange を呼び、条件に応じて processedRefs に追加", () => {
     const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
     engine.getBindings.mockReturnValue([binding]);
     const renderer: any = {
@@ -91,24 +94,78 @@ describe("Binding", () => {
       readonlyState: {},
       readonlyHandler: {},
     };
+    
     binding.applyChange(renderer);
     expect(mockBindingNode.applyChange).toHaveBeenCalledWith(renderer);
+    expect(renderer.updatedBindings.has(binding)).toBe(true);
+    
+    // isLoopIndex が false で、動的依存がなく、bindingsが1つの場合はprocessedRefsに追加される
+    expect(renderer.processedRefs.has(mockBindingState.ref)).toBe(true);
 
-    // 2回目は updatedBindings に追加してスキップされること
-    (renderer.updatedBindings as Set<any>).add(binding);
+    // 2回目は updatedBindings に含まれているのでスキップされること
     mockBindingNode.applyChange.mockClear();
     binding.applyChange(renderer);
     expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
   });
 
-  it("inactivate は bindingNode と bindingState の inactivate を呼び、isActive を false にする", () => {
+  it("inactivate は isActive が true の場合のみ bindingNode と bindingState の inactivate を呼び、isActive を false にする", () => {
     const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
-    binding.activate(); // 最初に activate して isActive を true にする
+    
+    // 最初に activate していない状態で inactivate を呼ぶ
+    binding.inactivate();
+    expect(mockBindingNode.inactivate).not.toHaveBeenCalled();
+    expect(mockBindingState.inactivate).not.toHaveBeenCalled();
+    expect((binding as any).isActive).toBe(false);
+    
+    // activate してから inactivate を呼ぶ
+    binding.activate();
     expect((binding as any).isActive).toBe(true);
     
     binding.inactivate();
     expect((binding as any).isActive).toBe(false);
     expect(mockBindingNode.inactivate).toHaveBeenCalledTimes(1);
     expect(mockBindingState.inactivate).toHaveBeenCalledTimes(1);
+  });
+
+  it("applyChange: isLoopIndex が true の場合は processedRefs に追加されない", () => {
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    mockBindingState.isLoopIndex = true;
+    engine.getBindings.mockReturnValue([binding]);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+    };
+    
+    binding.applyChange(renderer);
+    expect(renderer.processedRefs.has(mockBindingState.ref)).toBe(false);
+  });
+
+  it("applyChange: 動的依存がある場合は processedRefs に追加されない", () => {
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    engine.pathManager.dynamicDependencies.set("state.path", new Set(["dependency"]));
+    engine.getBindings.mockReturnValue([binding]);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+    };
+    
+    binding.applyChange(renderer);
+    expect(renderer.processedRefs.has(mockBindingState.ref)).toBe(false);
+  });
+
+  it("applyChange: bindingsが複数ある場合は processedRefs に追加されない", () => {
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    const otherBinding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    engine.getBindings.mockReturnValue([binding, otherBinding]);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+    };
+    
+    binding.applyChange(renderer);
+    expect(renderer.processedRefs.has(mockBindingState.ref)).toBe(false);
   });
 });
