@@ -77,7 +77,7 @@ class BindingState {
     assignValue(writeState, handler, value) {
         setByRef(this.binding.engine.state, this.ref, value, writeState, handler);
     }
-    activate(renderer) {
+    activate() {
         if (this.info.wildcardCount > 0) {
             const lastWildcardPath = this.info.lastWildcardPath ??
                 raiseError({

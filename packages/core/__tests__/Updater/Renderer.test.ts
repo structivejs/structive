@@ -31,7 +31,7 @@ vi.mock("../../src/StatePropertyRef/StatepropertyRef", () => ({
 }));
 
 // SUT
-import { render } from "../../src/Updater/Renderer";
+import { render, createRenderer } from "../../src/Updater/Renderer";
 
 // Helpers
 const makeReadonlyState = (getByRefValue: any = undefined, getListIndexesValue: any = undefined) => ({
@@ -1235,5 +1235,29 @@ describe("Updater/Renderer エラーハンドリング", () => {
   expect(getListDiffSpy).toHaveBeenCalled();
   const adds = getStatePropertyRefMock.mock.calls.filter((c) => c[0]?.pattern === "root.*").map((c) => c[1]);
   expect(adds).toEqual(expect.arrayContaining([10, 20]));
+  });
+});
+
+describe("createRenderer", () => {
+  beforeEach(() => {
+    // モックをクリア
+    vi.clearAllMocks();
+  });
+
+  it("createRenderer: engineとupdaterを受け取ってRendererインスタンスを作成する", async () => {
+    // 実際のcreateRenderer関数を動的にインポート
+    const { createRenderer: actualCreateRenderer } = await vi.importActual("../../src/Updater/Renderer") as any;
+    
+    const engine = makeEngine();
+    const updater = { createReadonlyState: vi.fn() } as any;
+
+    const renderer = actualCreateRenderer(engine, updater);
+    
+    expect(renderer).toBeDefined();
+    expect(typeof renderer.render).toBe("function");
+    expect(typeof renderer.createReadonlyState).toBe("function");
+    
+    // 実際に動作するかを軽く確認
+    expect(() => renderer.createReadonlyState(() => {})).not.toThrow();
   });
 });

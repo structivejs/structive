@@ -44,7 +44,7 @@ describe("BindingStateIndex", () => {
     expect(() => (bs as any).info).toThrowError(/Not implemented/);
   });
 
-  it("init で対象インデックスに登録され、getValue/getFilteredValue/ref が取得できる", () => {
+  it("activate で対象インデックスに登録され、getValue/getFilteredValue/ref が取得できる", () => {
     const ctx1 = { listIndex: { index: 0, sid: "LI0" }, ref: { key: "K0" } };
     const ctx2 = { listIndex: { index: 1, sid: "LI1" }, ref: { key: "K1" } };
     const root = { serialize: () => [ctx1, ctx2] } as any;
@@ -56,10 +56,10 @@ describe("BindingStateIndex", () => {
     ]);
     const bs = factory(binding, engine.outputFilters);
 
-    // init 前アクセスはエラー
+    // activate 前アクセスはエラー
   expect(() => (bs as any).getValue({} as any)).toThrowError(/listIndex is null/);
 
-    bs.init();
+    bs.activate();
 
     // Map 登録（listIndex オブジェクトがキー）
     const set = engine.bindingsByListIndex.get(ctx2.listIndex);
@@ -101,21 +101,21 @@ describe("BindingStateIndex", () => {
     expect(() => factory(binding, engine.outputFilters)).toThrowError(/pattern is not a number/i);
   });
 
-  it("currentLoopContext が null だと init でエラー", () => {
+  it("currentLoopContext が null だと activate でエラー", () => {
     const engine = createEngine();
     const binding = createBinding(engine, null);
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
-    expect(() => bs.init()).toThrowError(/loopContext is null/i);
+    expect(() => bs.activate()).toThrowError(/loopContext is null/i);
   });
 
-  it("シリアライズ結果の範囲外インデックスは init でエラー", () => {
+  it("シリアライズ結果の範囲外インデックスは activate でエラー", () => {
     const root = { serialize: () => [{ listIndex: { index: 0 }, ref: { key: "K0" } }] } as any;
     const engine = createEngine();
     const binding = createBinding(engine, root);
     const factory = createBindingStateIndex("$2", []);
     const bs = factory(binding, engine.outputFilters);
-    expect(() => bs.init()).toThrowError("Current loopContext is null");
+    expect(() => bs.activate()).toThrowError("Current loopContext is null");
   });
 
   it("assignValue は未実装エラー", () => {
@@ -125,7 +125,7 @@ describe("BindingStateIndex", () => {
     const binding = createBinding(engine, root);
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
-    bs.init();
+    bs.activate();
   expect(() => (bs as any).assignValue({} as any, {} as any, 123)).toThrowError(/not implemented/i);
   });
 
@@ -137,13 +137,13 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    bs.init();
+    bs.activate();
 
     expect(() => bs.getValue({} as any, {} as any)).toThrow(/listIndex is null/i);
     expect(() => bs.getFilteredValue({} as any, {} as any)).toThrow(/listIndex is null/i);
   });
 
-  it("init を複数回呼んでも Set は重複しない", () => {
+  it("activate を複数回呼んでも Set は重複しない", () => {
     const ctx = { listIndex: { index: 2 }, ref: { key: "K2" } };
     const root = { serialize: () => [ctx] } as any;
     const engine = createEngine();
@@ -151,15 +151,15 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    bs.init();
-    bs.init();
+    bs.activate();
+    bs.activate();
 
     const set = engine.bindingsByListIndex.get(ctx.listIndex)!;
     expect(set.size).toBe(1);
     expect(set.has(binding)).toBe(true);
   });
 
-  it("親バインディングが無い場合は init でエラー", () => {
+  it("親バインディングが無い場合は activate でエラー", () => {
     const engine = createEngine();
     const listIndex = { index: 0 };
     const loopContext = {
@@ -177,10 +177,10 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    expect(() => bs.init()).toThrowError(/Binding for list is null/);
+    expect(() => bs.activate()).toThrowError(/Binding for list is null/);
   });
 
-  it("bindContent.parentBinding が undefined の場合も init でエラー", () => {
+  it("bindContent.parentBinding が undefined の場合も activate でエラー", () => {
     const engine = createEngine();
     const listIndex = { index: 0 };
     
@@ -202,7 +202,7 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    expect(() => bs.init()).toThrowError(/Binding for list is null/);
+    expect(() => bs.activate()).toThrowError(/Binding for list is null/);
   });
 
   it("直接的にparentBinding が null の場合の初期化エラー", () => {
@@ -227,7 +227,7 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    expect(() => bs.init()).toThrowError(/Binding for list is null/);
+    expect(() => bs.activate()).toThrowError(/Binding for list is null/);
   });
 
   it("bindContentにparentBindingプロパティが存在しない場合の初期化エラー", () => {
@@ -253,7 +253,7 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    expect(() => bs.init()).toThrowError(/Binding for list is null/);
+    expect(() => bs.activate()).toThrowError(/Binding for list is null/);
   });
 
   it("デバッグ: 直接的なテストケース", () => {
@@ -281,7 +281,7 @@ describe("BindingStateIndex", () => {
     const bs = factory(binding as any, engine.outputFilters);
     
     // 期待: "Binding for list is null" エラーで145-146行が実行される
-    expect(() => bs.init()).toThrowError(/Binding for list is null/);
+    expect(() => bs.activate()).toThrowError(/Binding for list is null/);
   });
 
   it("明示的なnullケースでのエラー処理", () => {
@@ -304,7 +304,7 @@ describe("BindingStateIndex", () => {
       };
 
       const bs = factory(binding as any, engine.outputFilters);
-      expect(() => bs.init()).toThrowError(/Binding for list is null/);
+      expect(() => bs.activate()).toThrowError(/Binding for list is null/);
     }
   });
 
@@ -332,13 +332,13 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    bs.init();
+    bs.activate();
 
     expect(existingSet.size).toBe(2);
     expect(existingSet.has(binding)).toBe(true);
   });
 
-  it("parentBinding が null の場合は init でエラー (coverage test)", () => {
+  it("parentBinding が null の場合は activate でエラー (coverage test)", () => {
     const engine = createEngine();
     
     // Create a mock loop context with null parentBinding to cover lines with raiseError
@@ -360,6 +360,24 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    expect(() => bs.init()).toThrow("Binding for list is null");
+    expect(() => bs.activate()).toThrow("Binding for list is null");
+  });
+
+  it("inactivate でループコンテキストがクリアされる", () => {
+    const ctx = { listIndex: { index: 0 }, ref: { key: "K0" } };
+    const root = { serialize: () => [ctx] } as any;
+    const engine = createEngine();
+    const binding = createBinding(engine, root);
+
+    const factory = createBindingStateIndex("$1", []);
+    const bs = factory(binding, engine.outputFilters);
+
+    // activate後はref等にアクセス可能
+    bs.activate();
+    expect(bs.ref).toBe(ctx.ref);
+
+    // inactivate後はアクセスできない
+    bs.inactivate();
+    expect(() => bs.ref).toThrow(/ref is null/i);
   });
 });

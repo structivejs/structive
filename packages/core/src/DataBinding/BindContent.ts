@@ -293,10 +293,10 @@ class BindContent implements IBindContent {
       binding.applyChange(renderer);
     }
   }
-  activate(renderer: IRenderer): void {
+  activate(): void {
     this.isActive = true;
     for(let i = 0; i < this.bindings.length; i++) {
-      this.bindings[i].activate(renderer);
+      this.bindings[i].activate();
     }
   }
   inactivate(): void {

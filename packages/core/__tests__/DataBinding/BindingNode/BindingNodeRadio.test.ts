@@ -245,4 +245,25 @@ describe("BindingNodeRadio", () => {
       console.warn("Event handling failed:", error);
     }
   });
+
+  it("filteredValue applies filters to the value", () => {
+    const engine = createEngineStub();
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.value = "  test  ";
+    const binding = createBindingStub(engine, input);
+
+    // フィルターオブジェクトを作成（FilterWithOptionsとして）
+    const filters = {
+      trim: (options?: string[]) => (value: any) => typeof value === 'string' ? value.trim() : value
+    };
+    
+    // フィルターを適用するノードを作成（IFilterText形式）
+    const filterTexts = [{ name: "trim", options: [] }];
+    const node = createBindingNodeRadio("checked", filterTexts, [])(binding, input, filters);
+    
+    // フィルターが適用されることを確認（filteredValueのgetterのfor文をカバー）
+    expect(node.filteredValue).toBe("test");
+    expect(node.value).toBe("  test  ");  // 元の値は変わらない
+  });
 });

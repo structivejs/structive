@@ -34,9 +34,13 @@ vi.mock("../../src/StateClass/createReadonlyStateProxy", () => ({
 
 // Renderer.render をモックして呼び出しを検証
 const renderMock = vi.fn();
+const createRendererMock = vi.fn().mockReturnValue({
+  render: vi.fn()
+});
 vi.mock("../../src/Updater/Renderer", () => {
   return {
     render: (...args: any[]) => renderMock(...args),
+    createRenderer: (...args: any[]) => createRendererMock(...args),
   };
 });
 
@@ -473,3 +477,29 @@ function createPathNode(path: string, childNodeByName: Map<string, any> = new Ma
     childNodeByName,
   };
 }
+
+describe("Updater initialRender tests", () => {
+  it("initialRender calls createRenderer and executes callback", async () => {
+    const engine = createEngineStub();
+    
+    // createUpdaterを使ってUpdaterインスタンスを作成してテスト
+    const { createUpdater } = await import("../../src/Updater/Updater");
+    
+    let capturedUpdater: any;
+    await createUpdater(engine, (updater) => {
+      capturedUpdater = updater;
+    });
+    
+    const callbackSpy = vi.fn();
+    
+    capturedUpdater.initialRender(callbackSpy);
+    
+    // コールバックが呼ばれることを確認
+    expect(callbackSpy).toHaveBeenCalledWith(expect.anything());
+    
+    // コールバックの引数がrendererオブジェクトであることを確認
+    const renderer = callbackSpy.mock.calls[0][0];
+    expect(renderer).toBeDefined();
+    expect(typeof renderer.render).toBe('function');
+  });
+});

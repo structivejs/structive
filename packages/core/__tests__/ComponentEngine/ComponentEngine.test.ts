@@ -78,6 +78,20 @@ vi.mock("../../src/Updater/Updater", () => {
       const enqueueRef = vi.fn();
       const updater = {
         enqueueRef,
+        initialRender: vi.fn((renderFn: any) => {
+          // initialRenderのモック実装
+          const renderer = {
+            createReadonlyState: vi.fn((fn: any) => {
+              const readonlyProxy = {
+                [GetByRefSymbol]: vi.fn(() => 123),
+                [GetListIndexesByRefSymbol]: vi.fn(() => null),
+              };
+              const handler = {} as any;
+              return fn(readonlyProxy, handler);
+            }),
+          };
+          renderFn(renderer);
+        }),
         update: vi.fn(async (_loop: any, fn: any) => {
           updateCallCount++;
           lastUpdater = updater;
@@ -158,7 +172,12 @@ describe("ComponentEngine", () => {
 
   beforeEach(async () => {
     // reset mocks state
-    currentBindContent = { mount: vi.fn(), mountAfter: vi.fn() };
+    currentBindContent = { 
+      mount: vi.fn(), 
+      mountAfter: vi.fn(),
+      activate: vi.fn(),
+      applyChange: vi.fn()
+    };
     lastCreateBindArgs = [];
     lastUpdater = null;
     lastStateProxy = null;
@@ -215,8 +234,9 @@ describe("ComponentEngine", () => {
     await engine.connectedCallback();
     // mount が呼ばれる
     expect(currentBindContent.mount).toHaveBeenCalled();
-    // foo, bar が enqueue 対象（最低 2 回）
-    expect(lastUpdater?.enqueueRef.mock.calls.length).toBeGreaterThanOrEqual(2);
+    // initialRender と activate が呼ばれる
+    expect(currentBindContent.activate).toHaveBeenCalled();
+    expect(currentBindContent.applyChange).toHaveBeenCalled();
     // AssignStateSymbol が呼ばれている
     expect(assignCalls).toBe(1);
     expect(lastAssignPayload).toEqual({ foo: 10 });

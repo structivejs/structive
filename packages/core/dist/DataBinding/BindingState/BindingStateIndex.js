@@ -97,7 +97,7 @@ class BindingStateIndex {
             docsUrl: '/docs/error-codes.md#bind',
         });
     }
-    activate(renderer) {
+    activate() {
         const loopContext = this.binding.parentBindContent.currentLoopContext ??
             raiseError({
                 code: 'BIND-201',

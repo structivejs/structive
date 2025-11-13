@@ -32,7 +32,7 @@ import { IRenderer } from "../Updater/types";
 
 export interface IRenderBinding {
   applyChange(renderer: IRenderer): void; // バインディングの変更を適用する
-  activate(renderer: IRenderer): void;
+  activate(): void;
   inactivate(): void;
   readonly isActive: boolean;
 }

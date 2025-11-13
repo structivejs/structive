@@ -189,8 +189,9 @@ class ComponentEngine implements IComponentEngine {
     await createUpdater(this, async (updater) => {
       updater.initialRender((renderer) => {
         // 状態の初期レンダリングを行う
+        this.bindContent.activate();
         renderer.createReadonlyState( (readonlyState, readonlyHandler) => {
-          this.bindContent.activate(renderer);
+          this.bindContent.applyChange(renderer);
         } );
       });
       await updater.update(null, async (stateProxy, handler) => {

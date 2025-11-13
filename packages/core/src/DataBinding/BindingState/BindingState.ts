@@ -94,7 +94,7 @@ class BindingState implements IBindingState {
     setByRef(this.binding.engine.state, this.ref, value, writeState, handler);
   }
 
-  activate(renderer: IRenderer): void {
+  activate(): void {
     if (this.info.wildcardCount > 0) {
       const lastWildcardPath = this.info.lastWildcardPath ?? 
         raiseError({

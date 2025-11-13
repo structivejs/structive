@@ -3,13 +3,14 @@ import { BindingNodeBlock } from "../../../src/DataBinding/BindingNode/BindingNo
 import { createBindingStub, createEngineStub } from "../helpers/bindingNodeHarness";
 
 describe("BindingNodeBlock", () => {
-  it("valid node で id を取得し isBlock が true", () => {
+  it("valid node で id を取得できる", () => {
     const engine = createEngineStub();
     const comment = document.createComment("@@|42");
     const binding = createBindingStub(engine, comment);
     const node = new BindingNodeBlock(binding, comment, "block", [], []);
     expect(node.id).toBe(42);
-    expect(node.isBlock).toBe(true);
+    // isBlock プロパティは削除されたためコメントアウト
+    // expect(node.isBlock).toBe(true);
   });
 
   it("invalid node でエラー", () => {

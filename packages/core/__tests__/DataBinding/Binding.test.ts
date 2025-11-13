@@ -8,17 +8,18 @@ describe("Binding", () => {
 
   const mockBindingNode = {
     bindContents: [],
-    init: vi.fn(),
+    activate: vi.fn(),
+    inactivate: vi.fn(),
     notifyRedraw: vi.fn(),
     applyChange: vi.fn(),
     isBlock: false,
   };
 
   const mockBindingState = {
-    init: vi.fn(),
+    activate: vi.fn(),
     assignValue: vi.fn(),
     getFilteredValue: vi.fn(),
-    clear: vi.fn(),
+    inactivate: vi.fn(),
     isLoopIndex: false,
     ref: { info: { pattern: "state.path" } } as any,
   };
@@ -38,12 +39,13 @@ describe("Binding", () => {
       getBindings: vi.fn(() => []),
     };
     mockBindingNode.bindContents = [];
-    mockBindingNode.init.mockClear();
+    mockBindingNode.activate.mockClear();
+    mockBindingNode.inactivate.mockClear();
     mockBindingNode.notifyRedraw.mockClear();
     mockBindingNode.applyChange.mockClear();
-    mockBindingState.init.mockClear();
+    mockBindingState.activate.mockClear();
     mockBindingState.assignValue.mockClear();
-    mockBindingState.clear.mockClear();
+    mockBindingState.inactivate.mockClear();
   mockBindingState.ref = { info: { pattern: "state.path" } } as any;
   mockBindingState.isLoopIndex = false;
   mockBindingState.getFilteredValue.mockClear();
@@ -58,11 +60,11 @@ describe("Binding", () => {
     expect(binding.bindContents).toBe(childBindContents);
   });
 
-  it("init は bindingNode と bindingState の init を呼ぶ", () => {
+  it("activate は bindingNode と bindingState の activate を呼ぶ", () => {
     const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
-    binding.init();
-    expect(mockBindingNode.init).toHaveBeenCalledTimes(1);
-    expect(mockBindingState.init).toHaveBeenCalledTimes(1);
+    binding.activate();
+    expect(mockBindingNode.activate).toHaveBeenCalledTimes(1);
+    expect(mockBindingState.activate).toHaveBeenCalledTimes(1);
   });
 
   it("updateStateValue は bindingState.assignValue を呼ぶ", () => {
@@ -99,9 +101,14 @@ describe("Binding", () => {
     expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
   });
 
-  it("clear は bindingState.clear を呼び出す", () => {
+  it("inactivate は bindingNode と bindingState の inactivate を呼び、isActive を false にする", () => {
     const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
-    binding.clear();
-    expect(mockBindingState.clear).toHaveBeenCalledTimes(1);
+    binding.activate(); // 最初に activate して isActive を true にする
+    expect((binding as any).isActive).toBe(true);
+    
+    binding.inactivate();
+    expect((binding as any).isActive).toBe(false);
+    expect(mockBindingNode.inactivate).toHaveBeenCalledTimes(1);
+    expect(mockBindingState.inactivate).toHaveBeenCalledTimes(1);
   });
 });

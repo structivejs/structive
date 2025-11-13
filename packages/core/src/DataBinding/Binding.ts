@@ -69,15 +69,15 @@ class Binding implements IBinding {
     }
   }
 
-  activate(renderer: IRenderer): void {
+  activate(): void {
     this.isActive = true;
-    this.bindingState.activate(renderer);
-    this.bindingNode.activate(renderer);
-    this.bindingNode.applyChange(renderer);
+    this.bindingState.activate();
+    this.bindingNode.activate();
   }
   inactivate(): void {
     this.isActive = false;
-    // NodeとStateのバインディングを無効化
+    this.bindingNode.inactivate();
+    this.bindingState.inactivate();
   }
 }
 

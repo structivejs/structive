@@ -3,8 +3,9 @@ import { GetByRefSymbol, GetListIndexesByRefSymbol } from "../../../src/StateCla
 
 export function createEngineStub() {
   return {
-    inputFilters: {},
-    outputFilters: {},
+    state: {}, // stateプロパティを追加
+    inputFilters: new Map(),
+    outputFilters: new Map(),
     saveBinding: vi.fn(),
     calcListDiff: vi.fn(),
     getListIndexes: vi.fn(),
@@ -107,7 +108,13 @@ export function createBindingStub(engine: any, node: Node) {
   const bindingState = {
     pattern: "state.path",
     info,
-    getFilteredValue: vi.fn(() => (null)),
+    getFilteredValue: vi.fn(() => {
+      // HTMLInputElementの場合はvalueを返す
+      if (node instanceof HTMLInputElement) {
+        return node.value;
+      }
+      return null;
+    }),
     ref,
   } as any;
   return {

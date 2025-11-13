@@ -737,7 +737,7 @@ class BindingNode {
         const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
         this.assignValue(filteredValue);
     }
-    activate(renderer) {
+    activate() {
         // サブクラスでバインディングノードの有効化処理を実装可能
     }
     inactivate() {
@@ -2935,8 +2935,9 @@ class BindingNodeIf extends BindingNodeBlock {
             });
         }
         if (filteredValue) {
-            this.#bindContent.activate(renderer);
+            this.#bindContent.activate();
             this.#bindContent.mountAfter(parentNode, this.node);
+            this.#bindContent.applyChange(renderer);
             this.#bindContents = this.#trueBindContents;
         }
         else {
@@ -3014,7 +3015,7 @@ class BindingNodeFor extends BindingNodeBlock {
         }
         // 登録
         this.#bindContentByListIndex.set(listIndex, bindContent);
-        bindContent.activate(renderer);
+        bindContent.activate();
         return bindContent;
     }
     /**
@@ -3185,6 +3186,7 @@ class BindingNodeFor extends BindingNodeBlock {
                 if (addsSet.has(listIndex)) {
                     bindContent = this.createBindContent(renderer, listIndex);
                     bindContent.mountAfter(fragmentParentNode, lastNode);
+                    bindContent.applyChange(renderer);
                 }
                 else {
                     bindContent = this.#bindContentByListIndex.get(listIndex);
@@ -3576,7 +3578,7 @@ class BindingNodeComponent extends BindingNode {
     applyChange(renderer) {
         this._notifyRedraw([this.binding.bindingState.ref]);
     }
-    activate(renderer) {
+    activate() {
         const engine = this.binding.engine;
         registerStructiveComponent(engine.owner, this.node);
         let bindings = engine.bindingsByComponent.get(this.node);
@@ -3759,7 +3761,7 @@ class BindingState {
     assignValue(writeState, handler, value) {
         setByRef(this.binding.engine.state, this.ref, value, writeState, handler);
     }
-    activate(renderer) {
+    activate() {
         if (this.info.wildcardCount > 0) {
             const lastWildcardPath = this.info.lastWildcardPath ??
                 raiseError({
@@ -3889,7 +3891,7 @@ class BindingStateIndex {
             docsUrl: '/docs/error-codes.md#bind',
         });
     }
-    activate(renderer) {
+    activate() {
         const loopContext = this.binding.parentBindContent.currentLoopContext ??
             raiseError({
                 code: 'BIND-201',
@@ -4363,15 +4365,15 @@ class Binding {
             }
         }
     }
-    activate(renderer) {
+    activate() {
         this.isActive = true;
-        this.bindingState.activate(renderer);
-        this.bindingNode.activate(renderer);
-        this.bindingNode.applyChange(renderer);
+        this.bindingState.activate();
+        this.bindingNode.activate();
     }
     inactivate() {
         this.isActive = false;
-        // NodeとStateのバインディングを無効化
+        this.bindingNode.inactivate();
+        this.bindingState.inactivate();
     }
 }
 /**
@@ -4734,10 +4736,10 @@ class BindContent {
             binding.applyChange(renderer);
         }
     }
-    activate(renderer) {
+    activate() {
         this.isActive = true;
         for (let i = 0; i < this.bindings.length; i++) {
-            this.bindings[i].activate(renderer);
+            this.bindings[i].activate();
         }
     }
     inactivate() {
@@ -5275,8 +5277,9 @@ class ComponentEngine {
         await createUpdater(this, async (updater) => {
             updater.initialRender((renderer) => {
                 // 状態の初期レンダリングを行う
+                this.bindContent.activate();
                 renderer.createReadonlyState((readonlyState, readonlyHandler) => {
-                    this.bindContent.activate(renderer);
+                    this.bindContent.applyChange(renderer);
                 });
             });
             await updater.update(null, async (stateProxy, handler) => {

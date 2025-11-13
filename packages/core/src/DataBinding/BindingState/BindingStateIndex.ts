@@ -111,7 +111,7 @@ class BindingStateIndex implements IBindingState {
     });
   }
 
-  activate(renderer: IRenderer): void {
+  activate(): void {
     const loopContext = this.binding.parentBindContent.currentLoopContext ??
       raiseError({
         code: 'BIND-201',

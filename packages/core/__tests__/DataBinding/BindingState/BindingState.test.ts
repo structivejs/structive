@@ -34,7 +34,7 @@ describe("BindingState", () => {
     setByRefSpy.mockRestore();
   });
 
-  it("非ワイルドカード: init/saveBinding/get/assignValue", () => {
+  it("非ワイルドカード: activate/saveBinding/get/assignValue", () => {
     const mockBindContent = { currentLoopContext: null } as any;
     const binding = { parentBindContent: mockBindContent, engine } as any;
 
@@ -43,7 +43,7 @@ describe("BindingState", () => {
     const bindingState = factory(binding, engine.outputFilters);
 
     // 初期化で saveBinding が呼ばれる（非ワイルドカードはループ不要）
-    bindingState.init();
+    bindingState.activate();
     expect(engine.saveBinding).toHaveBeenCalledTimes(1);
     const savedRef = engine.saveBinding.mock.calls[0][0];
 
@@ -65,7 +65,7 @@ describe("BindingState", () => {
       { name: "add", options: ["10"] },
     ]);
     const bindingState = factory(binding, engine.outputFilters);
-    bindingState.init();
+    bindingState.activate();
 
     const savedRef = engine.saveBinding.mock.calls.at(-1)[0];
     const stateProxy = {} as any;
@@ -90,7 +90,7 @@ describe("BindingState", () => {
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);
 
-    bindingState.init();
+    bindingState.activate();
     // saveBinding に渡された ref は listIndex 付きのもの
     expect(engine.saveBinding).toHaveBeenCalled();
     const ref = engine.saveBinding.mock.calls.at(-1)[0];
@@ -109,7 +109,7 @@ describe("BindingState", () => {
       { name: "upper", options: [] },
     ]);
     const bindingState = factory(binding, engine.outputFilters);
-    bindingState.init();
+    bindingState.activate();
 
     const ref = engine.saveBinding.mock.calls.at(-1)[0];
     const stateProxy = {} as any;
@@ -124,7 +124,7 @@ describe("BindingState", () => {
 
     const factory = createBindingState("user.name", []);
     const bindingState = factory(binding, engine.outputFilters);
-    bindingState.init();
+    bindingState.activate();
 
     expect(bindingState.pattern).toBe("user.name");
     expect(bindingState.info.pattern).toBe("user.name");
@@ -140,12 +140,12 @@ describe("BindingState", () => {
     const bindingState = factory(binding, engine.outputFilters);
     // info.lastWildcardPath を null にするため、currentLoopContext.find が null を返すケースを利用
     (binding.parentBindContent.currentLoopContext.find as any).mockReturnValue(null);
-    expect(() => bindingState.init()).toThrow(/LoopContext is null/i);
+    expect(() => bindingState.activate()).toThrow(/LoopContext is null/i);
   });
 
-  it("エラー: ワイルドカード・未init で ref が null", () => {
+  it("エラー: ワイルドカード・未activate で ref が null", () => {
     // ワイルドカードの場合、コンストラクタで #nullRef は null になる
-    // init() を呼ばずに getValue すると、loopContext === null かつ nullRef === null で 'LoopContext is null'
+    // activate() を呼ばずに getValue すると、loopContext === null かつ nullRef === null で 'LoopContext is null'
     const binding = { parentBindContent: { currentLoopContext: null }, engine } as any;
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);
@@ -165,12 +165,12 @@ describe("BindingState", () => {
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);
 
-    expect(() => bindingState.init()).toThrow(/Wildcard last parentPath is null/);
+    expect(() => bindingState.activate()).toThrow(/Wildcard last parentPath is null/);
 
     spy.mockRestore();
   });
 
-  it("clear()メソッド: ワイルドカードの場合のrefがnullでない時のremoveBinding呼び出し", () => {
+  it("inactivate()メソッド: ワイルドカードの場合のrefがnullでない時のremoveBinding呼び出し", () => {
     const listIndex = { sid: "LI#1" } as any;
     const loopContext = {
       path: "items.*",
@@ -184,13 +184,13 @@ describe("BindingState", () => {
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);
     
-    // init() を呼んでrefを設定（ワイルドカードの場合はrefが作成される）
-    bindingState.init();
+    // activate() を呼んでrefを設定（ワイルドカードの場合はrefが作成される）
+    bindingState.activate();
     expect(engine.saveBinding).toHaveBeenCalledTimes(1);
     const savedRef = engine.saveBinding.mock.calls[0][0];
     
-    // clear() を呼ぶと removeBinding が呼ばれる
-    bindingState.clear();
+    // inactivate() を呼ぶと removeBinding が呼ばれる
+    bindingState.inactivate();
     expect(engine.removeBinding).toHaveBeenCalledWith(savedRef, binding);
   });
 

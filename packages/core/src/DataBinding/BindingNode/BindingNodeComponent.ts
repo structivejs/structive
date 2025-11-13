@@ -84,7 +84,7 @@ class BindingNodeComponent extends BindingNode {
     this._notifyRedraw([this.binding.bindingState.ref]);
   }
 
-  activate(renderer: IRenderer): void {
+  activate(): void {
     const engine = this.binding.engine;
     registerStructiveComponent(engine.owner, this.node as StructiveComponent);
     let bindings = engine.bindingsByComponent.get(this.node as StructiveComponent);

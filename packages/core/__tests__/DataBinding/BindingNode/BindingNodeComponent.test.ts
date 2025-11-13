@@ -4,6 +4,14 @@ import { createBindingNodeComponent } from "../../../src/DataBinding/BindingNode
 import { NotifyRedrawSymbol } from "../../../src/ComponentStateInput/symbols";
 import { getStatePropertyRef } from "../../../src/StatePropertyRef/StatepropertyRef";
 
+// モック設定
+vi.mock("../../../src/WebComponents/findStructiveParent", () => ({
+  registerStructiveComponent: vi.fn(),
+  removeStructiveComponent: vi.fn()
+}));
+
+import { registerStructiveComponent, removeStructiveComponent } from "../../../src/WebComponents/findStructiveParent";
+
 // ヘルパー: 簡易な info/listIndex を生成
 function makeInfo(pattern: string, pathSegments: string[], wildcardCount: number, cumulative: string[]): any {
   return {
@@ -88,6 +96,8 @@ describe("BindingNodeComponent", () => {
         },
         getFilteredValue: () => 0,
         assignValue: vi.fn(),
+        activate: vi.fn(), // activate メソッドを追加
+        inactivate: vi.fn(), // inactivate メソッドも追加
         init: vi.fn(),
         isLoopIndex: false,
       };
@@ -108,7 +118,7 @@ describe("BindingNodeComponent", () => {
   });
 
   it("component の listIndex が null でも親パス更新を通知する", async () => {
-    binding.init();
+    binding.activate();
     binding.bindingState.listIndex = null;
     const parentInfo = makeInfo("values", ["values"], 0, ["values", "values.*", "values.*.foo"]);
     const parentListIndex = makeListIndex("LI#parent", true);
@@ -121,7 +131,7 @@ describe("BindingNodeComponent", () => {
   });
 
   it("notifyRedraw: waitForInitialize 解決後に通知する", async () => {
-    binding.init();
+    binding.activate();
     const refs = [binding.bindingState.ref];
     let resolveInitialize!: () => void;
     component.waitForInitialize = { promise: new Promise<void>((resolve) => {
@@ -144,7 +154,7 @@ describe("BindingNodeComponent", () => {
   });
 
   it("applyChange: バインディングの ref を通知する", () => {
-    binding.init();
+    binding.activate();
     const node = binding.bindingNode as any;
     const notifySpy = vi.spyOn(node, "_notifyRedraw");
     const renderer = {} as any;
@@ -156,14 +166,17 @@ describe("BindingNodeComponent", () => {
   });
 
   it("init: bindingsByComponent に登録され、親 StructiveComponent が紐づく", () => {
-    binding.init();
+    binding.activate();
     const set = engine.bindingsByComponent.get(component)!;
     expect(set).toBeTruthy();
     expect(set.has(binding)).toBe(true);
+    
+    // registerStructiveComponent が呼び出されることを確認
+    expect(registerStructiveComponent).toHaveBeenCalledWith(engine.owner, component);
   });
 
   it("notifyRedraw: 親パス更新（component パターンを含む）をそのまま通知", async () => {
-    binding.init();
+    binding.activate();
   const info = binding.bindingState.info;
   const listIndex = binding.bindingState.listIndex;
     // 親パス values の更新を模す（短いパス）
@@ -178,7 +191,7 @@ describe("BindingNodeComponent", () => {
   });
 
   it("notifyRedraw: 子パスで component パターンを含まない場合は通知しない", async () => {
-    binding.init();
+    binding.activate();
     // 自分の pattern は values.*.foo。含まれない別ツリー（values.*.bar）
   const childInfo = makeInfo("values.*.bar", ["values","*","bar"], 1, ["values","values.*","values.*.bar"]);
   const childRef = getStatePropertyRef(childInfo as any, binding.bindingState.listIndex);
@@ -188,7 +201,7 @@ describe("BindingNodeComponent", () => {
   });
 
   it("notifyRedraw: listIndex 不一致はスキップ（子パス側）", async () => {
-    binding.init();
+    binding.activate();
     // listIndex が異なる子パス → 通知しない
     const otherListIndex = makeListIndex("LI#B", true);
     const childInfo = makeInfo("values.*.bar", ["values","*","bar"], 1, ["values","values.*","values.*.bar"]);
@@ -199,7 +212,7 @@ describe("BindingNodeComponent", () => {
   });
 
   it("notifyRedraw: cumulativePathSet に含まれない親パターンはスキップ", async () => {
-    binding.init();
+    binding.activate();
     const unrelatedInfo = makeInfo("others", ["others"], 0, ["others"]);
     const unrelatedRef = getStatePropertyRef(unrelatedInfo as any, null);
     binding.notifyRedraw([unrelatedRef]);
@@ -208,7 +221,7 @@ describe("BindingNodeComponent", () => {
   });
 
   it("notifyRedraw: 親パスで listIndex が一致する場合は親 Ref を通知", async () => {
-    binding.init();
+    binding.activate();
     const listIndex = binding.bindingState.listIndex;
     const parentInfo = makeInfo("values.*", ["values","*"], 1, ["values","values.*","values.*.foo"]);
     const parentRef = getStatePropertyRef(parentInfo as any, listIndex);
@@ -221,7 +234,7 @@ describe("BindingNodeComponent", () => {
   });
 
   it("notifyRedraw: 親パスで listIndex が異なる場合は通知しない", async () => {
-    binding.init();
+    binding.activate();
     const mismatchListIndex = makeListIndex("LI#Mismatch", true);
     const parentInfo = makeInfo("values.*", ["values","*"], 1, ["values","values.*","values.*.foo"]);
     const parentRef = getStatePropertyRef(parentInfo as any, mismatchListIndex);
@@ -231,12 +244,34 @@ describe("BindingNodeComponent", () => {
   });
 
   it("notifyRedraw: 自身のパターン更新は通知しない", async () => {
-    binding.init();
+    binding.activate();
     const info = binding.bindingState.info;
   const listIndex = binding.bindingState.listIndex;
     const sameRef = getStatePropertyRef(info as any, listIndex);
     binding.notifyRedraw([sameRef]);
     await flushPromises();
     expect((component.state[NotifyRedrawSymbol] as any).mock.calls.length).toBe(0);
+  });
+
+  it("inactivate: bindingsByComponent からバインディングを削除する", () => {
+    // 最初に activate してバインディングを登録
+    binding.activate();
+    const bindingsSet = engine.bindingsByComponent.get(component)!;
+    expect(bindingsSet.has(binding)).toBe(true);
+    
+    // inactivate を呼び出してバインディングを削除
+    binding.inactivate();
+    expect(bindingsSet.has(binding)).toBe(false);
+    
+    // removeStructiveComponent が呼び出されることを確認
+    expect(removeStructiveComponent).toHaveBeenCalledWith(component);
+  });
+
+  it("inactivate: bindingsByComponent に存在しない場合でもエラーにならない", () => {
+    // activate せずに直接 inactivate を呼び出す（bindingsが undefined の場合）
+    expect(() => binding.inactivate()).not.toThrow();
+    
+    // removeStructiveComponent は呼び出される
+    expect(removeStructiveComponent).toHaveBeenCalledWith(component);
   });
 });

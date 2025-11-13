@@ -266,10 +266,10 @@ class BindContent {
             binding.applyChange(renderer);
         }
     }
-    activate(renderer) {
+    activate() {
         this.isActive = true;
         for (let i = 0; i < this.bindings.length; i++) {
-            this.bindings[i].activate(renderer);
+            this.bindings[i].activate();
         }
     }
     inactivate() {

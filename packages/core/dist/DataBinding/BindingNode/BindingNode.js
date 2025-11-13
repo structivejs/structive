@@ -75,7 +75,7 @@ export class BindingNode {
         const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
         this.assignValue(filteredValue);
     }
-    activate(renderer) {
+    activate() {
         // サブクラスでバインディングノードの有効化処理を実装可能
     }
     inactivate() {

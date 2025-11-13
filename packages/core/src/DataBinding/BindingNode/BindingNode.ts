@@ -89,7 +89,7 @@ export class BindingNode implements IBindingNode {
     const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
     this.assignValue(filteredValue);
   }
-  activate(renderer: IRenderer): void {
+  activate(): void {
     // サブクラスでバインディングノードの有効化処理を実装可能
   }
   inactivate(): void {

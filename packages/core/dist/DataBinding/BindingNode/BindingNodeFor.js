@@ -64,7 +64,7 @@ class BindingNodeFor extends BindingNodeBlock {
         }
         // 登録
         this.#bindContentByListIndex.set(listIndex, bindContent);
-        bindContent.activate(renderer);
+        bindContent.activate();
         return bindContent;
     }
     /**
@@ -235,6 +235,7 @@ class BindingNodeFor extends BindingNodeBlock {
                 if (addsSet.has(listIndex)) {
                     bindContent = this.createBindContent(renderer, listIndex);
                     bindContent.mountAfter(fragmentParentNode, lastNode);
+                    bindContent.applyChange(renderer);
                 }
                 else {
                     bindContent = this.#bindContentByListIndex.get(listIndex);
