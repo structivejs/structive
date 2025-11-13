@@ -1,26 +1,51 @@
-# 外部からのアクセスを担当するクラス
+# Classes Handling External Access
 
-## 親コンポーネントから直接アクセス
+## File Guide
 
-subComponent = document.querySelector("sub-component");
+- `createComponentStateInput.ts`: Builds the input proxy that exposes state
+	properties to external consumers while enforcing Structive's reactivity
+	rules.
+- `symbols.ts`: Declares shared symbols used to tag the input proxy with
+	internal metadata.
+- `types.ts`: Type definitions for the component state input contract.
+
+## Direct access from a parent component
+
+```javascript
+const subComponent = document.querySelector("sub-component");
 subComponent.state.name = "Alice";
+```
 
-## data-state属性の設定(ルーティング時の値渡し)
+## Passing initial state via the `data-state-json` attribute (during routing)
 
-<sub-component data-state-json="{ name:'Alice' }"></sub-component>
+```html
+<sub-component data-state-json="{ name: 'Alice' }"></sub-component>
+```
 
-## 親子コンポーネントのバインド
+## Binding between parent and child components
 
-親コンポーネント
+Parent component markup:
 
-<sub-component data-bind="state.name:user.name"
+```html
+<sub-component data-bind="state.name:user.name"></sub-component>
+```
 
-user = { name: "Alice" }
+Parent component state:
 
-Proxyベースとすることで
+```javascript
+const user = { name: "Alice" };
+```
+
+By basing the implementation on proxies we can support assignments such as:
+
+```javascript
 subComponent.state.name = "Alice";
-を実現する
+```
 
-下記のような書き方は見送る
+We intentionally avoid patterns like the following, which overwrite the entire
+state object:
+
+```javascript
 subComponent.state = user;
+```
 
