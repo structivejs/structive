@@ -33,6 +33,8 @@ npm run build
 
 MIT License - see [LICENSE](LICENSE) file for details
 
+
 ## Version
 
-Current version: 1.2.1
+Current version: 1.2.2
+

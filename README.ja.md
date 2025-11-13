@@ -33,6 +33,8 @@ npm run build
 
 MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してください
 
+
 ## バージョン
 
-現在のバージョン: 1.2.1
+現在のバージョン: 1.2.2
+
