@@ -1,7 +1,7 @@
 /**
  * @vitest-environment jsdom
  */
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createSingleFileComponent } from "../../src/WebComponents/createSingleFileComponent";
 
 describe("WebComponents/createSingleFileComponent", () => {
@@ -57,5 +57,54 @@ describe("WebComponents/createSingleFileComponent", () => {
     expect(res.css.replace(/\s+/g, "")).toBe('.no-template{display:none}');
     // default export が無い場合は空クラスが返る
     expect(Object.getPrototypeOf(res.stateClass)).toBe(Function.prototype);
+  });
+
+  it("URL.createObjectURL が存在する場合は Blob URL 経由でスクリプトをインポートする", async () => {
+    // このテストでは URL.createObjectURL のコードパス（48-51行）を通過させる
+    // ただし実際のBlob URLからのimportはテスト環境では動作しないため、
+    // URL.createObjectURL/revokeObjectURLの呼び出しが正しく行われることを確認する
+    
+    const mockBlobURL = "blob:test-url";
+    let capturedBlob: Blob | null = null;
+    const mockCreateObjectURL = vi.fn((blob: Blob) => {
+      capturedBlob = blob;
+      return mockBlobURL;
+    });
+    const mockRevokeObjectURL = vi.fn();
+    
+    // URL APIをモック
+    const originalCreateObjectURL = URL.createObjectURL;
+    const originalRevokeObjectURL = URL.revokeObjectURL;
+    URL.createObjectURL = mockCreateObjectURL as any;
+    URL.revokeObjectURL = mockRevokeObjectURL;
+
+    const sfc = `
+      <template>
+        <div>blob test</div>
+      </template>
+      <script type="module">
+        export default class BlobTestState { static $type = "blob" }
+      </script>
+    `;
+
+    try {
+      // このテストは import(url) でエラーになるが、
+      // それまでの処理（createObjectURL呼び出し）が正しく行われることを確認
+      await createSingleFileComponent("blob-test.html", sfc).catch(() => {
+        // importエラーは予想される
+      });
+
+      // createObjectURL が Blob で呼ばれたことを確認
+      expect(mockCreateObjectURL).toHaveBeenCalledTimes(1);
+      expect(capturedBlob).toBeInstanceOf(Blob);
+      // @ts-expect-error - Blobの型チェック回避
+      expect(capturedBlob?.type).toBe("application/javascript");
+      
+      // revokeObjectURL は import でエラーになるため呼ばれない可能性がある
+      // （エラーハンドリングで呼ばれないケース）
+    } finally {
+      URL.createObjectURL = originalCreateObjectURL;
+      URL.revokeObjectURL = originalRevokeObjectURL;
+    }
   });
 });

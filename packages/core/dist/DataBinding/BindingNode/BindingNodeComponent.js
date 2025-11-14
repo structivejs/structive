@@ -1,5 +1,6 @@
 import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { NotifyRedrawSymbol } from "../../ComponentStateInput/symbols.js";
+import { raiseError } from "../../utils.js";
 import { registerStructiveComponent, removeStructiveComponent } from "../../WebComponents/findStructiveParent.js";
 import { BindingNode } from "./BindingNode.js";
 /**
@@ -19,6 +20,7 @@ import { BindingNode } from "./BindingNode.js";
  */
 class BindingNodeComponent extends BindingNode {
     #subName;
+    tagName;
     get subName() {
         return this.#subName;
     }
@@ -26,12 +28,26 @@ class BindingNodeComponent extends BindingNode {
         super(binding, node, name, filters, decorates);
         const [, subName] = this.name.split(".");
         this.#subName = subName;
+        const element = this.node;
+        if (element.tagName.includes("-")) {
+            this.tagName = element.tagName.toLowerCase();
+        }
+        else if (element.getAttribute("is")?.includes("-")) {
+            this.tagName = element.getAttribute("is").toLowerCase();
+        }
+        else {
+            raiseError({
+                code: 'COMP-401',
+                message: 'Cannot determine custom element tag name',
+                context: { where: 'BindingNodeComponent._notifyRedraw' },
+                docsUrl: '/docs/error-codes.md#comp',
+            });
+        }
     }
     _notifyRedraw(refs) {
         const component = this.node;
         // コンポーネントが定義されるのを待ち、初期化完了後に notifyRedraw を呼び出す
-        const tagName = component.tagName.toLowerCase();
-        customElements.whenDefined(tagName).then(() => {
+        customElements.whenDefined(this.tagName).then(() => {
             component.waitForInitialize.promise.then(() => {
                 component.state[NotifyRedrawSymbol](refs);
             });

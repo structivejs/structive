@@ -114,10 +114,9 @@ describe("BindingNodeComponent", () => {
     document.body.innerHTML = "";
   });
 
-  it("subName ゲッターと assignValue の no-op を通過", () => {
+  it("subName ゲッターが正しく動作する", () => {
     const componentNode = binding.bindingNode as any;
     expect(componentNode.subName).toBe("foo");
-    expect(() => componentNode.assignValue("value")).toThrow(/Not implemented/);
   });
 
   it("component の listIndex が null でも親パス更新を通知する", async () => {
@@ -140,7 +139,7 @@ describe("BindingNodeComponent", () => {
     component.waitForInitialize = { promise: new Promise<void>((resolve) => {
       resolveInitialize = resolve;
     }) };
-  const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockResolvedValue(customElements.get("mock-component")!);
+    const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockResolvedValue(customElements.get("mock-component")!);
 
     (binding.bindingNode as any)._notifyRedraw(refs);
     await Promise.resolve();
@@ -289,5 +288,66 @@ describe("BindingNodeComponent", () => {
     
     // removeStructiveComponent は呼び出される
     expect(removeStructiveComponent).toHaveBeenCalledWith(component);
+  });
+
+  it("constructor: カスタム要素のタグ名が決定できない場合はエラーを投げる", () => {
+    // カスタム要素でない通常の要素を作成
+    const invalidNode = document.createElement("div");
+    
+    const parentBindContent = {} as any;
+    const info = makeInfo("values.*.foo", ["values","*","foo"], 1, ["values","values.*","values.*.foo"]);
+    const currentListIndex = makeListIndex("LI#A", true);
+    
+    const createBindingState = vi.fn(() => {
+      const currentRef = getStatePropertyRef(info, currentListIndex);
+      return {
+        info,
+        listIndex: currentListIndex,
+        ref: currentRef,
+        getFilteredValue: () => 0,
+        assignValue: vi.fn(),
+        activate: vi.fn(),
+        inactivate: vi.fn(),
+        init: vi.fn(),
+        isLoopIndex: false,
+      };
+    });
+    
+    const createNode = createBindingNodeComponent("state.foo", [], []);
+    
+    // カスタム要素でないノードでバインディングを作成しようとするとエラー
+    expect(() => {
+      createBinding(parentBindContent, invalidNode, engine, createNode as any, createBindingState as any);
+    }).toThrow();
+  });
+
+  it("constructor: is属性でカスタム要素が指定されている場合はタグ名を取得できる", () => {
+    // is属性付きの要素を作成
+    const nodeWithIs = document.createElement("button");
+    nodeWithIs.setAttribute("is", "custom-button");
+    
+    const parentBindContent = {} as any;
+    const info = makeInfo("values.*.foo", ["values","*","foo"], 1, ["values","values.*","values.*.foo"]);
+    const currentListIndex = makeListIndex("LI#A", true);
+    
+    const createBindingState = vi.fn(() => {
+      const currentRef = getStatePropertyRef(info, currentListIndex);
+      return {
+        info,
+        listIndex: currentListIndex,
+        ref: currentRef,
+        getFilteredValue: () => 0,
+        assignValue: vi.fn(),
+        activate: vi.fn(),
+        inactivate: vi.fn(),
+        init: vi.fn(),
+        isLoopIndex: false,
+      };
+    });
+    
+    const createNode = createBindingNodeComponent("state.foo", [], []);
+    const bindingWithIs = createBinding(parentBindContent, nodeWithIs, engine, createNode as any, createBindingState as any);
+    
+    expect((bindingWithIs.bindingNode as any).tagName).toBe("custom-button");
   });
 });

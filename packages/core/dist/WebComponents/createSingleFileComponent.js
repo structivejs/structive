@@ -23,8 +23,12 @@ export async function createSingleFileComponent(path, text) {
         if (typeof URL.createObjectURL === 'function') {
             const blob = new Blob([script.text + uniq_comment], { type: "application/javascript" });
             const url = URL.createObjectURL(blob);
-            scriptModule = await import(url);
-            URL.revokeObjectURL(url);
+            try {
+                scriptModule = await import(url);
+            }
+            finally {
+                URL.revokeObjectURL(url);
+            }
         }
         else {
             // フォールバック: Base64エンコード方式（テスト環境用）
