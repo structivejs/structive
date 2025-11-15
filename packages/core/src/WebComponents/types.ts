@@ -27,7 +27,7 @@ export interface IComponent {
   readonly parentStructiveComponent: StructiveComponent | null; // The parent component of the current component
   readonly state: IComponentStateInput;
   readonly isStructive: boolean; // Whether the component is structive or not
-  readonly waitForInitialize: PromiseWithResolvers<void>;
+  readonly readyResolvers: PromiseWithResolvers<void>;
   getBindingsFromChild(component:IComponent): Set<IBinding> | null; // Get the bindings by component
   registerChildComponent(component:StructiveComponent): void; // Register the child component
   unregisterChildComponent(component:StructiveComponent): void; // Unregister the child component

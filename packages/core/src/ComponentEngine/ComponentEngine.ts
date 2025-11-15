@@ -42,7 +42,7 @@ import { IStatePropertyRef } from "../StatePropertyRef/types.js";
  * - STATE-202 Failed to parse state from dataset
  *
  * 備考:
- * - 非同期初期化（waitForInitialize）と切断待機（waitForDisconnected）を提供
+ * - 非同期初期化（readyResolvers）を提供
  * - Updater と連携したバッチ更新で効率的なレンダリングを実現
  */
 
@@ -75,8 +75,7 @@ class ComponentEngine implements IComponentEngine {
   structiveChildComponents: Set<StructiveComponent> = new Set();
   pathManager: IPathManager;
 
-  #waitForInitialize : PromiseWithResolvers<void> = Promise.withResolvers<void>();
-  #waitForDisconnected: PromiseWithResolvers<void> | null = null;
+  #readyResolvers : PromiseWithResolvers<void> = Promise.withResolvers<void>();
   
   #stateBinding: IComponentStateBinding = createComponentStateBinding();
   stateInput: IComponentStateInput;
@@ -128,13 +127,12 @@ class ComponentEngine implements IComponentEngine {
     this.#bindContent = createBindContent(null, componentClass.id, this, rootRef); // this.stateArrayPropertyNamePatternsが変更になる可能性がある
   }
 
-  get waitForInitialize(): PromiseWithResolvers<void> {
-    return this.#waitForInitialize;
+  get readyResolvers(): PromiseWithResolvers<void> {
+    return this.#readyResolvers;
   }
 
   async connectedCallback(): Promise<void> {
-    await this.#waitForDisconnected?.promise; // disconnectedCallbackが呼ばれている場合は待つ
-    await this.owner.parentStructiveComponent?.waitForInitialize.promise;
+    await this.owner.parentStructiveComponent?.readyResolvers.promise;
     // コンポーネントの状態を初期化する
     if (this.owner.dataset.state) {
       // data-state属性から状態を取得する
@@ -199,28 +197,23 @@ class ComponentEngine implements IComponentEngine {
 
     // レンダリングが終わってから実行する
     queueMicrotask(() => {
-      this.#waitForInitialize.resolve();
+      this.#readyResolvers.resolve();
     });
   }
 
   async disconnectedCallback(): Promise<void> {
-    this.#waitForDisconnected = Promise.withResolvers<void>();
-    try {
-      if (this.#ignoreDissconnectedCallback) return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
-      await createUpdater(this, async (updater) => {
-        await updater.update(null, async (stateProxy, handler) => {
-          await stateProxy[DisconnectedCallbackSymbol]();
-        });
+    if (this.#ignoreDissconnectedCallback) return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
+    await createUpdater(this, async (updater) => {
+      await updater.update(null, async (stateProxy, handler) => {
+        await stateProxy[DisconnectedCallbackSymbol]();
       });
-      // 親コンポーネントから登録を解除する
-      this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
-      if (!this.config.enableWebComponents) {
-        this.#blockPlaceholder?.remove();
-        this.#blockPlaceholder = null;
-        this.#blockParentNode = null;
-      }
-    } finally {
-      this.#waitForDisconnected.resolve(); // disconnectedCallbackが呼ばれたことを通知   
+    });
+    // 親コンポーネントから登録を解除する
+    this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
+    if (!this.config.enableWebComponents) {
+      this.#blockPlaceholder?.remove();
+      this.#blockPlaceholder = null;
+      this.#blockParentNode = null;
     }
   }
 

@@ -55,7 +55,7 @@ const engineObj = {
   disconnectedCallback: disconnectedSpy,
   stateInput: { foo: 1 },
   stateClass: { $isStructive: true },
-  waitForInitialize: { promise: Promise.resolve() },
+  readyResolvers: { promise: Promise.resolve() },
   bindingsByComponent: new Map<any, any>(),
   registerChildComponent: registerChildSpy,
   unregisterChildComponent: unregisterChildSpy,
@@ -157,13 +157,13 @@ describe("WebComponents/createComponentClass", () => {
     inst.disconnectedCallback();
     expect(disconnectedSpy).toHaveBeenCalled();
 
-    // state / isStructive / waitForInitialize
+    // state / isStructive / readyResolvers
     expect(inst.state).toBe(engineObj.stateInput);
     expect(inst.isStructive).toBe(true);
     engineObj.stateClass = {} as any;
     expect(inst.isStructive).toBe(false);
     engineObj.stateClass = { $isStructive: true } as any;
-    expect(inst.waitForInitialize).toBe(engineObj.waitForInitialize);
+    expect(inst.readyResolvers).toBe(engineObj.readyResolvers);
 
     // bindings の委譲
     expect(inst.getBindingsFromChild({ tagName: "X-NONE" } as any)).toBeNull();

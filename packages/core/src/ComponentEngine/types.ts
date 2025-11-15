@@ -36,7 +36,7 @@ export interface IComponentEngine {
   readonly pathManager   : IPathManager;
   baseClass     : typeof HTMLElement;
   owner         : StructiveComponent;
-  waitForInitialize: PromiseWithResolvers<void>;
+  readonly readyResolvers: PromiseWithResolvers<void>;
   readonly currentVersion: number;
 
   getCacheEntry(ref: IStatePropertyRef): ICacheEntry | null;

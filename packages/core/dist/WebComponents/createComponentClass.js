@@ -67,8 +67,8 @@ export function createComponentClass(componentData) {
         get isStructive() {
             return this.#engine.stateClass.$isStructive ?? false;
         }
-        get waitForInitialize() {
-            return this.#engine.waitForInitialize;
+        get readyResolvers() {
+            return this.#engine.readyResolvers;
         }
         getBindingsFromChild(component) {
             return this.#engine.bindingsByComponent.get(component) ?? null;

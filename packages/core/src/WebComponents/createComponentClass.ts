@@ -88,8 +88,8 @@ export function createComponentClass(componentData: IUserComponentData): Structi
       return this.#engine.stateClass.$isStructive ?? false;
     }
 
-    get waitForInitialize(): PromiseWithResolvers<void> {
-      return this.#engine.waitForInitialize;
+    get readyResolvers(): PromiseWithResolvers<void> {
+      return this.#engine.readyResolvers;
     }
 
     getBindingsFromChild(component: IComponent): Set<IBinding> | null {

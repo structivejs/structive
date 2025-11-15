@@ -3579,7 +3579,7 @@ class BindingNodeComponent extends BindingNode {
         // コンポーネントが定義されるのを待ち、初期化完了後に notifyRedraw を呼び出す
         const tagName = component.tagName.toLowerCase();
         customElements.whenDefined(tagName).then(() => {
-            component.waitForInitialize.promise.then(() => {
+            component.readyResolvers.promise.then(() => {
                 component.state[NotifyRedrawSymbol](refs);
             });
         });
@@ -5175,7 +5175,7 @@ function createComponentStateOutput(binding, childEngine) {
  * - STATE-202 Failed to parse state from dataset
  *
  * 備考:
- * - 非同期初期化（waitForInitialize）と切断待機（waitForDisconnected）を提供
+ * - 非同期初期化（readyResolvers）を提供
  * - Updater と連携したバッチ更新で効率的なレンダリングを実現
  */
 class ComponentEngine {
@@ -5204,8 +5204,7 @@ class ComponentEngine {
     bindingsByComponent = new WeakMap();
     structiveChildComponents = new Set();
     pathManager;
-    #waitForInitialize = Promise.withResolvers();
-    #waitForDisconnected = null;
+    #readyResolvers = Promise.withResolvers();
     #stateBinding = createComponentStateBinding();
     stateInput;
     stateOutput;
@@ -5251,12 +5250,11 @@ class ComponentEngine {
         const rootRef = getStatePropertyRef(getStructuredPathInfo(''), null);
         this.#bindContent = createBindContent(null, componentClass.id, this, rootRef); // this.stateArrayPropertyNamePatternsが変更になる可能性がある
     }
-    get waitForInitialize() {
-        return this.#waitForInitialize;
+    get readyResolvers() {
+        return this.#readyResolvers;
     }
     async connectedCallback() {
-        await this.#waitForDisconnected?.promise; // disconnectedCallbackが呼ばれている場合は待つ
-        await this.owner.parentStructiveComponent?.waitForInitialize.promise;
+        await this.owner.parentStructiveComponent?.readyResolvers.promise;
         // コンポーネントの状態を初期化する
         if (this.owner.dataset.state) {
             // data-state属性から状態を取得する
@@ -5323,29 +5321,23 @@ class ComponentEngine {
         });
         // レンダリングが終わってから実行する
         queueMicrotask(() => {
-            this.#waitForInitialize.resolve();
+            this.#readyResolvers.resolve();
         });
     }
     async disconnectedCallback() {
-        this.#waitForDisconnected = Promise.withResolvers();
-        try {
-            if (this.#ignoreDissconnectedCallback)
-                return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
-            await createUpdater(this, async (updater) => {
-                await updater.update(null, async (stateProxy, handler) => {
-                    await stateProxy[DisconnectedCallbackSymbol]();
-                });
+        if (this.#ignoreDissconnectedCallback)
+            return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
+        await createUpdater(this, async (updater) => {
+            await updater.update(null, async (stateProxy, handler) => {
+                await stateProxy[DisconnectedCallbackSymbol]();
             });
-            // 親コンポーネントから登録を解除する
-            this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
-            if (!this.config.enableWebComponents) {
-                this.#blockPlaceholder?.remove();
-                this.#blockPlaceholder = null;
-                this.#blockParentNode = null;
-            }
-        }
-        finally {
-            this.#waitForDisconnected.resolve(); // disconnectedCallbackが呼ばれたことを通知   
+        });
+        // 親コンポーネントから登録を解除する
+        this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
+        if (!this.config.enableWebComponents) {
+            this.#blockPlaceholder?.remove();
+            this.#blockPlaceholder = null;
+            this.#blockParentNode = null;
         }
     }
     getListIndexes(ref) {
@@ -5952,8 +5944,8 @@ function createComponentClass(componentData) {
         get isStructive() {
             return this.#engine.stateClass.$isStructive ?? false;
         }
-        get waitForInitialize() {
-            return this.#engine.waitForInitialize;
+        get readyResolvers() {
+            return this.#engine.readyResolvers;
         }
         getBindingsFromChild(component) {
             return this.#engine.bindingsByComponent.get(component) ?? null;

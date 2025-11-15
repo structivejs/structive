@@ -390,7 +390,7 @@ describe("ComponentEngine", () => {
     const parent = {
       registerChildComponent: vi.fn(),
       unregisterChildComponent: vi.fn(),
-      waitForInitialize: { promise: Promise.resolve() },
+      readyResolvers: { promise: Promise.resolve() },
     } as any;
     el.parentStructiveComponent = parent;
     // replaceWith をスタブして placeholder を捕捉し、remove をスパイ
@@ -423,29 +423,6 @@ describe("ComponentEngine", () => {
     expect(parent.unregisterChildComponent).toHaveBeenCalledWith(el);
   });
 
-  it("connectedCallback は pending な disconnectedCallback の完了を待つ", async () => {
-    engine.setup();
-    // 次の update 呼び出し（disconnectedCallback 内）をブロック
-    blockNextUpdate = true;
-    const dcPromise = engine.disconnectedCallback();
-    // disconnectedCallback の update 内でブロックが有効になるまで待つ（競合回避）
-    for (let i = 0; i < 20 && resolveUpdateBlocker === null; i++) {
-      await new Promise(r => setTimeout(r, 5));
-    }
-    expect(resolveUpdateBlocker).not.toBeNull();
-
-    const ccPromise = engine.connectedCallback();
-    // まだ mount は呼ばれないはず
-    await Promise.resolve(); // タスクを一度進める
-    expect(currentBindContent.mount).not.toHaveBeenCalled();
-
-    // ブロック解除
-    resolveUpdateBlocker?.();
-    await dcPromise;
-    await ccPromise;
-    expect(currentBindContent.mount).toHaveBeenCalled();
-  });
-
   it("createComponentEngine: ファクトリ関数でインスタンス生成できる", async () => {
     const { createComponentEngine } = await import("../../src/ComponentEngine/ComponentEngine");
     const inst = createComponentEngine(makeConfig(), el as any);
@@ -458,7 +435,7 @@ describe("ComponentEngine", () => {
     engine.setup();
     const parent = {
       registerChildComponent: vi.fn(),
-      waitForInitialize: { promise: Promise.resolve() },
+      readyResolvers: { promise: Promise.resolve() },
     } as any;
     el.parentStructiveComponent = parent as any;
     await engine.connectedCallback();
@@ -466,10 +443,10 @@ describe("ComponentEngine", () => {
     expect(stateBindingBindSpy).toHaveBeenCalledWith(parent, el);
   });
 
-  it("waitForInitialize: connectedCallback 完了後に解決される", async () => {
+  it("readyResolvers: connectedCallback 完了後に解決される", async () => {
     engine.setup();
     await engine.connectedCallback();
-    await engine.waitForInitialize.promise; // 例外なく await できればOK
+    await engine.readyResolvers.promise; // 例外なく await できればOK
     expect(true).toBe(true);
   });
 
