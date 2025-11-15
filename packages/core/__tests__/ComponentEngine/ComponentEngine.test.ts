@@ -449,6 +449,18 @@ describe("ComponentEngine", () => {
     expect(true).toBe(true);
   });
 
+  it("connectedCallback: hasConnectedCallback が true のとき ConnectedCallbackSymbol を呼び出す", async () => {
+    (engine.pathManager as any).hasConnectedCallback = true;
+    const initialUpdateCallCount = updateCallCount;
+    engine.setup();
+    await engine.connectedCallback();
+    // hasConnectedCallback=true のため update が追加で呼ばれる
+    // (setup 時の initialRender で1回 + connectedCallback 内のマウント処理で1回 + hasConnectedCallback による呼び出しで1回)
+    expect(updateCallCount).toBeGreaterThan(initialUpdateCallCount);
+    // lastStateProxy の ConnectedCallbackSymbol が呼ばれていることを確認
+    expect(lastStateProxy[ConnectedCallbackSymbol]).toHaveBeenCalled();
+  });
+
   it("config.extends が指定されていると type が builtin になる", async () => {
     const engine2 = createComponentEngineFn(makeConfig({ extends: "div" }), el as any);
     expect(engine2.type).toBe("builtin");

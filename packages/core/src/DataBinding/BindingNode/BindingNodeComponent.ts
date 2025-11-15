@@ -46,11 +46,9 @@ class BindingNodeComponent extends BindingNode {
   _notifyRedraw(refs: IStatePropertyRef[]): void {
     const component = this.node as StructiveComponent;
     // コンポーネントが定義されるのを待ち、初期化完了後に notifyRedraw を呼び出す
-    const tagName = component.tagName.toLowerCase();
+    const tagName = component.customTagName;
     customElements.whenDefined(tagName).then(() => {
-      component.readyResolvers.promise.then(() => {
-        component.state[NotifyRedrawSymbol](refs);
-      });
+      component.state[NotifyRedrawSymbol](refs);
     });
   }
 

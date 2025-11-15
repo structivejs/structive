@@ -3604,11 +3604,9 @@ class BindingNodeComponent extends BindingNode {
     _notifyRedraw(refs) {
         const component = this.node;
         // コンポーネントが定義されるのを待ち、初期化完了後に notifyRedraw を呼び出す
-        const tagName = component.tagName.toLowerCase();
+        const tagName = component.customTagName;
         customElements.whenDefined(tagName).then(() => {
-            component.readyResolvers.promise.then(() => {
-                component.state[NotifyRedrawSymbol](refs);
-            });
+            component.state[NotifyRedrawSymbol](refs);
         });
     }
     notifyRedraw(refs) {
@@ -5982,6 +5980,22 @@ function createComponentClass(componentData) {
         }
         get readyResolvers() {
             return this.#engine.readyResolvers;
+        }
+        get customTagName() {
+            if (this.tagName.includes('-')) {
+                return this.tagName.toLowerCase();
+            }
+            else if (this.getAttribute('is')?.includes('-')) {
+                return this.getAttribute('is').toLowerCase();
+            }
+            else {
+                raiseError({
+                    code: 'CE-001',
+                    message: 'Custom tag name not found',
+                    context: { where: 'ComponentEngine.customTagName.get' },
+                    docsUrl: './docs/error-codes.md#ce',
+                });
+            }
         }
         getBindingsFromChild(component) {
             return this.#engine.bindingsByComponent.get(component) ?? null;

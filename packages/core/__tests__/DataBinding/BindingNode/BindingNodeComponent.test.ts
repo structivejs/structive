@@ -79,6 +79,7 @@ describe("BindingNodeComponent", () => {
     component.isStructive = true;
     component.state = { [NotifyRedrawSymbol]: vi.fn() } as any;
     component.readyResolvers = { promise: Promise.resolve() };
+    component.customTagName = "mock-component";
 
     const parentBindContent = {} as any;
     const info = makeInfo("values.*.foo", ["values","*","foo"], 1, ["values","values.*","values.*.foo"]);
@@ -133,21 +134,21 @@ describe("BindingNodeComponent", () => {
     expect(calls[0][0][0]).toBe(parentRef);
   });
 
-  it("notifyRedraw: readyResolvers 解決後に通知する", async () => {
+  it("notifyRedraw: whenDefined 解決後に通知する", async () => {
     binding.activate();
     const refs = [binding.bindingState.ref];
-    let resolveInitialize!: () => void;
-    component.readyResolvers = { promise: new Promise<void>((resolve) => {
-      resolveInitialize = resolve;
-    }) };
-  const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockResolvedValue(customElements.get("mock-component")!);
+    let resolveWhenDefined!: (value: any) => void;
+    const whenDefinedPromise = new Promise<any>((resolve) => {
+      resolveWhenDefined = resolve;
+    });
+    const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockReturnValue(whenDefinedPromise);
 
     (binding.bindingNode as any)._notifyRedraw(refs);
     await Promise.resolve();
     expect(whenDefinedSpy).toHaveBeenCalledWith("mock-component");
     expect((component.state[NotifyRedrawSymbol] as any).mock.calls.length).toBe(0);
 
-    resolveInitialize();
+    resolveWhenDefined(customElements.get("mock-component")!);
     await Promise.resolve();
     await Promise.resolve();
 

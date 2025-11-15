@@ -26,6 +26,7 @@ import { registerHtml } from "../Template/registerHtml.js";
 import { getTemplateById } from "../Template/registerTemplate.js";
 import { getBaseClass } from "./getBaseClass.js";
 import { getComponentConfig } from "./getComponentConfig.js";
+import { raiseError } from "../utils.js";
 import { findStructiveParent } from "./findStructiveParent.js";
 import { createPathManager } from "../PathManager/PathManager.js";
 export function createComponentClass(componentData) {
@@ -69,6 +70,22 @@ export function createComponentClass(componentData) {
         }
         get readyResolvers() {
             return this.#engine.readyResolvers;
+        }
+        get customTagName() {
+            if (this.tagName.includes('-')) {
+                return this.tagName.toLowerCase();
+            }
+            else if (this.getAttribute('is')?.includes('-')) {
+                return this.getAttribute('is').toLowerCase();
+            }
+            else {
+                raiseError({
+                    code: 'CE-001',
+                    message: 'Custom tag name not found',
+                    context: { where: 'ComponentEngine.customTagName.get' },
+                    docsUrl: './docs/error-codes.md#ce',
+                });
+            }
         }
         getBindingsFromChild(component) {
             return this.#engine.bindingsByComponent.get(component) ?? null;
