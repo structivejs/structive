@@ -12,6 +12,11 @@ export function createEngineStub() {
     saveListAndListIndexes: vi.fn(),
     getListAndListIndexes: vi.fn(() => ({ list: null, listIndexes: null, listClone: null })),
     versionUp: vi.fn(() => 1),
+    pathManager: {
+      hasConnectedCallback: false,
+      hasDisconnectedCallback: false,
+      hasUpdatedCallback: false,
+    },
   } as any;
 }
 
@@ -109,7 +114,7 @@ export function createBindingStub(engine: any, node: Node) {
     pattern: "state.path",
     info,
     getFilteredValue: vi.fn(() => {
-      // HTMLInputElementの場合はvalueを返す
+      // HTMLInputElementの場合�Evalueを返す
       if (node instanceof HTMLInputElement) {
         return node.value;
       }

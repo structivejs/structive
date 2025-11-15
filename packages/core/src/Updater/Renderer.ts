@@ -5,7 +5,7 @@ import { IListIndex } from "../ListIndex/types";
 import { findPathNodeByPath } from "../PathTree/PathNode";
 import { IPathNode } from "../PathTree/types";
 import { createReadonlyStateHandler, createReadonlyStateProxy } from "../StateClass/createReadonlyStateProxy";
-import { GetListIndexesByRefSymbol, HasUpdatedCallbackSymbol, UpdatedCallbackSymbol } from "../StateClass/symbols";
+import { GetListIndexesByRefSymbol } from "../StateClass/symbols";
 import { IReadonlyStateHandler, IReadonlyStateProxy } from "../StateClass/types";
 import { getStructuredPathInfo } from "../StateProperty/getStructuredPathInfo";
 import { IStructuredPathInfo } from "../StateProperty/types";

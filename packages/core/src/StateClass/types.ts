@@ -21,7 +21,7 @@ import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { Constructor } from "../types";
 import { IRenderer, IUpdater } from "../Updater/types";
 import { IUserConfig } from "../WebComponents/types";
-import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, HasUpdatedCallbackSymbol, SetByRefSymbol, SetCacheableSymbol, UpdatedCallbackSymbol } from "./symbols";
+import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol, UpdatedCallbackSymbol } from "./symbols";
 
 export interface IState {
   [propName: string]: any;
@@ -46,7 +46,6 @@ export interface IWritableStateProxy extends IState {
   [ConnectedCallbackSymbol](): Promise<void>;
   [DisconnectedCallbackSymbol](): Promise<void>;
   [UpdatedCallbackSymbol](refs: IStatePropertyRef[]): Promise<void>;
-  [HasUpdatedCallbackSymbol](): boolean;
 }
 
 export type IStateProxy = IReadonlyStateProxy | IWritableStateProxy;

@@ -21,7 +21,7 @@ import { getResolvedPathInfo } from "../../StateProperty/getResolvedPathInfo.js"
 import { raiseError } from "../../utils.js";
 import { getListIndex } from "../methods/getListIndex.js";
 import { IStateHandler, IStateProxy } from "../types.js";
-import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, HasUpdatedCallbackSymbol, SetByRefSymbol, UpdatedCallbackSymbol } from "../symbols.js";
+import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol, UpdatedCallbackSymbol } from "../symbols.js";
 import { trackDependency } from "../apis/trackDependency.js";
 import { indexByIndexName } from "./indexByIndexName.js";
 import { IStatePropertyRef } from "../../StatePropertyRef/types.js";
@@ -34,8 +34,6 @@ import { disconnectedCallback } from "../apis/disconnectedCallback.js";
 import { getAll } from "../apis/getAll.js";
 import { getListIndexesByRef } from "../methods/getListIndexesByRef.js";
 import { updatedCallback } from "../apis/updatedCallback.js";
-import { hasUpdatedCallback } from "../apis/hasUpdateCallback.js";
-
 
 export function get(
   target  : Object, 
@@ -98,9 +96,6 @@ export function get(
         case UpdatedCallbackSymbol:
           return (refs: IStatePropertyRef[]) =>
             updatedCallback(target, refs, receiver, handler);
-        case HasUpdatedCallbackSymbol:
-          return () =>
-            hasUpdatedCallback(target, prop, receiver, handler);
       }
     } else {
       return Reflect.get(

@@ -806,6 +806,9 @@ const RESERVED_WORD_SET = new Set([
     "let", "var", "const", "class", "function",
     "null", "true", "false", "new", "return",
 ]);
+const CONNECTED_CALLBACK_FUNC_NAME = "$connectedCallback";
+const DISCONNECTED_CALLBACK_FUNC_NAME = "$disconnectedCallback";
+const UPDATED_CALLBACK_FUNC_NAME = "$updatedCallback";
 
 /**
  * getStructuredPathInfo.ts
@@ -1010,7 +1013,6 @@ const SetByRefSymbol = Symbol.for(`${symbolName$1}.SetByRef`);
 const ConnectedCallbackSymbol = Symbol.for(`${symbolName$1}.ConnectedCallback`);
 const DisconnectedCallbackSymbol = Symbol.for(`${symbolName$1}.DisconnectedCallback`);
 const UpdatedCallbackSymbol = Symbol.for(`${symbolName$1}.UpdatedCallback`);
-const HasUpdatedCallbackSymbol = Symbol.for(`${symbolName$1}.HasUpdatedCallback`);
 const GetListIndexesByRefSymbol = Symbol.for(`${symbolName$1}.GetListIndexesByRef`);
 
 /**
@@ -1741,17 +1743,45 @@ function resolve(target, prop, receiver, handler) {
     };
 }
 
-const CONNECTED_CALLBACK = "$connectedCallback";
+/**
+ * connectedCallback.ts
+ *
+ * StateClassのライフサイクルフック「$connectedCallback」を呼び出すユーティリティ関数です。
+ *
+ * 主な役割:
+ * - オブジェクト（target）に$connectedCallbackメソッドが定義されていれば呼び出す
+ * - コールバックはtargetのthisコンテキストで呼び出し、IReadonlyStateProxy（receiver）を引数として渡す
+ * - 非同期関数として実行可能（await対応）
+ *
+ * 設計ポイント:
+ * - Reflect.getで$connectedCallbackプロパティを安全に取得
+ * - 存在しない場合は何もしない
+ * - ライフサイクル管理やカスタム初期化処理に利用
+ */
 async function connectedCallback(target, prop, receiver, handler) {
-    const callback = Reflect.get(target, CONNECTED_CALLBACK);
+    const callback = Reflect.get(target, CONNECTED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
         await callback.call(receiver);
     }
 }
 
-const DISCONNECTED_CALLBACK = "$disconnectedCallback";
+/**
+ * disconnectedCallback.ts
+ *
+ * StateClassのライフサイクルフック「$disconnectedCallback」を呼び出すユーティリティ関数です。
+ *
+ * 主な役割:
+ * - オブジェクト（target）に$disconnectedCallbackメソッドが定義されていれば呼び出す
+ * - コールバックはtargetのthisコンテキストで呼び出し、IReadonlyStateProxy（receiver）を引数として渡す
+ * - 非同期関数として実行可能（await対応）
+ *
+ * 設計ポイント:
+ * - Reflect.getで$disconnectedCallbackプロパティを安全に取得
+ * - 存在しない場合は何もしない
+ * - ライフサイクル管理やクリーンアップ処理に利用
+ */
 async function disconnectedCallback(target, prop, receiver, handler) {
-    const callback = Reflect.get(target, DISCONNECTED_CALLBACK);
+    const callback = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
         await callback.call(receiver);
     }
@@ -1879,9 +1909,23 @@ function getListIndexesByRef(target, ref, receiver, handler) {
     return listIndexes;
 }
 
-const UPDATED_CALLBACK$1 = "$updatedCallback";
+/**
+ * updatedCallback.ts
+ *
+ * StateClassのライフサイクルフック「$updatedCallback」を呼び出すユーティリティ関数です。
+ *
+ * 主な役割:
+ * - オブジェクト（target）に$updatedCallbackメソッドが定義されていれば呼び出す
+ * - コールバックはtargetのthisコンテキストで呼び出し、IReadonlyStateProxy（receiver）を引数として渡す
+ * - 非同期関数として実行可能（await対応）
+ *
+ * 設計ポイント:
+ * - Reflect.getで$disconnectedCallbackプロパティを安全に取得
+ * - 存在しない場合は何もしない
+ * - ライフサイクル管理やクリーンアップ処理に利用
+ */
 async function updatedCallback(target, refs, receiver, handler) {
-    const callback = Reflect.get(target, UPDATED_CALLBACK$1);
+    const callback = Reflect.get(target, UPDATED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
         const paths = new Set();
         const indexesByPath = {};
@@ -1901,12 +1945,6 @@ async function updatedCallback(target, refs, receiver, handler) {
         }
         await callback.call(receiver, Array.from(paths), indexesByPath);
     }
-}
-
-const UPDATED_CALLBACK = "$updatedCallback";
-function hasUpdatedCallback(target, prop, receiver, handler) {
-    const callback = Reflect.get(target, UPDATED_CALLBACK);
-    return (typeof callback === "function");
 }
 
 /**
@@ -1974,8 +2012,6 @@ function get(target, prop, receiver, handler) {
                     return () => disconnectedCallback(target, prop, receiver);
                 case UpdatedCallbackSymbol:
                     return (refs) => updatedCallback(target, refs, receiver);
-                case HasUpdatedCallbackSymbol:
-                    return () => hasUpdatedCallback(target);
             }
         }
         else {
@@ -2102,7 +2138,7 @@ class StateHandler {
     symbols = new Set([
         GetByRefSymbol, SetByRefSymbol, GetListIndexesByRefSymbol,
         ConnectedCallbackSymbol, DisconnectedCallbackSymbol,
-        UpdatedCallbackSymbol, HasUpdatedCallbackSymbol
+        UpdatedCallbackSymbol
     ]);
     apis = new Set(["$resolve", "$getAll", "$trackDependency", "$navigate", "$component"]);
     constructor(engine, updater) {
@@ -2494,13 +2530,11 @@ class Updater {
      * @param callback
      */
     async update(loopContext, callback) {
-        let hasUpdatedCallback = false;
         await useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, async (state, handler) => {
             // 状態更新処理
             await callback(state, handler);
-            hasUpdatedCallback = state[HasUpdatedCallbackSymbol]();
         });
-        if (hasUpdatedCallback && this.#saveQueue.length > 0) {
+        if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
             const saveQueue = this.#saveQueue;
             this.#saveQueue = [];
             queueMicrotask(() => {
@@ -5724,6 +5758,9 @@ class PathManager {
     staticDependencies = new Map();
     dynamicDependencies = new Map();
     rootNode = createRootNode();
+    hasConnectedCallback = false;
+    hasDisconnectedCallback = false;
+    hasUpdatedCallback = false;
     #id;
     #stateClass;
     constructor(componentClass) {
@@ -5750,6 +5787,15 @@ class PathManager {
                     }
                     if (typeof desc.value === "function") {
                         this.funcs.add(key);
+                        if (key === CONNECTED_CALLBACK_FUNC_NAME) {
+                            this.hasConnectedCallback = true;
+                        }
+                        if (key === DISCONNECTED_CALLBACK_FUNC_NAME) {
+                            this.hasDisconnectedCallback = true;
+                        }
+                        if (key === UPDATED_CALLBACK_FUNC_NAME) {
+                            this.hasUpdatedCallback = true;
+                        }
                         continue;
                     }
                     const hasGetter = desc.get !== undefined;

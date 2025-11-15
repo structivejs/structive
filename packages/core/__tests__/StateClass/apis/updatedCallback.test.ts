@@ -1,14 +1,15 @@
 /**
  * updatedCallback.test.ts
  * 
- * updatedCallback関数のテストスイート
+ * updatedCallback関数のチE��トスイーチE
  */
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { updatedCallback } from '../../../src/StateClass/apis/updatedCallback.js';
 import { IStateHandler, IStateProxy } from '../../../src/StateClass/types.js';
 import { IStatePropertyRef } from '../../../src/StatePropertyRef/types.js';
+import { UPDATED_CALLBACK_FUNC_NAME } from '../../../src/constants.js';
 
-// モックオブジェクトの作成
+// モチE��オブジェクト�E作�E
 const createMockHandler = (): IStateHandler => ({
   engine: null as any,
   updater: null as any,
@@ -85,7 +86,7 @@ describe('updatedCallback', () => {
     it('should call $updatedCallback function with empty arrays when refs is empty', async () => {
       const mockCallback = vi.fn().mockResolvedValue(undefined);
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       await updatedCallback(mockTarget, [], mockReceiver, mockHandler);
@@ -98,7 +99,7 @@ describe('updatedCallback', () => {
     it('should call $updatedCallback with simple paths when refs have no wildcards', async () => {
       const mockCallback = vi.fn().mockResolvedValue(undefined);
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       const refs = [
@@ -119,7 +120,7 @@ describe('updatedCallback', () => {
     it('should handle refs with wildcards and collect indexes', async () => {
       const mockCallback = vi.fn().mockResolvedValue(undefined);
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       const refs = [
@@ -143,7 +144,7 @@ describe('updatedCallback', () => {
     it('should handle mixed refs with and without wildcards', async () => {
       const mockCallback = vi.fn().mockResolvedValue(undefined);
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       const refs = [
@@ -168,7 +169,7 @@ describe('updatedCallback', () => {
     it('should deduplicate paths while maintaining index arrays', async () => {
       const mockCallback = vi.fn().mockResolvedValue(undefined);
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       const refs = [
@@ -194,7 +195,7 @@ describe('updatedCallback', () => {
     it('should handle multiple wildcard patterns with different indexes', async () => {
       const mockCallback = vi.fn().mockResolvedValue(undefined);
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       const refs = [
@@ -226,7 +227,7 @@ describe('updatedCallback', () => {
       });
       
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       const refs = [createMockRef('test.value')];
@@ -240,7 +241,7 @@ describe('updatedCallback', () => {
     it('should call synchronous callback functions', async () => {
       const mockCallback = vi.fn().mockReturnValue(undefined);
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       const refs = [createMockRef('sync.value')];
@@ -254,7 +255,7 @@ describe('updatedCallback', () => {
     it('should handle edge case where wildcard ref has zero index', async () => {
       const mockCallback = vi.fn().mockResolvedValue(undefined);
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       const refs = [
@@ -296,7 +297,7 @@ describe('updatedCallback', () => {
 
     it('should do nothing when $updatedCallback is not a function (string)', async () => {
       mockTarget = {
-        $updatedCallback: 'not a function'
+        [UPDATED_CALLBACK_FUNC_NAME]: 'not a function'
       };
 
       await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
@@ -306,7 +307,7 @@ describe('updatedCallback', () => {
 
     it('should do nothing when $updatedCallback is not a function (number)', async () => {
       mockTarget = {
-        $updatedCallback: 123
+        [UPDATED_CALLBACK_FUNC_NAME]: 123
       };
 
       await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
@@ -316,7 +317,7 @@ describe('updatedCallback', () => {
 
     it('should do nothing when $updatedCallback is not a function (object)', async () => {
       mockTarget = {
-        $updatedCallback: { notAFunction: true }
+        [UPDATED_CALLBACK_FUNC_NAME]: { notAFunction: true }
       };
 
       await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
@@ -326,7 +327,7 @@ describe('updatedCallback', () => {
 
     it('should do nothing when $updatedCallback is null', async () => {
       mockTarget = {
-        $updatedCallback: null
+        [UPDATED_CALLBACK_FUNC_NAME]: null
       };
 
       await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
@@ -336,7 +337,7 @@ describe('updatedCallback', () => {
 
     it('should do nothing when $updatedCallback is undefined', async () => {
       mockTarget = {
-        $updatedCallback: undefined
+        [UPDATED_CALLBACK_FUNC_NAME]: undefined
       };
 
       await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
@@ -367,7 +368,7 @@ describe('updatedCallback', () => {
     it('should handle prototype chain correctly', async () => {
       const mockCallback = vi.fn().mockResolvedValue(undefined);
       const parent = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
       mockTarget = Object.create(parent);
 
@@ -382,7 +383,7 @@ describe('updatedCallback', () => {
       const error = new Error('Callback error');
       const mockCallback = vi.fn().mockRejectedValue(error);
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       const refs = [createMockRef('error.test')];
@@ -395,7 +396,7 @@ describe('updatedCallback', () => {
     it('should handle very large number of refs efficiently', async () => {
       const mockCallback = vi.fn().mockResolvedValue(undefined);
       mockTarget = {
-        $updatedCallback: mockCallback
+        [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
       };
 
       // Create 1000 refs with various patterns

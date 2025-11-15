@@ -5,5 +5,4 @@ export const SetCacheableSymbol = Symbol.for(`${symbolName}.SetCacheable`);
 export const ConnectedCallbackSymbol = Symbol.for(`${symbolName}.ConnectedCallback`);
 export const DisconnectedCallbackSymbol = Symbol.for(`${symbolName}.DisconnectedCallback`);
 export const UpdatedCallbackSymbol = Symbol.for(`${symbolName}.UpdatedCallback`);
-export const HasUpdatedCallbackSymbol = Symbol.for(`${symbolName}.HasUpdatedCallback`);
 export const GetListIndexesByRefSymbol = Symbol.for(`${symbolName}.GetListIndexesByRef`);

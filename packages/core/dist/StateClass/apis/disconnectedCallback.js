@@ -1,6 +1,21 @@
-const DISCONNECTED_CALLBACK = "$disconnectedCallback";
+/**
+ * disconnectedCallback.ts
+ *
+ * StateClassのライフサイクルフック「$disconnectedCallback」を呼び出すユーティリティ関数です。
+ *
+ * 主な役割:
+ * - オブジェクト（target）に$disconnectedCallbackメソッドが定義されていれば呼び出す
+ * - コールバックはtargetのthisコンテキストで呼び出し、IReadonlyStateProxy（receiver）を引数として渡す
+ * - 非同期関数として実行可能（await対応）
+ *
+ * 設計ポイント:
+ * - Reflect.getで$disconnectedCallbackプロパティを安全に取得
+ * - 存在しない場合は何もしない
+ * - ライフサイクル管理やクリーンアップ処理に利用
+ */
+import { DISCONNECTED_CALLBACK_FUNC_NAME } from "../../constants";
 export async function disconnectedCallback(target, prop, receiver, handler) {
-    const callback = Reflect.get(target, DISCONNECTED_CALLBACK);
+    const callback = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
         await callback.call(receiver);
     }

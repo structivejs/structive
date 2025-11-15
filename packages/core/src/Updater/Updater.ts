@@ -3,7 +3,7 @@ import { ILoopContext } from "../LoopContext/types";
 import { findPathNodeByPath } from "../PathTree/PathNode";
 import { IPathNode } from "../PathTree/types";
 import { createReadonlyStateHandler, createReadonlyStateProxy } from "../StateClass/createReadonlyStateProxy";
-import { HasUpdatedCallbackSymbol, UpdatedCallbackSymbol } from "../StateClass/symbols";
+import { UpdatedCallbackSymbol } from "../StateClass/symbols";
 import { IWritableStateHandler, IWritableStateProxy } from "../StateClass/types";
 import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
@@ -69,13 +69,11 @@ class Updater implements IUpdater {
    * @param callback 
    */
   async update(loopContext: ILoopContext | null, callback: UpdateCallback): Promise<void> {
-    let hasUpdatedCallback = false;
     await useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, async (state:IWritableStateProxy, handler:IWritableStateHandler) => {
       // 状態更新処理
       await callback(state, handler);
-      hasUpdatedCallback = state[HasUpdatedCallbackSymbol]();
     });
-    if (hasUpdatedCallback && this.#saveQueue.length > 0) {
+    if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
       const saveQueue = this.#saveQueue;
       this.#saveQueue = [];
       queueMicrotask(() => {

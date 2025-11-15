@@ -13,9 +13,8 @@
  * - 存在しない場合は何もしない
  * - ライフサイクル管理やカスタム初期化処理に利用
  */
+import { CONNECTED_CALLBACK_FUNC_NAME } from "../../constants";
 import { IStateHandler, IStateProxy } from "../types";
-
-const CONNECTED_CALLBACK = "$connectedCallback";
 
 export async function connectedCallback(
   target: Object, 
@@ -23,7 +22,7 @@ export async function connectedCallback(
   receiver: IStateProxy,
   handler: IStateHandler
 ):Promise<void> {
-  const callback = Reflect.get(target, CONNECTED_CALLBACK);
+  const callback = Reflect.get(target, CONNECTED_CALLBACK_FUNC_NAME);
   if (typeof callback === "function") {
     await callback.call(receiver);
   }

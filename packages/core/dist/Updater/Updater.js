@@ -1,6 +1,6 @@
 import { findPathNodeByPath } from "../PathTree/PathNode";
 import { createReadonlyStateHandler, createReadonlyStateProxy } from "../StateClass/createReadonlyStateProxy";
-import { HasUpdatedCallbackSymbol, UpdatedCallbackSymbol } from "../StateClass/symbols";
+import { UpdatedCallbackSymbol } from "../StateClass/symbols";
 import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { raiseError } from "../utils";
 import { createRenderer, render } from "./Renderer";
@@ -55,13 +55,11 @@ class Updater {
      * @param callback
      */
     async update(loopContext, callback) {
-        let hasUpdatedCallback = false;
         await useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, async (state, handler) => {
             // 状態更新処理
             await callback(state, handler);
-            hasUpdatedCallback = state[HasUpdatedCallbackSymbol]();
         });
-        if (hasUpdatedCallback && this.#saveQueue.length > 0) {
+        if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
             const saveQueue = this.#saveQueue;
             this.#saveQueue = [];
             queueMicrotask(() => {

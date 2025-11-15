@@ -773,5 +773,147 @@ describe("PathManager/PathManager", () => {
       // constructor や toString などの予約語はスキップされるはず
       expect(pathManager.funcs.has("constructor")).toBe(false);
     });
+
+    test("should detect connectedCallback function", () => {
+      // コールバック関数のテストではパスの登録をスキップ
+      mockGetPathsSetById.mockReturnValue(new Set());
+      mockGetListPathsSetById.mockReturnValue(new Set());
+      mockGetStructuredPathInfo.mockReturnValue({
+        cumulativePathSet: new Set(),
+        pathSegments: [],
+        parentPath: ""
+      } as any);
+      
+      const StateWithConnectedCallback = class {
+        $connectedCallback() {
+          console.log("connected");
+        }
+      };
+      
+      const componentClass = {
+        id: 5,
+        stateClass: StateWithConnectedCallback
+      } as unknown as StructiveComponentClass;
+
+      pathManager = createPathManager(componentClass);
+      
+      expect(pathManager.hasConnectedCallback).toBe(true);
+      expect(pathManager.funcs.has("$connectedCallback")).toBe(true);
+    });
+
+    test("should detect disconnectedCallback function", () => {
+      mockGetPathsSetById.mockReturnValue(new Set());
+      mockGetListPathsSetById.mockReturnValue(new Set());
+      mockGetStructuredPathInfo.mockReturnValue({
+        cumulativePathSet: new Set(),
+        pathSegments: [],
+        parentPath: ""
+      } as any);
+      
+      const StateWithDisconnectedCallback = class {
+        $disconnectedCallback() {
+          console.log("disconnected");
+        }
+      };
+      
+      const componentClass = {
+        id: 6,
+        stateClass: StateWithDisconnectedCallback
+      } as unknown as StructiveComponentClass;
+
+      pathManager = createPathManager(componentClass);
+      
+      expect(pathManager.hasDisconnectedCallback).toBe(true);
+      expect(pathManager.funcs.has("$disconnectedCallback")).toBe(true);
+    });
+
+    test("should detect updatedCallback function", () => {
+      mockGetPathsSetById.mockReturnValue(new Set());
+      mockGetListPathsSetById.mockReturnValue(new Set());
+      mockGetStructuredPathInfo.mockReturnValue({
+        cumulativePathSet: new Set(),
+        pathSegments: [],
+        parentPath: ""
+      } as any);
+      
+      const StateWithUpdatedCallback = class {
+        $updatedCallback() {
+          console.log("updated");
+        }
+      };
+      
+      const componentClass = {
+        id: 7,
+        stateClass: StateWithUpdatedCallback
+      } as unknown as StructiveComponentClass;
+
+      pathManager = createPathManager(componentClass);
+      
+      expect(pathManager.hasUpdatedCallback).toBe(true);
+      expect(pathManager.funcs.has("$updatedCallback")).toBe(true);
+    });
+
+    test("should detect all three callback functions", () => {
+      mockGetPathsSetById.mockReturnValue(new Set());
+      mockGetListPathsSetById.mockReturnValue(new Set());
+      mockGetStructuredPathInfo.mockReturnValue({
+        cumulativePathSet: new Set(),
+        pathSegments: [],
+        parentPath: ""
+      } as any);
+      
+      const StateWithAllCallbacks = class {
+        $connectedCallback() {
+          console.log("connected");
+        }
+        $disconnectedCallback() {
+          console.log("disconnected");
+        }
+        $updatedCallback() {
+          console.log("updated");
+        }
+      };
+      
+      const componentClass = {
+        id: 8,
+        stateClass: StateWithAllCallbacks
+      } as unknown as StructiveComponentClass;
+
+      pathManager = createPathManager(componentClass);
+      
+      expect(pathManager.hasConnectedCallback).toBe(true);
+      expect(pathManager.hasDisconnectedCallback).toBe(true);
+      expect(pathManager.hasUpdatedCallback).toBe(true);
+      expect(pathManager.funcs.has("$connectedCallback")).toBe(true);
+      expect(pathManager.funcs.has("$disconnectedCallback")).toBe(true);
+      expect(pathManager.funcs.has("$updatedCallback")).toBe(true);
+    });
+
+    test("should have callback flags as false by default", () => {
+      mockGetPathsSetById.mockReturnValue(new Set());
+      mockGetListPathsSetById.mockReturnValue(new Set());
+      mockGetStructuredPathInfo.mockReturnValue({
+        cumulativePathSet: new Set(),
+        pathSegments: [],
+        parentPath: ""
+      } as any);
+      
+      const StateWithoutCallbacks = class {
+        someMethod() {
+          return "test";
+        }
+      };
+      
+      const componentClass = {
+        id: 9,
+        stateClass: StateWithoutCallbacks
+      } as unknown as StructiveComponentClass;
+
+      pathManager = createPathManager(componentClass);
+      
+      expect(pathManager.hasConnectedCallback).toBe(false);
+      expect(pathManager.hasDisconnectedCallback).toBe(false);
+      expect(pathManager.hasUpdatedCallback).toBe(false);
+    });
   });
 });

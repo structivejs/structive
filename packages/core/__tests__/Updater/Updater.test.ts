@@ -14,12 +14,7 @@ vi.mock("../../src/StateClass/useWritableStateProxy", () => {
     useWritableStateProxy: vi.fn(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void>) => {
       capturedUpdater = updater;
       const dummyHandler = {} as any;
-      
-      // HasUpdatedCallbackSymbol を適切にモック
-      const { HasUpdatedCallbackSymbol } = await import("../../src/StateClass/symbols");
-      const mockState = {
-        [HasUpdatedCallbackSymbol]: () => false  // デフォルトでfalseを返す
-      };
+      const mockState = {};
       
       // ダミーの writable state/handler を渡す
       await cb(mockState, dummyHandler);
@@ -158,13 +153,13 @@ describe("Updater.update", () => {
     expect(renderMock).not.toHaveBeenCalled();
   });
 
-  it("HasUpdatedCallbackSymbol が true で saveQueue にアイテムがある場合、UpdatedCallbackSymbol が呼ばれる", async () => {
+  it("pathManager.hasUpdatedCallback が true で saveQueue にアイテムがある場合、UpdatedCallbackSymbol が呼ばれる", async () => {
     // useWritableStateProxyを一時的に別の実装に変更
     const { useWritableStateProxy: originalMock } = await import("../../src/StateClass/useWritableStateProxy");
     
     // UpdatedCallbackSymbolをモック
     const updatedCallbackMock = vi.fn();
-    const { HasUpdatedCallbackSymbol, UpdatedCallbackSymbol } = await import("../../src/StateClass/symbols");
+    const { UpdatedCallbackSymbol } = await import("../../src/StateClass/symbols");
     
     // useWritableStateProxyの動作を変更
     vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void>) => {
@@ -172,7 +167,6 @@ describe("Updater.update", () => {
       const dummyHandler = {} as any;
       
       const mockState = {
-        [HasUpdatedCallbackSymbol]: () => true,  // trueを返す
         [UpdatedCallbackSymbol]: updatedCallbackMock
       };
       
@@ -184,7 +178,6 @@ describe("Updater.update", () => {
       const dummyHandler = {} as any;
       
       const mockState = {
-        [HasUpdatedCallbackSymbol]: () => false,
         [UpdatedCallbackSymbol]: updatedCallbackMock
       };
       
@@ -192,6 +185,7 @@ describe("Updater.update", () => {
     });
 
     const engine = createEngineStub();
+    engine.pathManager.hasUpdatedCallback = true;  // pathManagerでhasUpdatedCallbackをtrueに設定
     const ref = createRef("foo");
 
     await withUpdater(engine, null, async (updater) => {

@@ -13,10 +13,9 @@
  * - 存在しない場合は何もしない
  * - ライフサイクル管理やクリーンアップ処理に利用
  */
+import { UPDATED_CALLBACK_FUNC_NAME } from "../../constants";
 import { IStatePropertyRef } from "../../StatePropertyRef/types";
 import { IStateHandler, IStateProxy } from "../types";
-
-const UPDATED_CALLBACK = "$updatedCallback";
 
 export async function updatedCallback(
   target: Object, 
@@ -24,7 +23,7 @@ export async function updatedCallback(
   receiver: IStateProxy,
   handler: IStateHandler,
 ):Promise<void> {
-  const callback = Reflect.get(target, UPDATED_CALLBACK);
+  const callback = Reflect.get(target, UPDATED_CALLBACK_FUNC_NAME);
   if (typeof callback === "function") {
     const paths: Set<string> = new Set();
     const indexesByPath: Record<string, number[]> = {};

@@ -10,3 +10,6 @@ export const RESERVED_WORD_SET = new Set([
     "let", "var", "const", "class", "function",
     "null", "true", "false", "new", "return",
 ]);
+export const CONNECTED_CALLBACK_FUNC_NAME = "$connectedCallback";
+export const DISCONNECTED_CALLBACK_FUNC_NAME = "$disconnectedCallback";
+export const UPDATED_CALLBACK_FUNC_NAME = "$updatedCallback";

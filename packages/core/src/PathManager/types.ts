@@ -72,4 +72,18 @@ export interface IPathManager {
    * パスツリーのルートノード
    */
   rootNode: IPathNode;
+
+  /**
+   * 接続コールバックが存在するかどうか
+   */
+  hasConnectedCallback: boolean;
+  /**
+   * 切断コールバックが存在するかどうか
+   */
+  hasDisconnectedCallback: boolean;
+  /**
+   * 更新コールバックが存在するかどうか
+   */
+  hasUpdatedCallback: boolean;
+
 }

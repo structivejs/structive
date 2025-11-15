@@ -7,5 +7,4 @@ export const SetCacheableSymbol        : unique symbol = Symbol.for(`${symbolNam
 export const ConnectedCallbackSymbol   : unique symbol = Symbol.for(`${symbolName}.ConnectedCallback`);
 export const DisconnectedCallbackSymbol: unique symbol = Symbol.for(`${symbolName}.DisconnectedCallback`);
 export const UpdatedCallbackSymbol     : unique symbol = Symbol.for(`${symbolName}.UpdatedCallback`);
-export const HasUpdatedCallbackSymbol  : unique symbol = Symbol.for(`${symbolName}.HasUpdatedCallback`);
 export const GetListIndexesByRefSymbol : unique symbol = Symbol.for(`${symbolName}.GetListIndexesByRef`);

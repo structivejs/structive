@@ -1,5 +1,5 @@
 import { getListPathsSetById, getPathsSetById } from "../BindingBuilder/registerDataBindAttributes";
-import { RESERVED_WORD_SET } from "../constants";
+import { CONNECTED_CALLBACK_FUNC_NAME, DISCONNECTED_CALLBACK_FUNC_NAME, RESERVED_WORD_SET, UPDATED_CALLBACK_FUNC_NAME } from "../constants";
 import { addPathNode, createRootNode } from "../PathTree/PathNode";
 import { IPathNode } from "../PathTree/types";
 import { createAccessorFunctions } from "../StateProperty/createAccessorFunctions";
@@ -21,6 +21,9 @@ class PathManager implements IPathManager {
   staticDependencies: Dependencies<string> = new Map<string, Set<string>>();
   dynamicDependencies: Dependencies<string> = new Map<string, Set<string>>();
   rootNode: IPathNode = createRootNode();
+  hasConnectedCallback: boolean = false;
+  hasDisconnectedCallback: boolean = false;
+  hasUpdatedCallback: boolean = false;
   #id: number;
   #stateClass: Constructor<any>;
 
@@ -48,6 +51,15 @@ class PathManager implements IPathManager {
           }
           if (typeof desc.value === "function") {
             this.funcs.add(key);
+            if (key === CONNECTED_CALLBACK_FUNC_NAME) {
+              this.hasConnectedCallback = true;
+            }
+            if (key === DISCONNECTED_CALLBACK_FUNC_NAME) {
+              this.hasDisconnectedCallback = true;
+            }
+            if (key === UPDATED_CALLBACK_FUNC_NAME) {
+              this.hasUpdatedCallback = true;
+            }
             continue;
           }
           const hasGetter = (desc as PropertyDescriptor).get !== undefined;

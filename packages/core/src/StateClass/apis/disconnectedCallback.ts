@@ -13,9 +13,8 @@
  * - 存在しない場合は何もしない
  * - ライフサイクル管理やクリーンアップ処理に利用
  */
+import { DISCONNECTED_CALLBACK_FUNC_NAME } from "../../constants";
 import { IStateHandler, IStateProxy } from "../types";
-
-const DISCONNECTED_CALLBACK = "$disconnectedCallback";
 
 export async function disconnectedCallback(
   target: Object, 
@@ -23,7 +22,7 @@ export async function disconnectedCallback(
   receiver: IStateProxy,
   handler: IStateHandler
 ):Promise<void> {
-  const callback = Reflect.get(target, DISCONNECTED_CALLBACK);
+  const callback = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
   if (typeof callback === "function") {
     await callback.call(receiver);
   }
