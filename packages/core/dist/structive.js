@@ -5203,6 +5203,7 @@ class ComponentEngine {
     owner;
     bindingsByComponent = new WeakMap();
     structiveChildComponents = new Set();
+    pathManager;
     #waitForInitialize = Promise.withResolvers();
     #waitForDisconnected = null;
     #stateBinding = createComponentStateBinding();
@@ -5234,9 +5235,7 @@ class ComponentEngine {
         this.owner = owner;
         this.stateInput = createComponentStateInput(this, this.#stateBinding);
         this.stateOutput = createComponentStateOutput(this.#stateBinding, this);
-    }
-    get pathManager() {
-        return this.owner.constructor.pathManager;
+        this.pathManager = componentClass.pathManager;
     }
     setup() {
         // 実体化された state オブジェクトのプロパティをすべて PathManager に登録する

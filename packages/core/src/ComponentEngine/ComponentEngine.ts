@@ -73,6 +73,7 @@ class ComponentEngine implements IComponentEngine {
 
   bindingsByComponent: WeakMap<StructiveComponent, Set<IBinding>> = new WeakMap();
   structiveChildComponents: Set<StructiveComponent> = new Set();
+  pathManager: IPathManager;
 
   #waitForInitialize : PromiseWithResolvers<void> = Promise.withResolvers<void>();
   #waitForDisconnected: PromiseWithResolvers<void> | null = null;
@@ -109,10 +110,7 @@ class ComponentEngine implements IComponentEngine {
     this.owner =  owner;
     this.stateInput = createComponentStateInput(this, this.#stateBinding);
     this.stateOutput = createComponentStateOutput(this.#stateBinding, this);
-  }
-
-  get pathManager(): IPathManager {
-    return (this.owner.constructor as IComponentStatic).pathManager;
+    this.pathManager = componentClass.pathManager;
   }
 
   setup(): void {
