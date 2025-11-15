@@ -1,12 +1,10 @@
 import { IComponentEngine } from "../ComponentEngine/types";
 import { IComponentStateBinding } from "../ComponentStateBinding/types";
 import { IListIndex } from "../ListIndex/types";
-import { SetByRefSymbol } from "../StateClass/symbols";
 import { getStructuredPathInfo } from "../StateProperty/getStructuredPathInfo";
 import { IStructuredPathInfo } from "../StateProperty/types";
 import { getStatePropertyRef } from "../StatePropertyRef/StatepropertyRef";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
-import { createUpdater } from "../Updater/Updater";
 import { raiseError } from "../utils";
 import { IComponentStateOutput } from "./types";
 

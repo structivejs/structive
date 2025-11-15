@@ -25,11 +25,16 @@ export interface IUpdater {
    * @param loopContext ループコンテキスト
    * @param callback Updaterを返すコールバック関数
    */
-  update(loopContext: ILoopContext | null, callback: UpdateCallback): Promise<void> | void;
+  update<R>(
+    loopContext: ILoopContext | null, 
+    callback: (state: IWritableStateProxy, handler: IWritableStateHandler) => R
+  ): R;
 
   swapInfoByRef: Map<IStatePropertyRef, IListInfo>;
 
-  createReadonlyState<T = any>(callback: ReadonlyStateCallback<T>): T;
+  createReadonlyState<R>(
+    callback: (state: IReadonlyStateProxy, handler: IReadonlyStateHandler) => R
+  ): R;
 
   initialRender(callback: (renderer: IRenderer) => void): void;
 }

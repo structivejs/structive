@@ -57,9 +57,9 @@ class BindingNodeCheckbox extends BindingNode {
     this.node.addEventListener(eventName, async (e) => {
       const loopContext = this.binding.parentBindContent.currentLoopContext;
       const value = this.filteredValue;
-      await createUpdater(engine, async (updater) => {
-        await updater.update(loopContext, async (state, handler) => {
-          binding.bindingState.getValue
+      // 同期処理
+      createUpdater<void>(engine, (updater) => {
+        updater.update(loopContext, (state, handler) => {
           binding.updateStateValue(state, handler, value);
         });
       });

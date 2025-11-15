@@ -107,7 +107,12 @@ describe("StateClass/methods setLoopContext", () => {
       throw error;
     });
 
-    await expect(setLoopContext(handler, loopContext, callback)).rejects.toThrow(error);
+    const resultPromise = setLoopContext(handler, loopContext, callback);
+    // エラーを明示的に捕捉してUnhandled Rejectionを防ぐ
+    resultPromise.catch(() => {});
+    await expect(resultPromise).rejects.toThrow(error);
+    // Promiseのfinallyが実行されるまで待つ
+    await new Promise(resolve => setTimeout(resolve, 0));
     expect(handler.loopContext).toBeNull();
     expect(handler.lastRefStack).toBeNull();
     expect(handler.refIndex).toBe(-1);

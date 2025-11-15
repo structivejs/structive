@@ -18,7 +18,8 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
   }
 
   assignState(object: any): void {
-    createUpdater(this.engine, (updater) => {
+    // 同期処理
+    createUpdater<void>(this.engine, (updater) => {
       updater.update(null, (stateProxy, handler) => {
         for(const [key, value] of Object.entries(object)) {
           const childPathInfo = getStructuredPathInfo(key);
@@ -34,7 +35,7 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
    * @param refs 
    */
   notifyRedraw(refs: IStatePropertyRef[]): void {
-    createUpdater(this.engine, (updater) => {
+    createUpdater<void>(this.engine, (updater) => {
       for(const parentPathRef of refs) {
         let childPath;
         try {

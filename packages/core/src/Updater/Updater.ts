@@ -4,7 +4,7 @@ import { findPathNodeByPath } from "../PathTree/PathNode";
 import { IPathNode } from "../PathTree/types";
 import { createReadonlyStateHandler, createReadonlyStateProxy } from "../StateClass/createReadonlyStateProxy";
 import { UpdatedCallbackSymbol } from "../StateClass/symbols";
-import { IWritableStateHandler, IWritableStateProxy } from "../StateClass/types";
+import { IReadonlyStateHandler, IReadonlyStateProxy, IWritableStateHandler, IWritableStateProxy } from "../StateClass/types";
 import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { raiseError } from "../utils";
@@ -68,21 +68,35 @@ class Updater implements IUpdater {
    * @param loopContext 
    * @param callback 
    */
-  async update(loopContext: ILoopContext | null, callback: UpdateCallback): Promise<void> {
-    await useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, async (state:IWritableStateProxy, handler:IWritableStateHandler) => {
+  update<R>(
+    loopContext: ILoopContext | null, 
+    callback: (state: IWritableStateProxy, handler: IWritableStateHandler) => R
+  ): R {
+    let resultPromise: R;
+    resultPromise = useWritableStateProxy<R>(this.#engine, this, this.#engine.state, loopContext, (state:IWritableStateProxy, handler:IWritableStateHandler): R => {
       // 状態更新処理
-      await callback(state, handler);
+      return callback(state, handler);
     });
-    if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
-      const saveQueue = this.#saveQueue;
-      this.#saveQueue = [];
-      queueMicrotask(() => {
-        this.update(null, (state, handler) => {
-          state[UpdatedCallbackSymbol](saveQueue);
+    const updatedCallbackHandler = () =>{
+      if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
+        const saveQueue = this.#saveQueue;
+        this.#saveQueue = [];
+        queueMicrotask(() => {
+          this.update<void>(null, (state, handler) => {
+            state[UpdatedCallbackSymbol](saveQueue);
+          });
         });
+      }
+    };
+    if (resultPromise instanceof Promise) {
+      resultPromise.finally(() => {
+        updatedCallbackHandler();
       });
+    } else {
+      updatedCallbackHandler();
     }
-  }
+    return resultPromise;
+ }
 
   /**
    * レンダリング処理
@@ -180,7 +194,9 @@ class Updater implements IUpdater {
    * @param callback 
    * @returns 
    */
-  createReadonlyState(callback: ReadonlyStateCallback): any {
+  createReadonlyState<R>(
+    callback: (state: IReadonlyStateProxy, handler: IReadonlyStateHandler) => R
+  ): R {
     const handler = createReadonlyStateHandler(this.#engine, this, null);
     const stateProxy = createReadonlyStateProxy(this.#engine.state, handler);
     return callback(stateProxy, handler);
@@ -193,7 +209,10 @@ class Updater implements IUpdater {
  * @param engine 
  * @param callback 
  */
-export function createUpdater(engine: IComponentEngine, callback: (updater: IUpdater) => Promise<void> | void): Promise<void> | void{
+export function createUpdater<R>(
+  engine: IComponentEngine, 
+  callback: (updater: IUpdater) => R
+): R {
   const updater = new Updater(engine);
   return callback(updater);
 }

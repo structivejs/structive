@@ -51,11 +51,14 @@ vi.mock("../../src/ListDiff/ListDiff", () => ({
 import { createUpdater } from "../../src/Updater/Updater";
 
 async function withUpdater(engine: any, loopContext: any, callback: (updater: any, state: any, handler: any) => Promise<void> | void) {
-  await createUpdater(engine, async (updater) => {
-    await updater.update(loopContext, async (state: any, handler: any) => {
-      await callback(updater, state, handler);
+  const result = createUpdater<Promise<void>>(engine, async (updater) => {
+    return updater.update<Promise<void>>(loopContext, async (state: any, handler: any) => {
+      return callback(updater, state, handler);
     });
   });
+  if (result instanceof Promise) {
+    await result;
+  }
 }
 
 describe("Updater.update", () => {
@@ -237,7 +240,7 @@ describe("Updater.collectMaybeUpdates", () => {
     });
 
     const revisionMap = new Map<string, { version: number; revision: number }>();
-    await createUpdater(engine, (updater) => {
+    createUpdater<void>(engine, (updater) => {
   (updater as any).collectMaybeUpdates(engine, "root", revisionMap, 1);
       expect(Array.from(revisionMap.entries())).toEqual([
         ["root", { version: 1, revision: 1 }],
@@ -276,7 +279,7 @@ describe("Updater.collectMaybeUpdates", () => {
       return null;
     });
 
-    await createUpdater(engine, (updater) => {
+    createUpdater<void>(engine, (updater) => {
       const revisionMap = new Map<string, { version: number; revision: number }>();
   (updater as any).collectMaybeUpdates(engine, "root", revisionMap, 3);
       expect(revisionMap.size).toBe(0);
@@ -297,7 +300,7 @@ describe("Updater.collectMaybeUpdates", () => {
     findPathNodeByPathMock.mockReturnValue(null);
 
     try {
-      createUpdater(engine, (updater) => {
+      createUpdater<void>(engine, (updater) => {
         (updater as any).collectMaybeUpdates(engine, "missing", engine.versionRevisionByPath, 4);
       });
       throw new Error("should have thrown");
@@ -317,7 +320,7 @@ describe("Updater.collectMaybeUpdates", () => {
       },
     };
 
-    await createUpdater(engine, (updater) => {
+    createUpdater<void>(engine, (updater) => {
       const visited = new Set<string>(["root"]);
       (updater as any).recursiveCollectMaybeUpdates(engine, "root", createPathNode("root"), visited, true);
       expect(visited.size).toBe(1);
@@ -345,19 +348,22 @@ describe("Updater その他のAPI", () => {
     engine.versionUp.mockReturnValue(7);
     const ref = createRef("foo");
 
-    await createUpdater(engine, async (updater) => {
+    const result = createUpdater<Promise<void>>(engine, async (updater) => {
       expect(updater.version).toBe(7);
       expect(updater.revision).toBe(0);
       updater.enqueueRef(ref);
       expect(updater.revision).toBe(1);
     });
+    if (result instanceof Promise) {
+      await result;
+    }
   });
 
-  it("swapInfoByRef が Map インスタンスを返す", async () => {
+  it("swapInfoByRef が Map インスタンスを返す", () => {
     const engine = createEngineStub();
     const ref = createRef("cache");
 
-    await createUpdater(engine, (updater) => {
+    createUpdater<void>(engine, (updater) => {
       const swapInfoMap = updater.swapInfoByRef;
 
       expect(swapInfoMap).toBeInstanceOf(Map);
@@ -370,15 +376,15 @@ describe("Updater その他のAPI", () => {
     });
   });
 
-  it("createReadonlyState で生成した state と handler をコールバックへ渡す", async () => {
+  it("createReadonlyState で生成した state と handler をコールバックへ渡す", () => {
     const engine = createEngineStub();
     const fakeHandler = { token: "handler" };
     const fakeState = { token: "state" };
     createReadonlyStateHandlerMock.mockReturnValueOnce(fakeHandler);
     createReadonlyStateProxyMock.mockReturnValueOnce(fakeState);
 
-    await createUpdater(engine, (updater) => {
-      const returned = updater.createReadonlyState((state, handler) => {
+    createUpdater<void>(engine, (updater) => {
+      const returned = updater.createReadonlyState<string>((state, handler) => {
         expect(state).toBe(fakeState);
         expect(handler).toBe(fakeHandler);
         return "done";
@@ -408,13 +414,13 @@ describe("Updater その他のAPI", () => {
     });
 
     expect(() => {
-      createUpdater(engine, (updater) => {
+      createUpdater<void>(engine, (updater) => {
         (updater as any).collectMaybeUpdates(engine, "root", engine.versionRevisionByPath, 1);
       });
     }).toThrowError(/Path node not found for pattern: missing/);
   });
 
-  it("recursiveCollectMaybeUpdates は子要素も依存も無いノードを訪問済みに追加する", async () => {
+  it("recursiveCollectMaybeUpdates は子要素も依存も無いノードを訪問済みに追加する", () => {
     const engine = {
       ...createEngineStub(),
       pathManager: {
@@ -425,7 +431,7 @@ describe("Updater その他のAPI", () => {
       },
     };
 
-    await createUpdater(engine, (updater) => {
+    createUpdater<void>(engine, (updater) => {
       const visited = new Set<string>();
       (updater as any).recursiveCollectMaybeUpdates(engine, "leaf", createPathNode("leaf"), visited, false);
       expect(Array.from(visited)).toEqual(["leaf"]);
@@ -473,14 +479,11 @@ function createPathNode(path: string, childNodeByName: Map<string, any> = new Ma
 }
 
 describe("Updater initialRender tests", () => {
-  it("initialRender calls createRenderer and executes callback", async () => {
+  it("initialRender calls createRenderer and executes callback", () => {
     const engine = createEngineStub();
     
-    // createUpdaterを使ってUpdaterインスタンスを作成してテスト
-    const { createUpdater } = await import("../../src/Updater/Updater");
-    
     let capturedUpdater: any;
-    await createUpdater(engine, (updater) => {
+    createUpdater<void>(engine, (updater: any) => {
       capturedUpdater = updater;
     });
     

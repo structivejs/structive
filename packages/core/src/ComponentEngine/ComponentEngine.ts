@@ -182,7 +182,7 @@ class ComponentEngine implements IComponentEngine {
       });
       this.bindContent.mountAfter(parentNode, this.#blockPlaceholder);
     }
-    await createUpdater(this, async (updater) => {
+    createUpdater<void>(this, (updater) => {
       updater.initialRender((renderer) => {
         // 状態の初期レンダリングを行う
         this.bindContent.activate();
@@ -190,22 +190,26 @@ class ComponentEngine implements IComponentEngine {
           this.bindContent.applyChange(renderer);
         } );
       });
-      await updater.update(null, async (stateProxy, handler) => {
-        await stateProxy[ConnectedCallbackSymbol]();
+    });
+    if (this.pathManager.hasConnectedCallback) {
+      const resultPromise = createUpdater<Promise<void>>(this, async (updater) => {
+        updater.update(null, async (stateProxy, handler) => {
+          stateProxy[ConnectedCallbackSymbol]();
+        });
       });
-    });
-
-    // レンダリングが終わってから実行する
-    queueMicrotask(() => {
-      this.#readyResolvers.resolve();
-    });
+      if (resultPromise instanceof Promise) {
+        await resultPromise;
+      }
+    }
+    this.#readyResolvers.resolve();
   }
 
   async disconnectedCallback(): Promise<void> {
     if (this.#ignoreDissconnectedCallback) return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
-    await createUpdater(this, async (updater) => {
-      await updater.update(null, async (stateProxy, handler) => {
-        await stateProxy[DisconnectedCallbackSymbol]();
+    // 同期処理
+    createUpdater<void>(this, (updater) => {
+      updater.update(null, (stateProxy, handler) => {
+        stateProxy[DisconnectedCallbackSymbol]();
       });
     });
     // 親コンポーネントから登録を解除する
@@ -222,7 +226,8 @@ class ComponentEngine implements IComponentEngine {
       return this.stateOutput.getListIndexes(ref);
     }
     let value: IListIndex[] | null = null;
-    createUpdater(this, (updater) => {
+    // 同期処理
+    createUpdater<any>(this, (updater) => {
       value = updater.createReadonlyState<IListIndex[] | null>((stateProxy, handler) => {
         return stateProxy[GetListIndexesByRefSymbol](ref);
       });
@@ -233,8 +238,9 @@ class ComponentEngine implements IComponentEngine {
   getPropertyValue(ref: IStatePropertyRef): any {
     // プロパティの値を取得する
     let value;
-    createUpdater(this, (updater) => {
-      value = updater.createReadonlyState((stateProxy, handler) => {
+    // 同期処理
+    createUpdater<any>(this, (updater) => {
+      value = updater.createReadonlyState<any>((stateProxy, handler) => {
         return stateProxy[GetByRefSymbol](ref);
       });
     });
@@ -242,7 +248,8 @@ class ComponentEngine implements IComponentEngine {
   }
   setPropertyValue(ref: IStatePropertyRef, value: any): void {
     // プロパティの値を設定する
-    createUpdater(this, (updater) => {
+    // 同期処理
+    createUpdater<void>(this, (updater) => {
       updater.update(null, (stateProxy, handler) => {
         stateProxy[SetByRefSymbol](ref, value);
       });

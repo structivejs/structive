@@ -2110,7 +2110,7 @@ function setLoopContext(handler, loopContext, callback) {
             }
             handler.refStack[handler.refIndex] = handler.lastRefStack = loopContext.ref;
             try {
-                return resultPromise = callback();
+                resultPromise = callback();
             }
             finally {
                 handler.refStack[handler.refIndex] = null;
@@ -2119,19 +2119,20 @@ function setLoopContext(handler, loopContext, callback) {
             }
         }
         else {
-            return resultPromise = callback();
+            resultPromise = callback();
         }
     }
     finally {
-        if (resultPromise) {
+        // Promiseの場合は新しいPromiseチェーンを返してfinallyを適用
+        if (resultPromise instanceof Promise) {
             return resultPromise.finally(() => {
                 handler.loopContext = null;
             });
         }
-        else {
-            handler.loopContext = null;
-        }
+        // 同期の場合は即座にリセット
+        handler.loopContext = null;
     }
+    return resultPromise;
 }
 
 const STACK_DEPTH = 32;
@@ -2537,20 +2538,32 @@ class Updater {
      * @param loopContext
      * @param callback
      */
-    async update(loopContext, callback) {
-        await useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, async (state, handler) => {
+    update(loopContext, callback) {
+        let resultPromise;
+        resultPromise = useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, (state, handler) => {
             // 状態更新処理
-            await callback(state, handler);
+            return callback(state, handler);
         });
-        if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
-            const saveQueue = this.#saveQueue;
-            this.#saveQueue = [];
-            queueMicrotask(() => {
-                this.update(null, (state, handler) => {
-                    state[UpdatedCallbackSymbol](saveQueue);
+        const updatedCallbackHandler = () => {
+            if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
+                const saveQueue = this.#saveQueue;
+                this.#saveQueue = [];
+                queueMicrotask(() => {
+                    this.update(null, (state, handler) => {
+                        state[UpdatedCallbackSymbol](saveQueue);
+                    });
                 });
+            }
+        };
+        if (resultPromise instanceof Promise) {
+            resultPromise.finally(() => {
+                updatedCallbackHandler();
             });
         }
+        else {
+            updatedCallbackHandler();
+        }
+        return resultPromise;
     }
     /**
      * レンダリング処理
@@ -2701,9 +2714,9 @@ class BindingNodeCheckbox extends BindingNode {
         this.node.addEventListener(eventName, async (e) => {
             const loopContext = this.binding.parentBindContent.currentLoopContext;
             const value = this.filteredValue;
-            await createUpdater(engine, async (updater) => {
-                await updater.update(loopContext, async (state, handler) => {
-                    binding.bindingState.getValue;
+            // 同期処理
+            createUpdater(engine, (updater) => {
+                updater.update(loopContext, (state, handler) => {
                     binding.updateStateValue(state, handler, value);
                 });
             });
@@ -2846,8 +2859,9 @@ class BindingNodeEvent extends BindingNode {
         if (options.includes("stopPropagation")) {
             e.stopPropagation();
         }
-        await createUpdater(engine, async (updater) => {
-            await updater.update(loopContext, async (state, handler) => {
+        // 非同期処理の可能性あり
+        const resultPromise = createUpdater(engine, (updater) => {
+            return updater.update(loopContext, (state, handler) => {
                 // stateProxyを生成し、バインディング値を実行
                 const func = this.binding.bindingState.getValue(state, handler);
                 if (typeof func !== "function") {
@@ -2859,9 +2873,12 @@ class BindingNodeEvent extends BindingNode {
                         severity: 'error',
                     });
                 }
-                await Reflect.apply(func, state, [e, ...indexes]);
+                return Reflect.apply(func, state, [e, ...indexes]);
             });
         });
+        if (resultPromise instanceof Promise) {
+            await resultPromise;
+        }
     }
     applyChange(renderer) {
         // イベントバインディングは初期化時のみで、状態変更時に何もしない
@@ -3400,8 +3417,9 @@ class BindingNodeProperty extends BindingNode {
         this.node.addEventListener(eventName, async () => {
             const loopContext = this.binding.parentBindContent.currentLoopContext;
             const value = this.filteredValue;
-            await createUpdater(engine, async (updater) => {
-                await updater.update(loopContext, async (state, handler) => {
+            // 同期処理
+            createUpdater(engine, (updater) => {
+                updater.update(loopContext, (state, handler) => {
                     binding.updateStateValue(state, handler, value);
                 });
             });
@@ -3478,8 +3496,9 @@ class BindingNodeRadio extends BindingNode {
         this.node.addEventListener(eventName, async (e) => {
             const loopContext = this.binding.parentBindContent.currentLoopContext;
             const value = this.filteredValue;
-            await createUpdater(engine, async (updater) => {
-                await updater.update(loopContext, async (state, handler) => {
+            // 同期処理
+            createUpdater(engine, (updater) => {
+                updater.update(loopContext, (state, handler) => {
                     binding.updateStateValue(state, handler, value);
                 });
             });
@@ -5022,6 +5041,7 @@ class ComponentStateInputHandler {
         this.engine = engine;
     }
     assignState(object) {
+        // 同期処理
         createUpdater(this.engine, (updater) => {
             updater.update(null, (stateProxy, handler) => {
                 for (const [key, value] of Object.entries(object)) {
@@ -5315,7 +5335,7 @@ class ComponentEngine {
             });
             this.bindContent.mountAfter(parentNode, this.#blockPlaceholder);
         }
-        await createUpdater(this, async (updater) => {
+        createUpdater(this, (updater) => {
             updater.initialRender((renderer) => {
                 // 状態の初期レンダリングを行う
                 this.bindContent.activate();
@@ -5323,21 +5343,26 @@ class ComponentEngine {
                     this.bindContent.applyChange(renderer);
                 });
             });
-            await updater.update(null, async (stateProxy, handler) => {
-                await stateProxy[ConnectedCallbackSymbol]();
+        });
+        if (this.pathManager.hasConnectedCallback) {
+            const resultPromise = createUpdater(this, async (updater) => {
+                updater.update(null, async (stateProxy, handler) => {
+                    stateProxy[ConnectedCallbackSymbol]();
+                });
             });
-        });
-        // レンダリングが終わってから実行する
-        queueMicrotask(() => {
-            this.#readyResolvers.resolve();
-        });
+            if (resultPromise instanceof Promise) {
+                await resultPromise;
+            }
+        }
+        this.#readyResolvers.resolve();
     }
     async disconnectedCallback() {
         if (this.#ignoreDissconnectedCallback)
             return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
-        await createUpdater(this, async (updater) => {
-            await updater.update(null, async (stateProxy, handler) => {
-                await stateProxy[DisconnectedCallbackSymbol]();
+        // 同期処理
+        createUpdater(this, (updater) => {
+            updater.update(null, (stateProxy, handler) => {
+                stateProxy[DisconnectedCallbackSymbol]();
             });
         });
         // 親コンポーネントから登録を解除する
@@ -5353,6 +5378,7 @@ class ComponentEngine {
             return this.stateOutput.getListIndexes(ref);
         }
         let value = null;
+        // 同期処理
         createUpdater(this, (updater) => {
             value = updater.createReadonlyState((stateProxy, handler) => {
                 return stateProxy[GetListIndexesByRefSymbol](ref);
@@ -5363,6 +5389,7 @@ class ComponentEngine {
     getPropertyValue(ref) {
         // プロパティの値を取得する
         let value;
+        // 同期処理
         createUpdater(this, (updater) => {
             value = updater.createReadonlyState((stateProxy, handler) => {
                 return stateProxy[GetByRefSymbol](ref);
@@ -5372,6 +5399,7 @@ class ComponentEngine {
     }
     setPropertyValue(ref, value) {
         // プロパティの値を設定する
+        // 同期処理
         createUpdater(this, (updater) => {
             updater.update(null, (stateProxy, handler) => {
                 stateProxy[SetByRefSymbol](ref, value);
