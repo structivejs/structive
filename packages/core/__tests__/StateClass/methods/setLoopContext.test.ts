@@ -26,18 +26,32 @@ beforeEach(() => {
 });
 
 describe("StateClass/methods setLoopContext", () => {
-  it("loopContext が null の場合は callback を直接実行", async () => {
+  it("loopContext が null の場合は callback を直接実行（非同期）", async () => {
     const handler = makeHandler();
     const callback = vi.fn(async () => {});
 
-    await setLoopContext(handler, null, callback);
+    const result = setLoopContext(handler, null, callback);
+    expect(result).toBeInstanceOf(Promise);
+    await result;
 
     expect(callback).toHaveBeenCalledTimes(1);
     expect(handler.loopContext).toBeNull();
     expect(handler.refIndex).toBe(-1);
   });
 
-  it("loopContext が指定された場合はスタックを構築して実行", async () => {
+  it("loopContext が null の場合は callback を直接実行（同期）", () => {
+    const handler = makeHandler();
+    const callback = vi.fn();
+
+    const result = setLoopContext(handler, null, callback);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(handler.loopContext).toBeNull();
+    expect(handler.refIndex).toBe(-1);
+    expect(result).toBeUndefined();
+  });
+
+  it("loopContext が指定された場合はスタックを構築して実行（非同期）", async () => {
     const handler = makeHandler();
     const ref = { info: { pattern: "items.*" } };
     const loopContext = { ref } as any;
@@ -46,7 +60,9 @@ describe("StateClass/methods setLoopContext", () => {
       expect(handler.refStack[handler.refIndex]).toBe(ref);
     });
 
-    await setLoopContext(handler, loopContext, callback);
+    const result = setLoopContext(handler, loopContext, callback);
+    expect(result).toBeInstanceOf(Promise);
+    await result;
 
     expect(callback).toHaveBeenCalledTimes(1);
     expect(handler.loopContext).toBeNull();
@@ -55,15 +71,34 @@ describe("StateClass/methods setLoopContext", () => {
     expect(handler.lastRefStack).toBeNull();
   });
 
-  it("既に loopContext が設定されている場合はエラー", async () => {
+  it("loopContext が指定された場合はスタックを構築して実行（同期）", () => {
+    const handler = makeHandler();
+    const ref = { info: { pattern: "items.*" } };
+    const loopContext = { ref } as any;
+    const callback = vi.fn(() => {
+      expect(handler.loopContext).toBe(loopContext);
+      expect(handler.refStack[handler.refIndex]).toBe(ref);
+    });
+
+    const result = setLoopContext(handler, loopContext, callback);
+
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(handler.loopContext).toBeNull();
+    expect(handler.refIndex).toBe(-1);
+    expect(handler.refStack[0]).toBeNull();
+    expect(handler.lastRefStack).toBeNull();
+    expect(result).toBeUndefined();
+  });
+
+  it("既に loopContext が設定されている場合はエラー", () => {
     const handler = makeHandler();
     handler.loopContext = { ref: {} };
 
-    await expect(setLoopContext(handler, null, async () => {})).rejects.toThrowError(/already in loop context/);
+    expect(() => setLoopContext(handler, null, () => {})).toThrow(/already in loop context/);
     expect(raiseErrorMock).toHaveBeenCalled();
   });
 
-  it("callback が例外を投げても最後に loopContext をリセット", async () => {
+  it("callback が例外を投げても最後に loopContext をリセット（非同期）", async () => {
     const handler = makeHandler();
     const loopContext = { ref: { info: { pattern: "loop" } } } as any;
     const error = new Error("boom");
@@ -78,15 +113,32 @@ describe("StateClass/methods setLoopContext", () => {
     expect(handler.refIndex).toBe(-1);
   });
 
-  it("loopContext が指定され refIndex が末尾の場合は push して実行", async () => {
+  it("callback が例外を投げても最後に loopContext をリセット（同期）", () => {
+    const handler = makeHandler();
+    const loopContext = { ref: { info: { pattern: "loop" } } } as any;
+    const error = new Error("boom");
+    const callback = vi.fn(() => {
+      expect(handler.loopContext).toBe(loopContext);
+      throw error;
+    });
+
+    expect(() => setLoopContext(handler, loopContext, callback)).toThrow(error);
+    expect(handler.loopContext).toBeNull();
+    expect(handler.lastRefStack).toBeNull();
+    expect(handler.refIndex).toBe(-1);
+  });
+
+  it("loopContext が指定され refIndex が末尾の場合は push して実行（非同期）", async () => {
     const handler = makeHandler();
     handler.refIndex = handler.refStack.length - 1;
     const ref = { info: { pattern: "items" } };
     const loopContext = { ref } as any;
 
-    await setLoopContext(handler, loopContext, async () => {
+    const result = setLoopContext(handler, loopContext, async () => {
       expect(handler.refStack[handler.refIndex]).toBe(ref);
     });
+    expect(result).toBeInstanceOf(Promise);
+    await result;
 
     expect(handler.refStack.length).toBe(2);
     expect(handler.refStack[1]).toBeNull();
@@ -94,12 +146,29 @@ describe("StateClass/methods setLoopContext", () => {
     expect(handler.lastRefStack).toBeNull();
   });
 
-  it("loopContext が指定されても refStack が空なら STC-002 を投げる", async () => {
+  it("loopContext が指定され refIndex が末尾の場合は push して実行（同期）", () => {
+    const handler = makeHandler();
+    handler.refIndex = handler.refStack.length - 1;
+    const ref = { info: { pattern: "items" } };
+    const loopContext = { ref } as any;
+
+    const result = setLoopContext(handler, loopContext, () => {
+      expect(handler.refStack[handler.refIndex]).toBe(ref);
+    });
+
+    expect(handler.refStack.length).toBe(2);
+    expect(handler.refStack[1]).toBeNull();
+    expect(handler.refIndex).toBe(0);
+    expect(handler.lastRefStack).toBeNull();
+    expect(result).toBeUndefined();
+  });
+
+  it("loopContext が指定されても refStack が空なら STC-002 を投げる", () => {
     const handler = makeHandler();
     handler.refStack = [];
     const loopContext = { ref: { info: { pattern: "items" } } } as any;
 
-    await expect(setLoopContext(handler, loopContext, async () => {})).rejects.toThrow(/refStack is empty/);
+    expect(() => setLoopContext(handler, loopContext, () => {})).toThrow(/refStack is empty/);
     expect(raiseErrorMock).toHaveBeenCalledWith(expect.objectContaining({ code: "STC-002" }));
     expect(handler.loopContext).toBeNull();
   });

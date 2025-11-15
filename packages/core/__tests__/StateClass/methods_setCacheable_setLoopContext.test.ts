@@ -66,11 +66,11 @@ describe("StateClass/methods setLoopContext", () => {
     expect(handler.refStack[1]).toBeNull();
   });
 
-  it("既に loopContext が設定されている場合はエラー", async () => {
+  it("既に loopContext が設定されている場合はエラー", () => {
     const handler = makeHandler();
     handler.loopContext = { ref: {} };
 
-    await expect(setLoopContext(handler, null, async () => {})).rejects.toThrowError(/already in loop context/);
+    expect(() => setLoopContext(handler, null, () => {})).toThrow(/already in loop context/);
     expect(raiseErrorMock).toHaveBeenCalled();
   });
 

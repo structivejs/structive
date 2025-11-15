@@ -31,10 +31,10 @@ class StateHandler {
         return Reflect.has(target, prop) || this.symbols.has(prop) || this.apis.has(prop);
     }
 }
-export async function useWritableStateProxy(engine, updater, state, loopContext, callback) {
+export function useWritableStateProxy(engine, updater, state, loopContext, callback) {
     const handler = new StateHandler(engine, updater);
     const stateProxy = new Proxy(state, handler);
-    return setLoopContext(handler, loopContext, async () => {
-        await callback(stateProxy, handler);
+    return setLoopContext(handler, loopContext, () => {
+        return callback(stateProxy, handler);
     });
 }

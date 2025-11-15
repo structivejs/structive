@@ -1,5 +1,5 @@
 import { raiseError } from "../../utils";
-export async function setLoopContext(handler, loopContext, callback) {
+export function setLoopContext(handler, loopContext, callback) {
     if (handler.loopContext) {
         raiseError({
             code: 'STATE-301',
@@ -9,6 +9,7 @@ export async function setLoopContext(handler, loopContext, callback) {
         });
     }
     handler.loopContext = loopContext;
+    let resultPromise;
     try {
         if (loopContext) {
             if (handler.refStack.length === 0) {
@@ -23,7 +24,7 @@ export async function setLoopContext(handler, loopContext, callback) {
             }
             handler.refStack[handler.refIndex] = handler.lastRefStack = loopContext.ref;
             try {
-                await callback();
+                return resultPromise = callback();
             }
             finally {
                 handler.refStack[handler.refIndex] = null;
@@ -32,10 +33,17 @@ export async function setLoopContext(handler, loopContext, callback) {
             }
         }
         else {
-            await callback();
+            return resultPromise = callback();
         }
     }
     finally {
-        handler.loopContext = null;
+        if (resultPromise) {
+            return resultPromise.finally(() => {
+                handler.loopContext = null;
+            });
+        }
+        else {
+            handler.loopContext = null;
+        }
     }
 }

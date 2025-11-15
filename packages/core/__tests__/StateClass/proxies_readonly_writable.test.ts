@@ -91,7 +91,7 @@ describe("StateClass proxies", () => {
     expect("$component" in proxy).toBe(true);
   });
 
-  it("useWritableStateProxy: get/set がトラップ経由で呼ばれる", async () => {
+  it("useWritableStateProxy: get/set がトラップ経由で呼ばれる（非同期）", async () => {
     const engine = makeEngine();
     const updater = makeUpdater();
     const state = { foo: 1 };
@@ -103,12 +103,35 @@ describe("StateClass proxies", () => {
       return Reflect.get(target as any, prop, receiver);
     });
 
-    await useWritableStateProxy(engine, updater, state, null, async (proxy) => {
+    const result = useWritableStateProxy(engine, updater, state, null, async (proxy) => {
       expect((proxy as any).foo).toBe("WRITE");
       expect(trapGetMock).toHaveBeenCalled();
       (proxy as any).foo = 2;
       expect(trapSetMock).toHaveBeenCalled();
     });
+    expect(result).toBeInstanceOf(Promise);
+    await result;
+  });
+
+  it("useWritableStateProxy: get/set がトラップ経由で呼ばれる（同期）", () => {
+    const engine = makeEngine();
+    const updater = makeUpdater();
+    const state = { foo: 1 };
+
+  trapGetMock.mockImplementation((target, prop, receiver) => {
+      if (prop === "foo") {
+        return "WRITE";
+      }
+      return Reflect.get(target as any, prop, receiver);
+    });
+
+    const result = useWritableStateProxy(engine, updater, state, null, (proxy) => {
+      expect((proxy as any).foo).toBe("WRITE");
+      expect(trapGetMock).toHaveBeenCalled();
+      (proxy as any).foo = 2;
+      expect(trapSetMock).toHaveBeenCalled();
+    });
+    expect(result).toBeUndefined();
   });
 
   it("useWritableStateProxy: has トラップはシンボルと API を判定", async () => {

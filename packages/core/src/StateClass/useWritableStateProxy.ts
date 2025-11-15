@@ -72,17 +72,17 @@ class StateHandler implements IWritableStateHandler {
   }
 }
 
-export async function useWritableStateProxy(
+export function useWritableStateProxy(
   engine: IComponentEngine, 
   updater: IUpdater,
   state: Object,
   loopContext: ILoopContext | null,
   callback: (stateProxy: IWritableStateProxy, handler: IWritableStateHandler) => Promise<void>
-): Promise<void> {
+): Promise<void> | void {
   const handler = new StateHandler(engine, updater);
   const stateProxy = new Proxy<IState>(state, handler) as IWritableStateProxy;
-  return setLoopContext(handler, loopContext, async () => {
-    await callback(stateProxy, handler);
+  return setLoopContext(handler, loopContext, () => {
+    return callback(stateProxy, handler);
   });
 }
 

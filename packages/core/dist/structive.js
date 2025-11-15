@@ -2085,7 +2085,7 @@ function set(target, prop, value, receiver, handler) {
     }
 }
 
-async function setLoopContext(handler, loopContext, callback) {
+function setLoopContext(handler, loopContext, callback) {
     if (handler.loopContext) {
         raiseError({
             code: 'STATE-301',
@@ -2095,6 +2095,7 @@ async function setLoopContext(handler, loopContext, callback) {
         });
     }
     handler.loopContext = loopContext;
+    let resultPromise;
     try {
         if (loopContext) {
             if (handler.refStack.length === 0) {
@@ -2109,7 +2110,7 @@ async function setLoopContext(handler, loopContext, callback) {
             }
             handler.refStack[handler.refIndex] = handler.lastRefStack = loopContext.ref;
             try {
-                await callback();
+                return resultPromise = callback();
             }
             finally {
                 handler.refStack[handler.refIndex] = null;
@@ -2118,11 +2119,18 @@ async function setLoopContext(handler, loopContext, callback) {
             }
         }
         else {
-            await callback();
+            return resultPromise = callback();
         }
     }
     finally {
-        handler.loopContext = null;
+        if (resultPromise) {
+            return resultPromise.finally(() => {
+                handler.loopContext = null;
+            });
+        }
+        else {
+            handler.loopContext = null;
+        }
     }
 }
 
@@ -2155,11 +2163,11 @@ class StateHandler {
         return Reflect.has(target, prop) || this.symbols.has(prop) || this.apis.has(prop);
     }
 }
-async function useWritableStateProxy(engine, updater, state, loopContext, callback) {
+function useWritableStateProxy(engine, updater, state, loopContext, callback) {
     const handler = new StateHandler(engine, updater);
     const stateProxy = new Proxy(state, handler);
-    return setLoopContext(handler, loopContext, async () => {
-        await callback(stateProxy, handler);
+    return setLoopContext(handler, loopContext, () => {
+        return callback(stateProxy, handler);
     });
 }
 

@@ -20,11 +20,11 @@ import { ILoopContext } from "../../LoopContext/types";
 import { raiseError } from "../../utils";
 import { IWritableStateHandler } from "../types";
 
-export async function setLoopContext(
+export function setLoopContext(
   handler: IWritableStateHandler,
   loopContext: ILoopContext | null,
-  callback: () => Promise<void>
-): Promise<void> {
+  callback: () => Promise<void> | void
+): Promise<void> | void {
   if (handler.loopContext) {
     raiseError({
       code: 'STATE-301',
@@ -34,6 +34,7 @@ export async function setLoopContext(
     });
   }
   handler.loopContext = loopContext;
+  let resultPromise: Promise<void> | void | undefined; 
   try {
     if (loopContext) {
       if (handler.refStack.length === 0) {
@@ -48,16 +49,22 @@ export async function setLoopContext(
       }
       handler.refStack[handler.refIndex] = handler.lastRefStack = loopContext.ref;
       try {
-        await callback();
+        return resultPromise = callback();
       } finally {
         handler.refStack[handler.refIndex] = null;
         handler.refIndex--;
         handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
       }
     } else {
-      await callback();
+      return resultPromise = callback();
     }
   } finally {
-    handler.loopContext = null;
+    if (resultPromise) {
+      return resultPromise.finally(() => {
+        handler.loopContext = null;
+      });
+    } else {
+      handler.loopContext = null;
+    }
   }
 }
