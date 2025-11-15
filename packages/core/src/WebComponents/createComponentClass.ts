@@ -92,21 +92,6 @@ export function createComponentClass(componentData: IUserComponentData): Structi
       return this.#engine.readyResolvers;
     }
 
-    get customTagName(): string {
-      if (this.tagName.includes('-')) {
-        return this.tagName.toLowerCase();
-      } else if (this.getAttribute('is')?.includes('-')) {
-        return this.getAttribute('is')!.toLowerCase();
-      } else {
-        raiseError({
-          code: 'CE-001',
-          message: 'Custom tag name not found',
-          context: { where: 'ComponentEngine.customTagName.get' },
-          docsUrl: './docs/error-codes.md#ce',
-        });
-      }
-    }
-
     getBindingsFromChild(component: IComponent): Set<IBinding> | null {
       return this.#engine.bindingsByComponent.get(component as StructiveComponent) ?? null;
     }

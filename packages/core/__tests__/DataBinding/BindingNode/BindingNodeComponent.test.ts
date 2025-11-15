@@ -79,7 +79,6 @@ describe("BindingNodeComponent", () => {
     component.isStructive = true;
     component.state = { [NotifyRedrawSymbol]: vi.fn() } as any;
     component.readyResolvers = { promise: Promise.resolve() };
-    component.customTagName = "mock-component";
 
     const parentBindContent = {} as any;
     const info = makeInfo("values.*.foo", ["values","*","foo"], 1, ["values","values.*","values.*.foo"]);

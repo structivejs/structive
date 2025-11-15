@@ -6,6 +6,7 @@ import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef.js"
 import { IStatePropertyRef } from "../../StatePropertyRef/types.js";
 import { IRenderer } from "../../Updater/types.js";
 import { registerStructiveComponent, removeStructiveComponent } from "../../WebComponents/findStructiveParent.js";
+import { getCustomTagName } from "../../WebComponents/getCustomTagName.js";
 import { StructiveComponent } from "../../WebComponents/types";
 import { IBinding } from "../types";
 import { BindingNode } from "./BindingNode.js";
@@ -46,7 +47,7 @@ class BindingNodeComponent extends BindingNode {
   _notifyRedraw(refs: IStatePropertyRef[]): void {
     const component = this.node as StructiveComponent;
     // コンポーネントが定義されるのを待ち、初期化完了後に notifyRedraw を呼び出す
-    const tagName = component.customTagName;
+    const tagName = getCustomTagName(component);
     customElements.whenDefined(tagName).then(() => {
       component.state[NotifyRedrawSymbol](refs);
     });

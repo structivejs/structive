@@ -208,38 +208,4 @@ describe("WebComponents/createComponentClass", () => {
     expect(typeof (Cls as any).inputFilters.eq).toBe("function");
     expect(typeof (Cls as any).outputFilters.uc).toBe("function");
   });
-
-  it("customTagName は tagName に - を含む場合、小文字化したタグ名を返す", () => {
-    getBaseClassMock.mockReturnValueOnce(class {} as any);
-    const Cls = createComponentClass(makeData());
-    const inst = new (Cls as any)();
-    
-    // tagName に - を含むカスタム要素
-    Object.defineProperty(inst, "tagName", { value: "X-CUSTOM", writable: false });
-    expect(inst.customTagName).toBe("x-custom");
-  });
-
-  it("customTagName は tagName に - がなく is 属性に - を含む場合、is 属性の小文字化を返す", () => {
-    getBaseClassMock.mockReturnValueOnce(class {} as any);
-    const Cls = createComponentClass(makeData());
-    const inst = new (Cls as any)();
-    
-    // カスタマイズドビルトイン要素（tagName は通常のタグ、is 属性にカスタム名）
-    Object.defineProperty(inst, "tagName", { value: "BUTTON", writable: false });
-    inst.getAttribute = vi.fn((name: string) => name === "is" ? "x-custom-button" : null);
-    
-    expect(inst.customTagName).toBe("x-custom-button");
-  });
-
-  it("customTagName はカスタムタグ名が見つからない場合エラーを投げる", () => {
-    getBaseClassMock.mockReturnValueOnce(class {} as any);
-    const Cls = createComponentClass(makeData());
-    const inst = new (Cls as any)();
-    
-    // 通常のタグで is 属性もない場合
-    Object.defineProperty(inst, "tagName", { value: "DIV", writable: false });
-    inst.getAttribute = vi.fn(() => null);
-    
-    expect(() => inst.customTagName).toThrow();
-  });
 });
