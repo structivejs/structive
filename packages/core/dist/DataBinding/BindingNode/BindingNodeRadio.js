@@ -53,8 +53,9 @@ class BindingNodeRadio extends BindingNode {
         this.node.addEventListener(eventName, async (e) => {
             const loopContext = this.binding.parentBindContent.currentLoopContext;
             const value = this.filteredValue;
-            await createUpdater(engine, async (updater) => {
-                await updater.update(loopContext, async (state, handler) => {
+            // 同期処理
+            createUpdater(engine, (updater) => {
+                updater.update(loopContext, (state, handler) => {
                     binding.updateStateValue(state, handler, value);
                 });
             });

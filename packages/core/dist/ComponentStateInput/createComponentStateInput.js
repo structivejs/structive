@@ -12,6 +12,7 @@ class ComponentStateInputHandler {
         this.engine = engine;
     }
     assignState(object) {
+        // 同期処理
         createUpdater(this.engine, (updater) => {
             updater.update(null, (stateProxy, handler) => {
                 for (const [key, value] of Object.entries(object)) {

@@ -252,8 +252,7 @@ describe("ComponentEngine", () => {
 
   it("connectedCallback: data-state が不正 JSON の場合はエラー", async () => {
     el.dataset.state = "{foo:}"; // 不正な JSON
-    engine.setup();
-    await expect(engine.connectedCallback()).rejects.toThrowError(/Failed to parse state from dataset/);
+    expect(() => engine.setup()).toThrowError(/Failed to parse state from dataset/);
   });
 
   it("connectedCallback: enableWebComponents=false では placeholder 経由で mountAfter", async () => {

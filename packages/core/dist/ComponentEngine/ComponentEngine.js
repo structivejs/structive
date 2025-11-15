@@ -104,12 +104,6 @@ class ComponentEngine {
         const componentClass = this.owner.constructor;
         const rootRef = getStatePropertyRef(getStructuredPathInfo(''), null);
         this.#bindContent = createBindContent(null, componentClass.id, this, rootRef); // this.stateArrayPropertyNamePatternsが変更になる可能性がある
-    }
-    get readyResolvers() {
-        return this.#readyResolvers;
-    }
-    async connectedCallback() {
-        await this.owner.parentStructiveComponent?.readyResolvers.promise;
         // コンポーネントの状態を初期化する
         if (this.owner.dataset.state) {
             // data-state属性から状態を取得する
@@ -127,6 +121,20 @@ class ComponentEngine {
                 });
             }
         }
+        // 状態の初期レンダリングを行う
+        createUpdater(this, (updater) => {
+            updater.initialRender((renderer) => {
+                this.bindContent.activate();
+                renderer.createReadonlyState((readonlyState, readonlyHandler) => {
+                    this.bindContent.applyChange(renderer);
+                });
+            });
+        });
+    }
+    get readyResolvers() {
+        return this.#readyResolvers;
+    }
+    async connectedCallback() {
         const parentComponent = this.owner.parentStructiveComponent;
         if (parentComponent) {
             // 親コンポーネントの状態をバインドする
@@ -162,29 +170,26 @@ class ComponentEngine {
             });
             this.bindContent.mountAfter(parentNode, this.#blockPlaceholder);
         }
-        await createUpdater(this, async (updater) => {
-            updater.initialRender((renderer) => {
-                // 状態の初期レンダリングを行う
-                this.bindContent.activate();
-                renderer.createReadonlyState((readonlyState, readonlyHandler) => {
-                    this.bindContent.applyChange(renderer);
+        // connectedCallbackが実装されていれば呼び出す
+        if (this.pathManager.hasConnectedCallback) {
+            const resultPromise = createUpdater(this, async (updater) => {
+                updater.update(null, async (stateProxy, handler) => {
+                    stateProxy[ConnectedCallbackSymbol]();
                 });
             });
-            await updater.update(null, async (stateProxy, handler) => {
-                await stateProxy[ConnectedCallbackSymbol]();
-            });
-        });
-        // レンダリングが終わってから実行する
-        queueMicrotask(() => {
-            this.#readyResolvers.resolve();
-        });
+            if (resultPromise instanceof Promise) {
+                await resultPromise;
+            }
+        }
+        this.#readyResolvers.resolve();
     }
     async disconnectedCallback() {
         if (this.#ignoreDissconnectedCallback)
             return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
-        await createUpdater(this, async (updater) => {
-            await updater.update(null, async (stateProxy, handler) => {
-                await stateProxy[DisconnectedCallbackSymbol]();
+        // 同期処理
+        createUpdater(this, (updater) => {
+            updater.update(null, (stateProxy, handler) => {
+                stateProxy[DisconnectedCallbackSymbol]();
             });
         });
         // 親コンポーネントから登録を解除する
@@ -200,6 +205,7 @@ class ComponentEngine {
             return this.stateOutput.getListIndexes(ref);
         }
         let value = null;
+        // 同期処理
         createUpdater(this, (updater) => {
             value = updater.createReadonlyState((stateProxy, handler) => {
                 return stateProxy[GetListIndexesByRefSymbol](ref);
@@ -210,6 +216,7 @@ class ComponentEngine {
     getPropertyValue(ref) {
         // プロパティの値を取得する
         let value;
+        // 同期処理
         createUpdater(this, (updater) => {
             value = updater.createReadonlyState((stateProxy, handler) => {
                 return stateProxy[GetByRefSymbol](ref);
@@ -219,6 +226,7 @@ class ComponentEngine {
     }
     setPropertyValue(ref, value) {
         // プロパティの値を設定する
+        // 同期処理
         createUpdater(this, (updater) => {
             updater.update(null, (stateProxy, handler) => {
                 stateProxy[SetByRefSymbol](ref, value);

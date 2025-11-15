@@ -54,20 +54,32 @@ class Updater {
      * @param loopContext
      * @param callback
      */
-    async update(loopContext, callback) {
-        await useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, async (state, handler) => {
+    update(loopContext, callback) {
+        let resultPromise;
+        resultPromise = useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, (state, handler) => {
             // 状態更新処理
-            await callback(state, handler);
+            return callback(state, handler);
         });
-        if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
-            const saveQueue = this.#saveQueue;
-            this.#saveQueue = [];
-            queueMicrotask(() => {
-                this.update(null, (state, handler) => {
-                    state[UpdatedCallbackSymbol](saveQueue);
+        const updatedCallbackHandler = () => {
+            if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
+                const saveQueue = this.#saveQueue;
+                this.#saveQueue = [];
+                queueMicrotask(() => {
+                    this.update(null, (state, handler) => {
+                        state[UpdatedCallbackSymbol](saveQueue);
+                    });
                 });
+            }
+        };
+        if (resultPromise instanceof Promise) {
+            resultPromise.finally(() => {
+                updatedCallbackHandler();
             });
         }
+        else {
+            updatedCallbackHandler();
+        }
+        return resultPromise;
     }
     /**
      * レンダリング処理

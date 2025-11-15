@@ -24,7 +24,7 @@ export function setLoopContext(handler, loopContext, callback) {
             }
             handler.refStack[handler.refIndex] = handler.lastRefStack = loopContext.ref;
             try {
-                return resultPromise = callback();
+                resultPromise = callback();
             }
             finally {
                 handler.refStack[handler.refIndex] = null;
@@ -33,17 +33,18 @@ export function setLoopContext(handler, loopContext, callback) {
             }
         }
         else {
-            return resultPromise = callback();
+            resultPromise = callback();
         }
     }
     finally {
-        if (resultPromise) {
+        // Promiseの場合は新しいPromiseチェーンを返してfinallyを適用
+        if (resultPromise instanceof Promise) {
             return resultPromise.finally(() => {
                 handler.loopContext = null;
             });
         }
-        else {
-            handler.loopContext = null;
-        }
+        // 同期の場合は即座にリセット
+        handler.loopContext = null;
     }
+    return resultPromise;
 }

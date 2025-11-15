@@ -42,8 +42,9 @@ class BindingNodeEvent extends BindingNode {
         if (options.includes("stopPropagation")) {
             e.stopPropagation();
         }
-        await createUpdater(engine, async (updater) => {
-            await updater.update(loopContext, async (state, handler) => {
+        // 非同期処理の可能性あり
+        const resultPromise = createUpdater(engine, (updater) => {
+            return updater.update(loopContext, (state, handler) => {
                 // stateProxyを生成し、バインディング値を実行
                 const func = this.binding.bindingState.getValue(state, handler);
                 if (typeof func !== "function") {
@@ -55,9 +56,12 @@ class BindingNodeEvent extends BindingNode {
                         severity: 'error',
                     });
                 }
-                await Reflect.apply(func, state, [e, ...indexes]);
+                return Reflect.apply(func, state, [e, ...indexes]);
             });
         });
+        if (resultPromise instanceof Promise) {
+            await resultPromise;
+        }
     }
     applyChange(renderer) {
         // イベントバインディングは初期化時のみで、状態変更時に何もしない
