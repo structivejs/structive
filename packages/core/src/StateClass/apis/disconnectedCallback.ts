@@ -16,14 +16,14 @@
 import { DISCONNECTED_CALLBACK_FUNC_NAME } from "../../constants";
 import { IStateHandler, IStateProxy } from "../types";
 
-export async function disconnectedCallback(
+export function disconnectedCallback(
   target: Object, 
   prop: PropertyKey, 
   receiver: IStateProxy,
   handler: IStateHandler
-):Promise<void> {
+): void {
   const callback = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
   if (typeof callback === "function") {
-    await callback.call(receiver);
+    callback.call(receiver);
   }
 }

@@ -14,9 +14,9 @@
  * - ライフサイクル管理やカスタム初期化処理に利用
  */
 import { CONNECTED_CALLBACK_FUNC_NAME } from "../../constants";
-export async function connectedCallback(target, prop, receiver, handler) {
+export function connectedCallback(target, prop, receiver, handler) {
     const callback = Reflect.get(target, CONNECTED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
-        await callback.call(receiver);
+        return callback.call(receiver);
     }
 }

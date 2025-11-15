@@ -14,7 +14,7 @@
  * - ライフサイクル管理やクリーンアップ処理に利用
  */
 import { UPDATED_CALLBACK_FUNC_NAME } from "../../constants";
-export async function updatedCallback(target, refs, receiver, handler) {
+export function updatedCallback(target, refs, receiver, handler) {
     const callback = Reflect.get(target, UPDATED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
         const paths = new Set();
@@ -33,6 +33,6 @@ export async function updatedCallback(target, refs, receiver, handler) {
                 }
             }
         }
-        await callback.call(receiver, Array.from(paths), indexesByPath);
+        return callback.call(receiver, Array.from(paths), indexesByPath);
     }
 }

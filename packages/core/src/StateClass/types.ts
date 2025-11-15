@@ -26,7 +26,8 @@ import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, Ge
 export interface IState {
   [propName: string]: any;
   $connectedCallback?(): Promise<void> | void;
-  $disconnectedCallback?(): Promise<void> | void;
+  $disconnectedCallback?(): void;
+  $updatedCallback?(paths: string[], indexesByPath: Record<string, number[]>): Promise<void> | void;
   $component?: any;
   $navigate?(to:string): void;
   $resolve?(pattern:string, indexes?: number[]): any;
@@ -43,9 +44,9 @@ export interface IWritableStateProxy extends IState {
   [GetByRefSymbol](ref: IStatePropertyRef): any;
   [SetByRefSymbol](ref: IStatePropertyRef, value: any): void;
   [GetListIndexesByRefSymbol](ref: IStatePropertyRef): IListIndex[] | null;
-  [ConnectedCallbackSymbol](): Promise<void>;
-  [DisconnectedCallbackSymbol](): Promise<void>;
-  [UpdatedCallbackSymbol](refs: IStatePropertyRef[]): Promise<void>;
+  [ConnectedCallbackSymbol](): Promise<void> | void;
+  [DisconnectedCallbackSymbol](): void;
+  [UpdatedCallbackSymbol](refs: IStatePropertyRef[]): Promise<void> | void;
 }
 
 export type IStateProxy = IReadonlyStateProxy | IWritableStateProxy;

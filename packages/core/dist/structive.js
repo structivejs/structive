@@ -1758,10 +1758,10 @@ function resolve(target, prop, receiver, handler) {
  * - 存在しない場合は何もしない
  * - ライフサイクル管理やカスタム初期化処理に利用
  */
-async function connectedCallback(target, prop, receiver, handler) {
+function connectedCallback(target, prop, receiver, handler) {
     const callback = Reflect.get(target, CONNECTED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
-        await callback.call(receiver);
+        return callback.call(receiver);
     }
 }
 
@@ -1780,10 +1780,10 @@ async function connectedCallback(target, prop, receiver, handler) {
  * - 存在しない場合は何もしない
  * - ライフサイクル管理やクリーンアップ処理に利用
  */
-async function disconnectedCallback(target, prop, receiver, handler) {
+function disconnectedCallback(target, prop, receiver, handler) {
     const callback = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
-        await callback.call(receiver);
+        callback.call(receiver);
     }
 }
 
@@ -1924,7 +1924,7 @@ function getListIndexesByRef(target, ref, receiver, handler) {
  * - 存在しない場合は何もしない
  * - ライフサイクル管理やクリーンアップ処理に利用
  */
-async function updatedCallback(target, refs, receiver, handler) {
+function updatedCallback(target, refs, receiver, handler) {
     const callback = Reflect.get(target, UPDATED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
         const paths = new Set();
@@ -1943,7 +1943,7 @@ async function updatedCallback(target, refs, receiver, handler) {
                 }
             }
         }
-        await callback.call(receiver, Array.from(paths), indexesByPath);
+        return callback.call(receiver, Array.from(paths), indexesByPath);
     }
 }
 

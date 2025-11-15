@@ -238,7 +238,7 @@ describe('updatedCallback', () => {
       expect(mockCallback).toHaveBeenCalledTimes(1);
     });
 
-    it('should call synchronous callback functions', async () => {
+    it('should call synchronous callback functions', () => {
       const mockCallback = vi.fn().mockReturnValue(undefined);
       mockTarget = {
         [UPDATED_CALLBACK_FUNC_NAME]: mockCallback
@@ -246,10 +246,11 @@ describe('updatedCallback', () => {
 
       const refs = [createMockRef('sync.value')];
 
-      await updatedCallback(mockTarget, refs, mockReceiver, mockHandler);
+      const result = updatedCallback(mockTarget, refs, mockReceiver, mockHandler);
 
       expect(mockCallback).toHaveBeenCalledTimes(1);
       expect(mockCallback).toHaveBeenCalledWith(['sync.value'], {});
+      expect(result).toBeUndefined();
     });
 
     it('should handle edge case where wildcard ref has zero index', async () => {
@@ -275,74 +276,74 @@ describe('updatedCallback', () => {
   });
 
   describe('when target does not have $updatedCallback property', () => {
-    it('should do nothing when target is empty object', async () => {
+    it('should do nothing when target is empty object', () => {
       mockTarget = {};
 
-      await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
+      const result = updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
 
       // No exceptions should be thrown and function should complete
-      expect(true).toBe(true);
+      expect(result).toBeUndefined();
     });
 
-    it('should do nothing when target has other properties but not $updatedCallback', async () => {
+    it('should do nothing when target has other properties but not $updatedCallback', () => {
       mockTarget = {
         someOtherProperty: 'value',
         anotherMethod: () => 'test'
       };
 
-      await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
+      const result = updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
 
-      expect(true).toBe(true);
+      expect(result).toBeUndefined();
     });
 
-    it('should do nothing when $updatedCallback is not a function (string)', async () => {
+    it('should do nothing when $updatedCallback is not a function (string)', () => {
       mockTarget = {
         [UPDATED_CALLBACK_FUNC_NAME]: 'not a function'
       };
 
-      await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
+      const result = updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
 
-      expect(true).toBe(true);
+      expect(result).toBeUndefined();
     });
 
-    it('should do nothing when $updatedCallback is not a function (number)', async () => {
+    it('should do nothing when $updatedCallback is not a function (number)', () => {
       mockTarget = {
         [UPDATED_CALLBACK_FUNC_NAME]: 123
       };
 
-      await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
+      const result = updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
 
-      expect(true).toBe(true);
+      expect(result).toBeUndefined();
     });
 
-    it('should do nothing when $updatedCallback is not a function (object)', async () => {
+    it('should do nothing when $updatedCallback is not a function (object)', () => {
       mockTarget = {
         [UPDATED_CALLBACK_FUNC_NAME]: { notAFunction: true }
       };
 
-      await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
+      const result = updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
 
-      expect(true).toBe(true);
+      expect(result).toBeUndefined();
     });
 
-    it('should do nothing when $updatedCallback is null', async () => {
+    it('should do nothing when $updatedCallback is null', () => {
       mockTarget = {
         [UPDATED_CALLBACK_FUNC_NAME]: null
       };
 
-      await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
+      const result = updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
 
-      expect(true).toBe(true);
+      expect(result).toBeUndefined();
     });
 
-    it('should do nothing when $updatedCallback is undefined', async () => {
+    it('should do nothing when $updatedCallback is undefined', () => {
       mockTarget = {
         [UPDATED_CALLBACK_FUNC_NAME]: undefined
       };
 
-      await updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
+      const result = updatedCallback(mockTarget, [createMockRef('test.value')], mockReceiver, mockHandler);
 
-      expect(true).toBe(true);
+      expect(result).toBeUndefined();
     });
   });
 

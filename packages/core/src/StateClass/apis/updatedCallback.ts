@@ -17,12 +17,12 @@ import { UPDATED_CALLBACK_FUNC_NAME } from "../../constants";
 import { IStatePropertyRef } from "../../StatePropertyRef/types";
 import { IStateHandler, IStateProxy } from "../types";
 
-export async function updatedCallback(
+export function updatedCallback(
   target: Object, 
   refs: IStatePropertyRef[], 
   receiver: IStateProxy,
   handler: IStateHandler,
-):Promise<void> {
+):Promise<void> | void {
   const callback = Reflect.get(target, UPDATED_CALLBACK_FUNC_NAME);
   if (typeof callback === "function") {
     const paths: Set<string> = new Set();
@@ -40,6 +40,6 @@ export async function updatedCallback(
         }
       }
     }
-    await callback.call(receiver, Array.from(paths), indexesByPath);
+    return callback.call(receiver, Array.from(paths), indexesByPath);
   }
 }

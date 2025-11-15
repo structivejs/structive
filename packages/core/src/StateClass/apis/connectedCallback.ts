@@ -16,14 +16,14 @@
 import { CONNECTED_CALLBACK_FUNC_NAME } from "../../constants";
 import { IStateHandler, IStateProxy } from "../types";
 
-export async function connectedCallback(
+export function connectedCallback(
   target: Object, 
   prop: PropertyKey, 
   receiver: IStateProxy,
   handler: IStateHandler
-):Promise<void> {
+):Promise<void> | void {
   const callback = Reflect.get(target, CONNECTED_CALLBACK_FUNC_NAME);
   if (typeof callback === "function") {
-    await callback.call(receiver);
+    return callback.call(receiver);
   }
 }

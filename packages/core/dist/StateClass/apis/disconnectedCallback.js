@@ -14,9 +14,9 @@
  * - ライフサイクル管理やクリーンアップ処理に利用
  */
 import { DISCONNECTED_CALLBACK_FUNC_NAME } from "../../constants";
-export async function disconnectedCallback(target, prop, receiver, handler) {
+export function disconnectedCallback(target, prop, receiver, handler) {
     const callback = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
-        await callback.call(receiver);
+        callback.call(receiver);
     }
 }
