@@ -386,6 +386,8 @@ describe("ComponentEngine", () => {
   it("disconnectedCallback: Disconnected を呼び出し、非 WebComponents は placeholder を掃除", async () => {
     engine = createComponentEngineFn(makeConfig({ enableWebComponents: false }), el as any);
     applyComponentEngineListStorePatch(engine);
+    // pathManager.hasDisconnectedCallback を true に設定
+    (engine as any).pathManager.hasDisconnectedCallback = true;
     document.body.appendChild(el);
     const parent = {
       registerChildComponent: vi.fn(),

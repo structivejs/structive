@@ -5432,11 +5432,13 @@ class ComponentEngine {
             return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
         try {
             // 同期処理
-            createUpdater(this, (updater) => {
-                updater.update(null, (stateProxy, handler) => {
-                    stateProxy[DisconnectedCallbackSymbol]();
+            if (this.pathManager.hasDisconnectedCallback) {
+                createUpdater(this, (updater) => {
+                    updater.update(null, (stateProxy, handler) => {
+                        stateProxy[DisconnectedCallbackSymbol]();
+                    });
                 });
-            });
+            }
         }
         finally {
             // 親コンポーネントから登録を解除する
@@ -5448,13 +5450,11 @@ class ComponentEngine {
             }
             // 状態の不活化とunmountを行う
             // inactivateの中でbindContent.unmountも呼ばれる
-            if (this.pathManager.hasDisconnectedCallback) {
-                createUpdater(this, (updater) => {
-                    updater.initialRender((renderer) => {
-                        this.bindContent.inactivate();
-                    });
+            createUpdater(this, (updater) => {
+                updater.initialRender((renderer) => {
+                    this.bindContent.inactivate();
                 });
-            }
+            });
         }
     }
     getListIndexes(ref) {

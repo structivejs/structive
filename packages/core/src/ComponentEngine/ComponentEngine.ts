@@ -218,11 +218,13 @@ class ComponentEngine implements IComponentEngine {
 
     try {
       // 同期処理
-      createUpdater<void>(this, (updater) => {
-        updater.update(null, (stateProxy, handler) => {
-          stateProxy[DisconnectedCallbackSymbol]();
+      if (this.pathManager.hasDisconnectedCallback) {
+        createUpdater<void>(this, (updater) => {
+          updater.update(null, (stateProxy, handler) => {
+            stateProxy[DisconnectedCallbackSymbol]();
+          });
         });
-      });
+      }
     } finally {
       // 親コンポーネントから登録を解除する
       this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
@@ -233,13 +235,11 @@ class ComponentEngine implements IComponentEngine {
       }
       // 状態の不活化とunmountを行う
       // inactivateの中でbindContent.unmountも呼ばれる
-      if (this.pathManager.hasDisconnectedCallback) {
-        createUpdater<void>(this, (updater) => {
-          updater.initialRender((renderer) => {
-            this.bindContent.inactivate();
-          });
+      createUpdater<void>(this, (updater) => {
+        updater.initialRender((renderer) => {
+          this.bindContent.inactivate();
         });
-      }
+      });
     }
 
   }
