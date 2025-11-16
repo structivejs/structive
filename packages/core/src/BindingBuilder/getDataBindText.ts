@@ -29,8 +29,9 @@ export function getDataBindText(nodeType: NodeType, node: Node): string {
     }
     case "Template": {
       const text = node.textContent?.slice(COMMENT_TEMPLATE_MARK_LEN).trim();
-      const id = Number(text);
-      const template = getTemplateById(id) ?? raiseError(`Template not found: ${text}`);
+      const [ idText,  ] = text?.split(' ', 2) ?? [];
+      const id = Number(idText);
+      const template = getTemplateById(id);
       return template.getAttribute(DATA_BIND_ATTRIBUTE) ?? "";
     }
     case "SVGElement": {

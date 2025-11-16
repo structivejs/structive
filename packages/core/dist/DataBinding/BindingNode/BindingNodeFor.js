@@ -320,6 +320,20 @@ class BindingNodeFor extends BindingNodeBlock {
         this.#oldListIndexes = [...newListIndexes];
         this.#oldListIndexSet = newListIndexesSet;
     }
+    inactivate() {
+        for (let i = 0; i < this.#bindContents.length; i++) {
+            const bindContent = this.#bindContents[i];
+            bindContent.unmount();
+            bindContent.inactivate();
+        }
+        this.#bindContentPool.push(...this.#bindContents);
+        this.#bindContents = [];
+        this.#bindContentByListIndex = new WeakMap();
+        this.#bindContentLastIndex = 0;
+        this.#oldList = undefined;
+        this.#oldListIndexes = [];
+        this.#oldListIndexSet = new Set();
+    }
 }
 export const createBindingNodeFor = (name, filterTexts, decorates) => (binding, node, filters) => {
     const filterFns = createFilters(filters, filterTexts);

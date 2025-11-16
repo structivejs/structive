@@ -86,6 +86,11 @@ class BindingNodeIf extends BindingNodeBlock {
             this.#bindContents = this.#falseBindContents;
         }
     }
+    inactivate() {
+        this.#bindContent.unmount();
+        this.#bindContent.inactivate();
+        this.#bindContents = this.#falseBindContents;
+    }
 }
 /**
  * if バインディングノード生成用ファクトリ関数。

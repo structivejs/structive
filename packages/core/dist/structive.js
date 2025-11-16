@@ -2912,14 +2912,29 @@ class BindingNodeBlock extends BindingNode {
     }
     constructor(binding, node, name, filters, decorates) {
         super(binding, node, name, filters, decorates);
-        const id = this.node.textContent?.slice(COMMENT_TEMPLATE_MARK_LEN$1) ?? raiseError({
+        const commentText = this.node.textContent?.slice(COMMENT_TEMPLATE_MARK_LEN$1) ?? raiseError({
             code: 'BIND-201',
             message: 'Invalid node',
             context: { where: 'BindingNodeBlock.id', textContent: this.node.textContent ?? null },
             docsUrl: '/docs/error-codes.md#bind',
             severity: 'error',
         });
-        this.#id = Number(id);
+        const [id,] = commentText.split(' ', 2);
+        const numId = Number(id);
+        // Number('') は 0 を返すため、文字列としての比較で妥当性を確認
+        // また isFinite で無限大も排除
+        // Integer であることも確認
+        // 負の数も不可
+        if (numId.toString() !== id || isNaN(numId) || !isFinite(numId) || !Number.isInteger(numId) || numId < 0) {
+            raiseError({
+                code: 'BIND-201',
+                message: 'Invalid node',
+                context: { where: 'BindingNodeBlock.id', textContent: this.node.textContent },
+                docsUrl: '/docs/error-codes.md#bind',
+                severity: 'error',
+            });
+        }
+        this.#id = numId;
     }
 }
 
@@ -3004,6 +3019,11 @@ class BindingNodeIf extends BindingNodeBlock {
             this.#bindContent.inactivate();
             this.#bindContents = this.#falseBindContents;
         }
+    }
+    inactivate() {
+        this.#bindContent.unmount();
+        this.#bindContent.inactivate();
+        this.#bindContents = this.#falseBindContents;
     }
 }
 /**
@@ -3329,6 +3349,20 @@ class BindingNodeFor extends BindingNodeBlock {
         this.#oldList = [...newList];
         this.#oldListIndexes = [...newListIndexes];
         this.#oldListIndexSet = newListIndexesSet;
+    }
+    inactivate() {
+        for (let i = 0; i < this.#bindContents.length; i++) {
+            const bindContent = this.#bindContents[i];
+            bindContent.unmount();
+            bindContent.inactivate();
+        }
+        this.#bindContentPool.push(...this.#bindContents);
+        this.#bindContents = [];
+        this.#bindContentByListIndex = new WeakMap();
+        this.#bindContentLastIndex = 0;
+        this.#oldList = undefined;
+        this.#oldListIndexes = [];
+        this.#oldListIndexSet = new Set();
     }
 }
 const createBindingNodeFor = (name, filterTexts, decorates) => (binding, node, filters) => {
@@ -4057,8 +4091,9 @@ function getDataBindText(nodeType, node) {
         }
         case "Template": {
             const text = node.textContent?.slice(COMMENT_TEMPLATE_MARK_LEN).trim();
-            const id = Number(text);
-            const template = getTemplateById(id) ?? raiseError(`Template not found: ${text}`);
+            const [idText,] = text?.split(' ', 2) ?? [];
+            const id = Number(idText);
+            const template = getTemplateById(id);
             return template.getAttribute(DATA_BIND_ATTRIBUTE) ?? "";
         }
         case "SVGElement": {
@@ -5292,32 +5327,6 @@ class ComponentEngine {
         const componentClass = this.owner.constructor;
         const rootRef = getStatePropertyRef(getStructuredPathInfo(''), null);
         this.#bindContent = createBindContent(null, componentClass.id, this, rootRef); // this.stateArrayPropertyNamePatternsが変更になる可能性がある
-        // コンポーネントの状態を初期化する
-        if (this.owner.dataset.state) {
-            // data-state属性から状態を取得する
-            try {
-                const json = JSON.parse(this.owner.dataset.state);
-                this.stateInput[AssignStateSymbol](json);
-            }
-            catch (e) {
-                raiseError({
-                    code: 'STATE-202',
-                    message: 'Failed to parse state from dataset',
-                    context: { where: 'ComponentEngine.connectedCallback', datasetState: this.owner.dataset.state },
-                    docsUrl: './docs/error-codes.md#state',
-                    cause: e,
-                });
-            }
-        }
-        // 状態の初期レンダリングを行う
-        createUpdater(this, (updater) => {
-            updater.initialRender((renderer) => {
-                this.bindContent.activate();
-                renderer.createReadonlyState((readonlyState, readonlyHandler) => {
-                    this.bindContent.applyChange(renderer);
-                });
-            });
-        });
     }
     get readyResolvers() {
         return this.#readyResolvers;
@@ -5358,6 +5367,37 @@ class ComponentEngine {
             });
             this.bindContent.mountAfter(parentNode, this.#blockPlaceholder);
         }
+        /**
+         * setup()で状態の初期化と初期レンダリングを行わない理由
+         * - setup()はコンポーネントのインスタンス化時に呼ばれるが、connectedCallback()はDOMに接続されたときに呼ばれる
+         * - disconnectでinactivateされた後に再度connectされた場合、状態の初期化とレンダリングを再度行う必要がある
+         */
+        // コンポーネントの状態を初期化する
+        if (this.owner.dataset.state) {
+            // data-state属性から状態を取得する
+            try {
+                const json = JSON.parse(this.owner.dataset.state);
+                this.stateInput[AssignStateSymbol](json);
+            }
+            catch (e) {
+                raiseError({
+                    code: 'STATE-202',
+                    message: 'Failed to parse state from dataset',
+                    context: { where: 'ComponentEngine.connectedCallback', datasetState: this.owner.dataset.state },
+                    docsUrl: './docs/error-codes.md#state',
+                    cause: e,
+                });
+            }
+        }
+        // 状態の初期レンダリングを行う
+        createUpdater(this, (updater) => {
+            updater.initialRender((renderer) => {
+                this.bindContent.activate();
+                renderer.createReadonlyState((readonlyState, readonlyHandler) => {
+                    this.bindContent.applyChange(renderer);
+                });
+            });
+        });
         // connectedCallbackが実装されていれば呼び出す
         if (this.pathManager.hasConnectedCallback) {
             const resultPromise = createUpdater(this, async (updater) => {
@@ -5374,18 +5414,31 @@ class ComponentEngine {
     async disconnectedCallback() {
         if (this.#ignoreDissconnectedCallback)
             return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
-        // 同期処理
-        createUpdater(this, (updater) => {
-            updater.update(null, (stateProxy, handler) => {
-                stateProxy[DisconnectedCallbackSymbol]();
+        try {
+            // 同期処理
+            createUpdater(this, (updater) => {
+                updater.update(null, (stateProxy, handler) => {
+                    stateProxy[DisconnectedCallbackSymbol]();
+                });
             });
-        });
-        // 親コンポーネントから登録を解除する
-        this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
-        if (!this.config.enableWebComponents) {
-            this.#blockPlaceholder?.remove();
-            this.#blockPlaceholder = null;
-            this.#blockParentNode = null;
+        }
+        finally {
+            // 親コンポーネントから登録を解除する
+            this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
+            if (!this.config.enableWebComponents) {
+                this.#blockPlaceholder?.remove();
+                this.#blockPlaceholder = null;
+                this.#blockParentNode = null;
+            }
+            // 状態の不活化とunmountを行う
+            // inactivateの中でbindContent.unmountも呼ばれる
+            if (this.pathManager.hasDisconnectedCallback) {
+                createUpdater(this, (updater) => {
+                    updater.initialRender((renderer) => {
+                        this.bindContent.inactivate();
+                    });
+                });
+            }
         }
     }
     getListIndexes(ref) {
@@ -5616,7 +5669,9 @@ function replaceMustacheWithTemplateTag(html) {
 const SVG_NS = "http://www.w3.org/2000/svg";
 function replaceTemplateTagWithComment(id, template, rootId = id) {
     // テンプレートの親ノードが存在する場合は、テンプレートをコメントノードに置き換える
-    template.parentNode?.replaceChild(document.createComment(`${COMMENT_TEMPLATE_MARK}${id}`), template);
+    // デバッグ時、bindTextの内容をコメントに含める
+    const bindText = config$2.debug ? template.getAttribute(DATA_BIND_ATTRIBUTE) : "";
+    template.parentNode?.replaceChild(document.createComment(`${COMMENT_TEMPLATE_MARK}${id} ${bindText ?? ""}`), template);
     if (template.namespaceURI === SVG_NS) {
         // SVGタグ内のtemplateタグを想定
         const newTemplate = document.createElement("template");
@@ -5625,7 +5680,6 @@ function replaceTemplateTagWithComment(id, template, rootId = id) {
             const childNode = childNodes[i];
             newTemplate.content.appendChild(childNode);
         }
-        const bindText = template.getAttribute(DATA_BIND_ATTRIBUTE);
         newTemplate.setAttribute(DATA_BIND_ATTRIBUTE, bindText ?? "");
         template = newTemplate;
     }

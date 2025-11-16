@@ -100,4 +100,29 @@ describe("BindingNodeIf", () => {
     node.applyChange(skipped);
     expect(binding.bindingState.getFilteredValue).toHaveBeenCalledTimes(1);
   });
+
+  it("inactivate は bindContent を unmount & inactivate し、bindContents を空にする", () => {
+    ensureTemplate(800, `<div>if-content</div>`);
+    const engine = createEngineStub();
+    const parent = document.createElement("div");
+    const comment = document.createComment(`${COMMENT_TEMPLATE_MARK}800`);
+    parent.appendChild(comment);
+    const binding = createBindingStub(engine, comment);
+    const node = createBindingNodeIf("if", [], [])(binding, comment, engine.inputFilters);
+
+    binding.bindingState.getFilteredValue.mockReturnValue(true);
+    const renderer = createRendererStub({ readonlyState: {} });
+    node.applyChange(renderer);
+    expect(node.bindContents).toHaveLength(1);
+
+    const bindContent = node.bindContents[0];
+    const unmountSpy = vi.spyOn(bindContent, "unmount");
+    const inactivateSpy = vi.spyOn(bindContent, "inactivate");
+
+    node.inactivate();
+
+    expect(unmountSpy).toHaveBeenCalled();
+    expect(inactivateSpy).toHaveBeenCalled();
+    expect(node.bindContents).toHaveLength(0);
+  });
 });

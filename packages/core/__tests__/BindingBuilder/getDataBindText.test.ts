@@ -1,11 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getDataBindText } from '../../src/BindingBuilder/getDataBindText.js';
-import * as templateModule from '../../src/Template/registerTemplate.js';
 
-// モック関数を作成
+// モック設定は必ずインポートの前に行う
 vi.mock('../../src/Template/registerTemplate.js', () => ({
   getTemplateById: vi.fn()
 }));
+
+import { getDataBindText } from '../../src/BindingBuilder/getDataBindText.js';
+import * as templateModule from '../../src/Template/registerTemplate.js';
 
 const mockGetTemplateById = vi.mocked(templateModule.getTemplateById);
 
@@ -108,13 +109,6 @@ describe('BindingBuilder', () => {
       expect(result).toBe('value:data');
     });
 
-    it('should throw error when template not found', () => {
-      mockGetTemplateById.mockReturnValue(undefined as any);
-      
-      const node = createMockNode('Comment', Node.COMMENT_NODE, '@@|999');
-      expect(() => getDataBindText('Template', node)).toThrow('Template not found: 999');
-    });
-
     it('should return empty string for template without data-bind', () => {
       const mockTemplate = createMockTemplate();
       mockGetTemplateById.mockReturnValue(mockTemplate as any);
@@ -123,6 +117,20 @@ describe('BindingBuilder', () => {
       const result = getDataBindText('Template', node);
       
       expect(result).toBe('');
+    });
+
+    it('should handle Template node with null textContent', () => {
+      const mockTemplate = createMockTemplate('value:test');
+      mockGetTemplateById.mockReturnValue(mockTemplate as any);
+      
+      // textContentがnullのノードを作成
+      const node = createMockNode('Comment', Node.COMMENT_NODE, null);
+      const result = getDataBindText('Template', node);
+      
+      // textがundefinedになり、text?.split()の右辺[]が使われ、idTextもundefinedになる
+      // Number(undefined)はNaNとなり、getTemplateByIdにNaNが渡される
+      expect(mockGetTemplateById).toHaveBeenCalledWith(NaN);
+      expect(result).toBe('value:test');
     });
 
     it('should return empty string for unsupported node type', () => {

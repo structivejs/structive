@@ -1,6 +1,5 @@
 import { COMMENT_EMBED_MARK, COMMENT_TEMPLATE_MARK, DATA_BIND_ATTRIBUTE } from "../constants.js";
 import { getTemplateById } from "../Template/registerTemplate.js";
-import { raiseError } from "../utils.js";
 const COMMENT_EMBED_MARK_LEN = COMMENT_EMBED_MARK.length;
 const COMMENT_TEMPLATE_MARK_LEN = COMMENT_TEMPLATE_MARK.length;
 /**
@@ -26,8 +25,9 @@ export function getDataBindText(nodeType, node) {
         }
         case "Template": {
             const text = node.textContent?.slice(COMMENT_TEMPLATE_MARK_LEN).trim();
-            const id = Number(text);
-            const template = getTemplateById(id) ?? raiseError(`Template not found: ${text}`);
+            const [idText,] = text?.split(' ', 2) ?? [];
+            const id = Number(idText);
+            const template = getTemplateById(id);
             return template.getAttribute(DATA_BIND_ATTRIBUTE) ?? "";
         }
         case "SVGElement": {

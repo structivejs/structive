@@ -22,6 +22,7 @@ import { getStatePropertyRef } from "../StatePropertyRef/StatepropertyRef.js";
 import { RESERVED_WORD_SET } from "../constants.js";
 import { addPathNode } from "../PathTree/PathNode.js";
 import { IStatePropertyRef } from "../StatePropertyRef/types.js";
+import { getCustomTagName } from "../WebComponents/getCustomTagName.js";
 
 /**
  * ComponentEngine は、Structive コンポーネントの状態・依存関係・
@@ -125,33 +126,6 @@ class ComponentEngine implements IComponentEngine {
     const componentClass = this.owner.constructor as IComponentStatic;
     const rootRef = getStatePropertyRef(getStructuredPathInfo(''), null);
     this.#bindContent = createBindContent(null, componentClass.id, this, rootRef); // this.stateArrayPropertyNamePatternsが変更になる可能性がある
-
-    // コンポーネントの状態を初期化する
-    if (this.owner.dataset.state) {
-      // data-state属性から状態を取得する
-      try {
-        const json = JSON.parse(this.owner.dataset.state);
-        this.stateInput[AssignStateSymbol](json);
-      } catch(e) {
-        raiseError({
-          code: 'STATE-202',
-          message: 'Failed to parse state from dataset',
-          context: { where: 'ComponentEngine.connectedCallback', datasetState: this.owner.dataset.state },
-          docsUrl: './docs/error-codes.md#state',
-          cause: e as any,
-        });
-      }
-    }
-
-    // 状態の初期レンダリングを行う
-    createUpdater<void>(this, (updater) => {
-      updater.initialRender((renderer) => {
-        this.bindContent.activate();
-        renderer.createReadonlyState( (readonlyState, readonlyHandler) => {
-          this.bindContent.applyChange(renderer);
-        } );
-      });
-    });
   }
 
   get readyResolvers(): PromiseWithResolvers<void> {
@@ -192,6 +166,39 @@ class ComponentEngine implements IComponentEngine {
       });
       this.bindContent.mountAfter(parentNode, this.#blockPlaceholder);
     }
+
+    /**
+     * setup()で状態の初期化と初期レンダリングを行わない理由
+     * - setup()はコンポーネントのインスタンス化時に呼ばれるが、connectedCallback()はDOMに接続されたときに呼ばれる
+     * - disconnectでinactivateされた後に再度connectされた場合、状態の初期化とレンダリングを再度行う必要がある
+     */
+    // コンポーネントの状態を初期化する
+    if (this.owner.dataset.state) {
+      // data-state属性から状態を取得する
+      try {
+        const json = JSON.parse(this.owner.dataset.state);
+        this.stateInput[AssignStateSymbol](json);
+      } catch(e) {
+        raiseError({
+          code: 'STATE-202',
+          message: 'Failed to parse state from dataset',
+          context: { where: 'ComponentEngine.connectedCallback', datasetState: this.owner.dataset.state },
+          docsUrl: './docs/error-codes.md#state',
+          cause: e as any,
+        });
+      }
+    }
+
+    // 状態の初期レンダリングを行う
+    createUpdater<void>(this, (updater) => {
+      updater.initialRender((renderer) => {
+        this.bindContent.activate();
+        renderer.createReadonlyState( (readonlyState, readonlyHandler) => {
+          this.bindContent.applyChange(renderer);
+        } );
+      });
+    });
+
     // connectedCallbackが実装されていれば呼び出す
     if (this.pathManager.hasConnectedCallback) {
       const resultPromise = createUpdater<Promise<void>>(this, async (updater) => {
@@ -208,19 +215,33 @@ class ComponentEngine implements IComponentEngine {
 
   async disconnectedCallback(): Promise<void> {
     if (this.#ignoreDissconnectedCallback) return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
-    // 同期処理
-    createUpdater<void>(this, (updater) => {
-      updater.update(null, (stateProxy, handler) => {
-        stateProxy[DisconnectedCallbackSymbol]();
+
+    try {
+      // 同期処理
+      createUpdater<void>(this, (updater) => {
+        updater.update(null, (stateProxy, handler) => {
+          stateProxy[DisconnectedCallbackSymbol]();
+        });
       });
-    });
-    // 親コンポーネントから登録を解除する
-    this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
-    if (!this.config.enableWebComponents) {
-      this.#blockPlaceholder?.remove();
-      this.#blockPlaceholder = null;
-      this.#blockParentNode = null;
+    } finally {
+      // 親コンポーネントから登録を解除する
+      this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
+      if (!this.config.enableWebComponents) {
+        this.#blockPlaceholder?.remove();
+        this.#blockPlaceholder = null;
+        this.#blockParentNode = null;
+      }
+      // 状態の不活化とunmountを行う
+      // inactivateの中でbindContent.unmountも呼ばれる
+      if (this.pathManager.hasDisconnectedCallback) {
+        createUpdater<void>(this, (updater) => {
+          updater.initialRender((renderer) => {
+            this.bindContent.inactivate();
+          });
+        });
+      }
     }
+
   }
 
   getListIndexes(ref: IStatePropertyRef): IListIndex[] | null {

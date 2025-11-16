@@ -252,7 +252,8 @@ describe("ComponentEngine", () => {
 
   it("connectedCallback: data-state が不正 JSON の場合はエラー", async () => {
     el.dataset.state = "{foo:}"; // 不正な JSON
-    expect(() => engine.setup()).toThrowError(/Failed to parse state from dataset/);
+    engine.setup();
+    await expect(() => engine.connectedCallback()).rejects.toThrow(/Failed to parse state from dataset/);
   });
 
   it("connectedCallback: enableWebComponents=false では placeholder 経由で mountAfter", async () => {
@@ -550,5 +551,21 @@ describe("ComponentEngine", () => {
     // 存在しないバインディングを削除しようとしても配列は変わらない
     engine.removeBinding(ref, nonExistentBinding);
     expect(engine.getBindings(ref)).toEqual([binding1, binding2]);
+  });
+
+  it("disconnectedCallback: hasDisconnectedCallback が true の場合に bindContent.inactivate が呼ばれる", async () => {
+    // hasDisconnectedCallback を true に設定
+    engine.pathManager.hasDisconnectedCallback = true;
+    engine.setup();
+    
+    // inactivate のスパイを設定
+    const inactivateSpy = vi.fn();
+    currentBindContent.inactivate = inactivateSpy;
+    
+    await engine.connectedCallback();
+    await engine.disconnectedCallback();
+    
+    // inactivate が呼ばれたことを確認
+    expect(inactivateSpy).toHaveBeenCalled();
   });
 });

@@ -31,14 +31,29 @@ export class BindingNodeBlock extends BindingNode {
     decorates : string[]
   ) {
     super(binding, node, name, filters, decorates);
-    const id = this.node.textContent?.slice(COMMENT_TEMPLATE_MARK_LEN) ?? raiseError({
+    const commentText = this.node.textContent?.slice(COMMENT_TEMPLATE_MARK_LEN) ?? raiseError({
       code: 'BIND-201',
       message: 'Invalid node',
       context: { where: 'BindingNodeBlock.id', textContent: this.node.textContent ?? null },
       docsUrl: '/docs/error-codes.md#bind',
       severity: 'error',
     });
-    this.#id = Number(id);
+    const [ id,  ] = commentText.split(' ', 2);
+    const numId = Number(id);
+    // Number('') は 0 を返すため、文字列としての比較で妥当性を確認
+    // また isFinite で無限大も排除
+    // Integer であることも確認
+    // 負の数も不可
+    if (numId.toString() !== id || isNaN(numId) || !isFinite(numId) || !Number.isInteger(numId) || numId < 0) {
+      raiseError({
+        code: 'BIND-201',
+        message: 'Invalid node',
+        context: { where: 'BindingNodeBlock.id', textContent: this.node.textContent },
+        docsUrl: '/docs/error-codes.md#bind',
+        severity: 'error',
+      });
+    }
+    this.#id = numId;
   }
     
 }

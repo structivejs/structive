@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+﻿import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createBindingNodeFor } from "../../../src/DataBinding/BindingNode/BindingNodeFor";
 import { createBindingStub, createEngineStub, createRendererStub } from "../helpers/bindingNodeHarness";
 import * as registerTemplateMod from "../../../src/Template/registerTemplate";
@@ -251,7 +251,7 @@ describe("BindingNodeFor coverage", () => {
 
   it("readonlyState が undefined/null を返しても空扱い", () => {
     const engine = createEngineStub();
-    const comment = document.createComment("@@|306a");
+    const comment = document.createComment("@@|306");
     const binding = createBindingStub(engine, comment);
     const container = document.createElement("div");
     container.appendChild(comment);
@@ -586,7 +586,7 @@ describe("BindingNodeFor coverage", () => {
   it("changeIndexesSet がある場合にリオーダー処理を実行する", () => {
     setupTemplate();
     const engine = createEngineStub();
-    const comment = document.createComment("@@|313a");
+    const comment = document.createComment("@@|313");
     const binding = createBindingStub(engine, comment);
     const container = document.createElement("div");
     container.appendChild(comment);
@@ -631,7 +631,7 @@ describe("BindingNodeFor coverage", () => {
   it("updatingRefs の listIndex が null だとエラー", () => {
     setupTemplate();
     const engine = createEngineStub();
-    const comment = document.createComment("@@|313b");
+    const comment = document.createComment("@@|314");
     const binding = createBindingStub(engine, comment);
     const container = document.createElement("div");
     container.appendChild(comment);
@@ -657,7 +657,7 @@ describe("BindingNodeFor coverage", () => {
   it("changeListIndexes に紐付いたバインディングが再評価される", () => {
     setupTemplate();
     const engine = createEngineStub();
-    const comment = document.createComment("@@|313c");
+    const comment = document.createComment("@@|315");
     const binding = createBindingStub(engine, comment);
     const container = document.createElement("div");
     container.appendChild(comment);
@@ -697,7 +697,7 @@ describe("BindingNodeFor coverage", () => {
   it("changeListIndexes のバインディングが updatedBindings に含まれる場合はスキップされる", () => {
     setupTemplate();
     const engine = createEngineStub();
-    const comment = document.createComment("@@|313c-skip");
+    const comment = document.createComment("@@|316");
     const binding = createBindingStub(engine, comment);
     const container = document.createElement("div");
     container.appendChild(comment);
@@ -741,7 +741,7 @@ describe("BindingNodeFor coverage", () => {
   it("processedRefs に含まれる updatingRef はスキップされる", () => {
     setupTemplate();
     const engine = createEngineStub();
-    const comment = document.createComment("@@|313d");
+    const comment = document.createComment("@@|317");
     const binding = createBindingStub(engine, comment);
     const container = document.createElement("div");
     container.appendChild(comment);
@@ -769,7 +769,7 @@ describe("BindingNodeFor coverage", () => {
   it("別パターンの updatingRef は無視される", () => {
     setupTemplate();
     const engine = createEngineStub();
-    const comment = document.createComment("@@|313e");
+    const comment = document.createComment("@@|318");
     const binding = createBindingStub(engine, comment);
     const container = document.createElement("div");
     container.appendChild(comment);
@@ -832,7 +832,7 @@ describe("BindingNodeFor coverage", () => {
   it("overwritesSet に含まれる BindContent は再描画される", () => {
     setupTemplate();
     const engine = createEngineStub();
-    const comment = document.createComment("@@|314a");
+    const comment = document.createComment("@@|319");
     const binding = createBindingStub(engine, comment);
     const container = document.createElement("div");
     container.appendChild(comment);
@@ -1261,5 +1261,41 @@ describe("BindingNodeFor coverage", () => {
       delete (globalThis as any).__STRUCTIVE_USE_ALL_APPEND__;
       vi.resetModules();
     }
+  });
+
+  it("inactivate は全ての BindContent を unmount & inactivate し、プールに追加する", () => {
+    setupTemplate();
+    const engine = createEngineStub();
+    const comment = document.createComment("@@|306");
+    const container = document.createElement("div");
+    container.appendChild(comment);
+    document.body.appendChild(container);
+
+    const binding = createBindingStub(engine);
+    const node = createBindingNodeFor("items", [], [])(binding, comment, {} as any);
+
+    const idx = createIndexes(3);
+    const renderer = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => ["a", "b", "c"]),
+        [GetListIndexesByRefSymbol]: vi.fn(() => idx),
+      },
+    });
+
+    node.applyChange(renderer);
+    expect(node.bindContents.length).toBe(3);
+
+    const bindContents = [...node.bindContents];
+    const unmountSpy = vi.spyOn(bindContents[0], "unmount");
+    const inactivateSpy = vi.spyOn(bindContents[0], "inactivate");
+
+    node.inactivate();
+
+    expect(unmountSpy).toHaveBeenCalled();
+    expect(inactivateSpy).toHaveBeenCalled();
+    expect(node.bindContents.length).toBe(0);
+    expect(node.poolLength).toBe(3);
+
+    document.body.removeChild(container);
   });
 });

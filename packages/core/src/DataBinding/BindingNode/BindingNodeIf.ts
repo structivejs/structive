@@ -106,6 +106,12 @@ class BindingNodeIf extends BindingNodeBlock {
       this.#bindContents = this.#falseBindContents;
     }
   }
+
+  inactivate(): void {
+    this.#bindContent.unmount();
+    this.#bindContent.inactivate();
+    this.#bindContents = this.#falseBindContents;
+  }
 }
 
 /**

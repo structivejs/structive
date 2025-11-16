@@ -1,6 +1,7 @@
 import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { NotifyRedrawSymbol } from "../../ComponentStateInput/symbols.js";
 import { registerStructiveComponent, removeStructiveComponent } from "../../WebComponents/findStructiveParent.js";
+import { getCustomTagName } from "../../WebComponents/getCustomTagName.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * BindingNodeComponentクラスは、StructiveComponent（カスタムコンポーネント）への
@@ -30,7 +31,7 @@ class BindingNodeComponent extends BindingNode {
     _notifyRedraw(refs) {
         const component = this.node;
         // コンポーネントが定義されるのを待ち、初期化完了後に notifyRedraw を呼び出す
-        const tagName = component.customTagName;
+        const tagName = getCustomTagName(component);
         customElements.whenDefined(tagName).then(() => {
             component.state[NotifyRedrawSymbol](refs);
         });

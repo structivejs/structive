@@ -10,6 +10,23 @@ vi.mock("../../../src/WebComponents/findStructiveParent", () => ({
   removeStructiveComponent: vi.fn()
 }));
 
+// getCustomTagNameのモック
+const getCustomTagNameMock = vi.fn((component: HTMLElement) => {
+  // デフォルトの動作: tagNameに'-'が含まれていれば小文字化
+  if (component.tagName.includes('-')) {
+    return component.tagName.toLowerCase();
+  }
+  // is属性をチェック
+  const isAttr = component.getAttribute('is');
+  if (isAttr?.includes('-')) {
+    return isAttr.toLowerCase();
+  }
+  throw new Error('Custom tag name not found');
+});
+vi.mock("../../../src/WebComponents/getCustomTagName", () => ({
+  getCustomTagName: (component: HTMLElement) => getCustomTagNameMock(component)
+}));
+
 import { registerStructiveComponent, removeStructiveComponent } from "../../../src/WebComponents/findStructiveParent";
 
 // ヘルパー: 簡易な info/listIndex を生成
@@ -56,6 +73,8 @@ describe("BindingNodeComponent", () => {
   let parentComponent: any;
   let node: HTMLElement;
   let binding: any;
+  let parentBindContent: any;
+  let createBindingState: any;
 
   beforeAll(() => {
     if (!customElements.get("mock-component")) {
@@ -80,10 +99,10 @@ describe("BindingNodeComponent", () => {
     component.state = { [NotifyRedrawSymbol]: vi.fn() } as any;
     component.readyResolvers = { promise: Promise.resolve() };
 
-    const parentBindContent = {} as any;
+    parentBindContent = {} as any;
     const info = makeInfo("values.*.foo", ["values","*","foo"], 1, ["values","values.*","values.*.foo"]);
     let currentListIndex: any = makeListIndex("LI#A", true);
-    const createBindingState = vi.fn(() => {
+    createBindingState = vi.fn(() => {
       let currentRef = getStatePropertyRef(info, currentListIndex);
       return {
         info,
@@ -289,5 +308,152 @@ describe("BindingNodeComponent", () => {
     
     // removeStructiveComponent は呼び出される
     expect(removeStructiveComponent).toHaveBeenCalledWith(component);
+  });
+
+  describe("getCustomTagName統合テスト", () => {
+    it("_notifyRedraw: getCustomTagNameが正しく呼び出される", async () => {
+      vi.clearAllMocks();
+      getCustomTagNameMock.mockClear();
+      
+      binding.activate();
+      const refs = [binding.bindingState.ref];
+      
+      let resolveWhenDefined!: (value: any) => void;
+      const whenDefinedPromise = new Promise<any>((resolve) => {
+        resolveWhenDefined = resolve;
+      });
+      vi.spyOn(customElements, "whenDefined").mockReturnValue(whenDefinedPromise);
+
+      (binding.bindingNode as any)._notifyRedraw(refs);
+      
+      // getCustomTagNameが呼び出されたことを確認
+      expect(getCustomTagNameMock).toHaveBeenCalledWith(component);
+      expect(getCustomTagNameMock).toHaveBeenCalledTimes(1);
+      
+      await Promise.resolve();
+      resolveWhenDefined(customElements.get("mock-component")!);
+      await flushPromises();
+      
+      const calls = (component.state[NotifyRedrawSymbol] as any).mock.calls;
+      expect(calls.length).toBe(1);
+    });
+
+    it("_notifyRedraw: カスタマイズドビルトイン要素（is属性）も正しく処理される", async () => {
+      vi.clearAllMocks();
+      getCustomTagNameMock.mockClear();
+      
+      // is属性を持つカスタマイズドビルトイン要素を作成
+      const customButton = document.createElement("button");
+      Object.defineProperty(customButton, "tagName", { value: "BUTTON", writable: false });
+      customButton.setAttribute("is", "x-custom-button");
+      (customButton as any).isStructive = true;
+      (customButton as any).state = { [NotifyRedrawSymbol]: vi.fn() };
+      
+      // 新しいバインディングを作成
+      const customButtonBinding = createBinding(
+        parentBindContent,
+        customButton,
+        engine,
+        createBindingNodeComponent("state.foo", [], []) as any,
+        createBindingState as any
+      );
+      customButtonBinding.activate();
+      
+      const refs = [customButtonBinding.bindingState.ref];
+      
+      let resolveWhenDefined!: (value: any) => void;
+      const whenDefinedPromise = new Promise<any>((resolve) => {
+        resolveWhenDefined = resolve;
+      });
+      const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockReturnValue(whenDefinedPromise);
+
+      (customButtonBinding.bindingNode as any)._notifyRedraw(refs);
+      
+      // getCustomTagNameが呼び出され、is属性の値が返されることを確認
+      expect(getCustomTagNameMock).toHaveBeenCalledWith(customButton);
+      expect(whenDefinedSpy).toHaveBeenCalledWith("x-custom-button");
+      
+      await Promise.resolve();
+      resolveWhenDefined(class extends HTMLButtonElement {});
+      await flushPromises();
+      
+      const calls = ((customButton as any).state[NotifyRedrawSymbol] as any).mock.calls;
+      expect(calls.length).toBe(1);
+    });
+
+    it("_notifyRedraw: getCustomTagNameがエラーを投げた場合、適切に伝播される", () => {
+      vi.clearAllMocks();
+      getCustomTagNameMock.mockClear();
+      
+      // 標準要素（カスタムタグ名なし）を作成
+      const standardDiv = document.createElement("div");
+      Object.defineProperty(standardDiv, "tagName", { value: "DIV", writable: false });
+      (standardDiv as any).isStructive = true;
+      (standardDiv as any).state = { [NotifyRedrawSymbol]: vi.fn() };
+      
+      // 新しいバインディングを作成
+      const standardBinding = createBinding(
+        parentBindContent,
+        standardDiv,
+        engine,
+        createBindingNodeComponent("state.foo", [], []) as any,
+        createBindingState as any
+      );
+      standardBinding.activate();
+      
+      const refs = [standardBinding.bindingState.ref];
+      
+      // getCustomTagNameがエラーを投げるようにモック
+      getCustomTagNameMock.mockImplementation(() => {
+        throw new Error('Custom tag name not found');
+      });
+      
+      // _notifyRedrawがエラーを投げることを確認
+      expect(() => {
+        (standardBinding.bindingNode as any)._notifyRedraw(refs);
+      }).toThrow('Custom tag name not found');
+    });
+
+    it("_notifyRedraw: 大文字のカスタムタグ名が小文字に変換されてwhenDefinedに渡される", async () => {
+      vi.clearAllMocks();
+      getCustomTagNameMock.mockClear();
+      
+      // 大文字のカスタムタグを持つコンポーネント
+      const upperCaseComponent = document.createElement("div");
+      Object.defineProperty(upperCaseComponent, "tagName", { value: "MY-CUSTOM-COMPONENT", writable: false });
+      (upperCaseComponent as any).isStructive = true;
+      (upperCaseComponent as any).state = { [NotifyRedrawSymbol]: vi.fn() };
+      
+      // 新しいバインディングを作成
+      const upperCaseBinding = createBinding(
+        parentBindContent,
+        upperCaseComponent,
+        engine,
+        createBindingNodeComponent("state.foo", [], []) as any,
+        createBindingState as any
+      );
+      upperCaseBinding.activate();
+      
+      const refs = [upperCaseBinding.bindingState.ref];
+      
+      let resolveWhenDefined!: (value: any) => void;
+      const whenDefinedPromise = new Promise<any>((resolve) => {
+        resolveWhenDefined = resolve;
+      });
+      const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockReturnValue(whenDefinedPromise);
+
+      (upperCaseBinding.bindingNode as any)._notifyRedraw(refs);
+      
+      // getCustomTagNameが呼び出され、小文字化された値がwhenDefinedに渡される
+      expect(getCustomTagNameMock).toHaveBeenCalledWith(upperCaseComponent);
+      expect(whenDefinedSpy).toHaveBeenCalledWith("my-custom-component");
+      
+      await Promise.resolve();
+      resolveWhenDefined(class extends HTMLElement {});
+      await flushPromises();
+      
+      const calls = ((upperCaseComponent as any).state[NotifyRedrawSymbol] as any).mock.calls;
+      expect(calls.length).toBe(1);
+    });
   });
 });

@@ -3,6 +3,7 @@
  */
 import { describe, test, expect, beforeEach, vi } from "vitest";
 import { replaceTemplateTagWithComment } from "../../src/Template/replaceTemplateTagWithComment";
+import { config } from "../../src/WebComponents/getGlobalConfig";
 
 // 依存関数をモック
 vi.mock("../../src/GlobalId/generateId", () => ({
@@ -20,6 +21,7 @@ describe("Template/replaceTemplateTagWithComment", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     document.body.innerHTML = "";
+    config.debug = false; // デフォルトはfalse
   });
 
   describe("basic functionality", () => {
@@ -35,7 +37,7 @@ describe("Template/replaceTemplateTagWithComment", () => {
       expect(result).toBe(id);
       expect(container.childNodes.length).toBe(1);
       expect(container.childNodes[0].nodeType).toBe(Node.COMMENT_NODE);
-      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|123");
+      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|123 ");
     });
 
     test("should not replace template when no parent", () => {
@@ -66,6 +68,55 @@ describe("Template/replaceTemplateTagWithComment", () => {
       
       expect(registerTemplate).toHaveBeenCalledWith(id, template, id);
     });
+
+    test("should include bindText in comment when config.debug is true", () => {
+      config.debug = true;
+      const container = document.createElement("div");
+      const template = document.createElement("template");
+      template.setAttribute("data-bind", "for:items");
+      const id = 202;
+      
+      container.appendChild(template);
+      
+      const result = replaceTemplateTagWithComment(id, template);
+      
+      expect(result).toBe(id);
+      expect(container.childNodes[0].nodeType).toBe(Node.COMMENT_NODE);
+      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|202 for:items");
+      
+      config.debug = false;
+    });
+
+    test("should not include bindText in comment when config.debug is false", () => {
+      config.debug = false;
+      const container = document.createElement("div");
+      const template = document.createElement("template");
+      template.setAttribute("data-bind", "if:condition");
+      const id = 303;
+      
+      container.appendChild(template);
+      
+      const result = replaceTemplateTagWithComment(id, template);
+      
+      expect(result).toBe(id);
+      expect(container.childNodes[0].nodeType).toBe(Node.COMMENT_NODE);
+      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|303 ");
+    });
+
+    test("should handle null bindText attribute", () => {
+      const container = document.createElement("div");
+      const template = document.createElement("template");
+      // data-bind属性を設定しない
+      const id = 404;
+      
+      container.appendChild(template);
+      
+      const result = replaceTemplateTagWithComment(id, template);
+      
+      expect(result).toBe(id);
+      expect(container.childNodes[0].nodeType).toBe(Node.COMMENT_NODE);
+      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|404 ");
+    });
   });
 
   describe("real DOM integration", () => {
@@ -83,7 +134,7 @@ describe("Template/replaceTemplateTagWithComment", () => {
       expect(result).toBe(id);
       expect(container.childNodes.length).toBe(1);
       expect(container.childNodes[0].nodeType).toBe(Node.COMMENT_NODE);
-      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|808");
+      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|808 ");
       expect(registerTemplate).toHaveBeenCalledWith(id, template, id);
     });
 
@@ -136,7 +187,7 @@ describe("Template/replaceTemplateTagWithComment", () => {
       const result = replaceTemplateTagWithComment(id, template);
       
       expect(result).toBe(0);
-      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|0");
+      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|0 ");
     });
 
     test("should handle negative id", () => {
@@ -149,7 +200,7 @@ describe("Template/replaceTemplateTagWithComment", () => {
       const result = replaceTemplateTagWithComment(id, template);
       
       expect(result).toBe(-1);
-      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|-1");
+      expect((container.childNodes[0] as Comment).nodeValue).toBe("@@|-1 ");
     });
 
     test("should handle error in registerTemplate", () => {
@@ -221,14 +272,14 @@ describe("Template/replaceTemplateTagWithComment", () => {
       expect(result).toBe(id);
       expect(svg.childNodes.length).toBe(1);
       expect(svg.childNodes[0].nodeType).toBe(Node.COMMENT_NODE);
-      expect((svg.childNodes[0] as Comment).nodeValue).toBe("@@|2025");
+      expect((svg.childNodes[0] as Comment).nodeValue).toBe("@@|2025 ");
 
       // registerTemplate 呼び出し時の第2引数は HTMLTemplateElement に変換されている
       const call = registerTemplate.mock.calls.find(c => c[0] === id)!;
       const converted = call[1] as HTMLTemplateElement;
       expect(converted instanceof HTMLTemplateElement).toBe(true);
-      // data-bind 属性が引き継がれる
-      expect(converted.getAttribute("data-bind")).toBe("if:cond");
+      // data-bind 属性が引き継がれる（config.debugがfalseの場合は空文字列になる）
+      expect(converted.getAttribute("data-bind")).toBe("");
       // 子ノードが content に移行されている
       const html = converted.content.cloneNode(true) as DocumentFragment;
       expect(html.textContent).toContain("hello");
@@ -264,6 +315,48 @@ describe("Template/replaceTemplateTagWithComment", () => {
       expect(generateId).toHaveBeenCalled();
       // 外側テンプレートで registerTemplate される
       expect(registerTemplate).toHaveBeenCalledWith(id, expect.any(HTMLTemplateElement), id);
+    });
+
+    test("svg template with config.debug true includes bindText in comment", () => {
+      config.debug = true;
+      const svg = document.createElementNS(SVG_NS, "svg");
+      const svgTemplate = document.createElementNS(SVG_NS, "template") as any;
+      (svgTemplate as Element).setAttribute("data-bind", "for:svgItems");
+      svg.appendChild(svgTemplate as unknown as Node);
+
+      const id = 5050;
+      const result = replaceTemplateTagWithComment(id, svgTemplate);
+
+      expect(result).toBe(id);
+      expect(svg.childNodes[0].nodeType).toBe(Node.COMMENT_NODE);
+      expect((svg.childNodes[0] as Comment).nodeValue).toBe("@@|5050 for:svgItems");
+
+      // registerTemplate 呼び出し時の変換された template で data-bind が設定される
+      const call = registerTemplate.mock.calls.find(c => c[0] === id)!;
+      const converted = call[1] as HTMLTemplateElement;
+      expect(converted.getAttribute("data-bind")).toBe("for:svgItems");
+      
+      config.debug = false;
+    });
+
+    test("svg template without data-bind attribute uses empty string", () => {
+      config.debug = true; // デバッグモードでnull値をテスト
+      const svg = document.createElementNS(SVG_NS, "svg");
+      const svgTemplate = document.createElementNS(SVG_NS, "template") as any;
+      // data-bind属性を設定しない
+      svg.appendChild(svgTemplate as unknown as Node);
+
+      const id = 6060;
+      const result = replaceTemplateTagWithComment(id, svgTemplate);
+
+      expect(result).toBe(id);
+      
+      // registerTemplate 呼び出し時の変換された template で data-bind が空文字列
+      const call = registerTemplate.mock.calls.find(c => c[0] === id)!;
+      const converted = call[1] as HTMLTemplateElement;
+      expect(converted.getAttribute("data-bind")).toBe("");
+      
+      config.debug = false;
     });
   });
 });
