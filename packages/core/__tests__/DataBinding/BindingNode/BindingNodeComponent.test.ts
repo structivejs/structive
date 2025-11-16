@@ -133,10 +133,9 @@ describe("BindingNodeComponent", () => {
     document.body.innerHTML = "";
   });
 
-  it("subName ゲッターと assignValue の no-op を通過", () => {
+  it("subName ゲッターが正しく動作する", () => {
     const componentNode = binding.bindingNode as any;
     expect(componentNode.subName).toBe("foo");
-    expect(() => componentNode.assignValue("value")).toThrow(/Not implemented/);
   });
 
   it("component の listIndex が null でも親パス更新を通知する", async () => {

@@ -5,6 +5,7 @@ import { Filters, FilterWithOptions } from "../../Filter/types";
 import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef.js";
 import { IStatePropertyRef } from "../../StatePropertyRef/types.js";
 import { IRenderer } from "../../Updater/types.js";
+import { raiseError } from "../../utils.js";
 import { registerStructiveComponent, removeStructiveComponent } from "../../WebComponents/findStructiveParent.js";
 import { getCustomTagName } from "../../WebComponents/getCustomTagName.js";
 import { StructiveComponent } from "../../WebComponents/types";
@@ -29,6 +30,7 @@ import { CreateBindingNodeFn } from "./types";
  */
 class BindingNodeComponent extends BindingNode {
   #subName: string;
+  tagName: string;
   get subName():string {
     return this.#subName;
   }
@@ -42,6 +44,19 @@ class BindingNodeComponent extends BindingNode {
     super(binding, node, name, filters, decorates);
     const [, subName] = this.name.split(".");
     this.#subName = subName;
+    const element = this.node as HTMLElement;
+    if (element.tagName.includes("-")) {
+      this.tagName = element.tagName.toLowerCase();
+    } else if (element.getAttribute("is")?.includes("-")) {
+      this.tagName = element.getAttribute("is")!.toLowerCase();
+    } else {
+      raiseError({
+        code: 'COMP-401',
+        message: 'Cannot determine custom element tag name',
+        context: { where: 'BindingNodeComponent._notifyRedraw' },
+        docsUrl: '/docs/error-codes.md#comp',
+      });
+    }
   }
 
   _notifyRedraw(refs: IStatePropertyRef[]): void {
