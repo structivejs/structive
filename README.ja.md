@@ -38,5 +38,5 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してくださ�
 
 ## バージョン
 
-Current version: 1.3.0
+Current version: 1.3.1
 
