@@ -384,32 +384,36 @@ describe("BindingNodeComponent", () => {
       vi.clearAllMocks();
       getCustomTagNameMock.mockClear();
       
-      // 標準要素（カスタムタグ名なし）を作成
-      const standardDiv = document.createElement("div");
-      Object.defineProperty(standardDiv, "tagName", { value: "DIV", writable: false });
-      (standardDiv as any).isStructive = true;
-      (standardDiv as any).state = { [NotifyRedrawSymbol]: vi.fn() };
+      // is属性を持つカスタマイズドビルトイン要素を作成
+      const customButton = document.createElement("button");
+      customButton.setAttribute("is", "x-error-button");
+      Object.defineProperty(customButton, "tagName", { value: "BUTTON", writable: false });
+      (customButton as any).isStructive = true;
+      (customButton as any).state = { [NotifyRedrawSymbol]: vi.fn() };
+      
+      // getCustomTagNameが正常に動作するようにモック
+      getCustomTagNameMock.mockReturnValue("x-error-button");
       
       // 新しいバインディングを作成
-      const standardBinding = createBinding(
+      const errorBinding = createBinding(
         parentBindContent,
-        standardDiv,
+        customButton,
         engine,
         createBindingNodeComponent("state.foo", [], []) as any,
         createBindingState as any
       );
-      standardBinding.activate();
+      errorBinding.activate();
       
-      const refs = [standardBinding.bindingState.ref];
+      const refs = [errorBinding.bindingState.ref];
       
-      // getCustomTagNameがエラーを投げるようにモック
+      // バインディング作成後、getCustomTagNameがエラーを投げるように変更
       getCustomTagNameMock.mockImplementation(() => {
         throw new Error('Custom tag name not found');
       });
       
       // _notifyRedrawがエラーを投げることを確認
       expect(() => {
-        (standardBinding.bindingNode as any)._notifyRedraw(refs);
+        (errorBinding.bindingNode as any)._notifyRedraw(refs);
       }).toThrow('Custom tag name not found');
     });
 
@@ -453,6 +457,27 @@ describe("BindingNodeComponent", () => {
       
       const calls = ((upperCaseComponent as any).state[NotifyRedrawSymbol] as any).mock.calls;
       expect(calls.length).toBe(1);
+    });
+
+    it("constructor: カスタム要素のタグ名が見つからない場合、エラーを投げる", () => {
+      vi.clearAllMocks();
+      
+      // 標準要素（ハイフンなし、is属性なし）
+      const standardDiv = document.createElement("div");
+      Object.defineProperty(standardDiv, "tagName", { value: "DIV", writable: false });
+      (standardDiv as any).isStructive = true;
+      (standardDiv as any).state = { [NotifyRedrawSymbol]: vi.fn() };
+      
+      // コンストラクタでエラーが投げられることを確認
+      expect(() => {
+        createBinding(
+          parentBindContent,
+          standardDiv,
+          engine,
+          createBindingNodeComponent("state.foo", [], []) as any,
+          createBindingState as any
+        );
+      }).toThrow('Cannot determine custom element tag name');
     });
   });
 });
