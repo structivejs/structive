@@ -147,6 +147,17 @@ const div = (options) => {
         return value / optValue;
     };
 };
+const mod = (options) => {
+    const opt = options?.[0] ?? optionsRequired('mod');
+    const optValue = Number(opt);
+    if (isNaN(optValue))
+        optionMustBeNumber('mod');
+    return (value) => {
+        if (typeof value !== 'number')
+            valueMustBeNumber('mod');
+        return value % optValue;
+    };
+};
 const fix = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Number(opt);
@@ -373,6 +384,7 @@ const builtinFilters = {
     "dec": dec,
     "mul": mul,
     "div": div,
+    "mod": mod,
     "fix": fix,
     "locale": locale,
     "uc": uc,

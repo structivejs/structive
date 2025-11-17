@@ -142,6 +142,16 @@ const div = (options?:string[]) => {
   }
 }
 
+const mod = (options?:string[]) => {
+  const opt = options?.[0] ?? optionsRequired('mod');
+  const optValue = Number(opt);
+  if (isNaN(optValue)) optionMustBeNumber('mod');
+  return (value: any) => {
+    if (typeof value !== 'number') valueMustBeNumber('mod');
+    return value % optValue;
+  }
+}
+
 const fix = (options?:string[]) => {
   const opt = options?.[0] ?? 0;
   const optValue = Number(opt);
@@ -375,6 +385,7 @@ const builtinFilters: FilterWithOptions = {
   "dec": dec,
   "mul": mul,
   "div": div,
+  "mod": mod,
 
   "fix": fix,
   "locale": locale,

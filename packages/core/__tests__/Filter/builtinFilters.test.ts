@@ -236,6 +236,39 @@ describe("Filter/builtinFilters", () => {
         expect(() => outputBuiltinFilters.div(["abc"])).toThrow("div requires a number as option");
       });
     });
+
+    describe("mod filter", () => {
+      test("should calculate modulo (remainder)", () => {
+        const filter = outputBuiltinFilters.mod(["3"]);
+        expect(filter(10)).toBe(1);  // 10 % 3 = 1
+        expect(filter(9)).toBe(0);   // 9 % 3 = 0
+        expect(filter(7)).toBe(1);   // 7 % 3 = 1
+        expect(filter(0)).toBe(0);   // 0 % 3 = 0
+      });
+
+      test("should handle negative numbers", () => {
+        const filter = outputBuiltinFilters.mod(["3"]);
+        expect(filter(-10)).toBe(-1); // -10 % 3 = -1 (in JavaScript)
+        expect(filter(-9)).toBe(-0);  // -9 % 3 = -0
+      });
+
+      test("should work with decimal divisors", () => {
+        const filter = outputBuiltinFilters.mod(["2.5"]);
+        expect(filter(7)).toBe(2);    // 7 % 2.5 = 2
+      });
+
+      test("should handle modulo by 1", () => {
+        const filter = outputBuiltinFilters.mod(["1"]);
+        expect(filter(5.7)).toBe(0.7000000000000002); // Floating point precision
+      });
+
+      test("should throw appropriate errors", () => {
+        const filter = outputBuiltinFilters.mod(["3"]);
+        expect(() => filter("10")).toThrow("mod requires a number value");
+        expect(() => outputBuiltinFilters.mod()).toThrow("mod requires at least one option");
+        expect(() => outputBuiltinFilters.mod(["abc"])).toThrow("mod requires a number as option");
+      });
+    });
   });
 
   describe("Number formatting filters", () => {
@@ -693,7 +726,7 @@ describe("Filter/builtinFilters", () => {
     test("should include all expected filters", () => {
       const expectedFilters = [
         "eq", "ne", "not", "lt", "le", "gt", "ge", 
-        "inc", "dec", "mul", "div", "fix", "locale",
+        "inc", "dec", "mul", "div", "mod", "fix", "locale",
         "uc", "lc", "cap", "trim", "slice", "substr", "pad", "rep", "rev",
         "int", "float", "round", "floor", "ceil", "percent",
         "date", "time", "datetime", "ymd", 
