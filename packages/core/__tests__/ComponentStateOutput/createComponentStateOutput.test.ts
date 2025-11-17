@@ -108,6 +108,9 @@ describe("createComponentStateOutput", () => {
     const calledParentRef = (engine.getListIndexes as any).mock.calls[0][0];
     // listIndex は childRef のもの
     expect(calledParentRef.listIndex).toBe(childRef.listIndex);
+    // パス登録ロジックが呼ばれることを確認
+    expect(engine.pathManager.addPath).toHaveBeenCalledTimes(1);
+    expect(engine.pathManager.addPath).toHaveBeenCalledWith(calledParentRef.info.pattern, true);
   });
 
   it("エラー: startsWithByChildPath が null の場合は raiseError", () => {
@@ -136,5 +139,23 @@ describe("createComponentStateOutput", () => {
     expect(() => out.get(ref)).toThrow(/No binding found/);
     expect(() => out.set(ref, 1)).toThrow(/No binding found/);
     expect(() => out.getListIndexes(ref)).toThrow(/No binding found/);
+  });
+
+  it("getListIndexes: 同じパスで複数回呼ばれても pathManager.addPath は1回のみ", () => {
+    childEngine.pathManager.lists.add(childInfo.pattern);
+    const out = createComponentStateOutput(binding, childEngine);
+    const childRef = getStatePropertyRef(childInfo, [{ sid: "LI#D", at: () => null }] as any);
+    
+    // 1回目
+    out.getListIndexes(childRef);
+    expect(engine.pathManager.addPath).toHaveBeenCalledTimes(1);
+    
+    // 2回目 - 同じパターン
+    out.getListIndexes(childRef);
+    expect(engine.pathManager.addPath).toHaveBeenCalledTimes(1); // 増えない
+    
+    // 3回目 - 同じパターン
+    out.getListIndexes(childRef);
+    expect(engine.pathManager.addPath).toHaveBeenCalledTimes(1); // 増えない
   });
 });

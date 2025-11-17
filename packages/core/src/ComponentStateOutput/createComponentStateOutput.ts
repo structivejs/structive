@@ -67,13 +67,18 @@ class ComponentStateOutput implements IComponentStateOutput {
     if (childPath === null) {
       raiseError(`No child path found for path "${ref.info.toString()}".`);
     }
-    const binding = this.binding.bindingByChildPath.get(childPath);
-    if (typeof binding === "undefined") {
+    const parentBinding = this.binding.bindingByChildPath.get(childPath);
+    if (typeof parentBinding === "undefined") {
       raiseError(`No binding found for child path "${childPath}".`);
     }
     const parentPathInfo = getStructuredPathInfo(this.binding.toParentPathFromChildPath(ref.info.pattern));
     const parentRef = getStatePropertyRef(parentPathInfo, ref.listIndex);
-    return binding.engine.getListIndexes(parentRef);
+    if (!this.#parentPaths.has(parentRef.info.pattern)) {
+      const isList = this.childEngine.pathManager.lists.has(ref.info.pattern);
+      parentBinding.engine.pathManager.addPath(parentRef.info.pattern, isList);
+      this.#parentPaths.add(parentRef.info.pattern);
+    }
+    return parentBinding.engine.getListIndexes(parentRef);
   }
 }
 
