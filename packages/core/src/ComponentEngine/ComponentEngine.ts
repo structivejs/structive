@@ -202,7 +202,7 @@ class ComponentEngine implements IComponentEngine {
     // connectedCallbackが実装されていれば呼び出す
     if (this.pathManager.hasConnectedCallback) {
       const resultPromise = createUpdater<Promise<void>>(this, async (updater) => {
-        updater.update(null, async (stateProxy, handler) => {
+        return updater.update(null, async (stateProxy, handler) => {
           stateProxy[ConnectedCallbackSymbol]();
         });
       });
