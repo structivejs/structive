@@ -60,7 +60,7 @@ class ComponentEngine {
     structiveChildComponents = new Set();
     pathManager;
     #readyResolvers = Promise.withResolvers();
-    #stateBinding = createComponentStateBinding();
+    stateBinding;
     stateInput;
     stateOutput;
     #blockPlaceholder = null; // ブロックプレースホルダー
@@ -87,8 +87,9 @@ class ComponentEngine {
         this.inputFilters = componentClass.inputFilters;
         this.outputFilters = componentClass.outputFilters;
         this.owner = owner;
-        this.stateInput = createComponentStateInput(this, this.#stateBinding);
-        this.stateOutput = createComponentStateOutput(this.#stateBinding, this);
+        this.stateBinding = createComponentStateBinding();
+        this.stateInput = createComponentStateInput(this, this.stateBinding);
+        this.stateOutput = createComponentStateOutput(this.stateBinding, this);
         this.pathManager = componentClass.pathManager;
     }
     setup() {
@@ -109,13 +110,6 @@ class ComponentEngine {
         return this.#readyResolvers;
     }
     async connectedCallback() {
-        const parentComponent = this.owner.parentStructiveComponent;
-        if (parentComponent) {
-            // 親コンポーネントの状態をバインドする
-            parentComponent.registerChildComponent(this.owner);
-            // 親コンポーネントの状態を子コンポーネントにバインドする
-            this.#stateBinding.bind(parentComponent, this.owner);
-        }
         if (this.config.enableWebComponents) {
             attachShadow(this.owner, this.config, this.styleSheet);
         }

@@ -14,4 +14,5 @@ export interface IComponentStateBinding {
   toParentPathFromChildPath(childPath: string): string;
   startsWithByChildPath(childPathInfo: IStructuredPathInfo): string | null;
   bind(parentComponent: StructiveComponent, childComponent: StructiveComponent): void;
+  addBinding(binding: IBinding): void;
 }

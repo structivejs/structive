@@ -78,7 +78,7 @@ class ComponentEngine implements IComponentEngine {
 
   #readyResolvers : PromiseWithResolvers<void> = Promise.withResolvers<void>();
   
-  #stateBinding: IComponentStateBinding = createComponentStateBinding();
+  stateBinding: IComponentStateBinding;
   stateInput: IComponentStateInput;
   stateOutput: IComponentStateOutput;
   #blockPlaceholder: Comment | null = null; // ブロックプレースホルダー
@@ -108,8 +108,9 @@ class ComponentEngine implements IComponentEngine {
     this.inputFilters = componentClass.inputFilters;
     this.outputFilters = componentClass.outputFilters;
     this.owner =  owner;
-    this.stateInput = createComponentStateInput(this, this.#stateBinding);
-    this.stateOutput = createComponentStateOutput(this.#stateBinding, this);
+    this.stateBinding = createComponentStateBinding();
+    this.stateInput = createComponentStateInput(this, this.stateBinding);
+    this.stateOutput = createComponentStateOutput(this.stateBinding, this);
     this.pathManager = componentClass.pathManager;
   }
 
@@ -133,13 +134,6 @@ class ComponentEngine implements IComponentEngine {
   }
 
   async connectedCallback(): Promise<void> {
-    const parentComponent = this.owner.parentStructiveComponent;
-    if (parentComponent) {
-      // 親コンポーネントの状態をバインドする
-      parentComponent.registerChildComponent(this.owner);
-      // 親コンポーネントの状態を子コンポーネントにバインドする
-      this.#stateBinding.bind(parentComponent, this.owner);
-    }
     if (this.config.enableWebComponents) {
       attachShadow(this.owner, this.config, this.styleSheet);
     } else {

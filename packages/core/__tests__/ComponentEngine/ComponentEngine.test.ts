@@ -433,7 +433,7 @@ describe("ComponentEngine", () => {
     expect(typeof (inst as any).setup).toBe("function");
   });
 
-  it("connectedCallback: 親子バインド登録（registerChildComponent と stateBinding.bind）", async () => {
+  it("connectedCallback: 親コンポーネントがいても connectedCallback では何もしない（BindingNodeComponent.activate で処理される）", async () => {
     engine.setup();
     const parent = {
       registerChildComponent: vi.fn(),
@@ -441,8 +441,9 @@ describe("ComponentEngine", () => {
     } as any;
     el.parentStructiveComponent = parent as any;
     await engine.connectedCallback();
-    expect(parent.registerChildComponent).toHaveBeenCalledWith(el);
-    expect(stateBindingBindSpy).toHaveBeenCalledWith(parent, el);
+    // connectedCallback では親子バインド登録は行わない（BindingNodeComponent.activate に移譲）
+    expect(parent.registerChildComponent).not.toHaveBeenCalled();
+    expect(stateBindingBindSpy).not.toHaveBeenCalled();
   });
 
   it("readyResolvers: connectedCallback 完了後に解決される", async () => {

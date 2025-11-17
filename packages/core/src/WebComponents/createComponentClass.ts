@@ -40,6 +40,7 @@ import { IComponentStateInput } from "../ComponentStateInput/types.js";
 import { findStructiveParent } from "./findStructiveParent.js";
 import { IPathManager } from "../PathManager/types.js";
 import { createPathManager } from "../PathManager/PathManager.js";
+import { IComponentStateBinding } from "../ComponentStateBinding/types.js";
 
 
 export function createComponentClass(componentData: IUserComponentData): StructiveComponentClass {
@@ -82,6 +83,10 @@ export function createComponentClass(componentData: IUserComponentData): Structi
 
     get state(): IComponentStateInput {
       return this.#engine.stateInput;
+    }
+
+    get stateBinding(): IComponentStateBinding {
+      return this.#engine.stateBinding;
     }
 
     get isStructive(): boolean {

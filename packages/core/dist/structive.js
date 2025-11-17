@@ -3706,10 +3706,19 @@ class BindingNodeComponent extends BindingNode {
     }
     activate() {
         const engine = this.binding.engine;
-        registerStructiveComponent(engine.owner, this.node);
-        let bindings = engine.bindingsByComponent.get(this.node);
+        const parentComponent = engine.owner;
+        const component = this.node;
+        const tagName = getCustomTagName(component);
+        customElements.whenDefined(tagName).then(() => {
+            // 親コンポーネントの状態をバインドする
+            parentComponent.registerChildComponent(component);
+            // 親コンポーネントの状態を子コンポーネントにバインドする
+            component.stateBinding.addBinding(this.binding);
+        });
+        registerStructiveComponent(parentComponent, component);
+        let bindings = engine.bindingsByComponent.get(component);
         if (typeof bindings === "undefined") {
-            engine.bindingsByComponent.set(this.node, bindings = new Set());
+            engine.bindingsByComponent.set(component, bindings = new Set());
         }
         bindings.add(this.binding);
     }
@@ -5299,7 +5308,7 @@ class ComponentEngine {
     structiveChildComponents = new Set();
     pathManager;
     #readyResolvers = Promise.withResolvers();
-    #stateBinding = createComponentStateBinding();
+    stateBinding;
     stateInput;
     stateOutput;
     #blockPlaceholder = null; // ブロックプレースホルダー
@@ -5326,8 +5335,9 @@ class ComponentEngine {
         this.inputFilters = componentClass.inputFilters;
         this.outputFilters = componentClass.outputFilters;
         this.owner = owner;
-        this.stateInput = createComponentStateInput(this, this.#stateBinding);
-        this.stateOutput = createComponentStateOutput(this.#stateBinding, this);
+        this.stateBinding = createComponentStateBinding();
+        this.stateInput = createComponentStateInput(this, this.stateBinding);
+        this.stateOutput = createComponentStateOutput(this.stateBinding, this);
         this.pathManager = componentClass.pathManager;
     }
     setup() {
@@ -5348,13 +5358,6 @@ class ComponentEngine {
         return this.#readyResolvers;
     }
     async connectedCallback() {
-        const parentComponent = this.owner.parentStructiveComponent;
-        if (parentComponent) {
-            // 親コンポーネントの状態をバインドする
-            parentComponent.registerChildComponent(this.owner);
-            // 親コンポーネントの状態を子コンポーネントにバインドする
-            this.#stateBinding.bind(parentComponent, this.owner);
-        }
         if (this.config.enableWebComponents) {
             attachShadow(this.owner, this.config, this.styleSheet);
         }
@@ -6061,6 +6064,9 @@ function createComponentClass(componentData) {
         }
         get state() {
             return this.#engine.stateInput;
+        }
+        get stateBinding() {
+            return this.#engine.stateBinding;
         }
         get isStructive() {
             return this.#engine.stateClass.$isStructive ?? false;

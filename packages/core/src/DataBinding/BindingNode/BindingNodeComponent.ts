@@ -100,10 +100,21 @@ class BindingNodeComponent extends BindingNode {
 
   activate(): void {
     const engine = this.binding.engine;
-    registerStructiveComponent(engine.owner, this.node as StructiveComponent);
-    let bindings = engine.bindingsByComponent.get(this.node as StructiveComponent);
+    const parentComponent = engine.owner;
+    const component = this.node as StructiveComponent;
+
+    const tagName = getCustomTagName(component);
+    customElements.whenDefined(tagName).then(() => {
+      // 親コンポーネントの状態をバインドする
+      parentComponent.registerChildComponent(component);
+      // 親コンポーネントの状態を子コンポーネントにバインドする
+      component.stateBinding.addBinding(this.binding);
+    });
+
+    registerStructiveComponent(parentComponent, component);
+    let bindings = engine.bindingsByComponent.get(component);
     if (typeof bindings === "undefined") {
-      engine.bindingsByComponent.set(this.node as StructiveComponent, bindings = new Set<IBinding>());
+      engine.bindingsByComponent.set(component, bindings = new Set<IBinding>());
     }
     bindings.add(this.binding);
   }

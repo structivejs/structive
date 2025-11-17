@@ -64,6 +64,9 @@ export function createComponentClass(componentData) {
         get state() {
             return this.#engine.stateInput;
         }
+        get stateBinding() {
+            return this.#engine.stateBinding;
+        }
         get isStructive() {
             return this.#engine.stateClass.$isStructive ?? false;
         }

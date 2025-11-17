@@ -1,3 +1,4 @@
+import { IComponentStateBinding } from "../ComponentStateBinding/types";
 import { IComponentStateInput } from "../ComponentStateInput/types";
 import { IComponentStateOutput } from "../ComponentStateOutput/types";
 import { IBindContent, IBinding } from "../DataBinding/types";
@@ -50,8 +51,9 @@ export interface IComponentEngine {
   bindingsByComponent: WeakMap<StructiveComponent, Set<IBinding>>; // Structive子コンポーネントからバインディングを取得する
   structiveChildComponents: Set<StructiveComponent>; // Structive子コンポーネントのセット
 
-  stateInput: IComponentStateInput;
-  stateOutput: IComponentStateOutput;
+  readonly stateInput: IComponentStateInput;
+  readonly stateOutput: IComponentStateOutput;
+  readonly stateBinding: IComponentStateBinding;
 
   versionRevisionByPath: Map<string, IVersionRevision>;
 

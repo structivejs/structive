@@ -89,6 +89,7 @@ describe("BindingNodeComponent", () => {
     parentComponent = document.createElement("div") as any;
     parentComponent.isStructive = true;
     parentComponent.state = { [NotifyRedrawSymbol]: vi.fn() } as any;
+    parentComponent.registerChildComponent = vi.fn(); // registerChildComponent を追加
     engine = {
       owner: parentComponent,
       bindingsByComponent: new WeakMap<any, Set<any>>()
@@ -98,6 +99,7 @@ describe("BindingNodeComponent", () => {
     component.isStructive = true;
     component.state = { [NotifyRedrawSymbol]: vi.fn() } as any;
     component.readyResolvers = { promise: Promise.resolve() };
+    component.stateBinding = { addBinding: vi.fn() }; // stateBinding を追加
 
     parentBindContent = {} as any;
     const info = makeInfo("values.*.foo", ["values","*","foo"], 1, ["values","values.*","values.*.foo"]);
@@ -186,7 +188,7 @@ describe("BindingNodeComponent", () => {
     expect(notifySpy.mock.calls[0][0]).toEqual([binding.bindingState.ref]);
   });
 
-  it("init: bindingsByComponent に登録され、親 StructiveComponent が紐づく", () => {
+  it("activate: bindingsByComponent に登録され、親 StructiveComponent が紐づく", () => {
     binding.activate();
     const set = engine.bindingsByComponent.get(component)!;
     expect(set).toBeTruthy();
@@ -194,6 +196,42 @@ describe("BindingNodeComponent", () => {
     
     // registerStructiveComponent が呼び出されることを確認
     expect(registerStructiveComponent).toHaveBeenCalledWith(engine.owner, component);
+  });
+
+  it("activate: カスタム要素定義後に registerChildComponent と stateBinding.addBinding が呼ばれる", async () => {
+    // stateBinding.addBinding のモックを追加
+    component.stateBinding = {
+      addBinding: vi.fn()
+    };
+    
+    // parentComponent の registerChildComponent をスパイ
+    const registerChildSpy = vi.fn();
+    engine.owner.registerChildComponent = registerChildSpy;
+    
+    // カスタム要素の定義を待機するPromiseをモック
+    let resolveWhenDefined!: (value: any) => void;
+    const whenDefinedPromise = new Promise<any>((resolve) => {
+      resolveWhenDefined = resolve;
+    });
+    const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockReturnValue(whenDefinedPromise);
+
+    binding.activate();
+    
+    // whenDefined が呼ばれることを確認
+    expect(whenDefinedSpy).toHaveBeenCalledWith("mock-component");
+    
+    // まだ呼ばれていないことを確認
+    await Promise.resolve();
+    expect(registerChildSpy).not.toHaveBeenCalled();
+    expect(component.stateBinding.addBinding).not.toHaveBeenCalled();
+    
+    // カスタム要素が定義された後の処理
+    resolveWhenDefined(customElements.get("mock-component")!);
+    await flushPromises();
+    
+    // registerChildComponent と stateBinding.addBinding が呼ばれたことを確認
+    expect(registerChildSpy).toHaveBeenCalledWith(component);
+    expect(component.stateBinding.addBinding).toHaveBeenCalledWith(binding);
   });
 
   it("notifyRedraw: 親パス更新（component パターンを含む）をそのまま通知", async () => {
@@ -314,7 +352,7 @@ describe("BindingNodeComponent", () => {
       vi.clearAllMocks();
       getCustomTagNameMock.mockClear();
       
-      binding.activate();
+      binding.activate(); // activate 内で getCustomTagName が1回呼ばれる
       const refs = [binding.bindingState.ref];
       
       let resolveWhenDefined!: (value: any) => void;
@@ -323,11 +361,11 @@ describe("BindingNodeComponent", () => {
       });
       vi.spyOn(customElements, "whenDefined").mockReturnValue(whenDefinedPromise);
 
-      (binding.bindingNode as any)._notifyRedraw(refs);
+      (binding.bindingNode as any)._notifyRedraw(refs); // _notifyRedraw 内で getCustomTagName が1回呼ばれる
       
-      // getCustomTagNameが呼び出されたことを確認
+      // getCustomTagNameが呼び出されたことを確認（activate と _notifyRedraw で計2回）
       expect(getCustomTagNameMock).toHaveBeenCalledWith(component);
-      expect(getCustomTagNameMock).toHaveBeenCalledTimes(1);
+      expect(getCustomTagNameMock).toHaveBeenCalledTimes(2);
       
       await Promise.resolve();
       resolveWhenDefined(customElements.get("mock-component")!);

@@ -54,6 +54,7 @@ const engineObj = {
   connectedCallback: connectedSpy,
   disconnectedCallback: disconnectedSpy,
   stateInput: { foo: 1 },
+  stateBinding: { addBinding: vi.fn() },
   stateClass: { $isStructive: true },
   readyResolvers: { promise: Promise.resolve() },
   bindingsByComponent: new Map<any, any>(),
@@ -159,6 +160,7 @@ describe("WebComponents/createComponentClass", () => {
 
     // state / isStructive / readyResolvers
     expect(inst.state).toBe(engineObj.stateInput);
+    expect(inst.stateBinding).toBe(engineObj.stateBinding);
     expect(inst.isStructive).toBe(true);
     engineObj.stateClass = {} as any;
     expect(inst.isStructive).toBe(false);

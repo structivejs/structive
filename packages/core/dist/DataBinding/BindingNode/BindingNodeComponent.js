@@ -83,10 +83,19 @@ class BindingNodeComponent extends BindingNode {
     }
     activate() {
         const engine = this.binding.engine;
-        registerStructiveComponent(engine.owner, this.node);
-        let bindings = engine.bindingsByComponent.get(this.node);
+        const parentComponent = engine.owner;
+        const component = this.node;
+        const tagName = getCustomTagName(component);
+        customElements.whenDefined(tagName).then(() => {
+            // 親コンポーネントの状態をバインドする
+            parentComponent.registerChildComponent(component);
+            // 親コンポーネントの状態を子コンポーネントにバインドする
+            component.stateBinding.addBinding(this.binding);
+        });
+        registerStructiveComponent(parentComponent, component);
+        let bindings = engine.bindingsByComponent.get(component);
         if (typeof bindings === "undefined") {
-            engine.bindingsByComponent.set(this.node, bindings = new Set());
+            engine.bindingsByComponent.set(component, bindings = new Set());
         }
         bindings.add(this.binding);
     }

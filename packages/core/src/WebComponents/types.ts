@@ -20,12 +20,14 @@ import { IBinding } from "../DataBinding/types";
 import { IComponentStateInput } from "../ComponentStateInput/types";
 import { Constructor } from "../types";
 import { IPathManager } from "../PathManager/types";
+import { IComponentStateBinding } from "../ComponentStateBinding/types";
 
 export type ComponentType = 'autonomous' | 'builtin';
 
 export interface IComponent {
   readonly parentStructiveComponent: StructiveComponent | null; // The parent component of the current component
   readonly state: IComponentStateInput;
+  readonly stateBinding: IComponentStateBinding;
   readonly isStructive: boolean; // Whether the component is structive or not
   readonly readyResolvers: PromiseWithResolvers<void>;
   getBindingsFromChild(component:IComponent): Set<IBinding> | null; // Get the bindings by component
