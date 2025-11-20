@@ -36,7 +36,7 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## Version
 
-See [packages/core/package.json](packages/core/package.json) for current version.
+Check current version: `npm pkg get version` (in packages/core directory)
 
 For version update procedures, see [packages/core/VERSION.md](packages/core/VERSION.md).
 
