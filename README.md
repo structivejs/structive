@@ -36,5 +36,7 @@ MIT License - see [LICENSE](LICENSE) file for details
 
 ## Version
 
-Current version: 1.3.6
+See [packages/core/package.json](packages/core/package.json) for current version.
+
+For version update procedures, see [packages/core/VERSION.md](packages/core/VERSION.md).
 

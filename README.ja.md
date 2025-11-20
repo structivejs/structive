@@ -36,7 +36,7 @@ MIT License - 詳細は [LICENSE](LICENSE) ファイルを参照してくださ�
 
 ## バージョン
 
-## バージョン
+現在のバージョンは [packages/core/package.json](packages/core/package.json) を参照してください。
 
-Current version: 1.3.6
+バージョン更新手順については [packages/core/VERSION.md](packages/core/VERSION.md) を参照してください。
 
