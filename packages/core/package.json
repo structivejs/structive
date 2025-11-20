@@ -13,7 +13,8 @@
     }
   },
   "scripts": {
-    "build": "rollup -c",
+    "build": "node node_modules/typescript/bin/tsc && rollup -c && node scripts/copy-loaders.js",
+    "clean": "node -e \"require('fs').rmSync('dist', {recursive: true, force: true})\"",
     "test": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:coverage:watch": "vitest --coverage"

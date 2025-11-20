@@ -6,7 +6,7 @@
  * 主な役割:
  * - getGlobalConfigでグローバル設定を取得
  * - ユーザー設定が優先され、未指定の場合はグローバル設定値を利用
- * - enableShadowDomやextendsなどの設定値を一元的に返却
+ * - shadowDomModeやextendsなどの設定値を一元的に返却
  *
  * 設計ポイント:
  * - ユーザーごとの個別設定と全体のデフォルト設定を柔軟に統合
@@ -17,7 +17,7 @@ export function getComponentConfig(userConfig) {
     const globalConfig = getGlobalConfig();
     return {
         enableWebComponents: typeof userConfig.enableWebComponents === "undefined" ? true : userConfig.enableWebComponents,
-        enableShadowDom: userConfig.enableShadowDom ?? globalConfig.enableShadowDom,
+        shadowDomMode: userConfig.shadowDomMode ?? globalConfig.shadowDomMode,
         extends: userConfig.extends ?? null,
     };
 }

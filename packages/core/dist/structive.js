@@ -1,7 +1,7 @@
 const globalConfig = {
     "debug": false,
     "locale": "en-US", // The locale of the component, ex. "en-US", default is "en-US"
-    "enableShadowDom": true, // Whether to use Shadow DOM or not
+    "shadowDomMode": "auto", // Shadow DOM mode: "auto" (default) | "none" | "force"
     "enableMainWrapper": true, // Whether to use the main wrapper or not
     "enableRouter": true, // Whether to use the router or not
     "autoInsertMainWrapper": false, // Whether to automatically insert the main wrapper or not
@@ -10,9 +10,6 @@ const globalConfig = {
     "routerTagName": "view-router", // The tag name of the router, default is "view-router"
     "layoutPath": "", // The path to the layout file, default is ""
     "autoLoadFromImportMap": false, // Whether to automatically load the component from the import map or not
-    "optimizeList": true, // Whether to optimize the list or not
-    "optimizeListElements": true, // Whether to optimize the list elements or not
-    "optimizeAccessor": true, // Whether to optimize the accessors or not
 };
 function getGlobalConfig() {
     return globalConfig;
@@ -11483,35 +11480,62 @@ function getParentShadowRoot(parentNode) {
     }
 }
 /**
+ * Light DOMモード: Shadow DOMを使用せず、スタイルを親のShadowRootまたはdocumentに追加する。
+ * スタイルシートの重複追加を防止する。
+ *
+ * @param element    対象のHTMLElement
+ * @param styleSheet 適用するCSSStyleSheet
+ */
+function attachStyleInLightMode(element, styleSheet) {
+    const shadowRootOrDocument = getParentShadowRoot(element.parentNode) || document;
+    const styleSheets = shadowRootOrDocument.adoptedStyleSheets;
+    if (!styleSheets.includes(styleSheet)) {
+        shadowRootOrDocument.adoptedStyleSheets = [...styleSheets, styleSheet];
+    }
+}
+/**
+ * ShadowRootを作成し、スタイルシートを適用する。
+ * 既にShadowRootが存在する場合は作成をスキップする。
+ *
+ * @param element    対象のHTMLElement
+ * @param styleSheet 適用するCSSStyleSheet
+ */
+function createShadowRootWithStyle(element, styleSheet) {
+    if (!element.shadowRoot) {
+        const shadowRoot = element.attachShadow({ mode: 'open' });
+        shadowRoot.adoptedStyleSheets = [styleSheet];
+    }
+}
+/**
  * 指定したHTMLElementにShadow DOMをアタッチし、スタイルシートを適用するユーティリティ関数。
  *
- * - config.enableShadowDomがtrueの場合は、ShadowRootを生成し、adoptedStyleSheetsでスタイルを適用
- * - extends指定がある場合はcanHaveShadowRootで拡張可能かチェック
- * - Shadow DOMを使わない場合は、親のShadowRootまたはdocumentにスタイルシートを追加
+ * - config.shadowDomMode="auto": Shadow DOMをサポートする要素のみShadowRootを生成、非対応はLight DOMにフォールバック
+ *   - 自律型カスタム要素: 常にShadowRoot作成
+ *   - 組み込み要素拡張: canHaveShadowRootで判定、対応ならShadowRoot作成、非対応ならLight DOM
+ * - config.shadowDomMode="force": 判定なしで強制的にShadowRootを生成（非対応の場合は例外）
+ * - config.shadowDomMode="none": Shadow DOMを使用せず、親のShadowRootまたはdocumentにスタイルを追加
  * - すでに同じスタイルシートが含まれていれば重複追加しない
  *
  * @param element    対象のHTMLElement
  * @param config     コンポーネント設定
  * @param styleSheet 適用するCSSStyleSheet
- * @throws           Shadow DOM非対応の組み込み要素を拡張しようとした場合はエラー
  */
 function attachShadow(element, config, styleSheet) {
-    if (config.enableShadowDom) {
-        if (config.extends === null || canHaveShadowRoot(config.extends)) {
-            if (!element.shadowRoot) {
-                const shadowRoot = element.attachShadow({ mode: 'open' });
-                shadowRoot.adoptedStyleSheets = [styleSheet];
-            }
-        }
-        else {
-            raiseError(`ComponentEngine: Shadow DOM not supported for builtin components that extend ${config.extends}`);
-        }
+    if (config.shadowDomMode === "none") {
+        attachStyleInLightMode(element, styleSheet);
+    }
+    else if (config.shadowDomMode === "force") {
+        createShadowRootWithStyle(element, styleSheet);
     }
     else {
-        const shadowRootOrDocument = getParentShadowRoot(element.parentNode) || document;
-        const styleSheets = shadowRootOrDocument.adoptedStyleSheets;
-        if (!styleSheets.includes(styleSheet)) {
-            shadowRootOrDocument.adoptedStyleSheets = [...styleSheets, styleSheet];
+        // Auto mode: Shadow DOMをサポートする要素のみShadowRoot作成、非対応はLight DOMにフォールバック
+        if (config.extends === null || canHaveShadowRoot(config.extends)) {
+            // 自律型カスタム要素 or Shadow DOM対応の組み込み要素拡張
+            createShadowRootWithStyle(element, styleSheet);
+        }
+        else {
+            // Shadow DOM非対応の組み込み要素拡張 → Light DOMにフォールバック
+            attachStyleInLightMode(element, styleSheet);
         }
     }
 }
@@ -12289,7 +12313,7 @@ function getBaseClass(extendTagName) {
  * 主な役割:
  * - getGlobalConfigでグローバル設定を取得
  * - ユーザー設定が優先され、未指定の場合はグローバル設定値を利用
- * - enableShadowDomやextendsなどの設定値を一元的に返却
+ * - shadowDomModeやextendsなどの設定値を一元的に返却
  *
  * 設計ポイント:
  * - ユーザーごとの個別設定と全体のデフォルト設定を柔軟に統合
@@ -12299,7 +12323,7 @@ function getComponentConfig(userConfig) {
     const globalConfig = getGlobalConfig();
     return {
         enableWebComponents: typeof userConfig.enableWebComponents === "undefined" ? true : userConfig.enableWebComponents,
-        enableShadowDom: userConfig.enableShadowDom ?? globalConfig.enableShadowDom,
+        shadowDomMode: userConfig.shadowDomMode ?? globalConfig.shadowDomMode,
         extends: userConfig.extends ?? null,
     };
 }
@@ -12588,7 +12612,7 @@ function createPathManager(componentClass) {
  *
  * 設計ポイント:
  * - findStructiveParentで親Structiveコンポーネントを探索し、階層的な状態管理を実現
- * - getter/setter/バインディング最適化やアクセサ自動生成（optimizeAccessor）に対応
+ * - getter/setter/バインディング最適化に対応
  * - テンプレート・CSS・StateClass・バインディング情報をIDで一元管理し、再利用性・拡張性を確保
  * - フィルターやバインディング情報も静的プロパティで柔軟に拡張可能
  */
@@ -13038,7 +13062,7 @@ async function registerSingleFileComponents(singleFileComponents) {
  * - ルーター要素（routerTagName）の動的追加
  *
  * 設計ポイント:
- * - config.enableShadowDom でShadow DOMの有効/無効を切り替え
+ * - config.shadowDomMode で Shadow DOMの有効/無効を切り替え
  * - config.layoutPath が指定されていればfetchでレイアウトHTMLを取得し、テンプレート・スタイルを適用
  * - スタイルはadoptedStyleSheetsでShadowRootまたはdocumentに適用
  * - レイアウトが指定されていない場合はデフォルトのslotを挿入
@@ -13049,7 +13073,7 @@ const DEFAULT_LAYOUT = `<slot name="${SLOT_KEY}"></slot>`;
 class MainWrapper extends HTMLElement {
     constructor() {
         super();
-        if (config$2.enableShadowDom) {
+        if (config$2.shadowDomMode !== "none") {
             this.attachShadow({ mode: 'open' });
         }
     }

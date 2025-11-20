@@ -15,7 +15,7 @@ const original = { ...config };
 
 beforeEach(() => {
   // テストごとにデフォルトへ戻す（必要部分のみ上書き）
-  config.enableShadowDom = original.enableShadowDom;
+  config.shadowDomMode = original.shadowDomMode;
   config.enableRouter = original.enableRouter;
   config.routerTagName = original.routerTagName;
   config.layoutPath = ""; // layout 無しのデフォルト
@@ -27,8 +27,8 @@ afterEach(() => {
 });
 
 describe("MainWrapper", () => {
-  it("enableShadowDom=true なら shadowRoot に slot と router が入る", async () => {
-    config.enableShadowDom = true;
+  it("shadowDomMode=auto なら shadowRoot に slot と router が入る", async () => {
+    config.shadowDomMode = "auto";
     config.enableRouter = true;
     const el = createMainWrapperElement();
     document.body.appendChild(el);
@@ -46,8 +46,8 @@ describe("MainWrapper", () => {
     expect(inserted.tagName.toLowerCase()).toBe(config.routerTagName);
   });
 
-  it("enableShadowDom=false なら light DOM に描画される", async () => {
-    config.enableShadowDom = false;
+  it("shadowDomMode=none なら light DOM に描画される", async () => {
+    config.shadowDomMode = "none";
     config.enableRouter = true;
     const el = createMainWrapperElement();
     document.body.appendChild(el);
@@ -64,7 +64,7 @@ describe("MainWrapper", () => {
   });
 
   it("layoutPath 指定時: fetch 成功で <template> の中身を展開してから router を追加", async () => {
-    config.enableShadowDom = true;
+    config.shadowDomMode = "auto";
     config.enableRouter = true;
     config.layoutPath = "/layout.html";
     const html = `<template><div class="layout"><slot name="router"></slot></div></template>`; // style は入れない（adoptedStyleSheets 分岐を避ける）
@@ -84,7 +84,7 @@ describe("MainWrapper", () => {
   });
 
   it("layoutPath 指定時: style を adoptedStyleSheets に追加する", async () => {
-    config.enableShadowDom = true;
+    config.shadowDomMode = "auto";
     config.enableRouter = false;
     config.layoutPath = "/layout-with-style.html";
 
@@ -117,7 +117,7 @@ describe("MainWrapper", () => {
   });
 
   it("layoutPath 指定時: 既存 style が含まれていれば adoptedStyleSheets を更新しない", async () => {
-    config.enableShadowDom = true;
+    config.shadowDomMode = "auto";
     config.enableRouter = false;
     config.layoutPath = "/layout-with-style.html";
 
@@ -143,7 +143,7 @@ describe("MainWrapper", () => {
   });
 
   it("layoutPath 指定時: template が存在しない場合は DocumentFragment を追加する", async () => {
-    config.enableShadowDom = true;
+    config.shadowDomMode = "auto";
     config.enableRouter = false;
     config.layoutPath = "/layout-without-template.html";
 
@@ -165,7 +165,7 @@ describe("MainWrapper", () => {
   });
 
   it("layoutPath 指定時: Shadow DOM 無効でも layout と style を適用する", async () => {
-    config.enableShadowDom = false;
+    config.shadowDomMode = "none";
     config.enableRouter = false;
     config.layoutPath = "/layout-light.html";
 
@@ -200,7 +200,7 @@ describe("MainWrapper", () => {
   });
 
   it("layoutPath 指定時: fetch 失敗でエラーを投げる", async () => {
-    config.enableShadowDom = true;
+    config.shadowDomMode = "auto";
     config.layoutPath = "/bad.html";
     vi.spyOn(globalThis, "fetch").mockResolvedValue({ ok: false } as any);
     const el = createMainWrapperElement();
@@ -209,7 +209,7 @@ describe("MainWrapper", () => {
   });
 
   it("enableRouter=false なら router を追加しない", async () => {
-    config.enableShadowDom = true;
+    config.shadowDomMode = "auto";
     config.enableRouter = false;
     const el = createMainWrapperElement();
     document.body.appendChild(el);
@@ -220,7 +220,7 @@ describe("MainWrapper", () => {
   });
 
   it("routerTagName を変更した場合、そのタグが挿入される", async () => {
-    config.enableShadowDom = true;
+    config.shadowDomMode = "auto";
     config.enableRouter = true;
     config.routerTagName = "my-router";
     const el = createMainWrapperElement();

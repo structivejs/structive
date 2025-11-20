@@ -9,7 +9,7 @@
  * - ルーター要素（routerTagName）の動的追加
  *
  * 設計ポイント:
- * - config.enableShadowDom でShadow DOMの有効/無効を切り替え
+ * - config.shadowDomMode で Shadow DOMの有効/無効を切り替え
  * - config.layoutPath が指定されていればfetchでレイアウトHTMLを取得し、テンプレート・スタイルを適用
  * - スタイルはadoptedStyleSheetsでShadowRootまたはdocumentに適用
  * - レイアウトが指定されていない場合はデフォルトのslotを挿入
@@ -24,7 +24,7 @@ const DEFAULT_LAYOUT = `<slot name="${SLOT_KEY}"></slot>`;
 export class MainWrapper extends HTMLElement {
   constructor() {
     super();
-    if (config.enableShadowDom) {
+    if (config.shadowDomMode !== "none") {
       this.attachShadow({ mode: 'open' });
     }
   }

@@ -12,7 +12,7 @@
  *
  * 設計ポイント:
  * - findStructiveParentで親Structiveコンポーネントを探索し、階層的な状態管理を実現
- * - getter/setter/バインディング最適化やアクセサ自動生成（optimizeAccessor）に対応
+ * - getter/setter/バインディング最適化に対応
  * - テンプレート・CSS・StateClass・バインディング情報をIDで一元管理し、再利用性・拡張性を確保
  * - フィルターやバインディング情報も静的プロパティで柔軟に拡張可能
  */

@@ -53,10 +53,20 @@ export type StructiveComponent = HTMLElement & IComponent;
 
 export type StructiveComponentClass = Constructor<StructiveComponent> & IComponentStatic;
 
+/**
+ * Shadow DOM mode options
+ * - "auto": Create ShadowRoot only for elements that support Shadow DOM
+ *   - Autonomous custom elements: Always supported (ShadowRoot created)
+ *   - Customized built-in elements: Checked via canHaveShadowRoot()
+ * - "none": Do not use Shadow DOM (Light DOM only)
+ * - "force": Force ShadowRoot creation without checking (throws error for unsupported elements)
+ */
+export type ShadowDomMode = "auto" | "none" | "force";
+
 export interface IConfig {
   debug                : boolean;
   locale               : string; // The locale of the component, ex. "en-US", default is "en-US"
-  enableShadowDom      : boolean; // Whether to use Shadow DOM or not
+  shadowDomMode        : ShadowDomMode; // Shadow DOM mode: "auto" (default) | "none" | "force"
   enableMainWrapper    : boolean; // Whether to use the main wrapper or not
   enableRouter         : boolean; // Whether to use the router or not
   autoInsertMainWrapper: boolean; // Whether to automatically insert the main wrapper or not
@@ -65,20 +75,17 @@ export interface IConfig {
   routerTagName        : string; // The tag name of the router, default is "view-router"
   layoutPath           : string; // The path to the layout file, default is "src/layout.html"
   autoLoadFromImportMap: boolean; // Whether to automatically load the component from the import map or not
-  optimizeList         : boolean; // Whether to optimize the list or not
-  optimizeListElements : boolean; // Whether to optimize the list elements or not
-  optimizeAccessor     : boolean; // Whether to optimize the accessors or not
 }
 
 export interface IUserConfig {
   enableWebComponents? : boolean; // Whether to use Web Components or not
-  enableShadowDom?     : boolean; // Whether to use Shadow DOM or not
+  shadowDomMode?       : ShadowDomMode; // Shadow DOM mode: "auto" | "none" | "force"
   extends?             : string; // The tag name of the component to extend
 }
 
 export interface IComponentConfig {
   enableWebComponents : boolean; // Whether to use Web Components or not
-  enableShadowDom     : boolean; // Whether to use Shadow DOM or not
+  shadowDomMode       : ShadowDomMode; // Shadow DOM mode: "auto" | "none" | "force"
   extends             : string | null; // The tag name of the component to extend
 }
 

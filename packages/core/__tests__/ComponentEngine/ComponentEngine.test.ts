@@ -47,7 +47,7 @@ customElements.define("x-dummy-engine", DummyComponent);
 function makeConfig(over?: Partial<any>) {
   return {
     enableWebComponents: true,
-    enableShadowDom: true,
+    shadowDomMode: "auto",
     extends: null,
     ...over,
   } as any;

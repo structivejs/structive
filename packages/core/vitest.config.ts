@@ -18,9 +18,13 @@ export default {
         // types-only files (no runtime code)
         'src/**/types.ts',
         'src/@types/**',
+        // loaders (pre-built JS files, not test targets)
+        'src/EasyLoaders/**',
+        'src/AutoLoaders/**',
         '**/node_modules/**',
         'vitest.config.ts',
-        'rollup.config.js'
+        'rollup.config.js',
+        'scripts/**'
       ],
       include: [
         'src/**/*.{js,ts}'
