@@ -156,6 +156,67 @@ describe("PathManager/PathManager", () => {
       expect(pathManager.elements.has("categories.*")).toBe(true);
     });
 
+    test("should detect list from wildcard paths in alls", () => {
+      const pathsWithWildcard = new Set(["todos.*", "items.*.name"]);
+      mockGetPathsSetById.mockReturnValue(pathsWithWildcard);
+      mockGetListPathsSetById.mockReturnValue(new Set());
+
+      mockGetStructuredPathInfo.mockImplementation((path: string) => {
+        if (path === "todos.*") {
+          return {
+            cumulativePathSet: new Set(["todos", "todos.*"]),
+            pathSegments: ["todos", "*"],
+            parentPath: "todos",
+            lastSegment: "*"
+          } as any;
+        }
+        if (path === "todos") {
+          return {
+            cumulativePathSet: new Set(["todos"]),
+            pathSegments: ["todos"],
+            parentPath: "",
+            lastSegment: "todos"
+          } as any;
+        }
+        if (path === "items.*.name") {
+          return {
+            cumulativePathSet: new Set(["items", "items.*", "items.*.name"]),
+            pathSegments: ["items", "*", "name"],
+            parentPath: "items.*",
+            lastSegment: "name"
+          } as any;
+        }
+        if (path === "items.*") {
+          return {
+            cumulativePathSet: new Set(["items", "items.*"]),
+            pathSegments: ["items", "*"],
+            parentPath: "items",
+            lastSegment: "*"
+          } as any;
+        }
+        if (path === "items") {
+          return {
+            cumulativePathSet: new Set(["items"]),
+            pathSegments: ["items"],
+            parentPath: "",
+            lastSegment: "items"
+          } as any;
+        }
+        return {
+          cumulativePathSet: new Set([path]),
+          pathSegments: [path],
+          parentPath: "",
+          lastSegment: path
+        } as any;
+      });
+
+      pathManager = createPathManager(mockComponentClass);
+      
+      // wildcard paths should add parent to lists
+      expect(pathManager.lists.has("todos")).toBe(true);
+      expect(pathManager.lists.has("items")).toBe(true);
+    });
+
     test("should analyze state class prototype for getters, setters, and methods", () => {
       pathManager = createPathManager(mockComponentClass);
       
@@ -573,6 +634,120 @@ describe("PathManager/PathManager", () => {
 
       expect(pathManager.lists.has("items")).toBe(true);
       expect(pathManager.elements.has("items.*")).toBe(true);
+    });
+
+    test("should handle wildcard path in addPath", () => {
+      mockGetPathsSetById.mockReturnValue(new Set());
+      mockGetListPathsSetById.mockReturnValue(new Set());
+
+      mockGetStructuredPathInfo.mockImplementation((path: string) => {
+        if (path === "todos.*") {
+          return {
+            cumulativePathSet: new Set(["todos", "todos.*"]),
+            pathSegments: ["todos", "*"],
+            parentPath: "todos",
+            lastSegment: "*"
+          } as any;
+        }
+        if (path === "todos") {
+          return {
+            cumulativePathSet: new Set(["todos"]),
+            pathSegments: ["todos"],
+            parentPath: "",
+            lastSegment: "todos"
+          } as any;
+        }
+        return {
+          cumulativePathSet: new Set([path]),
+          pathSegments: path ? path.split(".") : [],
+          parentPath: path && path.includes(".") ? path.substring(0, path.lastIndexOf(".")) : "",
+          lastSegment: path ? path.split(".").pop() : ""
+        } as any;
+      });
+
+      const componentClass = {
+        id: 22,
+        stateClass: class {}
+      } as unknown as StructiveComponentClass;
+
+      mockCreateAccessorFunctions.mockReturnValue({
+        get: vi.fn(),
+        set: vi.fn()
+      });
+
+      pathManager = createPathManager(componentClass);
+
+      expect(pathManager.elements.has("todos.*")).toBe(false);
+      expect(pathManager.lists.has("todos")).toBe(false);
+
+      pathManager.addPath("todos.*");
+
+      expect(pathManager.elements.has("todos.*")).toBe(true);
+      expect(pathManager.lists.has("todos")).toBe(true);
+    });
+
+    test("should handle cumulative wildcard paths in addPath", () => {
+      mockGetPathsSetById.mockReturnValue(new Set());
+      mockGetListPathsSetById.mockReturnValue(new Set());
+
+      mockGetStructuredPathInfo.mockImplementation((path: string) => {
+        if (path === "items.*.name") {
+          return {
+            cumulativePathSet: new Set(["items", "items.*", "items.*.name"]),
+            pathSegments: ["items", "*", "name"],
+            parentPath: "items.*",
+            lastSegment: "name"
+          } as any;
+        }
+        if (path === "items.*") {
+          return {
+            cumulativePathSet: new Set(["items", "items.*"]),
+            pathSegments: ["items", "*"],
+            parentPath: "items",
+            lastSegment: "*"
+          } as any;
+        }
+        if (path === "items") {
+          return {
+            cumulativePathSet: new Set(["items"]),
+            pathSegments: ["items"],
+            parentPath: "",
+            lastSegment: "items"
+          } as any;
+        }
+        if (path === "items.*.name") {
+          return {
+            cumulativePathSet: new Set(["items", "items.*", "items.*.name"]),
+            pathSegments: ["items", "*", "name"],
+            parentPath: "items.*",
+            lastSegment: "name"
+          } as any;
+        }
+        return {
+          cumulativePathSet: new Set([path]),
+          pathSegments: path ? path.split(".") : [],
+          parentPath: path && path.includes(".") ? path.substring(0, path.lastIndexOf(".")) : "",
+          lastSegment: path ? path.split(".").pop() : ""
+        } as any;
+      });
+
+      const componentClass = {
+        id: 23,
+        stateClass: class {}
+      } as unknown as StructiveComponentClass;
+
+      mockCreateAccessorFunctions.mockReturnValue({
+        get: vi.fn(),
+        set: vi.fn()
+      });
+
+      pathManager = createPathManager(componentClass);
+
+      pathManager.addPath("items.*.name");
+
+      expect(pathManager.elements.has("items.*")).toBe(true);
+      expect(pathManager.lists.has("items")).toBe(true);
+      expect(pathManager.alls.has("items.*.name")).toBe(true);
     });
   });
 

@@ -83,10 +83,10 @@ describe("StateClass/methods getListIndex", () => {
     const receiver = makeReceiver({});
     const resolved = {
       wildcardType: "all",
-      info: { pattern: "a.*", wildcardCount: 1, wildcardParentInfos: [] },
+      info: { pattern: "a.*", wildcardCount: 1, wildcardParentInfos: [{ pattern: "a" }] },
       wildcardIndexes: [0],
     } as any;
-    expect(() => getListIndex(resolved, receiver, {} as any)).toThrow(/wildcardParentPattern is null/i);
+    expect(() => getListIndex(resolved, receiver, {} as any)).toThrow(/ListIndex not found: a/);
   });
 
   it("all: GetListIndexesByRefSymbol が null/undefined だとエラー", () => {
@@ -117,5 +117,72 @@ describe("StateClass/methods getListIndex", () => {
       wildcardIndexes: [0],
     } as any;
     expect(() => getListIndex(resolved, receiver, {} as any)).toThrow(/ListIndex not found: p/);
+  });
+
+  it("all: 2階層目でGetListIndexesByRefSymbol が null だとエラー", () => {
+    const receiver = makeReceiver({
+      "a": [{ li: 0 }, { li: 1 }],
+      // "a.*.b" がない
+    });
+    const resolved = {
+      wildcardType: "all",
+      info: {
+        pattern: "a.*.b.*.c",
+        wildcardCount: 2,
+        wildcardParentInfos: [{ pattern: "a" }, { pattern: "a.*.b" }],
+      },
+      wildcardIndexes: [1, 0],
+    } as any;
+    expect(() => getListIndex(resolved, receiver, {} as any)).toThrow(/ListIndex not found: a\.\*\.b/);
+  });
+
+  it("all: 2階層目でwildcardIndexが無いとエラー", () => {
+    const receiver = makeReceiver({
+      "a": [{ li: 0 }, { li: 1 }],
+      "a.*.b": [{ li: 10 }],
+    });
+    const resolved = {
+      wildcardType: "all",
+      info: {
+        pattern: "a.*.b.*.c",
+        wildcardCount: 2,
+        wildcardParentInfos: [{ pattern: "a" }, { pattern: "a.*.b" }],
+      },
+      wildcardIndexes: [1], // 2つ必要だが1つしかない
+    } as any;
+    expect(() => getListIndex(resolved, receiver, {} as any)).toThrow(/wildcardIndex is null/i);
+  });
+
+  it("all: 2階層目でlistIndexes[wildcardIndex]が無いとエラー", () => {
+    const receiver = makeReceiver({
+      "a": [{ li: 0 }, { li: 1 }],
+      "a.*.b": [], // 空配列
+    });
+    const resolved = {
+      wildcardType: "all",
+      info: {
+        pattern: "a.*.b.*.c",
+        wildcardCount: 2,
+        wildcardParentInfos: [{ pattern: "a" }, { pattern: "a.*.b" }],
+      },
+      wildcardIndexes: [1, 0],
+    } as any;
+    expect(() => getListIndex(resolved, receiver, {} as any)).toThrow(/ListIndex not found: a\.\*\.b/);
+  });
+
+  it("all: wildcardParentInfos[i] が undefined だとエラー", () => {
+    const receiver = makeReceiver({
+      "a": [{ li: 0 }],
+    });
+    const resolved = {
+      wildcardType: "all",
+      info: {
+        pattern: "a.*.b.*.c",
+        wildcardCount: 2,
+        wildcardParentInfos: [{ pattern: "a" }], // 2つ必要だが1つしかない
+      },
+      wildcardIndexes: [0, 0],
+    } as any;
+    expect(() => getListIndex(resolved, receiver, {} as any)).toThrow(/wildcardParentPattern is null/i);
   });
 });

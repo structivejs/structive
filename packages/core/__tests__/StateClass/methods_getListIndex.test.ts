@@ -94,10 +94,10 @@ describe("StateClass/methods getListIndex", () => {
     const handler = makeHandler();
     const resolved = {
       wildcardType: "all",
-      info: { pattern: "a.*", wildcardCount: 1, wildcardParentInfos: [] },
+      info: { pattern: "a.*", wildcardCount: 1, wildcardParentInfos: [{ pattern: "a" }] },
       wildcardIndexes: [0],
     } as any;
-    expect(() => getListIndex(resolved, receiver, handler)).toThrow(/wildcardParentPattern is null/i);
+    expect(() => getListIndex(resolved, receiver, handler)).toThrow(/ListIndex not found: a/);
   });
 
   it("all: engine.getListIndexes が null/undefined だとエラー", () => {

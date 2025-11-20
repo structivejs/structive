@@ -31,13 +31,21 @@ class PathManager implements IPathManager {
     this.#id = componentClass.id;
     this.#stateClass = componentClass.stateClass;
     const alls = getPathsSetById(this.#id);
+    const listsFromAlls = new Set<string>();
     for(const path of alls) {
       const info = getStructuredPathInfo(path);
       this.alls = this.alls.union(info.cumulativePathSet);
+      // Check all paths in cumulativePathSet for wildcards
+      for(const cumulativePath of info.cumulativePathSet) {
+        const cumulativeInfo = getStructuredPathInfo(cumulativePath);
+        if (cumulativeInfo.lastSegment === "*") {
+          listsFromAlls.add(cumulativeInfo.parentPath!);
+        }
+      }
     }
     const lists = getListPathsSetById(this.#id);
-    this.lists = this.lists.union(lists);
-    for(const listPath of lists) {
+    this.lists = this.lists.union(lists).union(listsFromAlls);
+    for(const listPath of this.lists) {
       const elementPath = listPath + ".*";
       this.elements.add(elementPath);
     }
@@ -120,12 +128,19 @@ class PathManager implements IPathManager {
       this.lists.add(addPath);
       const elementPath = addPath + ".*";
       this.elements.add(elementPath);
+    } else if (info.lastSegment === "*") {
+      this.elements.add(addPath);
+      this.lists.add(info.parentPath!);
     }
     for(const path of info.cumulativePathSet) {
       if (this.alls.has(path)) continue;
       this.alls.add(path);
       addPathNode(this.rootNode, path);
       const pathInfo = getStructuredPathInfo(path);
+      if (pathInfo.lastSegment === "*") {
+        this.elements.add(path);
+        this.lists.add(pathInfo.parentPath!);
+      }      
       if (pathInfo.pathSegments.length > 1) {
         const funcs = createAccessorFunctions(pathInfo, this.getters);
         Object.defineProperty(this.#stateClass.prototype, path, {

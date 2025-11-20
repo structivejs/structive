@@ -223,7 +223,10 @@ describe("Updater/Renderer.render", () => {
       return pattern === "root" ? topNode : null;
     });
 
-    getStructuredPathInfoMock.mockImplementation((path: string) => ({ pattern: path, wildcardCount: path.includes("*") ? 1 : 0, wildcardParentInfos: [] }));
+    getStructuredPathInfoMock.mockImplementation((path: string) => {
+      if (path === "root.*") return { pattern: path, wildcardCount: 1, wildcardParentInfos: [{ pattern: "root" }] };
+      return { pattern: path, wildcardCount: 0, wildcardParentInfos: [] };
+    });
 
     // 新リスト値は readonlyState 経由で取得、diff は adds [10,20] を返す
     createReadonlyStateProxyMock.mockReturnValue(makeReadonlyState(["a", "b"]));
@@ -375,7 +378,13 @@ describe("Updater/Renderer.render", () => {
       return null;
     });
 
-    getStructuredPathInfoMock.mockImplementation((path: string) => ({ pattern: path, wildcardCount: path.includes("*") ? 1 : 0, wildcardParentInfos: [] }));
+    getStructuredPathInfoMock.mockImplementation((path: string) => {
+      const parts = path.split(".");
+      const wildcardCount = parts.filter(p => p === "*").length;
+      if (wildcardCount === 0) return { pattern: path, wildcardCount: 0, wildcardParentInfos: [] };
+      const parentPath = parts.slice(0, -1).join(".");
+      return { pattern: path, wildcardCount, wildcardParentInfos: [{ pattern: parentPath }] };
+    });
 
     const list = [1, 2];
     engine.getListAndListIndexes.mockReturnValue({
@@ -585,7 +594,13 @@ describe("Updater/Renderer.render", () => {
       return pattern === "root" ? topNode : null;
     });
 
-    getStructuredPathInfoMock.mockImplementation((path: string) => ({ pattern: path, wildcardCount: path.includes("*") ? 1 : 0, wildcardParentInfos: [] }));
+    getStructuredPathInfoMock.mockImplementation((path: string) => {
+      const parts = path.split(".");
+      const wildcardCount = parts.filter(p => p === "*").length;
+      if (wildcardCount === 0) return { pattern: path, wildcardCount: 0, wildcardParentInfos: [] };
+      const parentPath = parts.slice(0, -1).join(".");
+      return { pattern: path, wildcardCount, wildcardParentInfos: [{ pattern: parentPath }] };
+    });
 
     // adds用のmockリストインデックスを作成
     const mockListIndex10 = { id: 10, at: vi.fn() };
@@ -924,7 +939,13 @@ describe("Updater/Renderer.render", () => {
       return pattern === "root" ? topNode : null;
     });
 
-    getStructuredPathInfoMock.mockImplementation((path: string) => ({ pattern: path, wildcardCount: path.includes("*") ? 1 : 0, wildcardParentInfos: [] }));
+    getStructuredPathInfoMock.mockImplementation((path: string) => {
+      const parts = path.split(".");
+      const wildcardCount = parts.filter(p => p === "*").length;
+      if (wildcardCount === 0) return { pattern: path, wildcardCount: 0, wildcardParentInfos: [] };
+      const parentPath = parts.slice(0, -1).join(".");
+      return { pattern: path, wildcardCount, wildcardParentInfos: [{ pattern: parentPath }] };
+    });
     createReadonlyStateProxyMock.mockReturnValue(makeReadonlyState(["a", "b"]));
     
     const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null" } as any;
@@ -945,7 +966,13 @@ describe("Updater/Renderer.render", () => {
       return null;
     });
 
-    getStructuredPathInfoMock.mockImplementation((path: string) => ({ pattern: path, wildcardCount: path.includes("*") ? 1 : 0, wildcardParentInfos: [] }));
+    getStructuredPathInfoMock.mockImplementation((path: string) => {
+      const parts = path.split(".");
+      const wildcardCount = parts.filter(p => p === "*").length;
+      if (wildcardCount === 0) return { pattern: path, wildcardCount: 0, wildcardParentInfos: [] };
+      const parentPath = parts.slice(0, -1).join(".");
+      return { pattern: path, wildcardCount, wildcardParentInfos: [{ pattern: parentPath }] };
+    });
     createReadonlyStateProxyMock.mockReturnValue(makeReadonlyState(["value"]));
 
     const ref = { info: { pattern: "root" }, listIndex: null } as any;
@@ -1221,7 +1248,13 @@ describe("Updater/Renderer エラーハンドリング", () => {
       return pattern === "root" ? topNode : null;
     });
 
-    getStructuredPathInfoMock.mockImplementation((path: string) => ({ pattern: path, wildcardCount: path.includes("*") ? 1 : 0, wildcardParentInfos: [] }));
+    getStructuredPathInfoMock.mockImplementation((path: string) => {
+      const parts = path.split(".");
+      const wildcardCount = parts.filter(p => p === "*").length;
+      if (wildcardCount === 0) return { pattern: path, wildcardCount: 0, wildcardParentInfos: [] };
+      const parentPath = parts.slice(0, -1).join(".");
+      return { pattern: path, wildcardCount, wildcardParentInfos: [{ pattern: parentPath }] };
+    });
 
   createReadonlyStateProxyMock.mockReturnValue(makeReadonlyState(["a", "b"]));
   const mockListDiff = { adds: [10, 20], removes: [], newIndexes: [1, 2], overwrites: new Set(), same: false, oldListValue: [], newListValue: ["a", "b"], oldIndexes: [] } as any;

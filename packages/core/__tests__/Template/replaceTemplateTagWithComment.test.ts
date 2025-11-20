@@ -278,8 +278,8 @@ describe("Template/replaceTemplateTagWithComment", () => {
       const call = registerTemplate.mock.calls.find(c => c[0] === id)!;
       const converted = call[1] as HTMLTemplateElement;
       expect(converted instanceof HTMLTemplateElement).toBe(true);
-      // data-bind 属性が引き継がれる（config.debugがfalseの場合は空文字列になる）
-      expect(converted.getAttribute("data-bind")).toBe("");
+      // data-bind 属性が引き継がれる
+      expect(converted.getAttribute("data-bind")).toBe("if:cond");
       // 子ノードが content に移行されている
       const html = converted.content.cloneNode(true) as DocumentFragment;
       expect(html.textContent).toContain("hello");

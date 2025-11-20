@@ -29,8 +29,9 @@ export function replaceTemplateTagWithComment(
   // テンプレートの親ノードが存在する場合は、テンプレートをコメントノードに置き換える
 
   // デバッグ時、bindTextの内容をコメントに含める
-  const bindText = config.debug ? template.getAttribute(DATA_BIND_ATTRIBUTE) : "";
-  template.parentNode?.replaceChild(document.createComment(`${COMMENT_TEMPLATE_MARK}${id} ${bindText ?? ""}`), template);
+  const bindText = template.getAttribute(DATA_BIND_ATTRIBUTE);
+  const bindTextForDebug = config.debug ? (bindText ?? "") : "";
+  template.parentNode?.replaceChild(document.createComment(`${COMMENT_TEMPLATE_MARK}${id} ${bindTextForDebug}`), template);
   if (template.namespaceURI === SVG_NS) {
     // SVGタグ内のtemplateタグを想定
     const newTemplate = document.createElement("template");

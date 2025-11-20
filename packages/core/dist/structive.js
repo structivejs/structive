@@ -12235,8 +12235,9 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 function replaceTemplateTagWithComment(id, template, rootId = id) {
     // テンプレートの親ノードが存在する場合は、テンプレートをコメントノードに置き換える
     // デバッグ時、bindTextの内容をコメントに含める
-    const bindText = config$2.debug ? template.getAttribute(DATA_BIND_ATTRIBUTE) : "";
-    template.parentNode?.replaceChild(document.createComment(`${COMMENT_TEMPLATE_MARK}${id} ${bindText ?? ""}`), template);
+    const bindText = template.getAttribute(DATA_BIND_ATTRIBUTE);
+    const bindTextForDebug = config$2.debug ? (bindText ?? "") : "";
+    template.parentNode?.replaceChild(document.createComment(`${COMMENT_TEMPLATE_MARK}${id} ${bindTextForDebug}`), template);
     if (template.namespaceURI === SVG_NS) {
         // SVGタグ内のtemplateタグを想定
         const newTemplate = document.createElement("template");
@@ -12428,13 +12429,21 @@ class PathManager {
         this.#id = componentClass.id;
         this.#stateClass = componentClass.stateClass;
         const alls = getPathsSetById(this.#id);
+        const listsFromAlls = new Set();
         for (const path of alls) {
             const info = getStructuredPathInfo(path);
             this.alls = this.alls.union(info.cumulativePathSet);
+            // Check all paths in cumulativePathSet for wildcards
+            for (const cumulativePath of info.cumulativePathSet) {
+                const cumulativeInfo = getStructuredPathInfo(cumulativePath);
+                if (cumulativeInfo.lastSegment === "*") {
+                    listsFromAlls.add(cumulativeInfo.parentPath);
+                }
+            }
         }
         const lists = getListPathsSetById(this.#id);
-        this.lists = this.lists.union(lists);
-        for (const listPath of lists) {
+        this.lists = this.lists.union(lists).union(listsFromAlls);
+        for (const listPath of this.lists) {
             const elementPath = listPath + ".*";
             this.elements.add(elementPath);
         }
@@ -12517,12 +12526,20 @@ class PathManager {
             const elementPath = addPath + ".*";
             this.elements.add(elementPath);
         }
+        else if (info.lastSegment === "*") {
+            this.elements.add(addPath);
+            this.lists.add(info.parentPath);
+        }
         for (const path of info.cumulativePathSet) {
             if (this.alls.has(path))
                 continue;
             this.alls.add(path);
             addPathNode(this.rootNode, path);
             const pathInfo = getStructuredPathInfo(path);
+            if (pathInfo.lastSegment === "*") {
+                this.elements.add(path);
+                this.lists.add(pathInfo.parentPath);
+            }
             if (pathInfo.pathSegments.length > 1) {
                 const funcs = createAccessorFunctions(pathInfo, this.getters);
                 Object.defineProperty(this.#stateClass.prototype, path, {
