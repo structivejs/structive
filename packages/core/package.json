@@ -1,6 +1,6 @@
 {
   "name": "structive",
-  "version": "1.3.6",
+  "version": "1.3.7",
   "description": "Structure-driven template engine where structure defines meaning.",
   "main": "dist/structive.js",
   "module": "dist/structive.mjs",
@@ -19,8 +19,7 @@
     "test:coverage": "vitest run --coverage",
     "test:coverage:watch": "vitest --coverage",
     "preversion": "npm test",
-    "version": "npm run clean && npm run build && git add -A dist",
-    "postversion": "git push && git push --tags"
+    "version": "npm run clean && npm run build && git add -A dist"
   },
   "keywords": [
     "template",
