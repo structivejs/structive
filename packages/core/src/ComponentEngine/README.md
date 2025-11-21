@@ -9,6 +9,4 @@ shadow roots at runtime.
   copying template content.
 - `canHaveShadowRoot.ts`: Guards whether a given element can safely host a
   shadow root.
-- `isVoidElement.ts`: Detects empty HTML elements to avoid adding child
-  bindings.
 - `types.ts`: Shared interfaces that describe the engine contract.

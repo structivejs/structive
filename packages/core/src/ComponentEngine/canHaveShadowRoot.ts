@@ -1,25 +1,25 @@
 /**
- * 指定したタグ名の要素がShadowRootを持てるかどうかを判定するユーティリティ関数。
+ * Utility function to determine whether an element with the specified tag name can have a ShadowRoot.
  *
- * - 指定タグ名で要素を生成し、attachShadowメソッドが存在するかどうかで判定
- * - 無効なタグ名やattachShadow未対応の場合はfalseを返す
+ * - Creates an element with the specified tag name and checks if the attachShadow method exists
+ * - Returns false for invalid tag names or elements that don't support attachShadow
  *
- * @param tagName 判定したい要素のタグ名（例: "div", "span", "input" など）
- * @returns       ShadowRootを持てる場合はtrue、持てない場合はfalse
+ * @param tagName - Tag name of the element to check (e.g., "div", "span", "input")
+ * @returns       - true if the element can have a ShadowRoot, false otherwise
  */
 export function canHaveShadowRoot(tagName: string): boolean {
   try {
-    // 一時的に要素を作成
+    // Temporarily create an element
     const element = document.createElement(tagName);
-    // `attachShadow` メソッドが存在し、実行可能かを確認
+    // Check if the `attachShadow` method exists and is callable
     if (typeof element.attachShadow !== "function") {
       return false;
     }
-    // 一時的にShadowRootをアタッチしてみる
+    // Attempt to attach a ShadowRoot temporarily
     const shadowRoot = element.attachShadow({ mode: 'open' });
     return true;
   } catch {
-    // 無効なタグ名などが渡された場合は false を返す
+    // Return false if an invalid tag name or other error occurs
     return false;
   }
 }

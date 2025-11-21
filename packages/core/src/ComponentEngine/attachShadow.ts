@@ -2,6 +2,13 @@ import { raiseError } from "../utils.js";
 import { IComponentConfig } from "../WebComponents/types";
 import { canHaveShadowRoot } from "./canHaveShadowRoot.js";
 
+/**
+ * Traverses up the DOM tree to find the nearest parent ShadowRoot.
+ * Returns undefined if no ShadowRoot is found in the ancestor chain.
+ *
+ * @param parentNode - The starting node to traverse from
+ * @returns The nearest parent ShadowRoot, or undefined if none exists
+ */
 function getParentShadowRoot(parentNode: Node | null): ShadowRoot|undefined{
   let node: Node | null = parentNode;
   while(node) {
@@ -13,11 +20,11 @@ function getParentShadowRoot(parentNode: Node | null): ShadowRoot|undefined{
 }
 
 /**
- * Light DOMモード: Shadow DOMを使用せず、スタイルを親のShadowRootまたはdocumentに追加する。
- * スタイルシートの重複追加を防止する。
+ * Light DOM mode: Adds styles to the parent ShadowRoot or document without using Shadow DOM.
+ * Prevents duplicate stylesheet additions.
  *
- * @param element    対象のHTMLElement
- * @param styleSheet 適用するCSSStyleSheet
+ * @param element    - Target HTMLElement
+ * @param styleSheet - CSSStyleSheet to apply
  */
 function attachStyleInLightMode(element: HTMLElement, styleSheet: CSSStyleSheet): void {
   const shadowRootOrDocument = getParentShadowRoot(element.parentNode) || document;
@@ -28,11 +35,11 @@ function attachStyleInLightMode(element: HTMLElement, styleSheet: CSSStyleSheet)
 }
 
 /**
- * ShadowRootを作成し、スタイルシートを適用する。
- * 既にShadowRootが存在する場合は作成をスキップする。
+ * Creates a ShadowRoot and applies the stylesheet.
+ * Skips creation if a ShadowRoot already exists.
  *
- * @param element    対象のHTMLElement
- * @param styleSheet 適用するCSSStyleSheet
+ * @param element    - Target HTMLElement
+ * @param styleSheet - CSSStyleSheet to apply
  */
 function createShadowRootWithStyle(element: HTMLElement, styleSheet: CSSStyleSheet): void {
   if (!element.shadowRoot) {
@@ -42,33 +49,32 @@ function createShadowRootWithStyle(element: HTMLElement, styleSheet: CSSStyleShe
 }
 
 /**
- * 指定したHTMLElementにShadow DOMをアタッチし、スタイルシートを適用するユーティリティ関数。
+ * Utility function to attach Shadow DOM to the specified HTMLElement and apply a stylesheet.
  *
- * - config.shadowDomMode="auto": Shadow DOMをサポートする要素のみShadowRootを生成、非対応はLight DOMにフォールバック
- *   - 自律型カスタム要素: 常にShadowRoot作成
- *   - 組み込み要素拡張: canHaveShadowRootで判定、対応ならShadowRoot作成、非対応ならLight DOM
- * - config.shadowDomMode="force": 判定なしで強制的にShadowRootを生成（非対応の場合は例外）
- * - config.shadowDomMode="none": Shadow DOMを使用せず、親のShadowRootまたはdocumentにスタイルを追加
- * - すでに同じスタイルシートが含まれていれば重複追加しない
+ * - config.shadowDomMode="auto": Creates ShadowRoot only for elements that support Shadow DOM, falls back to Light DOM for unsupported elements
+ *   - Autonomous custom elements: Always creates ShadowRoot
+ *   - Built-in element extensions: Determined by canHaveShadowRoot; creates ShadowRoot if supported, falls back to Light DOM otherwise
+ * - config.shadowDomMode="force": Forcefully creates ShadowRoot without validation (throws exception if unsupported)
+ * - config.shadowDomMode="none": Does not use Shadow DOM; adds styles to parent ShadowRoot or document
+ * - Prevents duplicate additions if the same stylesheet is already included
  *
- * @param element    対象のHTMLElement
- * @param config     コンポーネント設定
- * @param styleSheet 適用するCSSStyleSheet
+ * @param element    - Target HTMLElement
+ * @param config     - Component configuration
+ * @param styleSheet - CSSStyleSheet to apply
  */
 export function attachShadow(element: HTMLElement, config: IComponentConfig, styleSheet: CSSStyleSheet): void {
-    if (config.shadowDomMode === "none") {
-      attachStyleInLightMode(element, styleSheet);
-    } else if (config.shadowDomMode === "force") {
+  if (config.shadowDomMode === "none") {
+    attachStyleInLightMode(element, styleSheet);
+  } else if (config.shadowDomMode === "force") {
+    createShadowRootWithStyle(element, styleSheet);
+  } else {
+    // Auto mode: Creates ShadowRoot only for elements that support Shadow DOM, falls back to Light DOM for unsupported elements
+    if (config.extends === null || canHaveShadowRoot(config.extends)) {
+      // Autonomous custom element or Shadow DOM-supported built-in element extension
       createShadowRootWithStyle(element, styleSheet);
     } else {
-      // Auto mode: Shadow DOMをサポートする要素のみShadowRoot作成、非対応はLight DOMにフォールバック
-      if (config.extends === null || canHaveShadowRoot(config.extends)) {
-        // 自律型カスタム要素 or Shadow DOM対応の組み込み要素拡張
-        createShadowRootWithStyle(element, styleSheet);
-      } else {
-        // Shadow DOM非対応の組み込み要素拡張 → Light DOMにフォールバック
-        attachStyleInLightMode(element, styleSheet);
-      }
+      // Shadow DOM-unsupported built-in element extension → Falls back to Light DOM
+      attachStyleInLightMode(element, styleSheet);
     }
-
+  }
 }

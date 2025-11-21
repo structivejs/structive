@@ -4,7 +4,7 @@ import { FilterWithOptions } from "../Filter/types";
 import { IState, IStructiveState } from "../StateClass/types";
 import { ComponentType, IComponentConfig, IComponentStatic, StructiveComponent } from "../WebComponents/types";
 import { attachShadow } from "./attachShadow.js";
-import { IComponentEngine, ICacheEntry, IVersionRevision, IPropertyRefInfo } from "./types";
+import { IComponentEngine, ICacheEntry, IVersionRevision, IPropertyRefMetadata } from "./types";
 import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol, SetCacheableSymbol } from "../StateClass/symbols.js";
 import { getStructuredPathInfo } from "../StateProperty/getStructuredPathInfo.js";
 import { raiseError } from "../utils.js";
@@ -25,78 +25,95 @@ import { IStatePropertyRef } from "../StatePropertyRef/types.js";
 import { getCustomTagName } from "../WebComponents/getCustomTagName.js";
 
 /**
- * ComponentEngine は、Structive コンポーネントの状態・依存関係・
- * バインディング・ライフサイクル・レンダリングを統合する中核エンジンです。
+ * ComponentEngine integrates state, dependencies, bindings, lifecycle, and rendering
+ * for Structive components as the core engine.
  *
- * 主な役割:
- * - 状態インスタンスやプロキシの生成・管理
- * - テンプレート/スタイルシート/フィルター/バインディングの管理
- * - 依存関係グラフ（PathTree）の構築と管理
- * - バインディング情報やリスト情報の保存・取得
- * - ライフサイクル（connected/disconnected）処理
- * - Shadow DOM の適用、またはブロックモードのプレースホルダー運用
- * - 状態プロパティの取得・設定
- * - バインディングの追加・存在判定・リスト管理
+ * Key Responsibilities:
+ * - State instance and proxy generation/management
+ * - Template/stylesheet/filter/binding management
+ * - Dependency graph (PathTree) construction and maintenance
+ * - Binding and list information storage/retrieval
+ * - Lifecycle (connected/disconnected) processing
+ * - Shadow DOM application or block mode placeholder management
+ * - State property get/set operations
+ * - Binding addition, existence checking, and list management
  *
- * Throws（代表例）:
- * - BIND-201 bindContent not initialized yet / Block parent node is not set
- * - STATE-202 Failed to parse state from dataset
+ * Error Codes:
+ * - BIND-201: bindContent not initialized yet / Block parent node is not set
+ * - STATE-202: Failed to parse state from dataset
  *
- * 備考:
- * - 非同期初期化（readyResolvers）を提供
- * - Updater と連携したバッチ更新で効率的なレンダリングを実現
+ * Design Notes:
+ * - Provides async initialization via readyResolvers
+ * - Achieves efficient rendering through batch updates with Updater
  */
 
 class ComponentEngine implements IComponentEngine {
-  type          : ComponentType = 'autonomous';
-  config        : IComponentConfig;
-  template      : HTMLTemplateElement;
-  styleSheet    : CSSStyleSheet;
-  stateClass    : IStructiveState;
-  state         : IState;
-  inputFilters  : FilterWithOptions;
-  outputFilters : FilterWithOptions;
-  #bindContent  :IBindContent | null = null;
- 
-  get bindContent(): IBindContent {
-    if (this.#bindContent === null) {
-      raiseError({
-        code: 'BIND-201',
-        message: 'bindContent not initialized yet',
-        context: { where: 'ComponentEngine.bindContent.get', componentId: (this.owner.constructor as IComponentStatic).id },
-        docsUrl: './docs/error-codes.md#bind',
-      });
-    }
-    return this.#bindContent;
-  }
-  baseClass     : typeof HTMLElement = HTMLElement;
-  owner         : StructiveComponent;
+  // ===== Readonly fields (Core component resources) =====
+  /** Component type: 'autonomous' or 'builtin' */
+  readonly type: ComponentType = 'autonomous';
+  /** Component configuration */
+  readonly config: IComponentConfig;
 
-  bindingsByComponent: WeakMap<StructiveComponent, Set<IBinding>> = new WeakMap();
-  structiveChildComponents: Set<StructiveComponent> = new Set();
-  pathManager: IPathManager;
+  /** HTMLTemplateElement for component rendering */
+  readonly template: HTMLTemplateElement;
+  /** CSSStyleSheet for component styling */
+  readonly styleSheet: CSSStyleSheet;
+  /** State class constructor */
+  readonly stateClass: IStructiveState;
+  /** State instance */
+  readonly state: IState;
+  /** Input filter functions */
+  readonly inputFilters: FilterWithOptions;
+  /** Output filter functions */
+  readonly outputFilters: FilterWithOptions;
+  /** Base HTML element class */
+  readonly baseClass: typeof HTMLElement = HTMLElement;
+  /** Owner component instance */
+  readonly owner: StructiveComponent;
 
-  #readyResolvers : PromiseWithResolvers<void> = Promise.withResolvers<void>();
-  
-  stateBinding: IComponentStateBinding;
-  stateInput: IComponentStateInput;
-  stateOutput: IComponentStateOutput;
-  #blockPlaceholder: Comment | null = null; // ブロックプレースホルダー
-  #blockParentNode: Node | null = null; // ブロックプレースホルダーの親ノード
-  #ignoreDissconnectedCallback: boolean = false; // disconnectedCallbackを無視するフラグ
+  /** Path manager for dependency tracking */
+  readonly pathManager: IPathManager;
+  /** Promise resolvers for async initialization */
+  readonly readyResolvers: PromiseWithResolvers<void> = Promise.withResolvers<void>();
 
-  #currentVersion: number = 0;
-  get currentVersion(): number {
-    return this.#currentVersion;
-  }
+  /** State input proxy for parent-to-child communication */
+  readonly stateInput: IComponentStateInput;
+  /** State output proxy for child-to-parent communication */
+  readonly stateOutput: IComponentStateOutput;
+  /** State binding for parent-child relationship */
+  readonly stateBinding: IComponentStateBinding;
 
-  versionUp(): number {
-    return ++this.#currentVersion;
-  }
+  /** Map of child components to their bindings */
+  readonly bindingsByComponent: WeakMap<StructiveComponent, Set<IBinding>> = new WeakMap();
+  /** Set of child Structive components */
+  readonly structiveChildComponents: Set<StructiveComponent> = new Set();
+  /** Version and revision tracking by path */
+  readonly versionRevisionByPath: Map<string, IVersionRevision> = new Map();
 
-  versionRevisionByPath: Map<string, IVersionRevision> = new Map();
+  // ===== Private fields (Internal state) =====
+  /** Bind content instance (initialized in setup()) */
+  _bindContent: IBindContent | null = null;
+  /** Block mode placeholder comment node */
+  _blockPlaceholder: Comment | null = null;
+  /** Block mode placeholder parent node */
+  _blockParentNode: Node | null = null;
+  /** Flag to ignore disconnectedCallback during replaceWith */
+  _ignoreDissconnectedCallback: boolean = false;
+  /** Current version number for change tracking */
+  _currentVersion: number = 0;
+  /** WeakMap storing binding metadata by property reference */
+  _propertyRefMetadataByRef: WeakMap<IStatePropertyRef, IPropertyRefMetadata> = new WeakMap();
+
+  /**
+   * Constructs a new ComponentEngine instance.
+   * Initializes all readonly fields and creates state management infrastructure.
+   * 
+   * @param config - Component configuration
+   * @param owner - Owner component instance
+   */
   constructor(config: IComponentConfig, owner: StructiveComponent) {
     this.config = config;
+    // Set type to 'builtin' if extending native elements
     if (this.config.extends) {
       this.type = 'builtin';
     }
@@ -107,16 +124,54 @@ class ComponentEngine implements IComponentEngine {
     this.state = new this.stateClass();
     this.inputFilters = componentClass.inputFilters;
     this.outputFilters = componentClass.outputFilters;
-    this.owner =  owner;
+    this.owner = owner;
     this.stateBinding = createComponentStateBinding();
     this.stateInput = createComponentStateInput(this, this.stateBinding);
     this.stateOutput = createComponentStateOutput(this.stateBinding, this);
     this.pathManager = componentClass.pathManager;
   }
 
+  // ===== Getters =====
+  /**
+   * Gets the bind content instance.
+   * Throws BIND-201 if accessed before setup() is called.
+   */
+  get bindContent(): IBindContent {
+    if (this._bindContent === null) {
+      raiseError({
+        code: 'BIND-201',
+        message: 'bindContent not initialized yet',
+        context: { where: 'ComponentEngine.bindContent.get', componentId: (this.owner.constructor as IComponentStatic).id },
+        docsUrl: './docs/error-codes.md#bind',
+      });
+    }
+    return this._bindContent;
+  }
+
+  /**
+   * Gets the current version number for change tracking.
+   */
+  get currentVersion(): number {
+    return this._currentVersion;
+  }
+
+  // ===== Public methods =====
+  /**
+   * Increments and returns the version number.
+   * Used for invalidating caches when state changes.
+   */
+  versionUp(): number {
+    return ++this._currentVersion;
+  }
+
+  /**
+   * Sets up the component engine.
+   * Registers all state properties to PathManager and creates bindContent.
+   * Must be called after construction and before connectedCallback.
+   */
   setup(): void {
-    // 実体化された state オブジェクトのプロパティをすべて PathManager に登録する
-    // ToDo:prototypeを遡ったほうが良い
+    // Register all instantiated state object properties to PathManager
+    // TODO: Should traverse prototype chain for inherited properties
     for(const path in this.state) {
       if (RESERVED_WORD_SET.has(path) || this.pathManager.alls.has(path)) {
         continue;
@@ -126,49 +181,54 @@ class ComponentEngine implements IComponentEngine {
     }
     const componentClass = this.owner.constructor as IComponentStatic;
     const rootRef = getStatePropertyRef(getStructuredPathInfo(''), null);
-    this.#bindContent = createBindContent(null, componentClass.id, this, rootRef); // this.stateArrayPropertyNamePatternsが変更になる可能性がある
+    // Create bindContent (may modify stateArrayPropertyNamePatterns)
+    this._bindContent = createBindContent(null, componentClass.id, this, rootRef);
   }
 
-  get readyResolvers(): PromiseWithResolvers<void> {
-    return this.#readyResolvers;
-  }
-
+  /**
+   * Handles component connection to DOM.
+   * - Attaches Shadow DOM or sets up block mode placeholder
+   * - Mounts bindContent
+   * - Initializes state from data-state attribute if present
+   * - Performs initial render
+   * - Calls state's connectedCallback if defined
+   * 
+   * Why not do this in setup():\n   * - setup() is called at component instantiation
+   * - connectedCallback() is called when connected to DOM
+   * - State initialization and rendering must be redone if reconnected after disconnect
+   */
   async connectedCallback(): Promise<void> {
     if (this.config.enableWebComponents) {
       attachShadow(this.owner, this.config, this.styleSheet);
     } else {
-      this.#blockParentNode = this.owner.parentNode;
-      this.#blockPlaceholder = document.createComment("Structive block placeholder");
+      // Block mode: Replace component with placeholder
+      this._blockParentNode = this.owner.parentNode;
+      this._blockPlaceholder = document.createComment("Structive block placeholder");
       try {
-        this.#ignoreDissconnectedCallback = true; // disconnectedCallbackを無視するフラグを立てる
-        this.owner.replaceWith(this.#blockPlaceholder); // disconnectCallbackが呼ばれてしまう
+        // Set flag to ignore disconnectedCallback triggered by replaceWith
+        this._ignoreDissconnectedCallback = true;
+        this.owner.replaceWith(this._blockPlaceholder);
       } finally {
-        this.#ignoreDissconnectedCallback = false;
+        this._ignoreDissconnectedCallback = false;
       }
     }
 
     if (this.config.enableWebComponents) {
-      // Shadow DOMにバインドコンテンツをマウントする
+      // Mount bind content to Shadow DOM
       this.bindContent.mount(this.owner.shadowRoot ?? this.owner);
     } else {
-      // ブロックプレースホルダーの親ノードにバインドコンテンツをマウントする
-      const parentNode = this.#blockParentNode ?? raiseError({
+      // Mount bind content after block placeholder
+      const parentNode = this._blockParentNode ?? raiseError({
         code: 'BIND-201',
         message: 'Block parent node is not set',
         context: { where: 'ComponentEngine.connectedCallback', mode: 'block' },
         docsUrl: './docs/error-codes.md#bind',
       });
-      this.bindContent.mountAfter(parentNode, this.#blockPlaceholder);
+      this.bindContent.mountAfter(parentNode, this._blockPlaceholder);
     }
 
-    /**
-     * setup()で状態の初期化と初期レンダリングを行わない理由
-     * - setup()はコンポーネントのインスタンス化時に呼ばれるが、connectedCallback()はDOMに接続されたときに呼ばれる
-     * - disconnectでinactivateされた後に再度connectされた場合、状態の初期化とレンダリングを再度行う必要がある
-     */
-    // コンポーネントの状態を初期化する
+    // Initialize component state from data-state attribute if present
     if (this.owner.dataset.state) {
-      // data-state属性から状態を取得する
       try {
         const json = JSON.parse(this.owner.dataset.state);
         this.stateInput[AssignStateSymbol](json);
@@ -183,7 +243,7 @@ class ComponentEngine implements IComponentEngine {
       }
     }
 
-    // 状態の初期レンダリングを行う
+    // Perform initial render
     createUpdater<void>(this, (updater) => {
       updater.initialRender((renderer) => {
         this.bindContent.activate();
@@ -193,7 +253,7 @@ class ComponentEngine implements IComponentEngine {
       });
     });
 
-    // connectedCallbackが実装されていれば呼び出す
+    // Call state's connectedCallback if implemented
     if (this.pathManager.hasConnectedCallback) {
       const resultPromise = createUpdater<Promise<void>>(this, async (updater) => {
         return updater.update(null, async (stateProxy, handler) => {
@@ -204,14 +264,22 @@ class ComponentEngine implements IComponentEngine {
         await resultPromise;
       }
     }
-    this.#readyResolvers.resolve();
+    this.readyResolvers.resolve();
   }
 
+  /**
+   * Handles component disconnection from DOM.
+   * - Calls state's disconnectedCallback if defined
+   * - Unregisters from parent component
+   * - Removes block placeholder if in block mode
+   * - Inactivates and unmounts bindContent
+   */
   async disconnectedCallback(): Promise<void> {
-    if (this.#ignoreDissconnectedCallback) return; // disconnectedCallbackを無視するフラグが立っている場合は何もしない
+    // Ignore if flag is set (during replaceWith in connectedCallback)
+    if (this._ignoreDissconnectedCallback) return;
 
     try {
-      // 同期処理
+      // Call state's disconnectedCallback if implemented (synchronous)
       if (this.pathManager.hasDisconnectedCallback) {
         createUpdater<void>(this, (updater) => {
           updater.update(null, (stateProxy, handler) => {
@@ -220,15 +288,14 @@ class ComponentEngine implements IComponentEngine {
         });
       }
     } finally {
-      // 親コンポーネントから登録を解除する
+      // Unregister from parent component
       this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
       if (!this.config.enableWebComponents) {
-        this.#blockPlaceholder?.remove();
-        this.#blockPlaceholder = null;
-        this.#blockParentNode = null;
+        this._blockPlaceholder?.remove();
+        this._blockPlaceholder = null;
+        this._blockParentNode = null;
       }
-      // 状態の不活化とunmountを行う
-      // inactivateの中でbindContent.unmountも呼ばれる
+      // Inactivate state and unmount (bindContent.unmount is called within inactivate)
       createUpdater<void>(this, (updater) => {
         updater.initialRender((renderer) => {
           this.bindContent.inactivate();
@@ -238,12 +305,16 @@ class ComponentEngine implements IComponentEngine {
 
   }
 
+  /**
+   * Gets list indexes for a property reference.
+   * Delegates to stateOutput if the path matches parent-child binding.
+   */
   getListIndexes(ref: IStatePropertyRef): IListIndex[] | null {
     if (this.stateOutput.startsWith(ref.info)) {
       return this.stateOutput.getListIndexes(ref);
     }
     let value: IListIndex[] | null = null;
-    // 同期処理
+    // Synchronous operation
     createUpdater<any>(this, (updater) => {
       value = updater.createReadonlyState<IListIndex[] | null>((stateProxy, handler) => {
         return stateProxy[GetListIndexesByRefSymbol](ref);
@@ -252,10 +323,13 @@ class ComponentEngine implements IComponentEngine {
     return value;
   }
 
+  /**
+   * Gets a property value by reference.
+   * Uses readonly state proxy to access the value synchronously.
+   */
   getPropertyValue(ref: IStatePropertyRef): any {
-    // プロパティの値を取得する
     let value;
-    // 同期処理
+    // Synchronous operation
     createUpdater<any>(this, (updater) => {
       value = updater.createReadonlyState<any>((stateProxy, handler) => {
         return stateProxy[GetByRefSymbol](ref);
@@ -263,58 +337,101 @@ class ComponentEngine implements IComponentEngine {
     });
     return value;
   }
+
+  /**
+   * Sets a property value by reference.
+   * Uses writable state proxy to set the value synchronously.
+   */
   setPropertyValue(ref: IStatePropertyRef, value: any): void {
-    // プロパティの値を設定する
-    // 同期処理
+    // Synchronous operation
     createUpdater<void>(this, (updater) => {
       updater.update(null, (stateProxy, handler) => {
         stateProxy[SetByRefSymbol](ref, value);
       });
     });
   }
-  // Structive子コンポーネントを登録する
+
+  /**
+   * Registers a child Structive component.
+   * Used for parent-child relationship tracking.
+   */
   registerChildComponent(component: StructiveComponent): void {
     this.structiveChildComponents.add(component);
   }
+
+  /**
+   * Unregisters a child Structive component.
+   * Called when child is disconnected or destroyed.
+   */
   unregisterChildComponent(component: StructiveComponent): void {
     this.structiveChildComponents.delete(component);
   }
 
-  #propertyRefInfoByRef: WeakMap<IStatePropertyRef, IPropertyRefInfo> = new WeakMap();
+  /**
+   * Gets the cache entry for a property reference.
+   * Returns null if no cache exists.
+   */
   getCacheEntry(ref: IStatePropertyRef): ICacheEntry | null {
-    return this.#propertyRefInfoByRef.get(ref)?.cacheEntry ?? null;
+    return this._propertyRefMetadataByRef.get(ref)?.cacheEntry ?? null;
   }
+
+  /**
+   * Sets the cache entry for a property reference.
+   * Creates a new PropertyRefMetadata if it doesn't exist.
+   */
   setCacheEntry(ref: IStatePropertyRef, entry: ICacheEntry): void {
-    let info = this.#propertyRefInfoByRef.get(ref);
-    if (typeof info === "undefined") {
-      this.#propertyRefInfoByRef.set(ref, { bindings: [], cacheEntry: entry });
+    let metadata = this._propertyRefMetadataByRef.get(ref);
+    if (typeof metadata === "undefined") {
+      this._propertyRefMetadataByRef.set(ref, { bindings: [], cacheEntry: entry });
     } else {
-      info.cacheEntry = entry;
+      metadata.cacheEntry = entry;
     }
   }
+
+  /**
+   * Gets all bindings associated with a property reference.
+   * Returns empty array if no bindings exist.
+   */
   getBindings(ref: IStatePropertyRef): IBinding[] {
-    return this.#propertyRefInfoByRef.get(ref)?.bindings ?? [];
+    return this._propertyRefMetadataByRef.get(ref)?.bindings ?? [];
   }
+
+  /**
+   * Saves a binding for a property reference.
+   * Creates a new PropertyRefMetadata if it doesn't exist.
+   */
   saveBinding(ref: IStatePropertyRef, binding: IBinding): void {
-    const info = this.#propertyRefInfoByRef.get(ref);
-    if (typeof info === "undefined") {
-      this.#propertyRefInfoByRef.set(ref, { bindings: [binding], cacheEntry: null });
+    const metadata = this._propertyRefMetadataByRef.get(ref);
+    if (typeof metadata === "undefined") {
+      this._propertyRefMetadataByRef.set(ref, { bindings: [binding], cacheEntry: null });
     } else {
-      info.bindings.push(binding);
+      metadata.bindings.push(binding);
     }
   }
+
+  /**
+   * Removes a binding from a property reference.
+   * Does nothing if the binding doesn't exist.
+   */
   removeBinding(ref: IStatePropertyRef, binding: IBinding): void {
-    const info = this.#propertyRefInfoByRef.get(ref);
-    if (typeof info !== "undefined") {
-      const index = info.bindings.indexOf(binding);
+    const metadata = this._propertyRefMetadataByRef.get(ref);
+    if (typeof metadata !== "undefined") {
+      const index = metadata.bindings.indexOf(binding);
       if (index >= 0) {
-        info.bindings.splice(index, 1);
+        metadata.bindings.splice(index, 1);
       }
     }
   }
   
 }
 
+/**
+ * Factory function to create a ComponentEngine instance.
+ * 
+ * @param config - Component configuration
+ * @param component - Owner component instance
+ * @returns A new ComponentEngine instance
+ */
 export function createComponentEngine(config: IComponentConfig, component: StructiveComponent): IComponentEngine {
   return new ComponentEngine(config, component);
 }
