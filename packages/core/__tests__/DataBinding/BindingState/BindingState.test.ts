@@ -129,7 +129,7 @@ describe("BindingState", () => {
     expect(bindingState.pattern).toBe("user.name");
     expect(bindingState.info.pattern).toBe("user.name");
     expect(bindingState.filters.length).toBe(0);
-  expect((bindingState as any).binding).toBe(binding);
+  expect((bindingState as any)._binding).toBe(binding);
     expect(bindingState.listIndex).toBeNull();
     expect(bindingState.isLoopIndex).toBe(false);
   });

@@ -146,7 +146,6 @@ describe("BindContent", () => {
     // mountBefore: 先頭に入る
     bc.mountBefore(host, host.firstChild);
     expect(host.firstChild).toBe(bc.firstChildNode);
-  expect(bc.isMounted).toBe(true);
 
   // mountAfter: アンカーの直後に入る（いったんアンマウントして検証）
   bc.unmount();

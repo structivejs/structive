@@ -88,7 +88,7 @@ describe("BindingStateIndex", () => {
     const binding = createBinding(engine, { serialize: () => [] } as any);
     const factory = createBindingStateIndex("$1", [{ name: "add", options: ["1"] }]);
     const bs = factory(binding, engine.outputFilters);
-    expect((bs as any).binding).toBe(binding);
+    expect((bs as any)._binding).toBe(binding);
     expect(Array.isArray((bs as any).filters)).toBe(true);
     expect((bs as any).filters.length).toBe(1);
     expect((bs as any).isLoopIndex).toBe(true);

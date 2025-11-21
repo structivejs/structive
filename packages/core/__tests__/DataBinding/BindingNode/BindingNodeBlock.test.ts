@@ -8,7 +8,7 @@ describe("BindingNodeBlock", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|0");
       const binding = createBindingStub(engine, comment);
-      const node = new BindingNodeBlock(binding, comment, "block", [], []);
+      const node = new BindingNodeBlock(binding, comment, "block", "block", [], []);
       expect(node.id).toBe(0);
     });
 
@@ -16,7 +16,7 @@ describe("BindingNodeBlock", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|42");
       const binding = createBindingStub(engine, comment);
-      const node = new BindingNodeBlock(binding, comment, "block", [], []);
+      const node = new BindingNodeBlock(binding, comment, "block", "block", [], []);
       expect(node.id).toBe(42);
     });
 
@@ -24,7 +24,7 @@ describe("BindingNodeBlock", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|999999");
       const binding = createBindingStub(engine, comment);
-      const node = new BindingNodeBlock(binding, comment, "block", [], []);
+      const node = new BindingNodeBlock(binding, comment, "block", "block", [], []);
       expect(node.id).toBe(999999);
     });
 
@@ -32,7 +32,7 @@ describe("BindingNodeBlock", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|123 extra info");
       const binding = createBindingStub(engine, comment);
-      const node = new BindingNodeBlock(binding, comment, "block", [], []);
+      const node = new BindingNodeBlock(binding, comment, "block", "block", [], []);
       expect(node.id).toBe(123);
     });
 
@@ -42,7 +42,7 @@ describe("BindingNodeBlock", () => {
       const binding = createBindingStub(engine, comment);
       const filters = [{ name: "testFilter", args: [] }];
       const decorates = ["decorate1"];
-      const node = new BindingNodeBlock(binding, comment, "block", filters, decorates);
+      const node = new BindingNodeBlock(binding, comment, "block", "block", filters, decorates);
       expect(node.id).toBe(99);
       expect(node.filters).toEqual(filters);
       expect(node.decorates).toEqual(decorates);
@@ -56,21 +56,21 @@ describe("BindingNodeBlock", () => {
         textContent: null
       } as unknown as Node;
       const binding = createBindingStub(engine, fakeNode);
-      expect(() => new BindingNodeBlock(binding, fakeNode, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, fakeNode, "block", "block", [], [])).toThrow("Invalid node");
     });
 
     it("textContent が空文字列の場合はエラー", () => {
       const engine = createEngineStub();
       const comment = document.createComment("");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
 
     it("textContent が COMMENT_TEMPLATE_MARK より短い場合はエラー", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
   });
 
@@ -79,14 +79,14 @@ describe("BindingNodeBlock", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|-5");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
 
     it("-1 はエラー", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|-1");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
   });
 
@@ -95,14 +95,14 @@ describe("BindingNodeBlock", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|42.5");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
 
     it("0.5 はエラー", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|0.5");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
   });
 
@@ -111,14 +111,14 @@ describe("BindingNodeBlock", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|Infinity");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
 
     it("-Infinity はエラー", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|-Infinity");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
   });
 
@@ -127,42 +127,42 @@ describe("BindingNodeBlock", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|abc");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
 
     it("先頭にスペースがある数値はエラー", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@| 42");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
 
     it("指数表記（文字列表現が異なる）はエラー", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|1e2");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
 
     it("16進数表記はエラー", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|0x10");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
 
     it("先頭にゼロがある数値（文字列表現が異なる）はエラー", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|007");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
 
     it("プラス記号付きの数値はエラー", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|+42");
       const binding = createBindingStub(engine, comment);
-      expect(() => new BindingNodeBlock(binding, comment, "block", [], [])).toThrow("Invalid node");
+      expect(() => new BindingNodeBlock(binding, comment, "block", "block", [], [])).toThrow("Invalid node");
     });
   });
 
@@ -172,7 +172,7 @@ describe("BindingNodeBlock", () => {
       const comment = document.createComment("@@|abc");
       const binding = createBindingStub(engine, comment);
       try {
-        new BindingNodeBlock(binding, comment, "block", [], []);
+        new BindingNodeBlock(binding, comment, "block", "block", [], []);
         expect.fail("エラーが投げられるべき");
       } catch (err: any) {
         expect(err.message).toBe("Invalid node");

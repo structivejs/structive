@@ -5,7 +5,7 @@ describe("BindingNode", () => {
   it("assignValue/updateElements は未実装エラー、notifyRedraw は何もしない", () => {
     const binding = {} as any;
     const div = document.createElement("div");
-    const node = new BindingNode(binding as any, div, "value", [], []);
+    const node = new BindingNode(binding as any, div, "value", "value", [], []);
     expect(() => node.assignValue(1)).toThrowError(/not implemented/i);
     expect(() => node.updateElements([], [])).toThrowError(/not implemented/i);
     node.notifyRedraw([] as any);
@@ -14,7 +14,7 @@ describe("BindingNode", () => {
   it("isSelectElement の判定、各種ゲッター", () => {
     const binding = {} as any;
     const select = document.createElement("select");
-    const node1 = new BindingNode(binding as any, select, "value", [], ["d1"]);
+    const node1 = new BindingNode(binding as any, select, "value", "value", [], ["d1"]);
     expect(node1.isSelectElement).toBe(true);
     expect(node1.name).toBe("value");
     expect(node1.subName).toBe("value");
@@ -28,7 +28,7 @@ describe("BindingNode", () => {
     // expect(node1.isBlock).toBe(false);
 
     const div = document.createElement("div");
-    const node2 = new BindingNode(binding as any, div, "textContent", [], []);
+    const node2 = new BindingNode(binding as any, div, "textContent", "textContent", [], []);
     expect(node2.isSelectElement).toBe(false);
   });
 
@@ -49,7 +49,7 @@ describe("BindingNode", () => {
       readonlyState: {},
       readonlyHandler: {},
     } as any;
-    const node = new ConcreteBindingNode(binding, document.createElement("div"), "value", [], []);
+    const node = new ConcreteBindingNode(binding, document.createElement("div"), "value", "value", [], []);
 
     node.applyChange(renderer);
     expect(node.assigned).toEqual(["filtered"]);
@@ -63,7 +63,7 @@ describe("BindingNode", () => {
   it("activate/inactivate methods are empty implementations", () => {
     const binding = {} as any;
     const div = document.createElement("div");
-    const node = new BindingNode(binding as any, div, "value", [], []);
+    const node = new BindingNode(binding as any, div, "value", "value", [], []);
     
     // activate/inactivateメソッドは何もしないが、呼び出せることを確認
     expect(() => node.activate()).not.toThrow();
