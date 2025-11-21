@@ -55,7 +55,7 @@ describe("createComponentStateBinding", () => {
     expect(() => toParent("child.unknown" as any)).toThrow(/No parent path found/);
 
     // マッピングが欠損している場合も例外
-    csb.parentPathByChildPath.delete("child.users.*");
+    csb._parentPathByChildPath.delete("child.users.*");
     expect(() => toParent("child.users.*.age")).toThrow(/No parent path found/);
   });
 
@@ -70,7 +70,7 @@ describe("createComponentStateBinding", () => {
     expect(() => toChild("parent.unknown" as any)).toThrow(/No child path found/);
 
     // マッピングが欠損している場合も例外
-    csb.childPathByParentPath.delete("parent.users.*");
+    csb._childPathByParentPath.delete("parent.users.*");
     expect(() => toChild("parent.users.*.name")).toThrow(/No child path found/);
   });
 

@@ -92,17 +92,17 @@ class ComponentEngine implements IComponentEngine {
 
   // ===== Private fields (Internal state) =====
   /** Bind content instance (initialized in setup()) */
-  _bindContent: IBindContent | null = null;
+  private _bindContent: IBindContent | null = null;
   /** Block mode placeholder comment node */
-  _blockPlaceholder: Comment | null = null;
+  private _blockPlaceholder: Comment | null = null;
   /** Block mode placeholder parent node */
-  _blockParentNode: Node | null = null;
+  private _blockParentNode: Node | null = null;
   /** Flag to ignore disconnectedCallback during replaceWith */
-  _ignoreDissconnectedCallback: boolean = false;
+  private _ignoreDissconnectedCallback: boolean = false;
   /** Current version number for change tracking */
-  _currentVersion: number = 0;
+  private _currentVersion: number = 0;
   /** WeakMap storing binding metadata by property reference */
-  _propertyRefMetadataByRef: WeakMap<IStatePropertyRef, IPropertyRefMetadata> = new WeakMap();
+  private _propertyRefMetadataByRef: WeakMap<IStatePropertyRef, IPropertyRefMetadata> = new WeakMap();
 
   /**
    * Constructs a new ComponentEngine instance.

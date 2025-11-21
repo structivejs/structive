@@ -119,9 +119,35 @@ describe("createComponentStateOutput", () => {
       startsWithByChildPath: vi.fn(() => null),
     }, childEngine);
     const childRef = getStatePropertyRef(childInfo, null);
-    expect(() => out.get(childRef)).toThrow(/No child path found/);
-    expect(() => out.set(childRef, 1)).toThrow(/No child path found/);
-    expect(() => out.getListIndexes(childRef)).toThrow(/No child path found/);
+    
+    try {
+      out.get(childRef);
+      expect.fail("Should throw error");
+    } catch (err: any) {
+      expect(err.message).toMatch(/No child path found/);
+      expect(err.code).toBe("CSO-101");
+      expect(err.context).toBeDefined();
+      expect(err.context.where).toBe("ComponentStateOutput.get");
+      expect(err.context.path).toBe(childInfo.pattern);
+    }
+    
+    try {
+      out.set(childRef, 1);
+      expect.fail("Should throw error");
+    } catch (err: any) {
+      expect(err.message).toMatch(/No child path found/);
+      expect(err.code).toBe("CSO-101");
+      expect(err.context.where).toBe("ComponentStateOutput.set");
+    }
+    
+    try {
+      out.getListIndexes(childRef);
+      expect.fail("Should throw error");
+    } catch (err: any) {
+      expect(err.message).toMatch(/No child path found/);
+      expect(err.code).toBe("CSO-101");
+      expect(err.context.where).toBe("ComponentStateOutput.getListIndexes");
+    }
   });
 
   it("エラー: bindingByChildPath に存在しない場合は raiseError", () => {
@@ -136,9 +162,35 @@ describe("createComponentStateOutput", () => {
     } as any;
     const out = createComponentStateOutput(b2, childEngine);
     const ref = getStatePropertyRef(childInfo, null);
-    expect(() => out.get(ref)).toThrow(/No binding found/);
-    expect(() => out.set(ref, 1)).toThrow(/No binding found/);
-    expect(() => out.getListIndexes(ref)).toThrow(/No binding found/);
+    
+    try {
+      out.get(ref);
+      expect.fail("Should throw error");
+    } catch (err: any) {
+      expect(err.message).toMatch(/No binding found/);
+      expect(err.code).toBe("CSO-102");
+      expect(err.context).toBeDefined();
+      expect(err.context.where).toBe("ComponentStateOutput.get");
+      expect(err.context.childPath).toBe(m.childInfo.pattern);
+    }
+    
+    try {
+      out.set(ref, 1);
+      expect.fail("Should throw error");
+    } catch (err: any) {
+      expect(err.message).toMatch(/No binding found/);
+      expect(err.code).toBe("CSO-102");
+      expect(err.context.where).toBe("ComponentStateOutput.set");
+    }
+    
+    try {
+      out.getListIndexes(ref);
+      expect.fail("Should throw error");
+    } catch (err: any) {
+      expect(err.message).toMatch(/No binding found/);
+      expect(err.code).toBe("CSO-102");
+      expect(err.context.where).toBe("ComponentStateOutput.getListIndexes");
+    }
   });
 
   it("getListIndexes: 同じパスで複数回呼ばれても pathManager.addPath は1回のみ", () => {
