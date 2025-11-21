@@ -4,16 +4,32 @@ import { getStatePropertyRef } from "../StatePropertyRef/StatepropertyRef";
 import { createUpdater } from "../Updater/Updater";
 import { raiseError } from "../utils";
 import { AssignStateSymbol, NotifyRedrawSymbol } from "./symbols";
+/**
+ * Handler class for ComponentStateInput proxy.
+ * Manages state property access, assignment, and redraw notifications
+ * by coordinating with the component engine and state binding.
+ */
 class ComponentStateInputHandler {
-    componentStateBinding;
-    engine;
+    _componentStateBinding;
+    _engine;
+    /**
+     * Constructor initializes component state input handler.
+     *
+     * @param engine - Component engine instance
+     * @param componentStateBinding - State binding configuration for path mapping
+     */
     constructor(engine, componentStateBinding) {
-        this.componentStateBinding = componentStateBinding;
-        this.engine = engine;
+        this._componentStateBinding = componentStateBinding;
+        this._engine = engine;
     }
+    /**
+     * Assigns multiple state properties from an object synchronously.
+     *
+     * @param object - Key-value pairs of state properties to assign
+     */
     assignState(object) {
-        // 同期処理
-        createUpdater(this.engine, (updater) => {
+        // Synchronous processing
+        createUpdater(this._engine, (updater) => {
             updater.update(null, (stateProxy, handler) => {
                 for (const [key, value] of Object.entries(object)) {
                     const childPathInfo = getStructuredPathInfo(key);
@@ -24,18 +40,21 @@ class ComponentStateInputHandler {
         });
     }
     /**
-     * listindexに一致するかどうかは事前にスクリーニングしておく
-     * @param refs
+     * Notifies the component to redraw based on parent state property changes.
+     * Translates parent paths to child paths and enqueues update references.
+     *
+     * @param refs - Array of parent state property references that have changed
+     * @throws LIST-201 ListIndex not found for parent ref
      */
     notifyRedraw(refs) {
-        createUpdater(this.engine, (updater) => {
+        createUpdater(this._engine, (updater) => {
             for (const parentPathRef of refs) {
                 let childPath;
                 try {
-                    childPath = this.componentStateBinding.toChildPathFromParentPath(parentPathRef.info.pattern);
+                    childPath = this._componentStateBinding.toChildPathFromParentPath(parentPathRef.info.pattern);
                 }
                 catch (e) {
-                    // 対象でないものは何もしない
+                    // Ignore non-target paths
                     continue;
                 }
                 const childPathInfo = getStructuredPathInfo(childPath);
@@ -54,12 +73,21 @@ class ComponentStateInputHandler {
                     });
                 }
                 const childRef = getStatePropertyRef(childPathInfo, childListIndex);
-                const value = this.engine.getPropertyValue(childRef);
-                // Ref情報をもとに状態更新キューに追加
+                const value = this._engine.getPropertyValue(childRef);
+                // Add to state update queue based on ref information
                 updater.enqueueRef(childRef);
             }
         });
     }
+    /**
+     * Proxy get trap for accessing state properties and symbol-based methods.
+     *
+     * @param target - Proxy target object
+     * @param prop - Property key being accessed
+     * @param receiver - Proxy receiver
+     * @returns Property value or bound method
+     * @throws Error if property is not supported
+     */
     get(target, prop, receiver) {
         if (prop === AssignStateSymbol) {
             return this.assignState.bind(this);
@@ -69,19 +97,36 @@ class ComponentStateInputHandler {
         }
         else if (typeof prop === "string") {
             const ref = getStatePropertyRef(getStructuredPathInfo(prop), null);
-            return this.engine.getPropertyValue(ref);
+            return this._engine.getPropertyValue(ref);
         }
         raiseError(`Property "${String(prop)}" is not supported in ComponentStateInput.`);
     }
+    /**
+     * Proxy set trap for updating state properties.
+     *
+     * @param target - Proxy target object
+     * @param prop - Property key being set
+     * @param value - New value to assign
+     * @param receiver - Proxy receiver
+     * @returns true if set operation succeeded
+     * @throws Error if property is not supported
+     */
     set(target, prop, value, receiver) {
         if (typeof prop === "string") {
             const ref = getStatePropertyRef(getStructuredPathInfo(prop), null);
-            this.engine.setPropertyValue(ref, value);
+            this._engine.setPropertyValue(ref, value);
             return true;
         }
         raiseError(`Property "${String(prop)}" is not supported in ComponentStateInput.`);
     }
 }
+/**
+ * Creates a component state input proxy for managing parent-child state bindings.
+ *
+ * @param engine - Component engine instance
+ * @param componentStateBinding - State binding configuration for parent-child path mapping
+ * @returns Proxied component state input interface
+ */
 export function createComponentStateInput(engine, componentStateBinding) {
     const handler = new ComponentStateInputHandler(engine, componentStateBinding);
     return new Proxy({}, handler);

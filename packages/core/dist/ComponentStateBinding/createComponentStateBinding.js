@@ -3,60 +3,90 @@ import { raiseError } from "../utils";
 /**
  * ComponentStateBinding
  *
- * 目的:
- * - 親コンポーネントの状態パスと子コンポーネント側のサブパスを一対一で関連付け、
- *   双方向にパス変換・参照できるようにする（親->子/子->親）。
+ * Purpose:
+ * - Associates parent component state paths with child component sub-paths in a one-to-one relationship,
+ *   enabling bidirectional path conversion and referencing (parent->child/child->parent).
  *
- * 制約:
- * - 親パス/子パスは 1:1 のみ（重複登録は STATE-303）
- * - 最長一致でのパス変換を行い、下位セグメントはそのまま連結
+ * Constraints:
+ * - Parent path/child path is 1:1 only (duplicate registration results in STATE-303)
+ * - Performs path conversion with longest match, concatenating lower segments as-is
  */
 class ComponentStateBinding {
-    parentPaths = new Set();
     childPaths = new Set();
-    childPathByParentPath = new Map();
-    parentPathByChildPath = new Map();
+    parentPaths = new Set();
     bindingByParentPath = new Map();
     bindingByChildPath = new Map();
-    bindings = new WeakSet();
+    _childPathByParentPath = new Map();
+    _parentPathByChildPath = new Map();
+    _bindings = new WeakSet();
+    /**
+     * Adds a binding to establish parent-child path mapping.
+     * Validates that paths are not already mapped and registers the binding.
+     *
+     * @param binding - IBinding instance to register
+     * @throws STATE-303 Parent path already has a child path or child path already has a parent path
+     */
     addBinding(binding) {
-        if (this.bindings.has(binding)) {
-            return; // 既にバインディングが追加されている場合は何もしない
+        if (this._bindings.has(binding)) {
+            return; // Skip if binding is already added
         }
         const parentPath = binding.bindingState.pattern;
         const childPath = binding.bindingNode.subName;
-        if (this.childPathByParentPath.has(parentPath)) {
+        if (this._childPathByParentPath.has(parentPath)) {
             raiseError({
                 code: "STATE-303",
                 message: `Parent path "${parentPath}" already has a child path`,
-                context: { parentPath, existingChildPath: this.childPathByParentPath.get(parentPath) },
+                context: { parentPath, existingChildPath: this._childPathByParentPath.get(parentPath) },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
-        if (this.parentPathByChildPath.has(childPath)) {
+        if (this._parentPathByChildPath.has(childPath)) {
             raiseError({
                 code: "STATE-303",
                 message: `Child path "${childPath}" already has a parent path`,
-                context: { childPath, existingParentPath: this.parentPathByChildPath.get(childPath) },
+                context: { childPath, existingParentPath: this._parentPathByChildPath.get(childPath) },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
-        this.childPathByParentPath.set(parentPath, childPath);
-        this.parentPathByChildPath.set(childPath, parentPath);
+        this._childPathByParentPath.set(parentPath, childPath);
+        this._parentPathByChildPath.set(childPath, parentPath);
         this.parentPaths.add(parentPath);
         this.childPaths.add(childPath);
         this.bindingByParentPath.set(parentPath, binding);
         this.bindingByChildPath.set(childPath, binding);
-        this.bindings.add(binding);
+        this._bindings.add(binding);
     }
+    /**
+     * Gets the child path mapped to the given parent path.
+     * Returns undefined if no mapping exists.
+     *
+     * @param parentPath - Parent component state path
+     * @returns Child path string or undefined
+     */
     getChildPath(parentPath) {
-        return this.childPathByParentPath.get(parentPath);
+        return this._childPathByParentPath.get(parentPath);
     }
+    /**
+     * Gets the parent path mapped to the given child path.
+     * Returns undefined if no mapping exists.
+     *
+     * @param childPath - Child component state path
+     * @returns Parent path string or undefined
+     */
     getParentPath(childPath) {
-        return this.parentPathByChildPath.get(childPath);
+        return this._parentPathByChildPath.get(childPath);
     }
+    /**
+     * Converts a child path to its corresponding parent path.
+     * Uses longest match algorithm and concatenates remaining segments.
+     * Throws error if no matching parent path is found.
+     *
+     * @param childPath - Child component state path
+     * @returns Corresponding parent path string
+     * @throws STATE-302 No parent path found for child path
+     */
     toParentPathFromChildPath(childPath) {
-        // 子から親へ: 最長一致する childPaths のエントリを探し、残差のセグメントを親に連結
+        // Child to parent: Find longest matching entry in childPaths, concatenate remaining segments to parent
         const childPathInfo = getStructuredPathInfo(childPath);
         const matchPaths = childPathInfo.cumulativePathSet.intersection(this.childPaths);
         if (matchPaths.size === 0) {
@@ -70,7 +100,7 @@ class ComponentStateBinding {
         const matchPathArray = Array.from(matchPaths);
         const longestMatchPath = matchPathArray[matchPathArray.length - 1];
         const remainPath = childPath.slice(longestMatchPath.length); // include the dot
-        const matchParentPath = this.parentPathByChildPath.get(longestMatchPath);
+        const matchParentPath = this._parentPathByChildPath.get(longestMatchPath);
         if (typeof matchParentPath === "undefined") {
             raiseError({
                 code: "STATE-302",
@@ -81,8 +111,17 @@ class ComponentStateBinding {
         }
         return matchParentPath + remainPath;
     }
+    /**
+     * Converts a parent path to its corresponding child path.
+     * Uses longest match algorithm and concatenates remaining segments.
+     * Throws error if no matching child path is found.
+     *
+     * @param parentPath - Parent component state path
+     * @returns Corresponding child path string
+     * @throws STATE-302 No child path found for parent path
+     */
     toChildPathFromParentPath(parentPath) {
-        // 親から子へ: 最長一致する parentPaths のエントリを探し、残差のセグメントを子に連結
+        // Parent to child: Find longest matching entry in parentPaths, concatenate remaining segments to child
         const parentPathInfo = getStructuredPathInfo(parentPath);
         const matchPaths = parentPathInfo.cumulativePathSet.intersection(this.parentPaths);
         if (matchPaths.size === 0) {
@@ -96,7 +135,7 @@ class ComponentStateBinding {
         const matchPathArray = Array.from(matchPaths);
         const longestMatchPath = matchPathArray[matchPathArray.length - 1];
         const remainPath = parentPath.slice(longestMatchPath.length); // include the dot
-        const matchChildPath = this.childPathByParentPath.get(longestMatchPath);
+        const matchChildPath = this._childPathByParentPath.get(longestMatchPath);
         if (typeof matchChildPath === "undefined") {
             raiseError({
                 code: "STATE-302",
@@ -107,6 +146,13 @@ class ComponentStateBinding {
         }
         return matchChildPath + remainPath;
     }
+    /**
+     * Checks if the given child path has a registered mapping.
+     * Returns the longest matching child path, or null if no match exists.
+     *
+     * @param childPathInfo - Structured path information for child path
+     * @returns Longest matching child path string or null
+     */
     startsWithByChildPath(childPathInfo) {
         if (this.childPaths.size === 0) {
             return null;
@@ -121,6 +167,13 @@ class ComponentStateBinding {
             return longestMatchPath;
         }
     }
+    /**
+     * Binds parent and child components by collecting and registering all bindings
+     * from parent to child component.
+     *
+     * @param parentComponent - Parent StructiveComponent instance
+     * @param childComponent - Child StructiveComponent instance
+     */
     bind(parentComponent, childComponent) {
         // bindParentComponent
         const bindings = parentComponent.getBindingsFromChild(childComponent);
@@ -129,6 +182,11 @@ class ComponentStateBinding {
         }
     }
 }
+/**
+ * Creates a component state binding instance for managing parent-child state mappings.
+ *
+ * @returns IComponentStateBinding instance
+ */
 export function createComponentStateBinding() {
     return new ComponentStateBinding();
 }

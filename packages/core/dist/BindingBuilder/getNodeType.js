@@ -1,19 +1,5 @@
 import { raiseError } from "../utils.js";
 /**
- * ノードからキャッシュキーを生成する内部関数。
- *
- * キーの構成:
- * - コンストラクタ名（例: "Comment", "HTMLDivElement", "SVGCircleElement"）
- * - タブ文字（"\t"）
- * - コメントノードの場合: textContent[2]の文字（":" または "|"）
- * - その他のノードの場合: 空文字列
- *
- * 例:
- * - Comment("@@:user.name") → "Comment\t:"
- * - Comment("@@|123") → "Comment\t|"
- * - HTMLDivElement → "HTMLDivElement\t"
- * - SVGCircleElement → "SVGCircleElement\t"
- *
  * Creates cache key from node (internal function).
  *
  * Key composition:
@@ -28,32 +14,12 @@ import { raiseError } from "../utils.js";
  * - HTMLDivElement → "HTMLDivElement\t"
  * - SVGCircleElement → "SVGCircleElement\t"
  *
- * @param node - キー生成対象のノード / Node to generate key from
- * @returns キャッシュキー文字列 / Cache key string
+ * @param node - Node to generate key from
+ * @returns Cache key string
  */
 const createNodeKey = (node) => node.constructor.name + "\t" + ((node instanceof Comment) ? (node.textContent?.[2] ?? "") : "");
 const nodeTypeByNodeKey = {};
 /**
- * ノードからNodeTypeを実際に判定する内部関数。
- *
- * 判定ロジック（優先順位順）:
- * 1. Comment かつ textContent[2] === ":" → "Text"
- *    - 例: "@@:user.name" → テキストコンテンツバインディング
- *
- * 2. HTMLElement → "HTMLElement"
- *    - 例: <div>, <input>, <span> など
- *
- * 3. Comment かつ textContent[2] === "|" → "Template"
- *    - 例: "@@|123" → テンプレート参照バインディング
- *
- * 4. SVGElement → "SVGElement"
- *    - 例: <circle>, <path>, <rect> など
- *
- * 5. その他 → エラー
- *
- * 注: HTMLElementの判定がSVGElementより前にある理由
- * → HTMLElementのチェックを先に行うことで、より一般的なケースを高速処理
- *
  * Internal function that actually determines NodeType from node.
  *
  * Decision logic (in priority order):
@@ -74,64 +40,26 @@ const nodeTypeByNodeKey = {};
  * Note: Why HTMLElement check comes before SVGElement
  * → Checking HTMLElement first allows faster processing of more common cases
  *
- * @param node - 判定対象のノード / Node to determine
- * @returns ノードタイプ / Node type
- * @throws 未知のノード型の場合 / When node type is unknown
+ * @param node - Node to determine
+ * @returns Node type
+ * @throws When node type is unknown
  */
 const getNodeTypeByNode = (node) => (node instanceof Comment && node.textContent?.[2] === ":") ? "Text" :
     (node instanceof HTMLElement) ? "HTMLElement" :
         (node instanceof Comment && node.textContent?.[2] === "|") ? "Template" :
             (node instanceof SVGElement) ? "SVGElement" :
-                raiseError(`Unknown NodeType: ${node.nodeType}`);
+                raiseError({
+                    code: 'BND-001',
+                    message: `Unknown NodeType: ${node.nodeType}`,
+                    context: {
+                        where: 'getNodeType.getNodeTypeByNode',
+                        nodeType: node.nodeType,
+                        nodeName: node.nodeName,
+                        nodeConstructor: node.constructor.name
+                    },
+                    docsUrl: './docs/error-codes.md#bnd'
+                });
 /**
- * ノードのタイプ（"Text" | "HTMLElement" | "Template" | "SVGElement"）を判定し、
- * キャッシュを利用して高速化するユーティリティ関数。
- *
- * ノード種別の判定基準:
- * 1. Text: Commentノードで textContent[2] が ":"
- *    - "@@:" で始まるコメント → テキストコンテンツバインディング
- *    - 例: <!--@@:user.name--> → "Text"
- *
- * 2. Template: Commentノードで textContent[2] が "|"
- *    - "@@|" で始まるコメント → テンプレート参照バインディング
- *    - 例: <!--@@|123--> → "Template"
- *
- * 3. HTMLElement: 通常のHTML要素
- *    - 例: <div>, <input>, <span> → "HTMLElement"
- *
- * 4. SVGElement: SVG要素
- *    - 例: <circle>, <path>, <rect> → "SVGElement"
- *
- * キャッシュ機構:
- * - ノードからキーを生成（コンストラクタ名 + コメント種別）
- * - 同じキーのノードは2回目以降キャッシュから返却
- * - パフォーマンス向上（特に大量のノードを処理する場合）
- *
- * 処理フロー:
- * 1. ノードからキャッシュキーを生成（または引数から取得）
- * 2. キャッシュを確認
- * 3. キャッシュヒット → 保存された値を返す
- * 4. キャッシュミス → getNodeTypeByNodeで判定し、キャッシュに保存してから返す
- *
- * 使用例:
- * ```typescript
- * // テキストバインディングコメント
- * const comment1 = document.createComment("@@:user.name");
- * getNodeType(comment1); // → "Text"
- *
- * // テンプレート参照コメント
- * const comment2 = document.createComment("@@|123");
- * getNodeType(comment2); // → "Template"
- *
- * // HTML要素
- * const div = document.createElement('div');
- * getNodeType(div); // → "HTMLElement"
- *
- * // SVG要素
- * const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
- * getNodeType(circle); // → "SVGElement"
- * ```
- *
  * Utility function that determines node type ("Text" | "HTMLElement" | "Template" | "SVGElement")
  * and uses cache for performance optimization.
  *
@@ -180,12 +108,11 @@ const getNodeTypeByNode = (node) => (node instanceof Comment && node.textContent
  * getNodeType(circle); // → "SVGElement"
  * ```
  *
- * @param node - 判定対象のノード / Node to determine
- * @param nodeKey - キャッシュ用のノードキー（省略時は自動生成） / Node key for cache (auto-generated if omitted)
- * @returns ノードタイプ（NodeType） / Node type (NodeType)
+ * @param node - Node to determine
+ * @param nodeKey - Node key for cache (auto-generated if omitted)
+ * @returns Node type (NodeType)
  */
 export function getNodeType(node, nodeKey = createNodeKey(node)) {
-    // キャッシュを確認し、なければ判定してキャッシュに保存
     // Check cache, if not exists, determine and save to cache
     return nodeTypeByNodeKey[nodeKey] ?? (nodeTypeByNodeKey[nodeKey] = getNodeTypeByNode(node));
 }
