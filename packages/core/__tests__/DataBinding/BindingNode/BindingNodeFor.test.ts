@@ -1014,17 +1014,6 @@ describe("BindingNodeFor coverage", () => {
     expect(container.contains(normalNode)).toBe(true);
   });
 
-  it("init のカバレッジ", () => {
-    setupTemplate();
-    const engine = createEngineStub();
-    const comment = document.createComment("@@|319");
-    const binding = createBindingStub(engine, comment);
-    const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
-    // isFor プロパティは削除されたためコメントアウト
-    // expect(node.isFor).toBe(true);
-    expect(() => node.init()).not.toThrow();
-  });
-
   it("全削除最適化でブランクテキストを掃除", () => {
     setupTemplate();
     const engine = createEngineStub();

@@ -5,7 +5,7 @@
  * - Returns false for invalid tag names or elements that don't support attachShadow
  *
  * @param tagName - Tag name of the element to check (e.g., "div", "span", "input")
- * @returns       - true if the element can have a ShadowRoot, false otherwise
+ * @returns true if the element can have a ShadowRoot, false otherwise
  */
 export function canHaveShadowRoot(tagName: string): boolean {
   try {

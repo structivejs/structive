@@ -17,6 +17,12 @@ import { IComponentStateInput, IComponentStateInputHandler } from "./types";
 class ComponentStateInputHandler implements IComponentStateInputHandler {
   private _componentStateBinding: IComponentStateBinding;
   private _engine: IComponentEngine;
+  /**
+   * Constructor initializes component state input handler.
+   * 
+   * @param engine - Component engine instance
+   * @param componentStateBinding - State binding configuration for path mapping
+   */
   constructor(engine:IComponentEngine, componentStateBinding: IComponentStateBinding) {
     this._componentStateBinding = componentStateBinding;
     this._engine = engine;
@@ -24,6 +30,7 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
 
   /**
    * Assigns multiple state properties from an object synchronously.
+   * 
    * @param object - Key-value pairs of state properties to assign
    */
   assignState(object: any): void {
@@ -42,7 +49,9 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
   /**
    * Notifies the component to redraw based on parent state property changes.
    * Translates parent paths to child paths and enqueues update references.
+   * 
    * @param refs - Array of parent state property references that have changed
+   * @throws LIST-201 ListIndex not found for parent ref
    */
   notifyRedraw(refs: IStatePropertyRef[]): void {
     createUpdater<void>(this._engine, (updater) => {
@@ -79,10 +88,12 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
 
   /**
    * Proxy get trap for accessing state properties and symbol-based methods.
+   * 
    * @param target - Proxy target object
    * @param prop - Property key being accessed
    * @param receiver - Proxy receiver
    * @returns Property value or bound method
+   * @throws Error if property is not supported
    */
   get(target:any, prop:PropertyKey, receiver:IComponentStateInput) {
     if (prop === AssignStateSymbol) {
@@ -98,11 +109,13 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
 
   /**
    * Proxy set trap for updating state properties.
+   * 
    * @param target - Proxy target object
    * @param prop - Property key being set
    * @param value - New value to assign
    * @param receiver - Proxy receiver
    * @returns true if set operation succeeded
+   * @throws Error if property is not supported
    */
   set(target:any, prop:PropertyKey, value:any, receiver:IComponentStateInput): boolean {
     if (typeof prop === "string") {
@@ -116,6 +129,7 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
 
 /**
  * Creates a component state input proxy for managing parent-child state bindings.
+ * 
  * @param engine - Component engine instance
  * @param componentStateBinding - State binding configuration for parent-child path mapping
  * @returns Proxied component state input interface

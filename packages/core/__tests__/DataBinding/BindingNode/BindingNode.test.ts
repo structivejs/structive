@@ -15,7 +15,6 @@ describe("BindingNode", () => {
     const binding = {} as any;
     const select = document.createElement("select");
     const node1 = new BindingNode(binding as any, select, "value", [], ["d1"]);
-    node1.init();
     expect(node1.isSelectElement).toBe(true);
     expect(node1.name).toBe("value");
     expect(node1.subName).toBe("value");

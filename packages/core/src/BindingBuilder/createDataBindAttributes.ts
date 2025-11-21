@@ -39,6 +39,12 @@ class DataBindAttributes implements IDataBindAttributes {
   /** Map from bind text to factory function pairs */
   readonly creatorByText: Map<IBindText, IBindingCreator> = new Map();
 
+  /**
+   * Constructor that initializes DataBindAttributes by analyzing the provided node.
+   * Extracts binding information, processes the DOM, and generates factory functions.
+   * 
+   * @param node - DOM node to extract binding information from
+   */
   constructor(node: Node) {
     // Step 1: Determine node type
     this.nodeType = getNodeType(node);

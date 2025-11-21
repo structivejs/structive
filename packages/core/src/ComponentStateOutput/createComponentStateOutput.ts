@@ -17,6 +17,12 @@ class ComponentStateOutput implements IComponentStateOutput {
   private _binding: IComponentStateBinding;
   private _childEngine: IComponentEngine;
   private _parentPaths: Set<string> = new Set<string>();
+  /**
+   * Constructor initializes component state output.
+   * 
+   * @param binding - Component state binding for path mapping
+   * @param childEngine - Child component engine
+   */
   constructor(binding: IComponentStateBinding, childEngine: IComponentEngine) {
     this._binding = binding;
     this._childEngine = childEngine;
@@ -25,8 +31,11 @@ class ComponentStateOutput implements IComponentStateOutput {
   /**
    * Gets the value of a child state property by delegating to the parent component.
    * Translates the child path to parent path and retrieves the value from parent engine.
+   * 
    * @param ref - Child state property reference
    * @returns The value from the parent component state
+   * @throws CSO-101 No child path found for path
+   * @throws CSO-102 No binding found for child path
    */
   get(ref: IStatePropertyRef): any {
     const childPath = this._binding.startsWithByChildPath(ref.info);
@@ -61,9 +70,12 @@ class ComponentStateOutput implements IComponentStateOutput {
   /**
    * Sets the value of a child state property by delegating to the parent component.
    * Translates the child path to parent path and sets the value in parent engine.
+   * 
    * @param ref - Child state property reference
    * @param value - New value to set
    * @returns true if the operation succeeded
+   * @throws CSO-101 No child path found for path
+   * @throws CSO-102 No binding found for child path
    */
   set(ref: IStatePropertyRef, value: any): boolean {
     const childPath = this._binding.startsWithByChildPath(ref.info);
@@ -98,6 +110,7 @@ class ComponentStateOutput implements IComponentStateOutput {
 
   /**
    * Checks if a given path pattern is handled by this state output.
+   * 
    * @param pathInfo - Structured path information to check
    * @returns true if the path matches a child path in the binding
    */
@@ -108,8 +121,11 @@ class ComponentStateOutput implements IComponentStateOutput {
   /**
    * Gets list indexes for a child state property by delegating to the parent component.
    * Translates the child path to parent path and retrieves list indexes from parent engine.
+   * 
    * @param ref - Child state property reference
    * @returns Array of list indexes or null if not a list
+   * @throws CSO-101 No child path found for path
+   * @throws CSO-102 No binding found for child path
    */
   getListIndexes(ref: IStatePropertyRef): IListIndex[] | null {
     const childPath = this._binding.startsWithByChildPath(ref.info);
@@ -143,6 +159,7 @@ class ComponentStateOutput implements IComponentStateOutput {
 
 /**
  * Creates a component state output instance for bridging child and parent component states.
+ * 
  * @param binding - Component state binding for path mapping between child and parent
  * @param childEngine - Child component engine for accessing child state metadata
  * @returns Component state output interface

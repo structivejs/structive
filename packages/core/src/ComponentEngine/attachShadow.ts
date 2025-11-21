@@ -58,9 +58,10 @@ function createShadowRootWithStyle(element: HTMLElement, styleSheet: CSSStyleShe
  * - config.shadowDomMode="none": Does not use Shadow DOM; adds styles to parent ShadowRoot or document
  * - Prevents duplicate additions if the same stylesheet is already included
  *
- * @param element    - Target HTMLElement
- * @param config     - Component configuration
+ * @param element - Target HTMLElement
+ * @param config - Component configuration
  * @param styleSheet - CSSStyleSheet to apply
+ * @throws DOMException if shadowDomMode is "force" and element doesn't support Shadow DOM
  */
 export function attachShadow(element: HTMLElement, config: IComponentConfig, styleSheet: CSSStyleSheet): void {
   if (config.shadowDomMode === "none") {

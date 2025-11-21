@@ -135,6 +135,9 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Gets the bind content instance.
    * Throws BIND-201 if accessed before setup() is called.
+   * 
+   * @returns IBindContent instance
+   * @throws BIND-201 bindContent not initialized yet
    */
   get bindContent(): IBindContent {
     if (this._bindContent === null) {
@@ -150,6 +153,8 @@ class ComponentEngine implements IComponentEngine {
 
   /**
    * Gets the current version number for change tracking.
+   * 
+   * @returns Current version number
    */
   get currentVersion(): number {
     return this._currentVersion;
@@ -159,6 +164,8 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Increments and returns the version number.
    * Used for invalidating caches when state changes.
+   * 
+   * @returns New version number
    */
   versionUp(): number {
     return ++this._currentVersion;
@@ -193,9 +200,13 @@ class ComponentEngine implements IComponentEngine {
    * - Performs initial render
    * - Calls state's connectedCallback if defined
    * 
-   * Why not do this in setup():\n   * - setup() is called at component instantiation
+   * Why not do this in setup():
+   * - setup() is called at component instantiation
    * - connectedCallback() is called when connected to DOM
    * - State initialization and rendering must be redone if reconnected after disconnect
+   * 
+   * @throws BIND-201 Block parent node is not set
+   * @throws STATE-202 Failed to parse state from dataset
    */
   async connectedCallback(): Promise<void> {
     if (this.config.enableWebComponents) {
@@ -308,6 +319,9 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Gets list indexes for a property reference.
    * Delegates to stateOutput if the path matches parent-child binding.
+   * 
+   * @param ref - State property reference
+   * @returns Array of list indexes or null if not a list
    */
   getListIndexes(ref: IStatePropertyRef): IListIndex[] | null {
     if (this.stateOutput.startsWith(ref.info)) {
@@ -326,6 +340,9 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Gets a property value by reference.
    * Uses readonly state proxy to access the value synchronously.
+   * 
+   * @param ref - State property reference
+   * @returns Property value
    */
   getPropertyValue(ref: IStatePropertyRef): any {
     let value;
@@ -341,6 +358,9 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Sets a property value by reference.
    * Uses writable state proxy to set the value synchronously.
+   * 
+   * @param ref - State property reference
+   * @param value - New value to set
    */
   setPropertyValue(ref: IStatePropertyRef, value: any): void {
     // Synchronous operation
@@ -354,6 +374,8 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Registers a child Structive component.
    * Used for parent-child relationship tracking.
+   * 
+   * @param component - Child StructiveComponent instance to register
    */
   registerChildComponent(component: StructiveComponent): void {
     this.structiveChildComponents.add(component);
@@ -362,6 +384,8 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Unregisters a child Structive component.
    * Called when child is disconnected or destroyed.
+   * 
+   * @param component - Child StructiveComponent instance to unregister
    */
   unregisterChildComponent(component: StructiveComponent): void {
     this.structiveChildComponents.delete(component);
@@ -370,6 +394,9 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Gets the cache entry for a property reference.
    * Returns null if no cache exists.
+   * 
+   * @param ref - State property reference
+   * @returns Cache entry or null
    */
   getCacheEntry(ref: IStatePropertyRef): ICacheEntry | null {
     return this._propertyRefMetadataByRef.get(ref)?.cacheEntry ?? null;
@@ -378,6 +405,9 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Sets the cache entry for a property reference.
    * Creates a new PropertyRefMetadata if it doesn't exist.
+   * 
+   * @param ref - State property reference
+   * @param entry - Cache entry to set
    */
   setCacheEntry(ref: IStatePropertyRef, entry: ICacheEntry): void {
     let metadata = this._propertyRefMetadataByRef.get(ref);
@@ -391,6 +421,9 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Gets all bindings associated with a property reference.
    * Returns empty array if no bindings exist.
+   * 
+   * @param ref - State property reference
+   * @returns Array of IBinding instances
    */
   getBindings(ref: IStatePropertyRef): IBinding[] {
     return this._propertyRefMetadataByRef.get(ref)?.bindings ?? [];
@@ -399,6 +432,9 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Saves a binding for a property reference.
    * Creates a new PropertyRefMetadata if it doesn't exist.
+   * 
+   * @param ref - State property reference
+   * @param binding - IBinding instance to save
    */
   saveBinding(ref: IStatePropertyRef, binding: IBinding): void {
     const metadata = this._propertyRefMetadataByRef.get(ref);
@@ -412,6 +448,9 @@ class ComponentEngine implements IComponentEngine {
   /**
    * Removes a binding from a property reference.
    * Does nothing if the binding doesn't exist.
+   * 
+   * @param ref - State property reference
+   * @param binding - IBinding instance to remove
    */
   removeBinding(ref: IStatePropertyRef, binding: IBinding): void {
     const metadata = this._propertyRefMetadataByRef.get(ref);

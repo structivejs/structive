@@ -29,6 +29,9 @@ class ComponentStateBinding implements IComponentStateBinding {
   /**
    * Adds a binding to establish parent-child path mapping.
    * Validates that paths are not already mapped and registers the binding.
+   * 
+   * @param binding - IBinding instance to register
+   * @throws STATE-303 Parent path already has a child path or child path already has a parent path
    */
   addBinding(binding: IBinding): void {
     if (this._bindings.has(binding)) {
@@ -64,6 +67,9 @@ class ComponentStateBinding implements IComponentStateBinding {
   /**
    * Gets the child path mapped to the given parent path.
    * Returns undefined if no mapping exists.
+   * 
+   * @param parentPath - Parent component state path
+   * @returns Child path string or undefined
    */
   getChildPath(parentPath: string): string | undefined {
     return this._childPathByParentPath.get(parentPath);
@@ -72,6 +78,9 @@ class ComponentStateBinding implements IComponentStateBinding {
   /**
    * Gets the parent path mapped to the given child path.
    * Returns undefined if no mapping exists.
+   * 
+   * @param childPath - Child component state path
+   * @returns Parent path string or undefined
    */
   getParentPath(childPath: string): string | undefined {
     return this._parentPathByChildPath.get(childPath);
@@ -81,6 +90,10 @@ class ComponentStateBinding implements IComponentStateBinding {
    * Converts a child path to its corresponding parent path.
    * Uses longest match algorithm and concatenates remaining segments.
    * Throws error if no matching parent path is found.
+   * 
+   * @param childPath - Child component state path
+   * @returns Corresponding parent path string
+   * @throws STATE-302 No parent path found for child path
    */
   toParentPathFromChildPath(childPath: string): string {
     // Child to parent: Find longest matching entry in childPaths, concatenate remaining segments to parent
@@ -113,6 +126,10 @@ class ComponentStateBinding implements IComponentStateBinding {
    * Converts a parent path to its corresponding child path.
    * Uses longest match algorithm and concatenates remaining segments.
    * Throws error if no matching child path is found.
+   * 
+   * @param parentPath - Parent component state path
+   * @returns Corresponding child path string
+   * @throws STATE-302 No child path found for parent path
    */
   toChildPathFromParentPath(parentPath: string): string {
     // Parent to child: Find longest matching entry in parentPaths, concatenate remaining segments to child
@@ -144,6 +161,9 @@ class ComponentStateBinding implements IComponentStateBinding {
   /**
    * Checks if the given child path has a registered mapping.
    * Returns the longest matching child path, or null if no match exists.
+   * 
+   * @param childPathInfo - Structured path information for child path
+   * @returns Longest matching child path string or null
    */
   startsWithByChildPath(childPathInfo: IStructuredPathInfo): string | null {
     if (this.childPaths.size === 0) {
@@ -162,6 +182,9 @@ class ComponentStateBinding implements IComponentStateBinding {
   /**
    * Binds parent and child components by collecting and registering all bindings
    * from parent to child component.
+   * 
+   * @param parentComponent - Parent StructiveComponent instance
+   * @param childComponent - Child StructiveComponent instance
    */
   bind(parentComponent: StructiveComponent, childComponent: StructiveComponent): void {
     // bindParentComponent
@@ -172,6 +195,11 @@ class ComponentStateBinding implements IComponentStateBinding {
   }
 }
 
+/**
+ * Creates a component state binding instance for managing parent-child state mappings.
+ * 
+ * @returns IComponentStateBinding instance
+ */
 export function createComponentStateBinding(): IComponentStateBinding {
   return new ComponentStateBinding();
 }

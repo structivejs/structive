@@ -134,7 +134,6 @@ describe("BindingNodeProperty", () => {
     binding.bindingState.getFilteredValue.mockReturnValue("abc");
 
     const node = createBindingNodeProperty("value", filterTexts, [])(binding, textarea, engine.inputFilters);
-    node.init();
     const renderer = createRendererStub({ readonlyState: {} });
     node.applyChange(renderer);
     expect(textarea.value).toBe("abc");
