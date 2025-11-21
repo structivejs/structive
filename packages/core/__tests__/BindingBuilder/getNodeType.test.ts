@@ -6,7 +6,8 @@ const createMockNode = (constructor: string, nodeType?: number, textContent?: st
   const node = {
     constructor: { name: constructor },
     nodeType: nodeType,
-    textContent: textContent
+    textContent: textContent,
+    nodeName: constructor.toUpperCase()
   };
   
   // instanceof チェック用のモック
@@ -49,7 +50,7 @@ describe('BindingBuilder', () => {
 
     it('should throw error for unknown node types', () => {
       const node = createMockNode('UnknownNode', 999);
-      expect(() => getNodeType(node)).toThrow('Unknown NodeType');
+      expect(() => getNodeType(node)).toThrow('Unknown NodeType: 999');
     });
 
     it('should handle comment nodes without proper format', () => {
