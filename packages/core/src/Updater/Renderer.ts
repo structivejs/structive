@@ -97,7 +97,7 @@ class Renderer implements IRenderer {
    * @param callback 
    * @returns 
    */
-  createReadonlyState(callback: ReadonlyStateCallback): any {
+  createReadonlyState<R>(callback: ReadonlyStateCallback<R>): R {
     const handler = createReadonlyStateHandler(this._engine, this._updater, this);
     const stateProxy = createReadonlyStateProxy(this._engine.state, handler);
     this._readonlyState = stateProxy;
@@ -125,7 +125,7 @@ class Renderer implements IRenderer {
     this._updatingRefSet = new Set(items);
 
     // Implement actual rendering logic
-    this.createReadonlyState( (readonlyState, readonlyHandler) => {
+    this.createReadonlyState( () => {
       // First, process list reordering
       const remainItems: IStatePropertyRef[] = [];
       const itemsByListRef = new Map<IStatePropertyRef, Set<IStatePropertyRef>>();
@@ -201,7 +201,8 @@ class Renderer implements IRenderer {
       // This allows nested components to update based on parent state changes
       if (this._engine.structiveChildComponents.size > 0) {
         for(const structiveComponent of this._engine.structiveChildComponents) {
-          const structiveComponentBindings = this._engine.bindingsByComponent.get(structiveComponent) ?? new Set<IBinding>();
+          const structiveComponentBindings = 
+            this._engine.bindingsByComponent.get(structiveComponent) ?? new Set<IBinding>();
           for(const binding of structiveComponentBindings) {
             // Notify each binding about refs that might affect it
             binding.notifyRedraw(remainItems);

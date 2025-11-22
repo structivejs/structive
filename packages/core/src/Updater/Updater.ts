@@ -9,7 +9,7 @@ import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { raiseError } from "../utils";
 import { createRenderer, render } from "./Renderer";
-import { IListSnapshot, IRenderer, IUpdater } from "./types";
+import { IListSnapshot, IRenderer, IUpdater, UpdateCallback } from "./types";
 
 
 /**
@@ -130,15 +130,15 @@ class Updater implements IUpdater {
    */
   update<R>(
     loopContext: ILoopContext | null, 
-    callback: (state: IWritableStateProxy, handler: IWritableStateHandler) => R
+    callback: UpdateCallback<R>
   ): R {
-    let resultPromise: R;
-    
     // Create writable state proxy and execute update callback
-    resultPromise = useWritableStateProxy<R>(this._engine, this, this._engine.state, loopContext, (state:IWritableStateProxy, handler:IWritableStateHandler): R => {
-      // Execute user's state modification callback
-      return callback(state, handler);
-    });
+    const resultPromise: R = useWritableStateProxy<R>(this._engine, this, this._engine.state, loopContext, 
+      (state:IWritableStateProxy, handler:IWritableStateHandler): R => {
+        // Execute user's state modification callback
+        return callback(state, handler);
+      }
+    );
     
     // Handler to process updated callbacks after state changes
     const updatedCallbackHandler = () =>{
@@ -149,10 +149,19 @@ class Updater implements IUpdater {
         
         // Schedule updated callbacks in next microtask
         queueMicrotask(() => {
-          this.update<void>(null, (state, handler) => {
+          const updatedPromise = this.update<Promise<void> | void>(null, (state, ): Promise<void> | void => {
             // Invoke updated callbacks with the saved refs
-            state[UpdatedCallbackSymbol](saveQueue);
+            return state[UpdatedCallbackSymbol](saveQueue);
           });
+          if (updatedPromise instanceof Promise) {
+            updatedPromise.catch(() => {
+              raiseError({
+                code: 'UPD-005',
+                message: 'An error occurred during asynchronous state update.',
+                docsUrl: "./docs/error-codes.md#upd",
+              });
+            });
+          }
         });
       }
     };
@@ -160,7 +169,13 @@ class Updater implements IUpdater {
     // Handle both Promise and non-Promise results
     if (resultPromise instanceof Promise) {
       // For async updates, run handler after promise completes
-      resultPromise.finally(() => {
+      resultPromise.catch(() => {
+        raiseError({
+          code: 'UPD-005',
+          message: 'An error occurred during asynchronous state update.',
+          docsUrl: "./docs/error-codes.md#upd",
+        });
+      }).finally(() => {
         updatedCallbackHandler();
       });
     } else {
@@ -237,7 +252,7 @@ class Updater implements IUpdater {
     visitedInfo.add(path);
 
     // Collect all static child dependencies
-    for(const [name, childNode] of node.childNodeByName.entries()) {
+    for(const [, childNode] of node.childNodeByName.entries()) {
       const childPath = childNode.currentPath;
       this.recursiveCollectMaybeUpdates(engine, childPath, childNode, visitedInfo, false);
     }
@@ -269,7 +284,12 @@ class Updater implements IUpdater {
    * @returns {void}
    * @throws {Error} Throws UPD-003 if path node not found
    */
-  collectMaybeUpdates(engine: IComponentEngine, path: string, versionRevisionByPath: Map<string, IVersionRevision>, revision: number): void {
+  collectMaybeUpdates(
+    engine: IComponentEngine, 
+    path: string, 
+    versionRevisionByPath: Map<string, IVersionRevision>, 
+    revision: number
+  ): void {
     const node = findPathNodeByPath(engine.pathManager.rootNode, path);
     if (node === null) {
       raiseError({

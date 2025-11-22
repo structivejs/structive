@@ -44,7 +44,7 @@ function escapeEmbed(html: string): string {
  * unescapeEmbed('<!--{{name}}-->') // Returns '{{name}}'
  */
 function unescapeEmbed(html:string):string {
-  return html.replaceAll(/<!--\{\{([^\}]+)\}\}-->/g, (match, expr) => {
+  return html.replaceAll(/<!--\{\{([^\}]+)}}-->/g, (match, expr) => {
     return `{{${expr}}}`;
   });
 }
@@ -80,11 +80,11 @@ export async function createSingleFileComponent(path: string, text: string): Pro
   template.innerHTML = escapeEmbed(text);
 
   // Extract and remove the <template> section
-  const html = template.content.querySelector("template");
+  const html = template.content.querySelector<HTMLTemplateElement>("template");
   html?.remove();
 
   // Extract and remove the <script type="module"> section
-  const script = template.content.querySelector("script[type=module]");
+  const script = template.content.querySelector<HTMLScriptElement>("script[type=module]");
   let scriptModule: any = {};
   if (script) {
     // Add unique comment for debugging and source mapping
@@ -106,13 +106,13 @@ export async function createSingleFileComponent(path: string, text: string): Pro
       // Fallback: Base64 encoding method (for test environment)
       // Convert script to Base64 and import via data: URL
       const b64 = btoa(String.fromCodePoint(...new TextEncoder().encode(script.text + uniq_comment)));
-      scriptModule = await import(`data:application/javascript;base64,${  b64}`);
+      scriptModule = await import(`data:application/javascript;base64,${b64}`);
     }
   }
   script?.remove();
 
   // Extract and remove the <style> section
-  const style = template.content.querySelector("style");
+  const style = template.content.querySelector<HTMLStyleElement>("style");
   style?.remove();
 
   // Use default export as state class, or empty class if not provided

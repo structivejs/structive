@@ -1,7 +1,7 @@
 import { IBinding } from "../DataBinding/types";
 import { IListIndex } from "../ListIndex/types";
 import { ILoopContext } from "../LoopContext/types";
-import { IReadonlyStateHandler, IReadonlyStateProxy, IStructiveState, IWritableStateHandler, IWritableStateProxy } from "../StateClass/types";
+import { IReadonlyStateHandler, IReadonlyStateProxy, IWritableStateHandler, IWritableStateProxy } from "../StateClass/types";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 
 /**
@@ -10,9 +10,9 @@ import { IStatePropertyRef } from "../StatePropertyRef/types";
  * 
  * @param {IWritableStateProxy} state - Writable state proxy for modifications
  * @param {IWritableStateHandler} handler - Handler for the writable state
- * @returns {Promise<any> | any} Result of the update operation
+ * @returns {T} Result of the update operation
  */
-export type UpdateCallback = (state: IWritableStateProxy, handler: IWritableStateHandler) => Promise<any> | any;
+export type UpdateCallback<T> = (state: IWritableStateProxy, handler: IWritableStateHandler) => T;
 
 /**
  * Callback function for read-only state operations.
@@ -21,9 +21,9 @@ export type UpdateCallback = (state: IWritableStateProxy, handler: IWritableStat
  * @template T - The return type of the callback
  * @param {IReadonlyStateProxy} state - Read-only state proxy
  * @param {IReadonlyStateHandler} handler - Handler for the read-only state
- * @returns {Promise<T> | T} Result of the read operation
+ * @returns {T} Result of the read operation
  */
-export type ReadonlyStateCallback<T = any> = (state: IReadonlyStateProxy, handler: IReadonlyStateHandler) => Promise<T> | T;
+export type ReadonlyStateCallback<T> = (state: IReadonlyStateProxy, handler: IReadonlyStateHandler) => T;
 
 /**
  * Interface for managing state updates and triggering rendering as needed.
@@ -128,6 +128,7 @@ export interface IListSnapshot {
    * The array of values in the list at snapshot time.
    * Represents the actual data elements.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any[];
   
   /** 
@@ -203,5 +204,5 @@ export interface IRenderer {
    * @param {ReadonlyStateCallback<T>} callback - Callback function receiving read-only state
    * @returns {T} The result returned by the callback
    */
-  createReadonlyState<T = any>(callback: ReadonlyStateCallback<T>): T;
+  createReadonlyState<T>(callback: ReadonlyStateCallback<T>): T;
 }
