@@ -39,7 +39,7 @@ import { createListIndexes } from "./createListIndexes";
  * @returns         Value of the target property
  */
 export function getByRef(
-  target   : Object, 
+  target   : object, 
   ref      : IStatePropertyRef,
   receiver : IStateProxy,
   handler  : IStateHandler
@@ -125,7 +125,7 @@ export function getByRef(
           newListIndexes = createListIndexes(ref.listIndex, lastCacheEntry?.value, value, lastCacheEntry?.listIndexes ?? []);
         }
         // Create or update cache entry with new value and metadata
-        let cacheEntry: ICacheEntry = lastCacheEntry ?? {
+        const cacheEntry: ICacheEntry = lastCacheEntry ?? {
           value: null,
           listIndexes: null,
           version: 0,

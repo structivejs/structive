@@ -39,7 +39,7 @@ import { getByRef } from "./getByRef";
  * @throws {Error} LIST-203 - When list indexes are missing in the cache entry
  */
 export function getListIndexesByRef(
-  target   : Object, 
+  target   : object, 
   ref      : IStatePropertyRef,
   receiver : IStateProxy,
   handler  : IStateHandler

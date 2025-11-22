@@ -24,7 +24,7 @@ import { IStateHandler, IStateProxy } from "../types";
  * @param handler - State handler (unused but part of signature)
  */
 export function disconnectedCallback(
-  target: Object, 
+  target: object, 
   prop: PropertyKey, 
   receiver: IStateProxy,
   handler: IStateHandler

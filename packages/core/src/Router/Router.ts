@@ -102,12 +102,12 @@ export class Router extends HTMLElement implements IRouter {
     }
     const pathName = paths.join('/');
     const replacedPath = pathName.replace(this._basePath, ''); // Remove base path and ensure default route
-    const currentPath = replacedPath[0] !== '/' ? '/' + replacedPath : replacedPath; // Ensure the path starts with '/'
+    const currentPath = replacedPath[0] !== '/' ? `/${  replacedPath}` : replacedPath; // Ensure the path starts with '/'
     let tagName: string | undefined = undefined;
-    let params: Record<string, string> = {};
+    const params: Record<string, string> = {};
     // Check if the routePath matches any of the defined routes
     for (const [path, tag] of routeEntries) {
-      const regex = new RegExp("^" + path.replace(/:[^\s/]+/g, '([^/]+)') + "$");
+      const regex = new RegExp(`^${  path.replace(/:[^\s/]+/g, '([^/]+)')  }$`);
       if (regex.test(currentPath)) {
         tagName = tag;
         // Extract the parameters from the routePath
@@ -125,7 +125,7 @@ export class Router extends HTMLElement implements IRouter {
       // If a route matches, create the custom element and set its state
       // Create the custom element with the tag name
       // project the custom element into the router slot
-      const customElement = document.createElement(tagName) as HTMLElement;
+      const customElement = document.createElement(tagName);
       customElement.setAttribute('data-state', JSON.stringify(params));
       customElement.setAttribute('slot', 'content');
       this.appendChild(customElement);

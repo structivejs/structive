@@ -54,7 +54,7 @@ import { updatedCallback } from "../apis/updatedCallback.js";
  * @throws {Error} LIST-201 - When list index is not found for index name properties
  */
 export function get(
-  target  : Object, 
+  target  : object, 
   prop    : PropertyKey, 
   receiver: IStateProxy,
   handler : IStateHandler

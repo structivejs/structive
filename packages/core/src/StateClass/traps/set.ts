@@ -38,7 +38,7 @@ import { IStateProxy, IStateHandler } from "../types";
  * @returns true if the property was successfully set, false otherwise
  */
 export function set(
-  target  : Object, 
+  target  : object, 
   prop    : PropertyKey, 
   value   : any, 
   receiver: IStateProxy,

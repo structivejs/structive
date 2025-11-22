@@ -35,7 +35,7 @@ const eq = (options?:string[]) => {
     // Align types for comparison
     if (typeof value === 'number') {
       const optValue = Number(opt);
-      if (isNaN(optValue)) optionMustBeNumber('eq');
+      if (isNaN(optValue)) {optionMustBeNumber('eq');}
       return value === optValue;
     }
     if (typeof value === 'string') {
@@ -60,7 +60,7 @@ const ne = (options?:string[]) => {
     // Align types for comparison
     if (typeof value === 'number') {
       const optValue = Number(opt);
-      if (isNaN(optValue)) optionMustBeNumber('ne');
+      if (isNaN(optValue)) {optionMustBeNumber('ne');}
       return value !== optValue;
     }
     if (typeof value === 'string') {
@@ -80,7 +80,7 @@ const ne = (options?:string[]) => {
  */
 const not = (options?:string[]) => {
   return (value: any) => {
-    if (typeof value !== 'boolean') valueMustBeBoolean('not');
+    if (typeof value !== 'boolean') {valueMustBeBoolean('not');}
     return !value;
   }
 }
@@ -97,9 +97,9 @@ const not = (options?:string[]) => {
 const lt = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('lt');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('lt');
+  if (isNaN(optValue)) {optionMustBeNumber('lt');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('lt');
+    if (typeof value !== 'number') {valueMustBeNumber('lt');}
     return value < optValue;
   }
 }
@@ -116,9 +116,9 @@ const lt = (options?:string[]) => {
 const le = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('le');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('le');
+  if (isNaN(optValue)) {optionMustBeNumber('le');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('le');
+    if (typeof value !== 'number') {valueMustBeNumber('le');}
     return value <= optValue;
   }
 }
@@ -135,9 +135,9 @@ const le = (options?:string[]) => {
 const gt = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('gt');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('gt');
+  if (isNaN(optValue)) {optionMustBeNumber('gt');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('gt');
+    if (typeof value !== 'number') {valueMustBeNumber('gt');}
     return value > optValue;
   }
 }
@@ -154,9 +154,9 @@ const gt = (options?:string[]) => {
 const ge = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('ge');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('ge');
+  if (isNaN(optValue)) {optionMustBeNumber('ge');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('ge');
+    if (typeof value !== 'number') {valueMustBeNumber('ge');}
     return value >= optValue;
   }
 }
@@ -173,9 +173,9 @@ const ge = (options?:string[]) => {
 const inc = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('inc');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('inc');
+  if (isNaN(optValue)) {optionMustBeNumber('inc');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('inc');
+    if (typeof value !== 'number') {valueMustBeNumber('inc');}
     return value + optValue;
   }
 }
@@ -192,9 +192,9 @@ const inc = (options?:string[]) => {
 const dec = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('dec');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('dec');
+  if (isNaN(optValue)) {optionMustBeNumber('dec');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('dec');
+    if (typeof value !== 'number') {valueMustBeNumber('dec');}
     return value - optValue;
   }
 }
@@ -211,9 +211,9 @@ const dec = (options?:string[]) => {
 const mul = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('mul');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('mul');
+  if (isNaN(optValue)) {optionMustBeNumber('mul');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('mul');
+    if (typeof value !== 'number') {valueMustBeNumber('mul');}
     return value * optValue;
   }
 }
@@ -230,9 +230,9 @@ const mul = (options?:string[]) => {
 const div = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('div');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('div');
+  if (isNaN(optValue)) {optionMustBeNumber('div');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('div');
+    if (typeof value !== 'number') {valueMustBeNumber('div');}
     return value / optValue;
   }
 }
@@ -249,9 +249,9 @@ const div = (options?:string[]) => {
 const mod = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('mod');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('mod');
+  if (isNaN(optValue)) {optionMustBeNumber('mod');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('mod');
+    if (typeof value !== 'number') {valueMustBeNumber('mod');}
     return value % optValue;
   }
 }
@@ -267,9 +267,9 @@ const mod = (options?:string[]) => {
 const fix = (options?:string[]) => {
   const opt = options?.[0] ?? 0;
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('fix');
+  if (isNaN(optValue)) {optionMustBeNumber('fix');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('fix');
+    if (typeof value !== 'number') {valueMustBeNumber('fix');}
     return value.toFixed(optValue);
   }
 }
@@ -284,7 +284,7 @@ const fix = (options?:string[]) => {
 const locale = (options?:string[]) => {
   const opt = options?.[0] ?? config.locale;
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('locale');
+    if (typeof value !== 'number') {valueMustBeNumber('locale');}
     return value.toLocaleString(opt);
   }
 }
@@ -322,8 +322,8 @@ const lc = (options?:string[]) => {
 const cap = (options?:string[]) => {
   return (value: any) => {
     const v = value.toString();
-    if (v.length === 0) return v;
-    if (v.length === 1) return v.toUpperCase();
+    if (v.length === 0) {return v;}
+    if (v.length === 1) {return v.toUpperCase();}
     return v.charAt(0).toUpperCase() + v.slice(1);
   }
 }
@@ -351,7 +351,7 @@ const trim = (options?:string[]) => {
 const slice = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('slice');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('slice');
+  if (isNaN(optValue)) {optionMustBeNumber('slice');}
   return (value: any) => {
     return value.toString().slice(optValue);
   }
@@ -368,10 +368,10 @@ const slice = (options?:string[]) => {
 const substr = (options?:string[]) => {
   const opt1 = options?.[0] ?? optionsRequired('substr');
   const opt1Value = Number(opt1);
-  if (isNaN(opt1Value)) optionMustBeNumber('substr');
+  if (isNaN(opt1Value)) {optionMustBeNumber('substr');}
   const opt2 = options?.[1] ?? optionsRequired('substr');
   const opt2Value = Number(opt2);
-  if (isNaN(opt2Value)) optionMustBeNumber('substr');
+  if (isNaN(opt2Value)) {optionMustBeNumber('substr');}
   return (value: any) => {
     return value.toString().substr(opt1Value, opt2Value);
   }
@@ -388,7 +388,7 @@ const substr = (options?:string[]) => {
 const pad = (options?:string[]) => {
   const opt1 = options?.[0] ?? optionsRequired('pad');
   const opt1Value = Number(opt1);
-  if (isNaN(opt1Value)) optionMustBeNumber('pad');
+  if (isNaN(opt1Value)) {optionMustBeNumber('pad');}
   const opt2 = options?.[1] ?? '0';
   const opt2Value = opt2;
   return (value: any) => {
@@ -407,7 +407,7 @@ const pad = (options?:string[]) => {
 const rep = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('rep');
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('rep');
+  if (isNaN(optValue)) {optionMustBeNumber('rep');}
   return (value: any) => {
     return value.toString().repeat(optValue);
   }
@@ -460,9 +460,9 @@ const float = (options?:string[]) => {
 const round = (options?:string[]) => {
   const opt = options?.[0] ?? 0;
   const optValue = Math.pow(10, Number(opt));
-  if (isNaN(optValue)) optionMustBeNumber('round');
+  if (isNaN(optValue)) {optionMustBeNumber('round');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('round');
+    if (typeof value !== 'number') {valueMustBeNumber('round');}
     return Math.round(value * optValue) / optValue;
   }
 }
@@ -478,9 +478,9 @@ const round = (options?:string[]) => {
 const floor = (options?:string[]) => {
   const opt = options?.[0] ?? 0;
   const optValue = Math.pow(10, Number(opt));
-  if (isNaN(optValue)) optionMustBeNumber('floor');
+  if (isNaN(optValue)) {optionMustBeNumber('floor');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('floor');
+    if (typeof value !== 'number') {valueMustBeNumber('floor');}
     return Math.floor(value * optValue) / optValue;
   }
 }
@@ -496,9 +496,9 @@ const floor = (options?:string[]) => {
 const ceil = (options?:string[]) => {
   const opt = options?.[0] ?? 0;
   const optValue = Math.pow(10, Number(opt));
-  if (isNaN(optValue)) optionMustBeNumber('ceil');
+  if (isNaN(optValue)) {optionMustBeNumber('ceil');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('ceil');
+    if (typeof value !== 'number') {valueMustBeNumber('ceil');}
     return Math.ceil(value * optValue) / optValue;
   }
 }
@@ -514,10 +514,10 @@ const ceil = (options?:string[]) => {
 const percent = (options?:string[]) => {
   const opt = options?.[0] ?? 0;
   const optValue = Number(opt);
-  if (isNaN(optValue)) optionMustBeNumber('percent');
+  if (isNaN(optValue)) {optionMustBeNumber('percent');}
   return (value: any) => {
-    if (typeof value !== 'number') valueMustBeNumber('percent');
-    return (value * 100).toFixed(optValue) + '%';
+    if (typeof value !== 'number') {valueMustBeNumber('percent');}
+    return `${(value * 100).toFixed(optValue)  }%`;
   }
 }
 
@@ -531,7 +531,7 @@ const percent = (options?:string[]) => {
 const date = (options?:string[]) => {
   const opt = options?.[0] ?? config.locale;
   return (value: any) => {
-    if (!(value instanceof Date))  valueMustBeDate('date');
+    if (!(value instanceof Date))  {valueMustBeDate('date');}
     return value.toLocaleDateString(opt);
   }
 }
@@ -546,7 +546,7 @@ const date = (options?:string[]) => {
 const time = (options?:string[]) => {
   const opt = options?.[0] ?? config.locale;
   return (value: any) => {
-    if (!(value instanceof Date)) valueMustBeDate('time');
+    if (!(value instanceof Date)) {valueMustBeDate('time');}
     return value.toLocaleTimeString(opt);
   }
 }
@@ -561,7 +561,7 @@ const time = (options?:string[]) => {
 const datetime = (options?:string[]) => {
   const opt = options?.[0] ?? config.locale;
   return (value: any) => {
-    if (!(value instanceof Date)) valueMustBeDate('datetime');
+    if (!(value instanceof Date)) {valueMustBeDate('datetime');}
     return value.toLocaleString(opt);
   }
 }
@@ -576,7 +576,7 @@ const datetime = (options?:string[]) => {
 const ymd = (options?:string[]) => {
   const opt = options?.[0] ?? '-';
   return (value: any) => {
-    if (!(value instanceof Date)) valueMustBeDate('ymd');
+    if (!(value instanceof Date)) {valueMustBeDate('ymd');}
     const year = value.getFullYear().toString();
     const month = (value.getMonth() + 1).toString().padStart(2, '0');
     const day = value.getDate().toString().padStart(2, '0');
@@ -614,7 +614,7 @@ const truthy = (options?:string[]) => {
 const defaults = (options?:string[]) => {
   const opt = options?.[0] ?? optionsRequired('defaults');
   return (value: any) => {
-    if (value === false || value === null || value === undefined || value === 0 || value === '' || Number.isNaN(value)) return opt;
+    if (value === false || value === null || value === undefined || value === 0 || value === '' || Number.isNaN(value)) {return opt;}
     return value;
   }
 }

@@ -134,9 +134,9 @@ export interface IReadonlyStateHandler {
   /** Set of string keys for special $ properties */
   readonly apis: Set<PropertyKey>;
   /** Proxy get trap handler */
-  get(target: Object, prop: PropertyKey, receiver: IReadonlyStateProxy): any;
+  get(target: object, prop: PropertyKey, receiver: IReadonlyStateProxy): any;
   /** Proxy set trap handler (throws error for read-only) */
-  set(target: Object, prop: PropertyKey, value: any, receiver: IReadonlyStateProxy): boolean;
+  set(target: object, prop: PropertyKey, value: any, receiver: IReadonlyStateProxy): boolean;
 }
 
 /**
@@ -166,9 +166,9 @@ export interface IWritableStateHandler {
   /** Set of string keys for special $ properties */
   readonly apis: Set<PropertyKey>;
   /** Proxy get trap handler */
-  get(target: Object, prop: PropertyKey, receiver: IWritableStateProxy): any;
+  get(target: object, prop: PropertyKey, receiver: IWritableStateProxy): any;
   /** Proxy set trap handler */
-  set(target: Object, prop: PropertyKey, value: any, receiver: IWritableStateProxy): boolean;
+  set(target: object, prop: PropertyKey, value: any, receiver: IWritableStateProxy): boolean;
 }
 
 /**

@@ -20,7 +20,7 @@ class NodePath implements IPathNode {
    */
   constructor(parentPath: string, name: string, level: number) {
     this.parentPath = parentPath;
-    this.currentPath = parentPath ? parentPath + "." + name : name;
+    this.currentPath = parentPath ? `${parentPath  }.${  name}` : name;
     this.name = name;
     this.level = level;
     this.childNodeByName = new Map<string, IPathNode>();
@@ -58,7 +58,7 @@ class NodePath implements IPathNode {
   appendChild(childName: string): IPathNode {
     let childNode = this.childNodeByName.get(childName);
     if (!childNode) {
-      const currentPath = this.parentPath ? this.parentPath + "." + this.name : this.name;
+      const currentPath = this.parentPath ? `${this.parentPath  }.${  this.name}` : this.name;
       childNode = new NodePath(currentPath, childName, this.level + 1);
       this.childNodeByName.set(childName, childNode);
     }

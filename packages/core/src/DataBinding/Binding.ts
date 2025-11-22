@@ -94,7 +94,7 @@ class Binding implements IBinding {
    * @param renderer - Renderer instance managing update cycle
    */
   applyChange(renderer: IRenderer): void {
-    if (renderer.updatedBindings.has(this)) return;
+    if (renderer.updatedBindings.has(this)) {return;}
     renderer.updatedBindings.add(this);
     this.bindingNode.applyChange(renderer);
     

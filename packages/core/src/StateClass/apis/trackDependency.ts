@@ -31,7 +31,7 @@ import { IStateHandler, IStateProxy } from "../types";
  * @returns        Anonymous function that registers dependency to pattern specified by path argument
  */
 export function trackDependency(
-  target: Object, 
+  target: object, 
   prop: PropertyKey, 
   receiver: IStateProxy,
   handler: IStateHandler

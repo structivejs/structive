@@ -196,7 +196,7 @@ export function getBindingNodeCreator(
   const isElement = node instanceof Element;
   
   // Generate cache key (concatenate with tab separator)
-  const key = isComment + "\t" + isElement + "\t" + propertyName;
+  const key = `${isComment  }\t${  isElement  }\t${  propertyName}`;
   
   // Get from cache, if not exists, determine and save to cache
   const fn = _cache[key] ?? (_cache[key] = _getBindingNodeCreator(isComment, isElement, propertyName));

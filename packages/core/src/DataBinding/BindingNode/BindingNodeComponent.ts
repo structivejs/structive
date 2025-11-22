@@ -152,7 +152,7 @@ class BindingNodeComponent extends BindingNode {
     const engine = this.binding.engine;
     removeStructiveComponent(this.node as StructiveComponent);
     
-    let bindings = engine.bindingsByComponent.get(this.node as StructiveComponent);
+    const bindings = engine.bindingsByComponent.get(this.node as StructiveComponent);
     if (typeof bindings !== "undefined") {
       bindings.delete(this.binding);
     }

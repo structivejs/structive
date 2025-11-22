@@ -35,7 +35,7 @@ import { getByRef } from "../methods/getByRef.js";
  * @throws LIST-201 If list index not found at any wildcard level
  */
 export function resolve(
-  target: Object, 
+  target: object, 
   prop: PropertyKey, 
   receiver: IStateProxy,
   handler: IStateHandler

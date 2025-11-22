@@ -72,7 +72,7 @@ class StateHandler implements IWritableStateHandler {
    * @returns Value of the accessed property
    */
   get(
-    target  : Object, 
+    target  : object, 
     prop    : PropertyKey, 
     receiver: IWritableStateProxy
   ): any {
@@ -92,7 +92,7 @@ class StateHandler implements IWritableStateHandler {
    * @returns true if the property was successfully set
    */
   set(
-    target  : Object, 
+    target  : object, 
     prop    : PropertyKey, 
     value   : any, 
     receiver: IWritableStateProxy
@@ -110,7 +110,7 @@ class StateHandler implements IWritableStateHandler {
    * @returns true if property exists in target or is a known symbol/API
    */
   has(
-    target: Object, 
+    target: object, 
     prop  : PropertyKey
   ): boolean {
     return Reflect.has(target, prop) || this.symbols.has(prop) || this.apis.has(prop);
@@ -136,7 +136,7 @@ class StateHandler implements IWritableStateHandler {
 export function useWritableStateProxy<R extends Promise<any> | any>(
   engine: IComponentEngine, 
   updater: IUpdater,
-  state: Object,
+  state: object,
   loopContext: ILoopContext | null,
   callback: (stateProxy: IWritableStateProxy, handler: IWritableStateHandler) => R
 ): R {

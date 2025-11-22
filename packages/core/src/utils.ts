@@ -94,11 +94,11 @@ export function raiseError(messageOrPayload: string | StructiveErrorPayload): ne
   
   // Attach additional metadata as properties (keeping message for existing compatibility)
   (err as any).code = code;
-  if (context) (err as any).context = context;
-  if (hint) (err as any).hint = hint;
-  if (docsUrl) (err as any).docsUrl = docsUrl;
-  if (severity) (err as any).severity = severity;
-  if (cause) (err as any).cause = cause;
+  if (context) {(err as any).context = context;}
+  if (hint) {(err as any).hint = hint;}
+  if (docsUrl) {(err as any).docsUrl = docsUrl;}
+  if (severity) {(err as any).severity = severity;}
+  if (cause) {(err as any).cause = cause;}
   
   throw err;
 }

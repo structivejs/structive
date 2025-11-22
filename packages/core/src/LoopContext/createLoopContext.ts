@@ -110,7 +110,7 @@ class LoopContext implements ILoopContext {
         }
         currentBindContent = currentBindContent.parentBinding?.parentBindContent ?? null;
       }
-      if (typeof this._parentLoopContext === "undefined") this._parentLoopContext = null;
+      if (typeof this._parentLoopContext === "undefined") {this._parentLoopContext = null;}
     }
     return this._parentLoopContext;
   }
@@ -125,7 +125,7 @@ class LoopContext implements ILoopContext {
     if (typeof loopContext === "undefined") {
       let currentLoopContext: ILoopContext | null = this;
       while(currentLoopContext !== null) {
-        if (currentLoopContext.path === name) break;
+        if (currentLoopContext.path === name) {break;}
         currentLoopContext = currentLoopContext.parentLoopContext;
       }
       loopContext = this._cache[name] = currentLoopContext;

@@ -40,7 +40,7 @@ import { getByRef } from "./getByRef";
  * @throws {Error} STATE-202 - When required parent info or list index is missing
  */
 export function setByRef(
-    target   : Object, 
+    target   : object, 
     ref      : IStatePropertyRef,
     value    : any, 
     receiver : IStateProxy,

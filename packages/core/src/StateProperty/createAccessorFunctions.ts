@@ -74,7 +74,7 @@ export function createAccessorFunctions(info: IStructuredPathInfo, getters: Set<
       const segment = info.pathSegments[i];
       if (segment === '*') {
         // Wildcard: map to $1, $2, etc. based on wildcard position
-        segments.push("[this.$" + (count + 1) + "]");
+        segments.push(`[this.$${  count + 1  }]`);
         count++;
       } else {
         // Regular segment: validate and add as property access
@@ -86,7 +86,7 @@ export function createAccessorFunctions(info: IStructuredPathInfo, getters: Set<
             docsUrl: "./docs/error-codes.md#state",
           });
         }
-        segments.push("." + segment);
+        segments.push(`.${  segment}`);
       }
     }
     // Build final path string and generate getter/setter functions
@@ -106,7 +106,7 @@ export function createAccessorFunctions(info: IStructuredPathInfo, getters: Set<
       const segment = info.pathSegments[i];
       if (segment === '*') {
         // Wildcard: map to $1, $2, etc.
-        segments.push("[this.$" + (count + 1) + "]");
+        segments.push(`[this.$${  count + 1  }]`);
         count++;
       } else {
         // Regular segment: validate and add

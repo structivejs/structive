@@ -172,7 +172,7 @@ class Renderer implements IRenderer {
         // Apply list bindings (e.g., for reordering)
         const bindings = this._engine.getBindings(listRef);
         for(let i = 0; i < bindings.length; i++) {
-          if (this.updatedBindings.has(bindings[i])) continue;
+          if (this.updatedBindings.has(bindings[i])) {continue;}
           bindings[i].applyChange(this);
         }
         this.processedRefs.add(listRef);
@@ -238,7 +238,7 @@ class Renderer implements IRenderer {
     // Bindings with changes must add themselves to updatedBindings (responsibility of applyChange implementation)
     const bindings = this._engine.getBindings(ref);
     for(let i = 0; i < bindings.length; i++) {
-      if (this.updatedBindings.has(bindings[i])) continue;
+      if (this.updatedBindings.has(bindings[i])) {continue;}
       bindings[i].applyChange(this);
     }
 

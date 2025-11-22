@@ -105,7 +105,7 @@ class Updater implements IUpdater {
     this.collectMaybeUpdates(this._engine, ref.info.pattern, this._engine.versionRevisionByPath, this._revision);
     
     // Skip scheduling if already rendering (will process queue on next iteration)
-    if (this._rendering) return;
+    if (this._rendering) {return;}
     this._rendering = true;
     queueMicrotask(() => {
       // Execute rendering after async processing interruption or update completion
@@ -225,7 +225,7 @@ class Updater implements IUpdater {
     isSource: boolean
   ): void {
     // Skip if already processed this path
-    if (visitedInfo.has(path)) return;
+    if (visitedInfo.has(path)) {return;}
     
     // Skip list elements when processing source to avoid redundant updates
     // (list container updates will handle elements)

@@ -64,7 +64,7 @@ import { IComponentStateBinding } from "../ComponentStateBinding/types.js";
  */
 export function createComponentClass(componentData: IUserComponentData): StructiveComponentClass {
   // Extract and process component configuration
-  const config = (componentData.stateClass.$config ?? {})as IUserConfig;
+  const config = (componentData.stateClass.$config ?? {});
   const componentConfig = getComponentConfig(config);
   
   // Generate unique ID for this component class
@@ -174,7 +174,7 @@ export function createComponentClass(componentData: IUserComponentData): Structi
      */
     static get stateClass():IStructiveState {
       if (!this._stateClass) {
-        this._stateClass = getStateClassById(this.id) as IStructiveState;
+        this._stateClass = getStateClassById(this.id);
       }
       return this._stateClass;
     }

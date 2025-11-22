@@ -89,5 +89,5 @@ export function setLoopContext<R>(
     // For synchronous case, reset immediately
     handler.loopContext = null;
   }
-  return resultPromise as R;
+  return resultPromise;
 }

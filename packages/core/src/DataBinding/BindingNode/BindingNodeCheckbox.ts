@@ -62,9 +62,9 @@ class BindingNodeCheckbox extends BindingNode {
     super(binding, node, name, subName, filters, decorates);
 
     const isInputElement = this.node instanceof HTMLInputElement;
-    if (!isInputElement) return;
-    const inputElement = this.node as HTMLInputElement;
-    if (inputElement.type !== "checkbox") return;
+    if (!isInputElement) {return;}
+    const inputElement = this.node;
+    if (inputElement.type !== "checkbox") {return;}
     
     if (decorates.length > 1) {
       raiseError({
@@ -79,7 +79,7 @@ class BindingNodeCheckbox extends BindingNode {
     const event = (decorates[0]?.startsWith("on") ? decorates[0]?.slice(2) : decorates[0]) ?? null;
     const eventName = event ?? "input";
     
-    if (eventName === "readonly" || eventName === "ro") return;
+    if (eventName === "readonly" || eventName === "ro") {return;}
     
     const engine = this.binding.engine;
     this.node.addEventListener(eventName, async (e) => {

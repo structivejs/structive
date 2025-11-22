@@ -66,7 +66,7 @@ class StateHandler implements IReadonlyStateHandler {
    * @returns Value of the accessed property
    */
   get(
-    target  : Object, 
+    target  : object, 
     prop    : PropertyKey, 
     receiver: IReadonlyStateProxy
   ): any {
@@ -86,7 +86,7 @@ class StateHandler implements IReadonlyStateHandler {
    * @throws {Error} STATE-202 - Always thrown to prevent writes to readonly state
    */
   set(
-    target  : Object, 
+    target  : object, 
     prop    : PropertyKey, 
     value   : any, 
     receiver: IReadonlyStateProxy
@@ -109,7 +109,7 @@ class StateHandler implements IReadonlyStateHandler {
    * @returns true if property exists in target or is a known symbol/API
    */
   has(
-    target: Object, 
+    target: object, 
     prop  : PropertyKey
   ): boolean {
     return Reflect.has(target, prop) || this.symbols.has(prop) || this.apis.has(prop);
@@ -139,7 +139,7 @@ export function createReadonlyStateHandler(engine: IComponentEngine, updater: IU
  * @returns Read-only proxy wrapping the state object
  */
 export function createReadonlyStateProxy(
-  state: Object,
+  state: object,
   handler: IReadonlyStateHandler,
 ): IReadonlyStateProxy {
   return new Proxy<IState>(state, handler) as IReadonlyStateProxy;

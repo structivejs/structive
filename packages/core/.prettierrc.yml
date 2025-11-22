@@ -1,0 +1,46 @@
+# Structive Core - Prettier Configuration
+
+# Print width
+printWidth: 120
+
+# Tab width
+tabWidth: 2
+
+# Use spaces instead of tabs
+useTabs: false
+
+# Semicolons at the end of statements
+semi: true
+
+# Use single quotes instead of double quotes
+singleQuote: true
+
+# Trailing commas where valid in ES5 (objects, arrays, etc.)
+trailingComma: es5
+
+# Print spaces between brackets in object literals
+bracketSpacing: true
+
+# Put the > of a multi-line JSX element at the end of the last line
+bracketSameLine: false
+
+# Include parentheses around a sole arrow function parameter
+arrowParens: always
+
+# End of line
+endOfLine: lf
+
+# Require pragma
+requirePragma: false
+
+# Insert pragma
+insertPragma: false
+
+# Prose wrap
+proseWrap: preserve
+
+# HTML whitespace sensitivity
+htmlWhitespaceSensitivity: css
+
+# Quote props
+quoteProps: as-needed

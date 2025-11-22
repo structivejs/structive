@@ -179,7 +179,7 @@ class BindContent implements IBindContent {
     if (typeof this._currentLoopContext === "undefined") {
       let bindContent: IBindContent | null = this;
       while(bindContent !== null) {
-        if (bindContent.loopContext !== null) break; ;
+        if (bindContent.loopContext !== null) {break;} ;
         bindContent = bindContent.parentBinding?.parentBindContent ?? null;
       }
       this._currentLoopContext = bindContent?.loopContext ?? null;
@@ -293,12 +293,12 @@ class BindContent implements IBindContent {
    * @throws BIND-201 LoopContext is null
    */
   assignListIndex(listIndex: IListIndex): void {
-    if (this.loopContext == null) raiseError({
+    if (this.loopContext == null) {raiseError({
       code: "BIND-201",
       message: "LoopContext is null",
       context: { where: 'BindContent.assignListIndex', templateId: this.id },
       docsUrl: "./docs/error-codes.md#bind",
-    });
+    });}
     this.loopContext.assignListIndex(listIndex);
   }
 
@@ -315,7 +315,7 @@ class BindContent implements IBindContent {
     }
     for(let i = 0; i < this.bindings.length; i++) {
       const binding = this.bindings[i];
-      if (renderer.updatedBindings.has(binding)) continue;
+      if (renderer.updatedBindings.has(binding)) {continue;}
       binding.applyChange(renderer);
     }
   }

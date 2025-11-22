@@ -287,7 +287,7 @@ class ComponentEngine implements IComponentEngine {
    */
   async disconnectedCallback(): Promise<void> {
     // Ignore if flag is set (during replaceWith in connectedCallback)
-    if (this._ignoreDissconnectedCallback) return;
+    if (this._ignoreDissconnectedCallback) {return;}
 
     try {
       // Call state's disconnectedCallback if implemented (synchronous)
@@ -410,7 +410,7 @@ class ComponentEngine implements IComponentEngine {
    * @param entry - Cache entry to set
    */
   setCacheEntry(ref: IStatePropertyRef, entry: ICacheEntry): void {
-    let metadata = this._propertyRefMetadataByRef.get(ref);
+    const metadata = this._propertyRefMetadataByRef.get(ref);
     if (typeof metadata === "undefined") {
       this._propertyRefMetadataByRef.set(ref, { bindings: [], cacheEntry: entry });
     } else {

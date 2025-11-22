@@ -63,7 +63,7 @@ class ResolvedPathInfo implements IResolvedPathInfo {
     let lastPath = "";
     let wildcardCount = 0;
     let wildcardType: WildcardType = "none";
-    let wildcardIndexes: (number | null)[] = [];
+    const wildcardIndexes: (number | null)[] = [];
     
     // Process each segment to identify wildcards and indexes
     for(let i = 0; i < elements.length; i++) {

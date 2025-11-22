@@ -67,7 +67,7 @@ export function resolveNodeFromPath(root: Node, path: NodePath): Node | null {
   let node = root;
   
   // Step 2: Return root node if path is empty
-  if (path.length === 0) return node;
+  if (path.length === 0) {return node;}
   
   // Step 3: Traverse each index in path sequentially
   // Using for loop instead of path.reduce() to explicitly check and break when null
@@ -76,7 +76,7 @@ export function resolveNodeFromPath(root: Node, path: NodePath): Node | null {
     node = node?.childNodes[path[i]] ?? null;
     
     // Break loop if node doesn't exist
-    if (node === null) break;
+    if (node === null) {break;}
   }
   
   // Step 4: Return final node (or null)

@@ -57,7 +57,7 @@ class PathManager implements IPathManager {
     const lists = getListPathsSetById(this._id);
     this.lists = this.lists.union(lists).union(listsFromAlls);
     for(const listPath of this.lists) {
-      const elementPath = listPath + ".*";
+      const elementPath = `${listPath  }.*`;
       this.elements.add(elementPath);
     }
     let currentProto = this._stateClass.prototype;
@@ -143,14 +143,14 @@ class PathManager implements IPathManager {
     const info = getStructuredPathInfo(addPath);
     if (isList && !this.lists.has(addPath)) {
       this.lists.add(addPath);
-      const elementPath = addPath + ".*";
+      const elementPath = `${addPath  }.*`;
       this.elements.add(elementPath);
     } else if (info.lastSegment === "*") {
       this.elements.add(addPath);
       this.lists.add(info.parentPath!);
     }
     for(const path of info.cumulativePathSet) {
-      if (this.alls.has(path)) continue;
+      if (this.alls.has(path)) {continue;}
       this.alls.add(path);
       addPathNode(this.rootNode, path);
       const pathInfo = getStructuredPathInfo(path);
@@ -182,7 +182,7 @@ class PathManager implements IPathManager {
    * @param source - Source path that target depends on
    */
   addDynamicDependency(target: string, source: string) {
-    const key = source + "=>" + target;
+    const key = `${source  }=>${  target}`;
     if (this._dynamicDependencyKeys.has(key)) {
       return;
     }

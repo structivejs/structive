@@ -20,7 +20,7 @@ import { NodeType } from "./types";
  * @returns Cache key string
  */
 const createNodeKey = (node: Node): string => 
-  node.constructor.name + "\t" + ((node instanceof Comment) ? (node.textContent?.[2] ?? "") : "");
+  `${node.constructor.name  }\t${  (node instanceof Comment) ? (node.textContent?.[2] ?? "") : ""}`;
 
 /**
  * Cache of NodeType values keyed by node key

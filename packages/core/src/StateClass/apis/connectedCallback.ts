@@ -25,7 +25,7 @@ import { IStateHandler, IStateProxy } from "../types";
  * @returns Promise or void depending on callback implementation
  */
 export function connectedCallback(
-  target: Object, 
+  target: object, 
   prop: PropertyKey, 
   receiver: IStateProxy,
   handler: IStateHandler

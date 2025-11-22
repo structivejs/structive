@@ -26,7 +26,7 @@ import { GetListIndexesByRefSymbol } from "../symbols.js";
  * @throws BIND-201 If wildcard information is inconsistent
  */
 export function getAll(
-  target: Object, 
+  target: object, 
   prop: PropertyKey, 
   receiver: IStateProxy,
   handler: IStateHandler

@@ -84,7 +84,7 @@ export async function createSingleFileComponent(path: string, text: string): Pro
   html?.remove();
 
   // Extract and remove the <script type="module"> section
-  const script = template.content.querySelector("script[type=module]") as HTMLScriptElement | null;
+  const script = template.content.querySelector("script[type=module]");
   let scriptModule: any = {};
   if (script) {
     // Add unique comment for debugging and source mapping
@@ -106,7 +106,7 @@ export async function createSingleFileComponent(path: string, text: string): Pro
       // Fallback: Base64 encoding method (for test environment)
       // Convert script to Base64 and import via data: URL
       const b64 = btoa(String.fromCodePoint(...new TextEncoder().encode(script.text + uniq_comment)));
-      scriptModule = await import("data:application/javascript;base64," + b64);
+      scriptModule = await import(`data:application/javascript;base64,${  b64}`);
     }
   }
   script?.remove();

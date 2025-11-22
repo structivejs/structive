@@ -27,7 +27,7 @@ import { IStateHandler, IStateProxy } from "../types";
  * @returns Promise or void depending on callback implementation
  */
 export function updatedCallback(
-  target: Object, 
+  target: object, 
   refs: IStatePropertyRef[], 
   receiver: IStateProxy,
   handler: IStateHandler,
@@ -41,7 +41,7 @@ export function updatedCallback(
       paths.add(path);
       if (ref.info.wildcardCount > 0) {
         const index = ref.listIndex!.index;
-        let indexes = indexesByPath[path];
+        const indexes = indexesByPath[path];
         if (typeof indexes === "undefined") {
           indexesByPath[path] = [index];
         } else {
