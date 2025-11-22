@@ -215,26 +215,6 @@ describe('getStructuredPathInfo', () => {
     });
   });
 
-  describe('childrenプロパティ', () => {
-    it('親子関係が children プロパティに反映される', () => {
-      const parentInfo = getStructuredPathInfo('parent');
-      const childInfo = getStructuredPathInfo('parent.child');
-      
-      expect(parentInfo.children['child']).toBe(childInfo);
-    });
-
-    it('複数の子が正しく管理される', () => {
-      const parentInfo = getStructuredPathInfo('parent');
-      const child1Info = getStructuredPathInfo('parent.child1');
-      const child2Info = getStructuredPathInfo('parent.child2');
-      
-      expect(parentInfo.children['child1']).toBe(child1Info);
-      expect(parentInfo.children['child2']).toBe(child2Info);
-      expect(Object.keys(parentInfo.children)).toContain('child1');
-      expect(Object.keys(parentInfo.children)).toContain('child2');
-    });
-  });
-
   describe('エッジケース', () => {
     it('空文字列を渡した場合の動作', () => {
       const info = getStructuredPathInfo('');

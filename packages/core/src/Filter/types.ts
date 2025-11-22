@@ -1,16 +1,16 @@
 /**
  * Filter/types.ts
  *
- * フィルタ関数に関する型定義ファイルです。
+ * Type definition file for filter functions.
  *
- * 主な役割:
- * - フィルタ関数（FilterFn）や、オプション付きフィルタ関数（FilterWithOptionsFn）の型を定義
- * - フィルタ名と関数のマッピング（FilterWithOptions）や、フィルタ関数配列（Filters）を型安全に管理
- * - 組み込みフィルタ群からフィルタ関数を取得するための型も定義
+ * Main responsibilities:
+ * - Defines types for filter functions (FilterFn) and filter functions with options (FilterWithOptionsFn)
+ * - Type-safe management of filter name-to-function mappings (FilterWithOptions) and filter function arrays (Filters)
+ * - Defines types for retrieving filter functions from built-in filter collections
  *
- * 設計ポイント:
- * - 柔軟なフィルタ設計・拡張を可能にするための型設計
- * - オプション付きフィルタや複数フィルタの組み合わせにも対応
+ * Design points:
+ * - Type design enabling flexible filter design and extension
+ * - Supports filters with options and combinations of multiple filters
  */
 export type FilterFn = (value:any) => any;
 

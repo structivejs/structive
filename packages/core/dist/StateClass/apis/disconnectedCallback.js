@@ -1,19 +1,26 @@
 /**
  * disconnectedCallback.ts
  *
- * StateClassのライフサイクルフック「$disconnectedCallback」を呼び出すユーティリティ関数です。
+ * Utility function to invoke the StateClass lifecycle hook "$disconnectedCallback".
  *
- * 主な役割:
- * - オブジェクト（target）に$disconnectedCallbackメソッドが定義されていれば呼び出す
- * - コールバックはtargetのthisコンテキストで呼び出し、IReadonlyStateProxy（receiver）を引数として渡す
- * - 非同期関数として実行可能（await対応）
+ * Main responsibilities:
+ * - Invokes $disconnectedCallback method if defined on the object (target)
+ * - Callback is invoked with target's this context, passing IReadonlyStateProxy (receiver) as argument
+ * - Executable as async function (await compatible)
  *
- * 設計ポイント:
- * - Reflect.getで$disconnectedCallbackプロパティを安全に取得
- * - 存在しない場合は何もしない
- * - ライフサイクル管理やクリーンアップ処理に利用
+ * Design points:
+ * - Safely retrieves $disconnectedCallback property using Reflect.get
+ * - Does nothing if the callback doesn't exist
+ * - Used for lifecycle management and cleanup logic
  */
 import { DISCONNECTED_CALLBACK_FUNC_NAME } from "../../constants";
+/**
+ * Invokes the $disconnectedCallback lifecycle hook if defined on the target.
+ * @param target - Target object to check for callback
+ * @param prop - Property key (unused but part of signature)
+ * @param receiver - State proxy to pass as this context
+ * @param handler - State handler (unused but part of signature)
+ */
 export function disconnectedCallback(target, prop, receiver, handler) {
     const callback = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {

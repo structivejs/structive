@@ -76,7 +76,6 @@ describe('StateProperty types', () => {
       expect(info.wildcardPathSet instanceof Set).toBe(true);
       expect(Array.isArray(info.wildcardInfos)).toBe(true);
       expect(info.wildcardInfoSet instanceof Set).toBe(true);
-      expect(typeof info.children).toBe('object');
     });
 
     it('readonlyプロパティが適切に設定される', () => {
@@ -210,16 +209,6 @@ describe('StateProperty types', () => {
   });
 
   describe('複合型のテスト', () => {
-    it('childrenプロパティの型が正しく動作する', () => {
-      const parentInfo = getStructuredPathInfo('parent');
-      const childInfo = getStructuredPathInfo('parent.child');
-      
-      const children: {[segment: string]: IStructuredPathInfo} = parentInfo.children;
-      const child: IStructuredPathInfo = children['child'];
-      
-      expect(child).toBe(childInfo);
-    });
-
     it('Set型プロパティが正しく動作する', () => {
       const info = getStructuredPathInfo('aaa.*.bbb');
       

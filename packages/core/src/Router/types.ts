@@ -2,15 +2,23 @@
 /**
  * Router/types.ts
  *
- * SPAルーター用のインターフェース定義ファイルです。
+ * Interface definition file for SPA router.
  *
- * 主な役割:
- * - IRouter: ルーターの基本インターフェース
- *   - navigate: 指定したパスに遷移するためのメソッド
+ * Main responsibilities:
+ * - IRouter: Basic router interface
+ *   - navigate: Method to navigate to a specified path
  *
- * 設計ポイント:
- * - ルーターの実装クラスが共通して持つべきAPIを型安全に定義
+ * Design points:
+ * - Type-safe definition of common API that router implementations should have
+ */
+
+/**
+ * Interface for SPA router functionality.
  */
 export interface IRouter {
+  /**
+   * Navigates to a specified path.
+   * @param path - Target path to navigate to
+   */
   navigate: (path: string) => void;
 }

@@ -1,30 +1,46 @@
 /**
  * setByRef.ts
  *
- * StateClassの内部APIとして、構造化パス情報（IStructuredPathInfo）とリストインデックス（IListIndex）を指定して
- * 状態オブジェクト（target）に値を設定するための関数（setByRef）の実装です。
+ * Internal API function for StateClass that sets values to the state object (target)
+ * by specifying structured path information (IStructuredPathInfo) and list index (IListIndex).
  *
- * 主な役割:
- * - 指定されたパス・インデックスに対応するState値を設定（多重ループやワイルドカードにも対応）
- * - getter/setter経由で値設定時はSetStatePropertyRefSymbolでスコープを一時設定
- * - 存在しない場合は親infoやlistIndexを辿って再帰的に値を設定
- * - 設定後はengine.updater.addUpdatedStatePropertyRefValueで更新情報を登録
+ * Main responsibilities:
+ * - Sets State values for specified path/index (supports multiple loops and wildcards)
+ * - Temporarily sets scope with SetStatePropertyRefSymbol when setting via getter/setter
+ * - Recursively sets values by traversing parent info and listIndex if not found
+ * - Registers update information via engine.updater.addUpdatedStatePropertyRefValue after setting
  *
- * 設計ポイント:
- * - ワイルドカードや多重ループにも柔軟に対応し、再帰的な値設定を実現
- * - finallyで必ず更新情報を登録し、再描画や依存解決に利用
- * - getter/setter経由のスコープ切り替えも考慮した設計
+ * Design points:
+ * - Flexibly supports wildcards and multiple loops, achieving recursive value setting
+ * - Always registers update information in finally block for re-rendering and dependency resolution
+ * - Design considers scope switching via getter/setter
  */
 import { createListIndex } from "../../ListIndex/ListIndex";
 import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef";
 import { raiseError } from "../../utils.js";
 import { GetByRefSymbol, GetListIndexesByRefSymbol } from "../symbols";
 import { getByRef } from "./getByRef";
+/**
+ * Sets a value to the state object for the specified property reference.
+ *
+ * This function handles value setting with support for wildcards, multiple loops, and nested structures.
+ * It manages scope switching for getter/setter execution and tracks swap operations for element updates.
+ * Update information is always registered in the finally block for re-rendering and dependency resolution.
+ *
+ * @param target - State object
+ * @param ref - State property reference indicating where to set the value
+ * @param value - Value to set
+ * @param receiver - State proxy object
+ * @param handler - State handler containing engine and updater references
+ * @returns Result of the set operation
+ * @throws {Error} STATE-202 - When required parent info or list index is missing
+ */
 export function setByRef(target, ref, value, receiver, handler) {
+    // Check if this path represents an element in a list
     const isElements = handler.engine.pathManager.elements.has(ref.info.pattern);
     let parentRef = null;
     let swapInfo = null;
-    // elementsの場合はswapInfoを準備
+    // Prepare swapInfo for elements to track value swapping in lists
     if (isElements) {
         parentRef = ref.parentRef ?? raiseError({
             code: 'STATE-202',
@@ -32,6 +48,7 @@ export function setByRef(target, ref, value, receiver, handler) {
             context: { where: 'setByRef (element)', refPath: ref.info.pattern },
             docsUrl: '/docs/error-codes.md#state',
         });
+        // Get or create swap info for tracking list element changes
         swapInfo = handler.updater.swapInfoByRef.get(parentRef) || null;
         if (swapInfo === null) {
             swapInfo = {
@@ -42,37 +59,45 @@ export function setByRef(target, ref, value, receiver, handler) {
         }
     }
     try {
-        // 親子関係のあるgetterが存在する場合は、外部依存を通じて値を設定
-        // ToDo: stateにgetterが存在する（パスの先頭が一致する）場合はgetter経由で取得
+        // If getters with parent-child relationships exist, set value through external dependencies
+        // TODO: When getter exists in state (path prefix matches), retrieve via getter
         if (handler.engine.stateOutput.startsWith(ref.info) && handler.engine.pathManager.setters.intersection(ref.info.cumulativePathSet).size === 0) {
             return handler.engine.stateOutput.set(ref, value);
         }
+        // If property exists directly in target, set via setter
         if (ref.info.pattern in target) {
+            // Push current ref onto stack for scope tracking during setter execution
             handler.refIndex++;
             if (handler.refIndex >= handler.refStack.length) {
                 handler.refStack.push(null);
             }
             handler.refStack[handler.refIndex] = handler.lastRefStack = ref;
             try {
+                // Execute the setter
                 return Reflect.set(target, ref.info.pattern, value, receiver);
             }
             finally {
+                // Always restore ref stack state
                 handler.refStack[handler.refIndex] = null;
                 handler.refIndex--;
                 handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
             }
         }
         else {
+            // Property doesn't exist directly, need to traverse parent hierarchy
             const parentInfo = ref.info.parentInfo ?? raiseError({
                 code: 'STATE-202',
                 message: 'propRef.stateProp.parentInfo is undefined',
                 context: { where: 'setByRef', refPath: ref.info.pattern },
                 docsUrl: '/docs/error-codes.md#state',
             });
+            // Calculate parent list index based on wildcard hierarchy
             const parentListIndex = parentInfo.wildcardCount < ref.info.wildcardCount ? (ref.listIndex?.parentListIndex ?? null) : ref.listIndex;
             const parentRef = getStatePropertyRef(parentInfo, parentListIndex);
+            // Get the parent value to set property on
             const parentValue = getByRef(target, parentRef, receiver, handler);
             const lastSegment = ref.info.lastSegment;
+            // Handle wildcard (array element) vs named property
             if (lastSegment === "*") {
                 const index = ref.listIndex?.index ?? raiseError({
                     code: 'STATE-202',
@@ -88,21 +113,25 @@ export function setByRef(target, ref, value, receiver, handler) {
         }
     }
     finally {
+        // Always register this ref for update processing
         handler.updater.enqueueRef(ref);
         if (isElements) {
+            // Handle list element swap tracking
             const index = swapInfo.value.indexOf(value);
             const currentListIndexes = receiver[GetListIndexesByRefSymbol](parentRef) ?? [];
             const curIndex = ref.listIndex.index;
+            // Assign list index from swap info or create new one
             const listIndex = (index !== -1) ? swapInfo.listIndexes[index] : createListIndex(parentRef.listIndex, -1);
             currentListIndexes[curIndex] = listIndex;
-            // 重複チェック
-            // 重複していない場合、swapが完了したとみなし、インデックスを更新
+            // Check for duplicates to determine if swap is complete
+            // If no duplicates, consider swap complete and update indexes
             const listValueSet = new Set(receiver[GetByRefSymbol](parentRef) ?? []);
             if (listValueSet.size === swapInfo.value.length) {
+                // Swap complete, renormalize indexes to match current positions
                 for (let i = 0; i < currentListIndexes.length; i++) {
                     currentListIndexes[i].index = i;
                 }
-                // 完了したのでswapInfoを削除
+                // Delete swapInfo as swap is complete
                 handler.updater.swapInfoByRef.delete(parentRef);
             }
         }

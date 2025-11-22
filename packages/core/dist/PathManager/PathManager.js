@@ -3,6 +3,10 @@ import { CONNECTED_CALLBACK_FUNC_NAME, DISCONNECTED_CALLBACK_FUNC_NAME, RESERVED
 import { addPathNode, createRootNode } from "../PathTree/PathNode";
 import { createAccessorFunctions } from "../StateProperty/createAccessorFunctions";
 import { getStructuredPathInfo } from "../StateProperty/getStructuredPathInfo";
+/**
+ * PathManager class manages property paths, dependencies, and accessor optimizations.
+ * Analyzes component class to build path hierarchy and dependency graph.
+ */
 class PathManager {
     alls = new Set();
     lists = new Set();
@@ -19,12 +23,18 @@ class PathManager {
     hasConnectedCallback = false;
     hasDisconnectedCallback = false;
     hasUpdatedCallback = false;
-    #id;
-    #stateClass;
+    _id;
+    _stateClass;
+    _dynamicDependencyKeys = new Set();
+    /**
+     * Creates a new PathManager instance.
+     * Analyzes component class to extract paths, getters, setters, and builds dependency graph.
+     * @param componentClass - Component class to analyze
+     */
     constructor(componentClass) {
-        this.#id = componentClass.id;
-        this.#stateClass = componentClass.stateClass;
-        const alls = getPathsSetById(this.#id);
+        this._id = componentClass.id;
+        this._stateClass = componentClass.stateClass;
+        const alls = getPathsSetById(this._id);
         const listsFromAlls = new Set();
         for (const path of alls) {
             const info = getStructuredPathInfo(path);
@@ -37,13 +47,13 @@ class PathManager {
                 }
             }
         }
-        const lists = getListPathsSetById(this.#id);
+        const lists = getListPathsSetById(this._id);
         this.lists = this.lists.union(lists).union(listsFromAlls);
         for (const listPath of this.lists) {
             const elementPath = listPath + ".*";
             this.elements.add(elementPath);
         }
-        let currentProto = this.#stateClass.prototype;
+        let currentProto = this._stateClass.prototype;
         while (currentProto && currentProto !== Object.prototype) {
             const getters = Object.getOwnPropertyDescriptors(currentProto);
             if (getters) {
@@ -84,7 +94,7 @@ class PathManager {
             }
             currentProto = Object.getPrototypeOf(currentProto);
         }
-        // 最適化対象のパスを決定し、最適化する
+        // Determine optimization target paths and optimize them
         for (const path of this.alls) {
             if (this.getters.has(path)) {
                 continue;
@@ -97,7 +107,7 @@ class PathManager {
                 continue;
             }
             const funcs = createAccessorFunctions(info, this.getters);
-            Object.defineProperty(this.#stateClass.prototype, path, {
+            Object.defineProperty(this._stateClass.prototype, path, {
                 get: funcs.get,
                 set: funcs.set,
                 enumerable: true,
@@ -105,7 +115,7 @@ class PathManager {
             });
             this.optimizes.add(path);
         }
-        // 静的依存関係の設定
+        // Configure static dependencies
         for (const path of this.alls) {
             addPathNode(this.rootNode, path);
             const info = getStructuredPathInfo(path);
@@ -115,6 +125,12 @@ class PathManager {
             }
         }
     }
+    /**
+     * Adds a new path to the manager dynamically.
+     * Updates path hierarchy, creates optimized accessors, and registers dependencies.
+     * @param addPath - Path to add
+     * @param isList - Whether the path represents a list (default: false)
+     */
     addPath(addPath, isList = false) {
         const info = getStructuredPathInfo(addPath);
         if (isList && !this.lists.has(addPath)) {
@@ -138,7 +154,7 @@ class PathManager {
             }
             if (pathInfo.pathSegments.length > 1) {
                 const funcs = createAccessorFunctions(pathInfo, this.getters);
-                Object.defineProperty(this.#stateClass.prototype, path, {
+                Object.defineProperty(this._stateClass.prototype, path, {
                     get: funcs.get,
                     set: funcs.set,
                     enumerable: true,
@@ -152,20 +168,30 @@ class PathManager {
             }
         }
     }
-    #dynamicDependencyKeys = new Set();
+    /**
+     * Adds a dynamic dependency between source and target paths.
+     * Ensures source path exists before registering dependency.
+     * @param target - Target path that depends on source
+     * @param source - Source path that target depends on
+     */
     addDynamicDependency(target, source) {
         const key = source + "=>" + target;
-        if (this.#dynamicDependencyKeys.has(key)) {
+        if (this._dynamicDependencyKeys.has(key)) {
             return;
         }
         if (!this.alls.has(source)) {
             this.addPath(source);
         }
-        this.#dynamicDependencyKeys.add(key);
+        this._dynamicDependencyKeys.add(key);
         this.dynamicDependencies.get(source)?.add(target) ??
             this.dynamicDependencies.set(source, new Set([target]));
     }
 }
+/**
+ * Factory function to create a new PathManager instance.
+ * @param componentClass - Component class to analyze and manage
+ * @returns New PathManager instance
+ */
 export function createPathManager(componentClass) {
     return new PathManager(componentClass);
 }

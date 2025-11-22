@@ -1,21 +1,28 @@
 /**
  * errorMessages.ts
  *
- * フィルタ関数などで利用するエラーメッセージ生成ユーティリティです。
+ * Error message generation utilities used by filter functions.
  *
- * 主な役割:
- * - フィルタのオプションや値の型チェックで条件を満たさない場合に、分かりやすいエラーメッセージを投げる
- * - 関数名を引数に取り、どのフィルタでエラーが発生したかを明示
+ * Main responsibilities:
+ * - Throws clear error messages when filter options or value type checks fail
+ * - Takes function name as argument to specify which filter caused the error
  *
- * 設計ポイント:
- * - optionsRequired: オプションが必須なフィルタで未指定時にエラー
- * - optionMustBeNumber: オプション値が数値でない場合にエラー
- * - valueMustBeNumber: 値が数値でない場合にエラー
- * - valueMustBeBoolean: 値がbooleanでない場合にエラー
- * - valueMustBeDate: 値がDateでない場合にエラー
+ * Design points:
+ * - optionsRequired: Error when required option is not specified
+ * - optionMustBeNumber: Error when option value is not a number
+ * - valueMustBeNumber: Error when value is not a number
+ * - valueMustBeBoolean: Error when value is not boolean
+ * - valueMustBeDate: Error when value is not a Date
  */
 import { raiseError } from "../utils";
 
+/**
+ * Throws error when filter requires at least one option but none provided.
+ * 
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires at least one option
+ */
 export function optionsRequired(fnName:string): never {
   raiseError({
     code: "FLT-202",
@@ -25,6 +32,13 @@ export function optionsRequired(fnName:string): never {
   });
 }
 
+/**
+ * Throws error when filter option must be a number but invalid value provided.
+ * 
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires a number as option
+ */
 export function optionMustBeNumber(fnName:string): never {
   raiseError({
     code: "FLT-202",
@@ -34,6 +48,13 @@ export function optionMustBeNumber(fnName:string): never {
   });
 }
 
+/**
+ * Throws error when filter requires numeric value but non-number provided.
+ * 
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires a number value
+ */
 export function valueMustBeNumber(fnName:string): never {
   raiseError({
     code: "FLT-202",
@@ -43,6 +64,13 @@ export function valueMustBeNumber(fnName:string): never {
   });
 }
 
+/**
+ * Throws error when filter requires boolean value but non-boolean provided.
+ * 
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires a boolean value
+ */
 export function valueMustBeBoolean(fnName:string): never {
   raiseError({
     code: "FLT-202",
@@ -52,6 +80,13 @@ export function valueMustBeBoolean(fnName:string): never {
   });
 }
 
+/**
+ * Throws error when filter requires Date value but non-Date provided.
+ * 
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires a date value
+ */
 export function valueMustBeDate(fnName:string): never {
   raiseError({
     code: "FLT-202",

@@ -1,73 +1,129 @@
 /**
  * createSingleFileComponent.ts
  *
- * Structive用のシングルファイルコンポーネント（SFC）をパースし、各要素（HTML, CSS, StateClass）を抽出・生成するユーティリティです。
+ * Utility for parsing Structive Single File Components (SFC) and extracting/generating each element (HTML, CSS, StateClass).
  *
- * 主な役割:
- * - テキストから<template>・<script type="module">・<style>を抽出し、それぞれを分離
- * - <script type="module">はBase64エンコードして動的importし、StateClassとして利用
- * - {{...}}埋め込み式は一時的にコメントノード化してHTMLパース時の消失を防止し、復元
- * - 各要素（html, css, stateClass, text）をIUserComponentDataとして返却
+ * Main responsibilities:
+ * - Extracts and separates <template>, <script type="module">, and <style> from text
+ * - Dynamically imports <script type="module"> via Base64 encoding and uses it as StateClass
+ * - Temporarily converts {{...}} embedded expressions to comment nodes to prevent loss during HTML parsing, then restores them
+ * - Returns each element (html, css, stateClass, text) as IUserComponentData
  *
- * 設計ポイント:
- * - escapeEmbed/unescapeEmbedでMustache構文の安全なパースを実現
- * - scriptはdata:URL経由で安全に動的import
- * - テンプレート・スクリプト・スタイルを柔軟に分離・管理できる設計
+ * Design points:
+ * - Achieves safe parsing of Mustache syntax via escapeEmbed/unescapeEmbed
+ * - Safely dynamically imports scripts via data: URL
+ * - Design that allows flexible separation and management of template, script, and style
  */
 import { IStructiveState } from "../StateClass/types";
 import { IUserComponentData } from "./types";
 
+/**
+ * Escapes Mustache template expressions by converting them to HTML comments.
+ * This prevents the browser's HTML parser from interpreting {{}} as invalid syntax.
+ * 
+ * @param {string} html - HTML string containing Mustache expressions
+ * @returns {string} HTML with {{...}} converted to <!--{{...}}-->
+ * 
+ * @example
+ * escapeEmbed('{{name}}') // Returns '<!--{{name}}-->'
+ */
 function escapeEmbed(html: string): string {
   return html.replaceAll(/\{\{([^\}]+)\}\}/g, (match, expr) => {
     return `<!--{{${expr}}}-->`;
   });
 }
 
+/**
+ * Restores escaped Mustache expressions from HTML comments back to original form.
+ * This reverses the escapeEmbed operation after safe HTML parsing.
+ * 
+ * @param {string} html - HTML string with escaped Mustache expressions
+ * @returns {string} HTML with <!--{{...}}--> converted back to {{...}}
+ * 
+ * @example
+ * unescapeEmbed('<!--{{name}}-->') // Returns '{{name}}'
+ */
 function unescapeEmbed(html:string):string {
   return html.replaceAll(/<!--\{\{([^\}]+)\}\}-->/g, (match, expr) => {
     return `{{${expr}}}`;
   });
 }
 
+/** Counter for generating unique IDs for dynamically imported scripts */
 let id = 0;
 
+/**
+ * Parses a Single File Component (SFC) and extracts its template, script, and style sections.
+ * 
+ * The SFC format consists of:
+ * - <template>: HTML template with Mustache syntax
+ * - <script type="module">: JavaScript module exporting the state class
+ * - <style>: CSS styles for the component
+ * 
+ * @param {string} path - File path or identifier for source mapping in error messages
+ * @param {string} text - Raw SFC text content to parse
+ * @returns {Promise<IUserComponentData>} Parsed component data including html, css, and stateClass
+ * 
+ * @example
+ * const componentData = await createSingleFileComponent('MyComponent.sfc', `
+ *   <template><div>{{message}}</div></template>
+ *   <script type="module">
+ *     export default class { message = 'Hello'; }
+ *   </script>
+ *   <style>div { color: blue; }</style>
+ * `);
+ */
 export async function createSingleFileComponent(path: string, text: string): Promise<IUserComponentData> {
+  // Create a temporary template element for safe HTML parsing
   const template = document.createElement("template");
+  // Escape Mustache expressions to prevent parsing issues
   template.innerHTML = escapeEmbed(text);
 
+  // Extract and remove the <template> section
   const html = template.content.querySelector("template");
   html?.remove();
 
+  // Extract and remove the <script type="module"> section
   const script = template.content.querySelector("script[type=module]") as HTMLScriptElement | null;
   let scriptModule: any = {};
   if (script) {
+    // Add unique comment for debugging and source mapping
     const uniq_comment = `\n// uniq id: ${id++}\n//# sourceURL=${path}\n`;
-    // blob URLを使用（ブラウザ環境）
-    // テスト環境（jsdom）ではURL.createObjectURLが存在しないためフォールバック
+    
+    // Use blob URL (browser environment)
+    // Fallback for test environment (jsdom) where URL.createObjectURL doesn't exist
     if (typeof URL.createObjectURL === 'function') {
+      // Create a blob URL for the script and dynamically import it
       const blob = new Blob([script.text + uniq_comment], { type: "application/javascript" });
       const url = URL.createObjectURL(blob);
       try {
         scriptModule = await import(url);
       } finally {
+        // Clean up blob URL to prevent memory leak
         URL.revokeObjectURL(url);
       }
     } else {
-      // フォールバック: Base64エンコード方式（テスト環境用）
+      // Fallback: Base64 encoding method (for test environment)
+      // Convert script to Base64 and import via data: URL
       const b64 = btoa(String.fromCodePoint(...new TextEncoder().encode(script.text + uniq_comment)));
       scriptModule = await import("data:application/javascript;base64," + b64);
     }
   }
   script?.remove();
 
+  // Extract and remove the <style> section
   const style = template.content.querySelector("style");
   style?.remove();
 
+  // Use default export as state class, or empty class if not provided
   const stateClass = (scriptModule.default ?? class {}) as IStructiveState;
   
+  // Return parsed component data
   return {
     text,
+    // Restore Mustache expressions and trim whitespace from template
     html      : unescapeEmbed(html?.innerHTML ?? "").trim(),
+    // Extract CSS text content or use empty string
     css       : style?.textContent ?? "",
     stateClass,
   }

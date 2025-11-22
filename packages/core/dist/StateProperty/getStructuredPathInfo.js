@@ -1,32 +1,35 @@
 /**
  * getStructuredPathInfo.ts
  *
- * Stateプロパティのパス文字列から、詳細な構造化パス情報（IStructuredPathInfo）を生成・キャッシュするユーティリティです。
+ * Utility for generating and caching detailed structured path information (IStructuredPathInfo)
+ * from State property path strings.
  *
- * 主な役割:
- * - パス文字列を分割し、各セグメントやワイルドカード（*）の位置・親子関係などを解析
- * - cumulativePaths/wildcardPaths/parentPathなど、パス階層やワイルドカード階層の情報を構造化
- * - 解析結果をIStructuredPathInfoとしてキャッシュし、再利用性とパフォーマンスを両立
- * - reservedWords（予約語）チェックで安全性を担保
+ * Main responsibilities:
+ * - Splits path strings and analyzes segments, wildcard (*) positions, and parent-child relationships
+ * - Structures information about path hierarchy and wildcard hierarchy (cumulativePaths/wildcardPaths/parentPath, etc.)
+ * - Caches analysis results as IStructuredPathInfo for reusability and performance
+ * - Ensures safety with reserved word checks
  *
- * 設計ポイント:
- * - パスごとにキャッシュし、同じパスへの複数回アクセスでも高速に取得可能
- * - ワイルドカードや親子関係、階層構造を厳密に解析し、バインディングや多重ループに最適化
- * - childrenプロパティでパス階層のツリー構造も構築
- * - 予約語や危険なパスはraiseErrorで例外を発生
+ * Design points:
+ * - Caches by path for fast retrieval on multiple accesses to the same path
+ * - Strictly analyzes wildcards, parent-child relationships, and hierarchical structure, optimized for bindings and nested loops
+ * - Raises exceptions via raiseError for reserved words or dangerous paths
  */
 import { RESERVED_WORD_SET } from '../constants.js';
 import { raiseError } from '../utils.js';
 /**
- * プロパティ名に"constructor"や"toString"などの予約語やオブジェクトのプロパティ名を
- * 上書きするような名前も指定できるように、Mapを検討したが、そもそもそのような名前を
- * 指定することはないと考え、Mapを使わないことにした。
+ * Cache for structured path information.
+ * Uses plain object instead of Map since reserved words and object property names
+ * are not expected to be used as path patterns in practice.
  */
 const _cache = {};
 /**
- * パターン情報を取得します
- * @param pattern パターン
- * @returns {IPatternInfo} パターン情報
+ * Class representing comprehensive structured information about a State property path.
+ * Analyzes path hierarchy, wildcard positions, parent-child relationships, and provides
+ * various access patterns for binding and dependency tracking.
+ *
+ * @class StructuredPathInfo
+ * @implements {IStructuredPathInfo}
  */
 class StructuredPathInfo {
     static id = 0;
@@ -53,43 +56,59 @@ class StructuredPathInfo {
     parentPath;
     parentInfo;
     wildcardCount;
-    children = {};
+    /**
+     * Constructs a StructuredPathInfo instance with comprehensive path analysis.
+     * Parses the pattern into segments, identifies wildcards, builds cumulative and wildcard paths,
+     * and establishes parent-child relationships for hierarchical navigation.
+     *
+     * @param {string} pattern - The property path pattern (e.g., "items.*.name" or "user.profile")
+     */
     constructor(pattern) {
+        // Helper to get or create StructuredPathInfo instances, avoiding redundant creation for self-reference
         const getPattern = (_pattern) => {
             return (pattern === _pattern) ? this : getStructuredPathInfo(_pattern);
         };
+        // Split the pattern into individual path segments (e.g., "items.*.name" → ["items", "*", "name"])
         const pathSegments = pattern.split(".");
+        // Arrays to track all cumulative paths from root to each segment
         const cumulativePaths = [];
         const cumulativeInfos = [];
+        // Arrays to track wildcard-specific information
         const wildcardPaths = [];
-        const indexByWildcardPath = {};
+        const indexByWildcardPath = {}; // Maps wildcard path to its index position
         const wildcardInfos = [];
-        const wildcardParentPaths = [];
+        const wildcardParentPaths = []; // Paths of parent segments for each wildcard
         const wildcardParentInfos = [];
         let currentPatternPath = "", prevPatternPath = "";
         let wildcardCount = 0;
+        // Iterate through each segment to build cumulative paths and identify wildcards
         for (let i = 0; i < pathSegments.length; i++) {
             currentPatternPath += pathSegments[i];
+            // If this segment is a wildcard, track it with all wildcard-specific metadata
             if (pathSegments[i] === "*") {
                 wildcardPaths.push(currentPatternPath);
-                indexByWildcardPath[currentPatternPath] = wildcardCount;
+                indexByWildcardPath[currentPatternPath] = wildcardCount; // Store wildcard's ordinal position
                 wildcardInfos.push(getPattern(currentPatternPath));
-                wildcardParentPaths.push(prevPatternPath);
+                wildcardParentPaths.push(prevPatternPath); // Parent path is the previous cumulative path
                 wildcardParentInfos.push(getPattern(prevPatternPath));
                 wildcardCount++;
             }
+            // Track all cumulative paths for hierarchical navigation (e.g., "items", "items.*", "items.*.name")
             cumulativePaths.push(currentPatternPath);
             cumulativeInfos.push(getPattern(currentPatternPath));
+            // Save current path as previous for next iteration, then add separator
             prevPatternPath = currentPatternPath;
             currentPatternPath += ".";
         }
+        // Determine the deepest (last) wildcard path and the parent path of the entire pattern
         const lastWildcardPath = wildcardPaths.length > 0 ? wildcardPaths[wildcardPaths.length - 1] : null;
         const parentPath = cumulativePaths.length > 1 ? cumulativePaths[cumulativePaths.length - 2] : null;
+        // Assign all analyzed data to readonly properties
         this.pattern = pattern;
         this.pathSegments = pathSegments;
         this.lastSegment = pathSegments[pathSegments.length - 1];
         this.cumulativePaths = cumulativePaths;
-        this.cumulativePathSet = new Set(cumulativePaths);
+        this.cumulativePathSet = new Set(cumulativePaths); // Set for fast lookup
         this.cumulativeInfos = cumulativeInfos;
         this.cumulativeInfoSet = new Set(cumulativeInfos);
         this.wildcardPaths = wildcardPaths;
@@ -106,12 +125,24 @@ class StructuredPathInfo {
         this.parentPath = parentPath;
         this.parentInfo = parentPath ? getPattern(parentPath) : null;
         this.wildcardCount = wildcardCount;
-        if (this.parentInfo) {
-            this.parentInfo.children[this.lastSegment] = this;
-        }
     }
 }
+/**
+ * Retrieves or creates a StructuredPathInfo instance for the given path pattern.
+ * Uses caching to avoid redundant parsing of the same path patterns.
+ * Validates that the path is not a reserved word before processing.
+ *
+ * @param {string} structuredPath - The property path pattern to analyze (e.g., "items.*.name")
+ * @returns {IStructuredPathInfo} Comprehensive structured information about the path
+ * @throws {Error} Throws STATE-202 error if the path is a reserved word
+ *
+ * @example
+ * const info = getStructuredPathInfo("items.*.name");
+ * console.log(info.wildcardCount); // 1
+ * console.log(info.cumulativePaths); // ["items", "items.*", "items.*.name"]
+ */
 export function getStructuredPathInfo(structuredPath) {
+    // Validate that the path is not a reserved word to prevent conflicts
     if (RESERVED_WORD_SET.has(structuredPath)) {
         raiseError({
             code: 'STATE-202',
@@ -120,9 +151,11 @@ export function getStructuredPathInfo(structuredPath) {
             docsUrl: './docs/error-codes.md#state',
         });
     }
+    // Return cached result if available
     const info = _cache[structuredPath];
     if (typeof info !== "undefined") {
         return info;
     }
+    // Create new StructuredPathInfo and cache it for future use
     return (_cache[structuredPath] = new StructuredPathInfo(structuredPath));
 }

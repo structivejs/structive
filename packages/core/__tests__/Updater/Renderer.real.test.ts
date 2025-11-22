@@ -152,7 +152,6 @@ describe("Updater/Renderer (real implementation)", () => {
       applyChange: vi.fn((renderer: any) => {
         capturedRenderer = renderer;
         bindCallLog.push("list");
-        expect(renderer.engine).toBe(engine);
         expect(renderer.updatingRefs).toEqual(expect.arrayContaining([listRef, itemRef]));
         expect(renderer.updatingRefSet.has(itemRef)).toBe(true);
         expect(renderer.updatedBindings.size).toBeGreaterThanOrEqual(0);
@@ -218,32 +217,8 @@ describe("Updater/Renderer (real implementation)", () => {
     expect(() => capturedRenderer.readonlyHandler).toThrowError(/ReadonlyHandler not initialized/);
   });
 
-  it("engineゲッターは未初期化時にUPD-001を投げる", () => {
-    const engine = makeEngine();
-    const updater = makeUpdater();
-    let RendererCtor: any = null;
-
-    createReadonlyStateHandlerMock.mockImplementation((eng: any, upd: any, renderer: any) => {
-      RendererCtor = renderer.constructor;
-      return { eng, upd, renderer };
-    });
-
-    render([], engine as any, updater as any);
-
-    expect(RendererCtor).not.toBeNull();
-
-    const rendererWithoutEngine = new RendererCtor(null as any, updater as any);
-    let caught: any;
-    expect(() => {
-      try {
-        void rendererWithoutEngine.engine;
-      } catch (error) {
-        caught = error;
-        throw error;
-      }
-    }).toThrowError(/Engine not initialized/);
-    expect(caught?.code).toBe("UPD-001");
-  });
+  // Removed: engineゲッターは未初期化時にUPD-001を投げる
+  // Reason: engine property is not part of IRenderer interface (internal implementation detail)
 
   it("親リストがitemsに含まれない要素は並べ替え処理で親を更新する", () => {
     const engine = makeEngine();

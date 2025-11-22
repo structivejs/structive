@@ -1,4 +1,10 @@
 import { createListIndex } from "../../ListIndex/ListIndex";
+/**
+ * Checks if two lists are identical by comparing length and each element.
+ * @param oldList - Previous list to compare
+ * @param newList - New list to compare
+ * @returns True if lists are identical, false otherwise
+ */
 function isSameList(oldList, newList) {
     if (oldList.length !== newList.length) {
         return false;
@@ -10,13 +16,25 @@ function isSameList(oldList, newList) {
     }
     return true;
 }
+/**
+ * Creates or updates list indexes by comparing old and new lists.
+ * Optimizes by reusing existing list indexes when values match.
+ * @param parentListIndex - Parent list index for nested lists, or null for top-level
+ * @param oldList - Previous list (will be normalized to array)
+ * @param newList - New list (will be normalized to array)
+ * @param oldIndexes - Array of existing list indexes to potentially reuse
+ * @returns Array of list indexes for the new list
+ */
 export function createListIndexes(parentListIndex, oldList, newList, oldIndexes) {
+    // Normalize inputs to arrays (handles null/undefined)
     oldList = Array.isArray(oldList) ? oldList : [];
     newList = Array.isArray(newList) ? newList : [];
     const newIndexes = [];
+    // Early return for empty list
     if (newList.length === 0) {
         return [];
     }
+    // If old list was empty, create all new indexes
     if (oldList.length === 0) {
         for (let i = 0; i < newList.length; i++) {
             const newListIndex = createListIndex(parentListIndex, i);
@@ -24,26 +42,29 @@ export function createListIndexes(parentListIndex, oldList, newList, oldIndexes)
         }
         return newIndexes;
     }
+    // If lists are identical, return existing indexes unchanged (optimization)
     if (isSameList(oldList, newList)) {
         return oldIndexes;
     }
-    // インデックスベースのマップを使用して効率化
+    // Use index-based map for efficiency
     const indexByValue = new Map();
     for (let i = 0; i < oldList.length; i++) {
-        // 重複値の場合は最後のインデックスが優先される（既存動作を維持）
+        // For duplicate values, the last index takes precedence (maintains existing behavior)
         indexByValue.set(oldList[i], i);
     }
+    // Build new indexes array by matching values with old list
     for (let i = 0; i < newList.length; i++) {
         const newValue = newList[i];
         const oldIndex = indexByValue.get(newValue);
         if (typeof oldIndex === "undefined") {
-            // 新しい要素
+            // New element
             const newListIndex = createListIndex(parentListIndex, i);
             newIndexes.push(newListIndex);
         }
         else {
-            // 既存要素の再利用
+            // Reuse existing element
             const existingListIndex = oldIndexes[oldIndex];
+            // Update index if position changed
             if (existingListIndex.index !== i) {
                 existingListIndex.index = i;
             }

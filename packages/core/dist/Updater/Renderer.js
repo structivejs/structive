@@ -6,189 +6,160 @@ import { getStructuredPathInfo } from "../StateProperty/getStructuredPathInfo";
 import { getStatePropertyRef } from "../StatePropertyRef/StatepropertyRef";
 import { raiseError } from "../utils";
 /**
- * Renderer は、State の変更（参照 IStatePropertyRef の集合）に対応して、
- * PathTree を辿りつつ各 Binding（IBinding）へ applyChange を委譲するコーディネータです。
+ * Renderer is a coordinator that responds to State changes (a set of IStatePropertyRef references)
+ * by traversing the PathTree and delegating applyChange to each Binding (IBinding).
  *
- * 主な役割
- * - reorderList: 要素単位の並べ替え要求を収集し、親リスト単位の差分（IListDiff）へ変換して適用
- * - render: エントリポイント。ReadonlyState を生成し、reorder → 各 ref の描画（renderItem）の順で実行
- * - renderItem: 指定 ref に紐づく Binding を更新し、静的依存（子 PathNode）と動的依存を再帰的に辿る
+ * Main responsibilities
+ * - reorderList: Collects element-level reordering requests and converts them to parent list-level diffs (IListDiff) for application
+ * - render: Entry point. Creates ReadonlyState and executes in order: reorder → rendering each ref (renderItem)
+ * - renderItem: Updates bindings tied to specified ref and recursively traverses static dependencies (child PathNodes) and dynamic dependencies
  *
- * コントラクト
- * - Binding#applyChange(renderer): 変更があった場合は renderer.updatedBindings に自分自身を追加すること
- * - readonlyState[GetByRefSymbol](ref): ref の新しい値（読み取り専用ビュー）を返すこと
+ * Contract
+ * - Binding#applyChange(renderer): If there are changes, must add itself to renderer.updatedBindings
+ * - readonlyState[GetByRefSymbol](ref): Returns the new value (read-only view) of ref
  *
- * スレッド/再入
- * - 同期実行前提。
+ * Thread/Reentrancy
+ * - Assumes synchronous execution.
  *
- * 代表的な例外
- * - UPD-001/002: Engine/ReadonlyState の未初期化
- * - UPD-003/004/005/006: ListIndex/ParentInfo/OldList* の不整合や ListDiff 未生成
- * - PATH-101: PathNode が見つからない
+ * Common exceptions
+ * - UPD-001/002: Engine/ReadonlyState not initialized
+ * - UPD-003/004/005/006: ListIndex/ParentInfo/OldList* inconsistency or ListDiff not generated
+ * - PATH-101: PathNode not found
  */
 class Renderer {
-    #updatingRefs = [];
-    #updatingRefSet = new Set();
+    updatedBindings = new Set();
+    processedRefs = new Set();
+    lastListInfoByRef = new Map();
+    _engine;
+    _updater;
+    _updatingRefs = [];
+    _updatingRefSet = new Set();
+    _readonlyState = null;
+    _readonlyHandler = null;
     /**
-     * このレンダリングサイクルで「変更あり」となった Binding の集合。
-     * 注意: 実際に追加するのは各 binding.applyChange 実装側の責務。
+     * Constructs a new Renderer instance.
+     *
+     * @param {IComponentEngine} engine - The component engine to render
+     * @param {IUpdater} updater - The updater managing this renderer
      */
-    #updatedBindings = new Set();
-    /**
-     * 二重適用を避けるために処理済みとした参照。
-     * renderItem の再帰や依存関係の横断時に循環/重複を防ぐ。
-     */
-    #processedRefs = new Set();
-    /**
-     * レンダリング対象のエンジン。state, pathManager, bindings などのファサード。
-     */
-    #engine;
-    #readonlyState = null;
-    #readonlyHandler = null;
-    /**
-     * 親リスト参照ごとに「要素の新しい並び位置」を記録するためのインデックス配列。
-     * reorderList で収集し、後段で仮の IListDiff を生成するために用いる。
-     */
-    #reorderIndexesByRef = new Map();
-    #lastListInfoByRef = new Map();
-    #updater;
     constructor(engine, updater) {
-        this.#engine = engine;
-        this.#updater = updater;
+        this._engine = engine;
+        this._updater = updater;
     }
     get updatingRefs() {
-        return this.#updatingRefs;
+        return this._updatingRefs;
     }
     get updatingRefSet() {
-        return this.#updatingRefSet;
+        return this._updatingRefSet;
     }
     /**
-     * このサイクル中に更新された Binding の集合を返す（読み取り専用的に使用）。
-     */
-    get updatedBindings() {
-        return this.#updatedBindings;
-    }
-    /**
-     * 既に処理済みの参照集合を返す。二重適用の防止に利用する。
-     */
-    get processedRefs() {
-        return this.#processedRefs;
-    }
-    /**
-     * 読み取り専用 State ビューを取得する。render 実行中でなければ例外。
+     * Gets the read-only State view. Throws exception if not during render execution.
      * Throws: UPD-002
      */
     get readonlyState() {
-        if (!this.#readonlyState) {
+        if (!this._readonlyState) {
             raiseError({
                 code: "UPD-002",
                 message: "ReadonlyState not initialized",
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }
-        return this.#readonlyState;
+        return this._readonlyState;
     }
     get readonlyHandler() {
-        if (!this.#readonlyHandler) {
+        if (!this._readonlyHandler) {
             raiseError({
                 code: "UPD-002",
                 message: "ReadonlyHandler not initialized",
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }
-        return this.#readonlyHandler;
+        return this._readonlyHandler;
     }
     /**
-     * バッキングエンジンを取得する。未初期化の場合は例外。
-     * Throws: UPD-001
-     */
-    get engine() {
-        if (!this.#engine) {
-            raiseError({
-                code: "UPD-001",
-                message: "Engine not initialized",
-                docsUrl: "./docs/error-codes.md#upd",
-            });
-        }
-        return this.#engine;
-    }
-    get lastListInfoByRef() {
-        return this.#lastListInfoByRef;
-    }
-    /**
-     * リードオンリーな状態を生成し、コールバックに渡す
+     * Creates a read-only state and passes it to the callback
      * @param callback
      * @returns
      */
     createReadonlyState(callback) {
-        const handler = createReadonlyStateHandler(this.#engine, this.#updater, this);
-        const stateProxy = createReadonlyStateProxy(this.#engine.state, handler);
-        this.#readonlyState = stateProxy;
-        this.#readonlyHandler = handler;
+        const handler = createReadonlyStateHandler(this._engine, this._updater, this);
+        const stateProxy = createReadonlyStateProxy(this._engine.state, handler);
+        this._readonlyState = stateProxy;
+        this._readonlyHandler = handler;
         try {
             return callback(stateProxy, handler);
         }
         finally {
-            this.#readonlyState = null;
-            this.#readonlyHandler = null;
+            this._readonlyState = null;
+            this._readonlyHandler = null;
         }
     }
     /**
-     * レンダリングのエントリポイント。ReadonlyState を生成し、
-     * 並べ替え処理→各参照の描画の順に処理します。
+     * Entry point for rendering. Creates ReadonlyState and
+     * processes in order: reordering → rendering each reference.
      *
-     * 注意
-     * - readonlyState はこのメソッドのスコープ内でのみ有効。
-     * - SetCacheableSymbol により参照解決のキャッシュをまとめて有効化できる。
+     * Notes
+     * - readonlyState is only valid within this method's scope.
+     * - SetCacheableSymbol enables caching of reference resolution in bulk.
      */
     render(items) {
-        this.#reorderIndexesByRef.clear();
-        this.#processedRefs.clear();
-        this.#updatedBindings.clear();
-        this.#updatingRefs = [...items];
-        this.#updatingRefSet = new Set(items);
-        // 実際のレンダリングロジックを実装
+        this.processedRefs.clear();
+        this.updatedBindings.clear();
+        this._updatingRefs = [...items];
+        this._updatingRefSet = new Set(items);
+        // Implement actual rendering logic
         this.createReadonlyState((readonlyState, readonlyHandler) => {
-            // まずはリストの並び替えを処理
+            // First, process list reordering
             const remainItems = [];
             const itemsByListRef = new Map();
             const refSet = new Set();
+            // Phase 1: Classify refs into list elements and other refs
             for (let i = 0; i < items.length; i++) {
                 const ref = items[i];
                 refSet.add(ref);
-                if (!this.#engine.pathManager.elements.has(ref.info.pattern)) {
+                // Check if this ref represents a list element
+                if (!this._engine.pathManager.elements.has(ref.info.pattern)) {
+                    // Not a list element - handle later
                     remainItems.push(ref);
                     continue;
                 }
+                // This is a list element - group by parent list ref
                 const listRef = ref.parentRef ?? raiseError({
                     code: "UPD-004",
                     message: `ParentInfo is null for ref: ${ref.key}`,
                     context: { refKey: ref.key, pattern: ref.info.pattern },
                     docsUrl: "./docs/error-codes.md#upd",
                 });
+                // Group element refs by their parent list
                 if (!itemsByListRef.has(listRef)) {
                     itemsByListRef.set(listRef, new Set());
                 }
                 itemsByListRef.get(listRef).add(ref);
             }
+            // Phase 2: Apply changes to list bindings (for list reordering)
             for (const [listRef, refs] of itemsByListRef) {
+                // If the parent list itself is in the update set, skip individual elements
+                // (parent list update will handle all children)
                 if (refSet.has(listRef)) {
                     for (const ref of refs) {
-                        this.#processedRefs.add(ref); // 終了済み
+                        this.processedRefs.add(ref); // Completed
                     }
-                    continue; // 親リストが存在する場合はスキップ
+                    continue; // Skip if parent list exists
                 }
-                const bindings = this.#engine.getBindings(listRef);
+                // Apply list bindings (e.g., for reordering)
+                const bindings = this._engine.getBindings(listRef);
                 for (let i = 0; i < bindings.length; i++) {
-                    if (this.#updatedBindings.has(bindings[i]))
+                    if (this.updatedBindings.has(bindings[i]))
                         continue;
                     bindings[i].applyChange(this);
                 }
                 this.processedRefs.add(listRef);
             }
+            // Phase 3: Process remaining refs (non-list-elements)
             for (let i = 0; i < remainItems.length; i++) {
                 const ref = remainItems[i];
-                const node = findPathNodeByPath(this.#engine.pathManager.rootNode, ref.info.pattern);
+                // Find the PathNode for this ref pattern
+                const node = findPathNodeByPath(this._engine.pathManager.rootNode, ref.info.pattern);
                 if (node === null) {
                     raiseError({
                         code: "PATH-101",
@@ -201,11 +172,13 @@ class Renderer {
                     this.renderItem(ref, node);
                 }
             }
-            // 子コンポーネントへの再描画通知
-            if (this.#engine.structiveChildComponents.size > 0) {
-                for (const structiveComponent of this.#engine.structiveChildComponents) {
-                    const structiveComponentBindings = this.#engine.bindingsByComponent.get(structiveComponent) ?? new Set();
+            // Phase 4: Notify child Structive components of changes
+            // This allows nested components to update based on parent state changes
+            if (this._engine.structiveChildComponents.size > 0) {
+                for (const structiveComponent of this._engine.structiveChildComponents) {
+                    const structiveComponentBindings = this._engine.bindingsByComponent.get(structiveComponent) ?? new Set();
                     for (const binding of structiveComponentBindings) {
+                        // Notify each binding about refs that might affect it
                         binding.notifyRedraw(remainItems);
                     }
                 }
@@ -213,43 +186,49 @@ class Renderer {
         });
     }
     /**
-     * 単一の参照 ref と対応する PathNode を描画します。
+     * Renders a single reference ref and its corresponding PathNode.
      *
-     * - まず自身のバインディング適用
-     * - 次に静的依存（ワイルドカード含む）
-     * - 最後に動的依存（ワイルドカードは階層的に展開）
+     * - First applies its own bindings
+     * - Then static dependencies (including wildcards)
+     * - Finally dynamic dependencies (wildcards are expanded hierarchically)
      *
-     * 静的依存（子ノード）
-     * - それ以外: 親の listIndex を引き継いで子参照を生成して再帰描画
+     * Static dependencies (child nodes)
+     * - Otherwise: Inherit parent's listIndex to generate child reference and render recursively
      *
-     * 動的依存
-     * - pathManager.dynamicDependencies に登録されたパスを基に、ワイルドカードを展開しつつ描画を再帰
+     * Dynamic dependencies
+     * - Based on paths registered in pathManager.dynamicDependencies, render recursively while expanding wildcards
      *
      * Throws
-     * - UPD-006: WILDCARD 分岐で ListDiff が未計算（null）の場合
-     * - PATH-101: 動的依存の PathNode 未検出
+     * - UPD-006: ListDiff is not calculated (null) in WILDCARD branch
+     * - PATH-101: PathNode not detected for dynamic dependency
      */
     renderItem(ref, node) {
         this.processedRefs.add(ref);
-        // バインディングに変更を適用する
-        // 変更があったバインディングは updatedBindings に追加する（applyChange 実装の責務）
-        const bindings = this.#engine.getBindings(ref);
+        // Apply changes to bindings
+        // Bindings with changes must add themselves to updatedBindings (responsibility of applyChange implementation)
+        const bindings = this._engine.getBindings(ref);
         for (let i = 0; i < bindings.length; i++) {
-            if (this.#updatedBindings.has(bindings[i]))
+            if (this.updatedBindings.has(bindings[i]))
                 continue;
             bindings[i].applyChange(this);
         }
+        // Calculate which list indexes are new (added) since last render
+        // This optimization ensures we only traverse new list elements
         let diffListIndexes = new Set();
-        if (this.#engine.pathManager.lists.has(ref.info.pattern)) {
+        if (this._engine.pathManager.lists.has(ref.info.pattern)) {
+            // Get current list indexes for this ref
             const currentListIndexes = new Set(this.readonlyState[GetListIndexesByRefSymbol](ref) ?? []);
+            // Get previous list indexes from last render
             const { listIndexes } = this.lastListInfoByRef.get(ref) ?? {};
             const lastListIndexSet = new Set(listIndexes ?? []);
+            // Compute difference: new indexes = current - previous
             diffListIndexes = currentListIndexes.difference(lastListIndexSet);
         }
-        // 静的な依存関係を辿る
+        // Traverse static dependencies
         for (const [name, childNode] of node.childNodeByName) {
             const childInfo = getStructuredPathInfo(childNode.currentPath);
             if (name === WILDCARD) {
+                // Wildcard child: traverse only new list indexes
                 for (const listIndex of diffListIndexes) {
                     const childRef = getStatePropertyRef(childInfo, listIndex);
                     if (!this.processedRefs.has(childRef)) {
@@ -258,18 +237,19 @@ class Renderer {
                 }
             }
             else {
+                // Regular property child: inherit parent's listIndex
                 const childRef = getStatePropertyRef(childInfo, ref.listIndex);
                 if (!this.processedRefs.has(childRef)) {
                     this.renderItem(childRef, childNode);
                 }
             }
         }
-        // 動的な依存関係を辿る
-        const deps = this.#engine.pathManager.dynamicDependencies.get(ref.info.pattern);
+        // Traverse dynamic dependencies
+        const deps = this._engine.pathManager.dynamicDependencies.get(ref.info.pattern);
         if (deps) {
             for (const depPath of deps) {
                 const depInfo = getStructuredPathInfo(depPath);
-                const depNode = findPathNodeByPath(this.#engine.pathManager.rootNode, depInfo.pattern);
+                const depNode = findPathNodeByPath(this._engine.pathManager.rootNode, depInfo.pattern);
                 if (depNode === null) {
                     raiseError({
                         code: "PATH-101",
@@ -279,16 +259,22 @@ class Renderer {
                     });
                 }
                 if (depInfo.wildcardCount > 0) {
+                    // Dynamic dependency has wildcards - need hierarchical expansion
                     const infos = depInfo.wildcardParentInfos;
+                    // Recursive walker to expand wildcards level by level
                     const walk = (depRef, index, nextInfo) => {
+                        // Get list indexes at current wildcard level
                         const listIndexes = this.readonlyState[GetListIndexesByRefSymbol](depRef) || [];
                         if ((index + 1) < infos.length) {
+                            // More wildcard levels to traverse
                             for (let i = 0; i < listIndexes.length; i++) {
                                 const nextRef = getStatePropertyRef(nextInfo, listIndexes[i]);
+                                // Recurse to next wildcard level
                                 walk(nextRef, index + 1, infos[index + 1]);
                             }
                         }
                         else {
+                            // Reached final wildcard level - render all elements
                             for (let i = 0; i < listIndexes.length; i++) {
                                 const subDepRef = getStatePropertyRef(depInfo, listIndexes[i]);
                                 if (!this.processedRefs.has(subDepRef)) {
@@ -297,10 +283,12 @@ class Renderer {
                             }
                         }
                     };
+                    // Start traversal from first wildcard parent
                     const startRef = getStatePropertyRef(depInfo.wildcardParentInfos[0], null);
                     walk(startRef, 0, depInfo.wildcardParentInfos[1] || null);
                 }
                 else {
+                    // No wildcards - simple direct dependency
                     const depRef = getStatePropertyRef(depInfo, null);
                     if (!this.processedRefs.has(depRef)) {
                         this.renderItem(depRef, depNode);
@@ -311,12 +299,19 @@ class Renderer {
     }
 }
 /**
- * 便宜関数。Renderer のインスタンス化と render 呼び出しをまとめて行う。
+ * Convenience function. Creates a Renderer instance and calls render in one go.
  */
 export function render(refs, engine, updater) {
     const renderer = new Renderer(engine, updater);
     renderer.render(refs);
 }
+/**
+ * Creates a new Renderer instance.
+ *
+ * @param {IComponentEngine} engine - The component engine to render
+ * @param {IUpdater} updater - The updater managing this renderer
+ * @returns {IRenderer} A new renderer instance
+ */
 export function createRenderer(engine, updater) {
     return new Renderer(engine, updater);
 }

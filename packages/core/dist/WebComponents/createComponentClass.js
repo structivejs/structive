@@ -1,20 +1,20 @@
 /**
  * createComponentClass.ts
  *
- * StructiveのWeb Components用カスタム要素クラスを動的に生成するユーティリティです。
+ * Utility for dynamically generating custom element classes for Structive Web Components.
  *
- * 主な役割:
- * - ユーザー定義のcomponentData（stateClass, html, css等）からWeb Componentsクラスを生成
- * - StateClass/テンプレート/CSS/バインディング情報などをIDで一元管理・登録
- * - 独自のget/setトラップやバインディング、親子コンポーネント探索、フィルター拡張など多機能な基盤を提供
- * - 静的プロパティでテンプレート・スタイル・StateClass・フィルター・getter情報などにアクセス可能
- * - defineメソッドでカスタム要素として登録
+ * Main responsibilities:
+ * - Generates Web Components classes from user-defined componentData (stateClass, html, css, etc.)
+ * - Centrally manages and registers StateClass/template/CSS/binding information by ID
+ * - Provides a feature-rich foundation including custom get/set traps, bindings, parent-child component discovery, and filter extensions
+ * - Provides access to template, styles, StateClass, filters, and getter information via static properties
+ * - Registers custom elements via the define method
  *
- * 設計ポイント:
- * - findStructiveParentで親Structiveコンポーネントを探索し、階層的な状態管理を実現
- * - getter/setter/バインディング最適化に対応
- * - テンプレート・CSS・StateClass・バインディング情報をIDで一元管理し、再利用性・拡張性を確保
- * - フィルターやバインディング情報も静的プロパティで柔軟に拡張可能
+ * Design points:
+ * - Uses findStructiveParent to discover parent Structive components, enabling hierarchical state management
+ * - Supports getter/setter/binding optimization
+ * - Centrally manages template/CSS/StateClass/binding information by ID, ensuring reusability and extensibility
+ * - Filters and binding information can be flexibly extended via static properties
  */
 import { inputBuiltinFilters, outputBuiltinFilters } from "../Filter/builtinFilters.js";
 import { generateId } from "../GlobalId/generateId.js";
@@ -28,61 +28,56 @@ import { getBaseClass } from "./getBaseClass.js";
 import { getComponentConfig } from "./getComponentConfig.js";
 import { findStructiveParent } from "./findStructiveParent.js";
 import { createPathManager } from "../PathManager/PathManager.js";
+/**
+ * Creates a custom Web Component class from user-defined component data.
+ *
+ * This factory function generates a fully-configured custom element class that:
+ * - Extends the appropriate base class (HTMLElement or specified custom element)
+ * - Registers all templates, styles, and state management
+ * - Provides static accessors for component resources (template, stylesheet, stateClass, filters)
+ * - Implements the IComponent interface with lifecycle hooks and state management
+ *
+ * @param {IUserComponentData} componentData - Configuration object containing stateClass, html, and css
+ * @returns {StructiveComponentClass} A custom element class ready to be registered via customElements.define()
+ *
+ * @example
+ * const MyComponent = createComponentClass({
+ *   stateClass: { count: 0 },
+ *   html: '<div>{{count}}</div>',
+ *   css: 'div { color: blue; }'
+ * });
+ * MyComponent.define('my-component');
+ */
 export function createComponentClass(componentData) {
+    // Extract and process component configuration
     const config = (componentData.stateClass.$config ?? {});
     const componentConfig = getComponentConfig(config);
+    // Generate unique ID for this component class
     const id = generateId();
     const { html, css, stateClass } = componentData;
+    // Initialize filter collections with built-in filters
     const inputFilters = Object.assign({}, inputBuiltinFilters);
     const outputFilters = Object.assign({}, outputBuiltinFilters);
+    // Mark as Structive component and register all resources
     stateClass.$isStructive = true;
     registerHtml(id, html);
     registerCss(id, css);
     registerStateClass(id, stateClass);
+    // Determine base class to extend (HTMLElement or custom element)
     const baseClass = getBaseClass(componentConfig.extends);
     const extendTagName = componentConfig.extends;
     return class extends baseClass {
-        #engine;
-        constructor() {
-            super();
-            this.#engine = createComponentEngine(componentConfig, this);
-            this.#engine.setup();
-        }
-        connectedCallback() {
-            this.#engine.connectedCallback();
-        }
-        disconnectedCallback() {
-            this.#engine.disconnectedCallback();
-        }
-        #parentStructiveComponent;
-        get parentStructiveComponent() {
-            if (typeof this.#parentStructiveComponent === "undefined") {
-                this.#parentStructiveComponent = findStructiveParent(this);
-            }
-            return this.#parentStructiveComponent;
-        }
-        get state() {
-            return this.#engine.stateInput;
-        }
-        get stateBinding() {
-            return this.#engine.stateBinding;
-        }
-        get isStructive() {
-            return this.#engine.stateClass.$isStructive ?? false;
-        }
-        get readyResolvers() {
-            return this.#engine.readyResolvers;
-        }
-        getBindingsFromChild(component) {
-            return this.#engine.bindingsByComponent.get(component) ?? null;
-        }
-        registerChildComponent(component) {
-            this.#engine.registerChildComponent(component);
-        }
-        unregisterChildComponent(component) {
-            this.#engine.unregisterChildComponent(component);
-        }
+        /**
+         * Registers this component class as a custom element.
+         *
+         * @param {string} tagName - The custom element tag name (must contain a hyphen)
+         * @returns {void}
+         *
+         * @example
+         * MyComponent.define('my-component');
+         */
         static define(tagName) {
+            // Register as extended built-in element if extends is specified
             if (extendTagName) {
                 customElements.define(tagName, this, { extends: extendTagName });
             }
@@ -90,63 +85,200 @@ export function createComponentClass(componentData) {
                 customElements.define(tagName, this);
             }
         }
+        /** Gets the unique numeric ID for this component class */
         static get id() {
             return id;
         }
-        static #html = html;
+        /** HTML template string for this component */
+        static _html = html;
         static get html() {
-            return this.#html;
+            return this._html;
         }
+        /**
+         * Updates the HTML template and invalidates cached template/pathManager.
+         * This allows dynamic template modification after component class creation.
+         */
         static set html(value) {
-            this.#html = value;
+            this._html = value;
             registerHtml(this.id, value);
-            this.#template = null;
-            this.#pathManager = null; // パス情報をリセット
+            this._template = null;
+            this._pathManager = null; // Reset path information when template changes
         }
-        static #css = css;
+        /** CSS stylesheet string for this component */
+        static _css = css;
         static get css() {
-            return this.#css;
+            return this._css;
         }
+        /**
+         * Updates the CSS stylesheet and invalidates cached stylesheet.
+         * Allows dynamic style modification after component class creation.
+         */
         static set css(value) {
-            this.#css = value;
+            this._css = value;
             registerCss(this.id, value);
-            this.#styleSheet = null;
+            this._styleSheet = null;
         }
-        static #template = null;
+        /** Cached HTMLTemplateElement instance */
+        static _template = null;
+        /**
+         * Gets the compiled HTMLTemplateElement for this component.
+         * Lazily loads and caches on first access.
+         */
         static get template() {
-            if (!this.#template) {
-                this.#template = getTemplateById(this.id);
+            if (!this._template) {
+                this._template = getTemplateById(this.id);
             }
-            return this.#template;
+            return this._template;
         }
-        static #styleSheet = null;
+        /** Cached CSSStyleSheet instance */
+        static _styleSheet = null;
+        /**
+         * Gets the CSSStyleSheet for this component.
+         * Lazily loads and caches on first access.
+         */
         static get styleSheet() {
-            if (!this.#styleSheet) {
-                this.#styleSheet = getStyleSheetById(this.id);
+            if (!this._styleSheet) {
+                this._styleSheet = getStyleSheetById(this.id);
             }
-            return this.#styleSheet;
+            return this._styleSheet;
         }
-        static #stateClass = null;
+        /** Cached state class definition */
+        static _stateClass = null;
+        /**
+         * Gets the state class definition for this component.
+         * Lazily loads and caches on first access.
+         */
         static get stateClass() {
-            if (!this.#stateClass) {
-                this.#stateClass = getStateClassById(this.id);
+            if (!this._stateClass) {
+                this._stateClass = getStateClassById(this.id);
             }
-            return this.#stateClass;
+            return this._stateClass;
         }
-        static #inputFilters = inputFilters;
+        /** Input filters for data binding transformations */
+        static _inputFilters = inputFilters;
         static get inputFilters() {
-            return this.#inputFilters;
+            return this._inputFilters;
         }
-        static #outputFilters = outputFilters;
+        /** Output filters for data binding transformations */
+        static _outputFilters = outputFilters;
         static get outputFilters() {
-            return this.#outputFilters;
+            return this._outputFilters;
         }
-        static #pathManager = null;
+        /** Cached PathManager instance for managing state paths and bindings */
+        static _pathManager = null;
+        /**
+         * Gets the PathManager for analyzing and managing state property paths.
+         * Lazily creates and caches on first access.
+         */
         static get pathManager() {
-            if (!this.#pathManager) {
-                this.#pathManager = createPathManager(this);
+            if (!this._pathManager) {
+                this._pathManager = createPathManager(this);
             }
-            return this.#pathManager;
+            return this._pathManager;
+        }
+        /** Component engine that manages lifecycle, state, and rendering */
+        _engine;
+        /** Cached reference to parent Structive component (undefined = not yet searched) */
+        _parentStructiveComponent;
+        /**
+         * Constructs a new component instance.
+         * Creates the component engine and performs initial setup.
+         */
+        constructor() {
+            super();
+            // Create the component engine with configuration
+            this._engine = createComponentEngine(componentConfig, this);
+            // Initialize bindings, state, and prepare for rendering
+            this._engine.setup();
+        }
+        /**
+         * Called when the element is inserted into the DOM.
+         * Triggers component initialization and rendering.
+         */
+        connectedCallback() {
+            this._engine.connectedCallback();
+        }
+        /**
+         * Called when the element is removed from the DOM.
+         * Performs cleanup and resource disposal.
+         */
+        disconnectedCallback() {
+            this._engine.disconnectedCallback();
+        }
+        /**
+         * Gets the nearest parent Structive component in the DOM tree.
+         * Result is cached after first lookup for performance.
+         *
+         * @returns {StructiveComponent | null} Parent component or null if none found
+         */
+        get parentStructiveComponent() {
+            if (typeof this._parentStructiveComponent === "undefined") {
+                // Search up the DOM tree for parent Structive component
+                this._parentStructiveComponent = findStructiveParent(this);
+            }
+            return this._parentStructiveComponent;
+        }
+        /**
+         * Gets the state input interface for accessing and modifying component state.
+         *
+         * @returns {IComponentStateInput} State input interface
+         */
+        get state() {
+            return this._engine.stateInput;
+        }
+        /**
+         * Gets the state binding interface for managing bindings between parent and child components.
+         *
+         * @returns {IComponentStateBinding} State binding interface
+         */
+        get stateBinding() {
+            return this._engine.stateBinding;
+        }
+        /**
+         * Checks if this is a Structive component.
+         *
+         * @returns {boolean} True if this is a Structive component
+         */
+        get isStructive() {
+            return this._engine.stateClass.$isStructive ?? false;
+        }
+        /**
+         * Gets the Promise resolvers for component ready state.
+         * Allows external code to wait for component initialization to complete.
+         *
+         * @returns {PromiseWithResolvers<void>} Promise resolvers for ready state
+         */
+        get readyResolvers() {
+            return this._engine.readyResolvers;
+        }
+        /**
+         * Retrieves the set of bindings associated with a specific child component.
+         *
+         * @param {IComponent} component - The child component to query
+         * @returns {Set<IBinding> | null} Set of bindings or null if component not found
+         */
+        getBindingsFromChild(component) {
+            return this._engine.bindingsByComponent.get(component) ?? null;
+        }
+        /**
+         * Registers a child component, establishing parent-child relationship.
+         * Called when a child Structive component is connected.
+         *
+         * @param {StructiveComponent} component - The child component to register
+         * @returns {void}
+         */
+        registerChildComponent(component) {
+            this._engine.registerChildComponent(component);
+        }
+        /**
+         * Unregisters a child component, cleaning up the parent-child relationship.
+         * Called when a child Structive component is disconnected.
+         *
+         * @param {StructiveComponent} component - The child component to unregister
+         * @returns {void}
+         */
+        unregisterChildComponent(component) {
+            this._engine.unregisterChildComponent(component);
         }
     };
 }

@@ -1,20 +1,21 @@
 /**
  * get.ts
  *
- * StateClassのProxyトラップとして、プロパティアクセス時の値取得処理を担う関数（get）の実装です。
+ * Implementation of the get function as a Proxy trap for StateClass,
+ * handling property access and value retrieval.
  *
- * 主な役割:
- * - 文字列プロパティの場合、特殊プロパティ（$1〜$9, $resolve, $getAll, $navigate）に応じた値やAPIを返却
- * - 通常のプロパティはgetResolvedPathInfoでパス情報を解決し、getListIndexでリストインデックスを取得
- * - getByRefで構造化パス・リストインデックスに対応した値を取得
- * - シンボルプロパティの場合はhandler.callableApi経由でAPIを呼び出し
- * - それ以外はReflect.getで通常のプロパティアクセスを実行
+ * Main responsibilities:
+ * - For string properties, returns values or APIs based on special properties ($1-$9, $resolve, $getAll, $navigate)
+ * - For regular properties, resolves path info via getResolvedPathInfo and retrieves list index via getListIndex
+ * - Retrieves values corresponding to structured path and list index via getByRef
+ * - For symbol properties, calls APIs via handler.callableApi
+ * - For other cases, executes normal property access via Reflect.get
  *
- * 設計ポイント:
- * - $1〜$9は直近のStatePropertyRefのリストインデックス値を返す特殊プロパティ
- * - $resolve, $getAll, $navigateはAPI関数やルーターインスタンスを返す
- * - 通常のプロパティアクセスもバインディングや多重ループに対応
- * - シンボルAPIやReflect.getで拡張性・互換性も確保
+ * Design points:
+ * - $1-$9 are special properties that return list index values from the most recent StatePropertyRef
+ * - $resolve, $getAll, $navigate return API functions or router instances
+ * - Regular property access also supports bindings and nested loops
+ * - Ensures extensibility and compatibility through symbol APIs and Reflect.get
  */
 import { getRouter } from "../../Router/Router.js";
 import { getResolvedPathInfo } from "../../StateProperty/getResolvedPathInfo.js";
@@ -35,14 +36,33 @@ import { getAll } from "../apis/getAll.js";
 import { getListIndexesByRef } from "../methods/getListIndexesByRef.js";
 import { updatedCallback } from "../apis/updatedCallback.js";
 
+/**
+ * Proxy trap handler for property access on State objects.
+ * 
+ * This function intercepts property access and handles:
+ * - Index name properties ($1-$9): Returns list index values from current context
+ * - Special properties ($resolve, $getAll, $navigate, etc.): Returns API functions
+ * - String properties: Resolves path and retrieves value via getByRef
+ * - Symbol properties: Returns internal API functions for StateClass operations
+ * - Other properties: Falls back to default Reflect.get behavior
+ * 
+ * @param target - State object being accessed
+ * @param prop - Property key being accessed (string, symbol, or other)
+ * @param receiver - Proxy object that triggered this trap
+ * @param handler - State handler containing context and configuration
+ * @returns Value of the accessed property or an API function
+ * @throws {Error} LIST-201 - When list index is not found for index name properties
+ */
 export function get(
   target  : Object, 
   prop    : PropertyKey, 
   receiver: IStateProxy,
   handler : IStateHandler
 ): any {
+  // Check if property is an index name ($1-$9)
   const index = indexByIndexName[prop];
   if (typeof index !== "undefined") {
+    // Retrieve list index from the most recent property reference
     const listIndex = handler.lastRefStack?.listIndex;
     return listIndex?.indexes[index] ?? raiseError({
       code: 'LIST-201',
@@ -52,7 +72,9 @@ export function get(
       severity: 'error',
     });
   }
+  // Handle string properties
   if (typeof prop === "string") {
+    // Check for special properties starting with $
     if (prop[0] === "$") {
       switch (prop) {
         case "$resolve":
@@ -67,6 +89,7 @@ export function get(
           return handler.engine.owner;
       }
     }
+    // Regular property access: resolve path, get list index, and retrieve value
     const resolvedInfo = getResolvedPathInfo(prop);
     const listIndex = getListIndex(resolvedInfo, receiver, handler);
     const ref = getStatePropertyRef(resolvedInfo.info, listIndex);
@@ -78,7 +101,9 @@ export function get(
     );
 
   } else if (typeof prop === "symbol") {
+    // Handle symbol properties for internal APIs
     if (handler.symbols.has(prop)) {
+      // Return API functions based on symbol type
       switch (prop) {
         case GetByRefSymbol: 
           return (ref: IStatePropertyRef) => 
@@ -98,6 +123,7 @@ export function get(
             updatedCallback(target, refs, receiver, handler);
       }
     } else {
+      // Unknown symbol, use default behavior
       return Reflect.get(
         target, 
         prop, 

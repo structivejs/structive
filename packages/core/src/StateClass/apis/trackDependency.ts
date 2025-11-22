@@ -1,34 +1,34 @@
 /**
  * trackDependency.ts
  *
- * StateClassのAPIとして、getterチェーン中に参照されたパス間の
- * 依存関係を動的に登録するための関数（trackDependency）の実装です。
+ * Implementation of trackDependency function for StateClass API to dynamically register
+ * dependencies between paths referenced during getter chains.
  *
- * 主な役割:
- * - 現在解決中のStatePropertyRef（lastRefStack）を取得
- * - pathManager.gettersに登録されているgetterの場合のみ依存を追跡
- * - 自身と同一パターンでない参照に対してaddDynamicDependencyを呼び出す
+ * Main responsibilities:
+ * - Retrieves currently resolving StatePropertyRef (lastRefStack)
+ * - Tracks dependencies only for getters registered in pathManager.getters
+ * - Calls addDynamicDependency for references with different patterns than itself
  *
- * 設計ポイント:
- * - lastRefStackが存在しない場合はSTATE-202エラーを発生させる
- * - getter同士の再帰（自己依存）は登録しない
- * - 動的依存はpathManagerに集約し、キャッシュの無効化に利用する
+ * Design points:
+ * - Raises STATE-202 error if lastRefStack doesn't exist
+ * - Does not register recursive getter dependencies (self-reference)
+ * - Dynamic dependencies are aggregated in pathManager and used for cache invalidation
  */
 import { raiseError } from "../../utils";
 import { IStateHandler, IStateProxy } from "../types";
 
 /**
- * 現在解決中のgetterから、指定されたパスへの動的依存を登録する関数を返します。
+ * Returns a function to register dynamic dependency from currently resolving getter to specified path.
  *
- * - pathManager.gettersに登録されているgetterのみ依存追跡を行う
- * - 自己参照は除外し、異なるパターン間の依存だけを記録
- * - 動的依存はpathManager.addDynamicDependencyで集中管理される
+ * - Only tracks dependencies for getters registered in pathManager.getters
+ * - Excludes self-references, only recording dependencies between different patterns
+ * - Dynamic dependencies are centrally managed via pathManager.addDynamicDependency
  *
- * @param target   プロキシ対象オブジェクト
- * @param prop     アクセスされたプロパティキー
- * @param receiver プロキシレシーバ
- * @param handler  StateClassハンドラ
- * @returns        引数pathで指定されたパターンへの依存を登録する無名関数
+ * @param target   - Proxy target object
+ * @param prop     - Accessed property key
+ * @param receiver - Proxy receiver
+ * @param handler  - StateClass handler
+ * @returns        Anonymous function that registers dependency to pattern specified by path argument
  */
 export function trackDependency(
   target: Object, 
@@ -37,12 +37,15 @@ export function trackDependency(
   handler: IStateHandler
 ): Function {
   return (path: string): void => {
+    // Get the currently resolving getter's info from the stack
     const lastInfo = handler.lastRefStack?.info ?? raiseError({
       code: 'STATE-202',
       message: 'Internal error: lastRefStack is null',
       context: { where: 'trackDependency', path },
       docsUrl: '/docs/error-codes.md#state',
     });
+    // Only register dependency if source is a getter and target is different
+    // This prevents self-references and only tracks getter -> property dependencies
     if (handler.engine.pathManager.getters.has(lastInfo.pattern) &&
       lastInfo.pattern !== path) {
       handler.engine.pathManager.addDynamicDependency(lastInfo.pattern, path);

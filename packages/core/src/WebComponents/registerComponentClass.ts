@@ -1,16 +1,37 @@
 /**
  * registerComponentClass.ts
  *
- * StructiveのWeb Componentsクラスを指定したタグ名でカスタム要素として登録するユーティリティ関数です。
+ * Utility function to register a Structive Web Components class as a custom element with the specified tag name.
  *
- * 主な役割:
- * - registerComponentClass: 渡されたcomponentClassをtagNameでdefineメソッドを使って登録
+ * Main responsibilities:
+ * - registerComponentClass: Registers the provided componentClass using the define method with the given tagName
  *
- * 設計ポイント:
- * - Web Componentsのカスタム要素登録を簡潔にラップし、再利用性を高める設計
+ * Design points:
+ * - Concisely wraps Web Components custom element registration for improved reusability
  */
 import { StructiveComponentClass } from "./types";
 
+/**
+ * Registers a Structive component class as a custom element.
+ * 
+ * This is a convenience wrapper around the component class's define method,
+ * which internally calls customElements.define() with the appropriate configuration.
+ * 
+ * @param {string} tagName - The custom element tag name (must contain a hyphen, e.g., 'my-button')
+ * @param {StructiveComponentClass} componentClass - The component class to register
+ * @returns {void}
+ * @throws {DOMException} If the tag name is invalid or already registered
+ * 
+ * @example
+ * const ButtonComponent = createComponentClass({
+ *   stateClass: { count: 0 },
+ *   html: '<button>{{count}}</button>',
+ *   css: 'button { color: blue; }'
+ * });
+ * registerComponentClass('my-button', ButtonComponent);
+ * // Now <my-button> can be used in HTML
+ */
 export function registerComponentClass(tagName: string, componentClass: StructiveComponentClass) {
+  // Delegates to the component class's define method, which handles customElements.define()
   componentClass.define(tagName);
 }

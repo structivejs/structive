@@ -1,19 +1,19 @@
 /**
  * resolve.ts
  *
- * StateClassのAPIとして、パス（path）とインデックス（indexes）を指定して
- * Stateの値を取得・設定するための関数（resolve）の実装です。
+ * Implementation of resolve function for StateClass API to get/set State values
+ * by specifying path and indexes.
  *
- * 主な役割:
- * - 文字列パス（path）とインデックス配列（indexes）から、該当するState値の取得・設定を行う
- * - ワイルドカードや多重ループを含むパスにも対応
- * - value未指定時は取得（getByRef）、指定時は設定（setByRef）を実行
+ * Main responsibilities:
+ * - Gets or sets State values from string path and index array
+ * - Supports paths with wildcards and nested loops
+ * - Executes get (getByRef) when value not specified, set (setByRef) when specified
  *
- * 設計ポイント:
- * - getStructuredPathInfoでパスを解析し、ワイルドカード階層ごとにリストインデックスを解決
- * - handler.engine.getListIndexesSetで各階層のリストインデックス集合を取得
- * - getByRef/setByRefで値の取得・設定を一元的に処理
- * - 柔軟なバインディングやAPI経由での利用が可能
+ * Design points:
+ * - Parses path with getStructuredPathInfo and resolves list indexes for each wildcard level
+ * - Gets list index collection for each level via handler.engine.getListIndexesSet
+ * - Centrally handles value get/set with getByRef/setByRef
+ * - Enables flexible binding and API-based usage
  */
 import { getStructuredPathInfo } from "../../StateProperty/getStructuredPathInfo.js";
 import { raiseError } from "../../utils.js";
@@ -24,6 +24,16 @@ import { GetListIndexesByRefSymbol, SetByRefSymbol } from "../symbols.js";
 import { setByRef } from "../methods/setByRef.js";
 import { getByRef } from "../methods/getByRef.js";
 
+/**
+ * Creates a resolve function to get/set State values by path and indexes.
+ * @param target - Target object to access
+ * @param prop - Property key (unused but part of signature)
+ * @param receiver - State proxy for context
+ * @param handler - State handler with engine and dependency tracking
+ * @returns Function that accepts path, indexes, and optional value
+ * @throws STATE-202 If indexes length insufficient or setting on readonly proxy
+ * @throws LIST-201 If list index not found at any wildcard level
+ */
 export function resolve(
   target: Object, 
   prop: PropertyKey, 
@@ -34,12 +44,13 @@ export function resolve(
     const info = getStructuredPathInfo(path);
     const lastInfo = handler.lastRefStack?.info ?? null;
     if (lastInfo !== null && lastInfo.pattern !== info.pattern) {
-      // gettersに含まれる場合は依存関係を登録
+      // Register dependency if included in getters
       if (handler.engine.pathManager.onlyGetters.has(lastInfo.pattern)) {
         handler.engine.pathManager.addDynamicDependency(lastInfo.pattern, info.pattern);
       }
     }
 
+    // Validate that enough indexes are provided for all wildcard levels
     if (info.wildcardParentInfos.length > indexes.length) {
       raiseError({
         code: 'STATE-202',
@@ -49,12 +60,15 @@ export function resolve(
         severity: 'error',
       });
     }
-    // ワイルドカード階層ごとにListIndexを解決していく
+    // Resolve ListIndex for each wildcard level by walking through the hierarchy
     let listIndex: IListIndex | null = null;
     for(let i = 0; i < info.wildcardParentInfos.length; i++) {
       const wildcardParentPattern = info.wildcardParentInfos[i];
+      // Get reference for current wildcard level
       const wildcardRef = getStatePropertyRef(wildcardParentPattern, listIndex);
+      // Access the value to ensure list exists
       const tmpValue = getByRef(target, wildcardRef, receiver, handler);
+      // Get all list indexes at this level
       const listIndexes = receiver[GetListIndexesByRefSymbol](wildcardRef);
       if (listIndexes == null) {
         raiseError({
@@ -65,6 +79,7 @@ export function resolve(
           severity: 'error',
         });
       }
+      // Get the specific list index for this level using provided index
       const index = indexes[i];
       listIndex = listIndexes[index] ?? raiseError({
         code: 'LIST-201',
@@ -75,9 +90,11 @@ export function resolve(
       });
     }
 
-    // WritableかReadonlyかを判定して適切なメソッドを呼び出す
+    // Create reference with resolved list index and perform get or set
+    // Determine if Writable or Readonly and call appropriate method
     const ref = getStatePropertyRef(info, listIndex);
     const hasSetValue = typeof value !== "undefined";
+    // Check if receiver supports setting (has SetByRefSymbol)
     if (SetByRefSymbol in receiver) {
       if (!hasSetValue) {
         return getByRef(target, ref, receiver, handler);
@@ -88,7 +105,7 @@ export function resolve(
       if (!hasSetValue) {
         return getByRef(target, ref, receiver, handler);
       } else {
-        // readonlyなので、setはできない
+        // Cannot set on readonly proxy
         raiseError({
           code: 'STATE-202',
           message: `Cannot set value on a readonly proxy: ${path}`,

@@ -1,19 +1,28 @@
 /**
  * updatedCallback.ts
  *
- * StateClassのライフサイクルフック「$updatedCallback」を呼び出すユーティリティ関数です。
+ * Utility function to invoke the StateClass lifecycle hook "$updatedCallback".
  *
- * 主な役割:
- * - オブジェクト（target）に$updatedCallbackメソッドが定義されていれば呼び出す
- * - コールバックはtargetのthisコンテキストで呼び出し、IReadonlyStateProxy（receiver）を引数として渡す
- * - 非同期関数として実行可能（await対応）
+ * Main responsibilities:
+ * - Invokes $updatedCallback method if defined on the object (target)
+ * - Callback is invoked with target's this context, passing IReadonlyStateProxy (receiver) as argument
+ * - Executable as async function (await compatible)
  *
- * 設計ポイント:
- * - Reflect.getで$disconnectedCallbackプロパティを安全に取得
- * - 存在しない場合は何もしない
- * - ライフサイクル管理やクリーンアップ処理に利用
+ * Design points:
+ * - Safely retrieves $updatedCallback property using Reflect.get
+ * - Does nothing if the callback doesn't exist
+ * - Used for lifecycle management and update handling logic
  */
 import { UPDATED_CALLBACK_FUNC_NAME } from "../../constants";
+/**
+ * Invokes the $updatedCallback lifecycle hook if defined on the target.
+ * Aggregates updated paths and their indexes before passing to the callback.
+ * @param target - Target object to check for callback
+ * @param refs - Array of state property references that were updated
+ * @param receiver - State proxy to pass as this context
+ * @param handler - State handler (unused but part of signature)
+ * @returns Promise or void depending on callback implementation
+ */
 export function updatedCallback(target, refs, receiver, handler) {
     const callback = Reflect.get(target, UPDATED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {

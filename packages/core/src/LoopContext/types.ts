@@ -1,40 +1,80 @@
 /**
  * LoopContext/types.ts
  *
- * ループバインディング（for等）で利用するLoopContext（ループコンテキスト）管理用インターフェース定義です。
+ * Interface definitions for LoopContext management used in loop bindings (for, etc.).
  *
- * 主な役割:
- * - ILoopContext: ループごとのプロパティパス・インデックス・BindContentを紐付けて管理するインターフェース
- *   - path: ループのプロパティパス
- *   - info: パスの構造化情報
- *   - bindContent: 対応するBindContentインスタンス
- *   - listIndex: 現在のリストインデックス
- *   - parentLoopContext: 親ループコンテキスト（多重ループ対応）
- *   - assignListIndex/clearListIndex: インデックスの再割り当て・クリア
- *   - find: 名前からループコンテキストを検索（キャッシュ付き）
- *   - walk: 階層をたどってコールバックを実行
- *   - serialize: ループ階層を配列で取得
+ * Main responsibilities:
+ * - ILoopContext: Interface for managing property path, index, and BindContent associations per loop
+ *   - path: Property path of the loop
+ *   - info: Structured path information
+ *   - bindContent: Associated BindContent instance
+ *   - listIndex: Current list index
+ *   - parentLoopContext: Parent loop context (for nested loops)
+ *   - assignListIndex/clearListIndex: Index reassignment and clearing
+ *   - find: Search loop context by name (with caching)
+ *   - walk: Traverse hierarchy and execute callback
+ *   - serialize: Get loop hierarchy as array
  *
- * 設計ポイント:
- * - 多重ループやネストしたバインディング構造に柔軟に対応できる設計
- * - 親子関係や階層構造の探索・列挙・検索を効率的に行うためのインターフェース
+ * Design points:
+ * - Flexible design to support nested loops and binding structures
+ * - Efficient interface for searching, enumerating, and exploring parent-child relationships and hierarchical structures
  */
 import { IBindContent } from "../DataBinding/types";
 import { IListIndex } from "../ListIndex/types";
 import { IStructuredPathInfo } from "../StateProperty/types";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 
+/**
+ * Interface for loop context management in loop bindings.
+ * Manages property path, index, and BindContent associations for each loop iteration.
+ */
 export interface ILoopContext {
+  /** State property reference with path and index information */
   readonly ref              : IStatePropertyRef;
+  
+  /** Property path pattern of the loop */
   readonly path             : string;
+  
+  /** Structured path information */
   readonly info             : IStructuredPathInfo;
+  
+  /** Associated BindContent instance */
   readonly bindContent      : IBindContent;
+  
+  /** Current list index for this loop */
   readonly listIndex        : IListIndex;
+  
+  /** Parent loop context for nested loops, or null if top-level */
   readonly parentLoopContext: ILoopContext | null;
+  
+  /**
+   * Assigns a new list index to this loop context.
+   * @param listIndex - New list index to assign
+   */
   assignListIndex(listIndex: IListIndex): void;
+  
+  /**
+   * Clears the list index reference.
+   */
   clearListIndex(): void;
+  
+  /**
+   * Finds a loop context by path name in the hierarchy.
+   * @param name - Path name to search for
+   * @returns Loop context with matching path or null if not found
+   */
   find(name: string): ILoopContext | null;
+  
+  /**
+   * Walks through the loop context hierarchy from current to root.
+   * @param callback - Function to call for each loop context
+   */
   walk(callback: (loopContext: ILoopContext) => void): void;
+  
+  /**
+   * Serializes the loop context hierarchy to an array from root to current.
+   * @returns Array of loop contexts ordered from root to current
+   */
   serialize(): ILoopContext[];
   
 }

@@ -1,28 +1,110 @@
+/**
+ * Global configuration object with default values for all Structive components.
+ * This object can be modified directly to change application-wide behavior.
+ */
 const globalConfig = {
+    /** Enable debug mode for verbose logging */
     "debug": false,
-    "locale": "en-US", // The locale of the component, ex. "en-US", default is "en-US"
-    "shadowDomMode": "auto", // Shadow DOM mode: "auto" (default) | "none" | "force"
-    "enableMainWrapper": true, // Whether to use the main wrapper or not
-    "enableRouter": true, // Whether to use the router or not
-    "autoInsertMainWrapper": false, // Whether to automatically insert the main wrapper or not
-    "autoInit": true, // Whether to automatically initialize the component or not
-    "mainTagName": "app-main", // The tag name of the main wrapper, default is "app-main"
-    "routerTagName": "view-router", // The tag name of the router, default is "view-router"
-    "layoutPath": "", // The path to the layout file, default is ""
-    "autoLoadFromImportMap": false, // Whether to automatically load the component from the import map or not
+    /** Locale for internationalization (e.g., "en-US", "ja-JP") */
+    "locale": "en-US",
+    /** Shadow DOM mode: "auto" (default) uses Shadow DOM when supported, "none" disables it, "force" requires it */
+    "shadowDomMode": "auto",
+    /** Enable the main wrapper component */
+    "enableMainWrapper": true,
+    /** Enable the router component */
+    "enableRouter": true,
+    /** Automatically insert the main wrapper into the document */
+    "autoInsertMainWrapper": false,
+    /** Automatically initialize components on page load */
+    "autoInit": true,
+    /** Custom tag name for the main wrapper element */
+    "mainTagName": "app-main",
+    /** Custom tag name for the router element */
+    "routerTagName": "view-router",
+    /** Path to the layout template file */
+    "layoutPath": "",
+    /** Automatically load components referenced in import maps */
+    "autoLoadFromImportMap": false,
 };
+/**
+ * Retrieves the global configuration object.
+ * Returns a reference to the live configuration object, so modifications
+ * will affect all components.
+ *
+ * @returns {IConfig} The global configuration object
+ *
+ * @example
+ * const config = getGlobalConfig();
+ * config.debug = true; // Enable debug mode
+ * config.shadowDomMode = 'none'; // Disable Shadow DOM
+ */
 function getGlobalConfig() {
     return globalConfig;
 }
+/**
+ * Pre-initialized global configuration for convenient access.
+ * This is a direct reference to the result of getGlobalConfig().
+ *
+ * @example
+ * import { config } from './getGlobalConfig';
+ * console.log(config.locale); // 'en-US'
+ */
 const config$2 = getGlobalConfig();
 
+/**
+ * Error generation utility
+ *
+ * Purpose:
+ * - Throws exceptions with structured metadata (code, context, hint, documentation URL, severity, cause)
+ * - Follows existing Error conventions while adding additional properties to improve debuggability
+ *
+ * Example:
+ * raiseError({
+ *   code: 'UPD-001',
+ *   message: 'Engine not initialized',
+ *   context: { where: 'Renderer.render' },
+ *   docsUrl: './docs/error-codes.md#upd'
+ * });
+ */
+/**
+ * Raises an error with optional structured metadata.
+ *
+ * This function provides two calling patterns:
+ * 1. Simple string message for basic errors
+ * 2. Structured payload with metadata for enhanced debugging
+ *
+ * The structured payload attaches additional properties to the Error object,
+ * making it easier to debug issues in production by providing context, hints,
+ * and links to documentation.
+ *
+ * @param {string | StructiveErrorPayload} messageOrPayload - Error message or structured payload
+ * @returns {never} This function never returns (always throws)
+ *
+ * @example
+ * // Simple error
+ * raiseError('Something went wrong');
+ *
+ * @example
+ * // Structured error with metadata
+ * raiseError({
+ *   code: 'STATE-101',
+ *   message: 'Invalid state property',
+ *   context: { property: 'user.name', value: undefined },
+ *   hint: 'Ensure the property is initialized before access',
+ *   docsUrl: './docs/error-codes.md#state-101',
+ *   severity: 'error'
+ * });
+ */
 function raiseError(messageOrPayload) {
+    // Handle simple string message
     if (typeof messageOrPayload === "string") {
         throw new Error(messageOrPayload);
     }
+    // Handle structured payload
     const { message, code, context, hint, docsUrl, severity, cause } = messageOrPayload;
+    // Create base Error with the message
     const err = new Error(message);
-    // 追加情報はプロパティとして付与（メッセージは既存互換のまま）
+    // Attach additional metadata as properties (keeping message for existing compatibility)
     err.code = code;
     if (context)
         err.context = context;
@@ -40,18 +122,25 @@ function raiseError(messageOrPayload) {
 /**
  * errorMessages.ts
  *
- * フィルタ関数などで利用するエラーメッセージ生成ユーティリティです。
+ * Error message generation utilities used by filter functions.
  *
- * 主な役割:
- * - フィルタのオプションや値の型チェックで条件を満たさない場合に、分かりやすいエラーメッセージを投げる
- * - 関数名を引数に取り、どのフィルタでエラーが発生したかを明示
+ * Main responsibilities:
+ * - Throws clear error messages when filter options or value type checks fail
+ * - Takes function name as argument to specify which filter caused the error
  *
- * 設計ポイント:
- * - optionsRequired: オプションが必須なフィルタで未指定時にエラー
- * - optionMustBeNumber: オプション値が数値でない場合にエラー
- * - valueMustBeNumber: 値が数値でない場合にエラー
- * - valueMustBeBoolean: 値がbooleanでない場合にエラー
- * - valueMustBeDate: 値がDateでない場合にエラー
+ * Design points:
+ * - optionsRequired: Error when required option is not specified
+ * - optionMustBeNumber: Error when option value is not a number
+ * - valueMustBeNumber: Error when value is not a number
+ * - valueMustBeBoolean: Error when value is not boolean
+ * - valueMustBeDate: Error when value is not a Date
+ */
+/**
+ * Throws error when filter requires at least one option but none provided.
+ *
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires at least one option
  */
 function optionsRequired(fnName) {
     raiseError({
@@ -61,6 +150,13 @@ function optionsRequired(fnName) {
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
+/**
+ * Throws error when filter option must be a number but invalid value provided.
+ *
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires a number as option
+ */
 function optionMustBeNumber(fnName) {
     raiseError({
         code: "FLT-202",
@@ -69,6 +165,13 @@ function optionMustBeNumber(fnName) {
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
+/**
+ * Throws error when filter requires numeric value but non-number provided.
+ *
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires a number value
+ */
 function valueMustBeNumber(fnName) {
     raiseError({
         code: "FLT-202",
@@ -77,6 +180,13 @@ function valueMustBeNumber(fnName) {
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
+/**
+ * Throws error when filter requires boolean value but non-boolean provided.
+ *
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires a boolean value
+ */
 function valueMustBeBoolean(fnName) {
     raiseError({
         code: "FLT-202",
@@ -85,6 +195,13 @@ function valueMustBeBoolean(fnName) {
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
+/**
+ * Throws error when filter requires Date value but non-Date provided.
+ *
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires a date value
+ */
 function valueMustBeDate(fnName) {
     raiseError({
         code: "FLT-202",
@@ -97,24 +214,32 @@ function valueMustBeDate(fnName) {
 /**
  * builtinFilters.ts
  *
- * Structiveで利用可能な組み込みフィルタ関数群の実装ファイルです。
+ * Implementation file for built-in filter functions available in Structive.
  *
- * 主な役割:
- * - 数値・文字列・日付・真偽値などの変換・比較・整形・判定用フィルタを提供
- * - フィルタ名ごとにオプション付きの関数を定義し、バインディング時に柔軟に利用可能
- * - input/output両方のフィルタとして共通利用できる設計
+ * Main responsibilities:
+ * - Provides filters for conversion, comparison, formatting, and validation of numbers, strings, dates, booleans, etc.
+ * - Defines functions with options for each filter name, enabling flexible use during binding
+ * - Designed for common use as both input and output filters
  *
- * 設計ポイント:
- * - eq, ne, lt, gt, inc, fix, locale, uc, lc, cap, trim, slice, pad, int, float, round, date, time, ymd, falsy, truthy, defaults, boolean, number, string, null など多彩なフィルタを網羅
- * - オプション値の型チェックやエラーハンドリングも充実
- * - FilterWithOptions型でフィルタ関数群を一元管理し、拡張も容易
- * - builtinFilterFnでフィルタ名・オプションからフィルタ関数を動的に取得可能
+ * Design points:
+ * - Comprehensive coverage of diverse filters: eq, ne, lt, gt, inc, fix, locale, uc, lc, cap, trim, slice, pad, int, float, round, date, time, ymd, falsy, truthy, defaults, boolean, number, string, null, etc.
+ * - Rich type checking and error handling for option values
+ * - Centralized management of filter functions with FilterWithOptions type, easy to extend
+ * - Dynamic retrieval of filter functions from filter names and options via builtinFilterFn
  */
 const config$1 = getGlobalConfig();
+/**
+ * Equality filter - compares value with option.
+ *
+ * @param options - Array with comparison value as first element
+ * @returns Filter function that returns boolean
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number (when value is number)
+ */
 const eq = (options) => {
     const opt = options?.[0] ?? optionsRequired('eq');
     return (value) => {
-        // 型を揃えて比較
+        // Align types for comparison
         if (typeof value === 'number') {
             const optValue = Number(opt);
             if (isNaN(optValue))
@@ -124,14 +249,22 @@ const eq = (options) => {
         if (typeof value === 'string') {
             return value === opt;
         }
-        // その他は厳密等価
+        // Strict equality for others
         return value === opt;
     };
 };
+/**
+ * Inequality filter - compares value with option.
+ *
+ * @param options - Array with comparison value as first element
+ * @returns Filter function that returns boolean
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number (when value is number)
+ */
 const ne = (options) => {
     const opt = options?.[0] ?? optionsRequired('ne');
     return (value) => {
-        // 型を揃えて比較
+        // Align types for comparison
         if (typeof value === 'number') {
             const optValue = Number(opt);
             if (isNaN(optValue))
@@ -141,10 +274,17 @@ const ne = (options) => {
         if (typeof value === 'string') {
             return value !== opt;
         }
-        // その他は厳密等価
+        // Strict equality for others
         return value !== opt;
     };
 };
+/**
+ * Boolean NOT filter - inverts boolean value.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns inverted boolean
+ * @throws FLT-103 Value must be boolean
+ */
 const not = (options) => {
     return (value) => {
         if (typeof value !== 'boolean')
@@ -152,6 +292,15 @@ const not = (options) => {
         return !value;
     };
 };
+/**
+ * Less than filter - checks if value is less than option.
+ *
+ * @param options - Array with comparison number as first element
+ * @returns Filter function that returns boolean
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const lt = (options) => {
     const opt = options?.[0] ?? optionsRequired('lt');
     const optValue = Number(opt);
@@ -163,6 +312,15 @@ const lt = (options) => {
         return value < optValue;
     };
 };
+/**
+ * Less than or equal filter - checks if value is less than or equal to option.
+ *
+ * @param options - Array with comparison number as first element
+ * @returns Filter function that returns boolean
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const le = (options) => {
     const opt = options?.[0] ?? optionsRequired('le');
     const optValue = Number(opt);
@@ -174,6 +332,15 @@ const le = (options) => {
         return value <= optValue;
     };
 };
+/**
+ * Greater than filter - checks if value is greater than option.
+ *
+ * @param options - Array with comparison number as first element
+ * @returns Filter function that returns boolean
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const gt = (options) => {
     const opt = options?.[0] ?? optionsRequired('gt');
     const optValue = Number(opt);
@@ -185,6 +352,15 @@ const gt = (options) => {
         return value > optValue;
     };
 };
+/**
+ * Greater than or equal filter - checks if value is greater than or equal to option.
+ *
+ * @param options - Array with comparison number as first element
+ * @returns Filter function that returns boolean
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const ge = (options) => {
     const opt = options?.[0] ?? optionsRequired('ge');
     const optValue = Number(opt);
@@ -196,6 +372,15 @@ const ge = (options) => {
         return value >= optValue;
     };
 };
+/**
+ * Increment filter - adds option value to input value.
+ *
+ * @param options - Array with increment number as first element
+ * @returns Filter function that returns incremented number
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const inc = (options) => {
     const opt = options?.[0] ?? optionsRequired('inc');
     const optValue = Number(opt);
@@ -207,6 +392,15 @@ const inc = (options) => {
         return value + optValue;
     };
 };
+/**
+ * Decrement filter - subtracts option value from input value.
+ *
+ * @param options - Array with decrement number as first element
+ * @returns Filter function that returns decremented number
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const dec = (options) => {
     const opt = options?.[0] ?? optionsRequired('dec');
     const optValue = Number(opt);
@@ -218,6 +412,15 @@ const dec = (options) => {
         return value - optValue;
     };
 };
+/**
+ * Multiply filter - multiplies value by option.
+ *
+ * @param options - Array with multiplier number as first element
+ * @returns Filter function that returns multiplied number
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const mul = (options) => {
     const opt = options?.[0] ?? optionsRequired('mul');
     const optValue = Number(opt);
@@ -229,6 +432,15 @@ const mul = (options) => {
         return value * optValue;
     };
 };
+/**
+ * Divide filter - divides value by option.
+ *
+ * @param options - Array with divisor number as first element
+ * @returns Filter function that returns divided number
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const div = (options) => {
     const opt = options?.[0] ?? optionsRequired('div');
     const optValue = Number(opt);
@@ -240,6 +452,15 @@ const div = (options) => {
         return value / optValue;
     };
 };
+/**
+ * Modulo filter - returns remainder of division.
+ *
+ * @param options - Array with divisor number as first element
+ * @returns Filter function that returns remainder
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const mod = (options) => {
     const opt = options?.[0] ?? optionsRequired('mod');
     const optValue = Number(opt);
@@ -251,6 +472,14 @@ const mod = (options) => {
         return value % optValue;
     };
 };
+/**
+ * Fixed decimal filter - formats number to fixed decimal places.
+ *
+ * @param options - Array with decimal places as first element (default: 0)
+ * @returns Filter function that returns formatted string
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const fix = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Number(opt);
@@ -262,6 +491,13 @@ const fix = (options) => {
         return value.toFixed(optValue);
     };
 };
+/**
+ * Locale number filter - formats number according to locale.
+ *
+ * @param options - Array with locale string as first element (default: config.locale)
+ * @returns Filter function that returns localized number string
+ * @throws FLT-104 Value must be number
+ */
 const locale = (options) => {
     const opt = options?.[0] ?? config$1.locale;
     return (value) => {
@@ -270,16 +506,34 @@ const locale = (options) => {
         return value.toLocaleString(opt);
     };
 };
+/**
+ * Uppercase filter - converts string to uppercase.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns uppercase string
+ */
 const uc = (options) => {
     return (value) => {
         return value.toString().toUpperCase();
     };
 };
+/**
+ * Lowercase filter - converts string to lowercase.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns lowercase string
+ */
 const lc = (options) => {
     return (value) => {
         return value.toString().toLowerCase();
     };
 };
+/**
+ * Capitalize filter - capitalizes first character of string.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns capitalized string
+ */
 const cap = (options) => {
     return (value) => {
         const v = value.toString();
@@ -290,11 +544,25 @@ const cap = (options) => {
         return v.charAt(0).toUpperCase() + v.slice(1);
     };
 };
+/**
+ * Trim filter - removes whitespace from both ends of string.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns trimmed string
+ */
 const trim$1 = (options) => {
     return (value) => {
         return value.toString().trim();
     };
 };
+/**
+ * Slice filter - extracts portion of string from specified index.
+ *
+ * @param options - Array with start index as first element
+ * @returns Filter function that returns sliced string
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ */
 const slice = (options) => {
     const opt = options?.[0] ?? optionsRequired('slice');
     const optValue = Number(opt);
@@ -304,6 +572,14 @@ const slice = (options) => {
         return value.toString().slice(optValue);
     };
 };
+/**
+ * Substring filter - extracts substring from specified position and length.
+ *
+ * @param options - Array with start index and length
+ * @returns Filter function that returns substring
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ */
 const substr = (options) => {
     const opt1 = options?.[0] ?? optionsRequired('substr');
     const opt1Value = Number(opt1);
@@ -317,6 +593,14 @@ const substr = (options) => {
         return value.toString().substr(opt1Value, opt2Value);
     };
 };
+/**
+ * Pad filter - pads string to specified length from start.
+ *
+ * @param options - Array with target length and pad string (default: '0')
+ * @returns Filter function that returns padded string
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ */
 const pad = (options) => {
     const opt1 = options?.[0] ?? optionsRequired('pad');
     const opt1Value = Number(opt1);
@@ -328,6 +612,14 @@ const pad = (options) => {
         return value.toString().padStart(opt1Value, opt2Value);
     };
 };
+/**
+ * Repeat filter - repeats string specified number of times.
+ *
+ * @param options - Array with repeat count as first element
+ * @returns Filter function that returns repeated string
+ * @throws FLT-101 Options required
+ * @throws FLT-102 Option must be number
+ */
 const rep = (options) => {
     const opt = options?.[0] ?? optionsRequired('rep');
     const optValue = Number(opt);
@@ -337,21 +629,47 @@ const rep = (options) => {
         return value.toString().repeat(optValue);
     };
 };
+/**
+ * Reverse filter - reverses character order in string.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns reversed string
+ */
 const rev = (options) => {
     return (value) => {
         return value.toString().split('').reverse().join('');
     };
 };
+/**
+ * Integer filter - parses value to integer.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns integer
+ */
 const int = (options) => {
     return (value) => {
         return parseInt(value, 10);
     };
 };
+/**
+ * Float filter - parses value to floating point number.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns float
+ */
 const float = (options) => {
     return (value) => {
         return parseFloat(value);
     };
 };
+/**
+ * Round filter - rounds number to specified decimal places.
+ *
+ * @param options - Array with decimal places as first element (default: 0)
+ * @returns Filter function that returns rounded number
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const round = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Math.pow(10, Number(opt));
@@ -363,6 +681,14 @@ const round = (options) => {
         return Math.round(value * optValue) / optValue;
     };
 };
+/**
+ * Floor filter - rounds number down to specified decimal places.
+ *
+ * @param options - Array with decimal places as first element (default: 0)
+ * @returns Filter function that returns floored number
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const floor = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Math.pow(10, Number(opt));
@@ -374,6 +700,14 @@ const floor = (options) => {
         return Math.floor(value * optValue) / optValue;
     };
 };
+/**
+ * Ceiling filter - rounds number up to specified decimal places.
+ *
+ * @param options - Array with decimal places as first element (default: 0)
+ * @returns Filter function that returns ceiled number
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const ceil = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Math.pow(10, Number(opt));
@@ -385,6 +719,14 @@ const ceil = (options) => {
         return Math.ceil(value * optValue) / optValue;
     };
 };
+/**
+ * Percent filter - formats number as percentage string.
+ *
+ * @param options - Array with decimal places as first element (default: 0)
+ * @returns Filter function that returns percentage string with '%'
+ * @throws FLT-102 Option must be number
+ * @throws FLT-104 Value must be number
+ */
 const percent = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Number(opt);
@@ -396,6 +738,13 @@ const percent = (options) => {
         return (value * 100).toFixed(optValue) + '%';
     };
 };
+/**
+ * Date filter - formats Date object as localized date string.
+ *
+ * @param options - Array with locale string as first element (default: config.locale)
+ * @returns Filter function that returns date string
+ * @throws FLT-105 Value must be Date
+ */
 const date = (options) => {
     const opt = options?.[0] ?? config$1.locale;
     return (value) => {
@@ -404,6 +753,13 @@ const date = (options) => {
         return value.toLocaleDateString(opt);
     };
 };
+/**
+ * Time filter - formats Date object as localized time string.
+ *
+ * @param options - Array with locale string as first element (default: config.locale)
+ * @returns Filter function that returns time string
+ * @throws FLT-105 Value must be Date
+ */
 const time = (options) => {
     const opt = options?.[0] ?? config$1.locale;
     return (value) => {
@@ -412,6 +768,13 @@ const time = (options) => {
         return value.toLocaleTimeString(opt);
     };
 };
+/**
+ * DateTime filter - formats Date object as localized date and time string.
+ *
+ * @param options - Array with locale string as first element (default: config.locale)
+ * @returns Filter function that returns datetime string
+ * @throws FLT-105 Value must be Date
+ */
 const datetime = (options) => {
     const opt = options?.[0] ?? config$1.locale;
     return (value) => {
@@ -420,6 +783,13 @@ const datetime = (options) => {
         return value.toLocaleString(opt);
     };
 };
+/**
+ * Year-Month-Day filter - formats Date object as YYYY-MM-DD string.
+ *
+ * @param options - Array with separator string as first element (default: '-')
+ * @returns Filter function that returns formatted date string
+ * @throws FLT-105 Value must be Date
+ */
 const ymd = (options) => {
     const opt = options?.[0] ?? '-';
     return (value) => {
@@ -431,12 +801,31 @@ const ymd = (options) => {
         return `${year}${opt}${month}${opt}${day}`;
     };
 };
+/**
+ * Falsy filter - checks if value is falsy.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns true for false/null/undefined/0/''/NaN
+ */
 const falsy = (options) => {
     return (value) => value === false || value === null || value === undefined || value === 0 || value === '' || Number.isNaN(value);
 };
+/**
+ * Truthy filter - checks if value is truthy.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns true for non-falsy values
+ */
 const truthy = (options) => {
     return (value) => value !== false && value !== null && value !== undefined && value !== 0 && value !== '' && !Number.isNaN(value);
 };
+/**
+ * Default filter - returns default value if input is falsy.
+ *
+ * @param options - Array with default value as first element
+ * @returns Filter function that returns value or default
+ * @throws FLT-101 Options required
+ */
 const defaults = (options) => {
     const opt = options?.[0] ?? optionsRequired('defaults');
     return (value) => {
@@ -445,21 +834,45 @@ const defaults = (options) => {
         return value;
     };
 };
+/**
+ * Boolean filter - converts value to boolean.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns boolean
+ */
 const boolean = (options) => {
     return (value) => {
         return Boolean(value);
     };
 };
+/**
+ * Number filter - converts value to number.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns number
+ */
 const number = (options) => {
     return (value) => {
         return Number(value);
     };
 };
+/**
+ * String filter - converts value to string.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns string
+ */
 const string = (options) => {
     return (value) => {
         return String(value);
     };
 };
+/**
+ * Null filter - converts empty string to null.
+ *
+ * @param options - Unused
+ * @returns Filter function that returns null for empty string, otherwise original value
+ */
 const _null = (options) => {
     return (value) => {
         return (value === "") ? null : value;
@@ -518,21 +931,41 @@ function generateId() {
 /**
  * registerStateClass.ts
  *
- * StateClassインスタンスをIDで登録・取得するための管理モジュールです。
+ * Management module for registering and retrieving StateClass instances by ID.
  *
- * 主な役割:
- * - stateClassById: IDをキーにStateClassインスタンスを管理するレコード
- * - registerStateClass: 指定IDでStateClassインスタンスを登録
- * - getStateClassById: 指定IDのStateClassインスタンスを取得（未登録時はエラーを投げる）
+ * Main responsibilities:
+ * - stateClassById: Record managing StateClass instances keyed by ID
+ * - registerStateClass: Registers a StateClass instance with the specified ID
+ * - getStateClassById: Retrieves a StateClass instance by ID (throws error if not registered)
  *
- * 設計ポイント:
- * - グローバルにStateClassインスタンスを一元管理し、ID経由で高速にアクセス可能
- * - 存在しないIDアクセス時はraiseErrorで明確な例外を発生
+ * Design points:
+ * - Centrally manages StateClass instances globally for fast access via ID
+ * - Raises clear exceptions via raiseError when accessing non-existent IDs
  */
+// Global registry mapping StateClass IDs to their instances
 const stateClassById = {};
+/**
+ * Registers a StateClass instance with a unique ID.
+ *
+ * This function stores the StateClass instance in a global registry,
+ * making it accessible for retrieval via getStateClassById.
+ *
+ * @param id - Unique identifier for the StateClass instance
+ * @param stateClass - StateClass instance to register
+ */
 function registerStateClass(id, stateClass) {
     stateClassById[id] = stateClass;
 }
+/**
+ * Retrieves a registered StateClass instance by its ID.
+ *
+ * This function looks up a StateClass instance from the global registry.
+ * If the ID is not found, it throws a descriptive error.
+ *
+ * @param id - Unique identifier of the StateClass instance to retrieve
+ * @returns The registered StateClass instance
+ * @throws {Error} STATE-101 - When no StateClass is registered with the given ID
+ */
 function getStateClassById(id) {
     return stateClassById[id] ?? raiseError({
         code: "STATE-101",
@@ -545,22 +978,52 @@ function getStateClassById(id) {
 /**
  * registerStyleSheet.ts
  *
- * CSSStyleSheetインスタンスをIDで登録・取得するための管理モジュールです。
+ * Management module for registering and retrieving CSSStyleSheet instances by ID.
  *
- * 主な役割:
- * - styleSheetById: IDをキーにCSSStyleSheetインスタンスを管理するレコード
- * - registerStyleSheet: 指定IDでCSSStyleSheetインスタンスを登録
- * - getStyleSheetById: 指定IDのCSSStyleSheetインスタンスを取得（未登録時はエラーを投げる）
+ * Main responsibilities:
+ * - styleSheetById: Record that manages CSSStyleSheet instances keyed by ID
+ * - registerStyleSheet: Registers a CSSStyleSheet instance with a specified ID
+ * - getStyleSheetById: Retrieves a CSSStyleSheet instance by ID (throws error if not registered)
  *
- * 設計ポイント:
- * - グローバルにCSSStyleSheetインスタンスを一元管理し、ID経由で高速にアクセス可能
- * - 存在しないIDアクセス時はraiseErrorで明確な例外を発生
+ * Design points:
+ * - Centrally manages CSSStyleSheet instances globally, enabling fast access via ID
+ * - Throws clear exceptions via raiseError when accessing non-existent IDs
+ */
+/**
+ * Global registry for CSSStyleSheet instances keyed by numeric ID.
+ * Enables fast lookup and sharing of stylesheets across components.
  */
 const styleSheetById = {};
+/**
+ * Registers a CSSStyleSheet instance with a unique numeric ID.
+ * Allows the stylesheet to be retrieved later via getStyleSheetById.
+ * Overwrites any existing stylesheet with the same ID.
+ *
+ * @param {number} id - Unique numeric identifier for the stylesheet
+ * @param {CSSStyleSheet} css - The CSSStyleSheet instance to register
+ * @returns {void}
+ *
+ * @example
+ * const sheet = new CSSStyleSheet();
+ * registerStyleSheet(1, sheet);
+ */
 function registerStyleSheet(id, css) {
     styleSheetById[id] = css;
 }
+/**
+ * Retrieves a registered CSSStyleSheet instance by its numeric ID.
+ * Throws an error if no stylesheet is found with the given ID.
+ *
+ * @param {number} id - The numeric identifier of the stylesheet to retrieve
+ * @returns {CSSStyleSheet} The registered CSSStyleSheet instance
+ * @throws {Error} Throws CSS-001 error if the stylesheet ID is not registered
+ *
+ * @example
+ * const sheet = getStyleSheetById(1);
+ * document.adoptedStyleSheets = [sheet];
+ */
 function getStyleSheetById(id) {
+    // Return the stylesheet if found, otherwise throw a descriptive error
     return styleSheetById[id] ?? raiseError({
         code: "CSS-001",
         message: `Stylesheet not found: ${id}`,
@@ -572,19 +1035,36 @@ function getStyleSheetById(id) {
 /**
  * regsiterCss.ts
  *
- * CSS文字列をCSSStyleSheetとして生成し、IDで登録するユーティリティ関数です。
+ * Utility function for creating CSSStyleSheet from CSS strings and registering them by ID.
  *
- * 主な役割:
- * - CSS文字列からCSSStyleSheetインスタンスを生成
- * - registerStyleSheetを利用して、指定IDでCSSStyleSheetを登録
+ * Main responsibilities:
+ * - Creates CSSStyleSheet instances from CSS strings
+ * - Registers the CSSStyleSheet with a specified ID using registerStyleSheet
  *
- * 設計ポイント:
- * - styleSheet.replaceSyncで同期的にCSSを適用
- * - グローバルなスタイル管理や動的スタイル適用に利用可能
+ * Design points:
+ * - Uses styleSheet.replaceSync to apply CSS synchronously
+ * - Enables global style management and dynamic style application
+ */
+/**
+ * Creates a CSSStyleSheet from a CSS string and registers it with a unique ID.
+ * The CSS is applied synchronously using replaceSync for immediate availability.
+ *
+ * @param {number} id - Unique numeric identifier for the stylesheet
+ * @param {string} css - CSS rules as a string to be applied to the stylesheet
+ * @returns {void}
+ *
+ * @example
+ * registerCss(1, `
+ *   .container { display: flex; }
+ *   .item { padding: 10px; }
+ * `);
  */
 function registerCss(id, css) {
+    // Create a new CSSStyleSheet instance
     const styleSheet = new CSSStyleSheet();
+    // Apply CSS rules synchronously to the stylesheet
     styleSheet.replaceSync(css);
+    // Register the stylesheet in the global registry
     registerStyleSheet(id, styleSheet);
 }
 
@@ -1071,30 +1551,33 @@ const UPDATED_CALLBACK_FUNC_NAME = "$updatedCallback";
 /**
  * getStructuredPathInfo.ts
  *
- * Stateプロパティのパス文字列から、詳細な構造化パス情報（IStructuredPathInfo）を生成・キャッシュするユーティリティです。
+ * Utility for generating and caching detailed structured path information (IStructuredPathInfo)
+ * from State property path strings.
  *
- * 主な役割:
- * - パス文字列を分割し、各セグメントやワイルドカード（*）の位置・親子関係などを解析
- * - cumulativePaths/wildcardPaths/parentPathなど、パス階層やワイルドカード階層の情報を構造化
- * - 解析結果をIStructuredPathInfoとしてキャッシュし、再利用性とパフォーマンスを両立
- * - reservedWords（予約語）チェックで安全性を担保
+ * Main responsibilities:
+ * - Splits path strings and analyzes segments, wildcard (*) positions, and parent-child relationships
+ * - Structures information about path hierarchy and wildcard hierarchy (cumulativePaths/wildcardPaths/parentPath, etc.)
+ * - Caches analysis results as IStructuredPathInfo for reusability and performance
+ * - Ensures safety with reserved word checks
  *
- * 設計ポイント:
- * - パスごとにキャッシュし、同じパスへの複数回アクセスでも高速に取得可能
- * - ワイルドカードや親子関係、階層構造を厳密に解析し、バインディングや多重ループに最適化
- * - childrenプロパティでパス階層のツリー構造も構築
- * - 予約語や危険なパスはraiseErrorで例外を発生
+ * Design points:
+ * - Caches by path for fast retrieval on multiple accesses to the same path
+ * - Strictly analyzes wildcards, parent-child relationships, and hierarchical structure, optimized for bindings and nested loops
+ * - Raises exceptions via raiseError for reserved words or dangerous paths
  */
 /**
- * プロパティ名に"constructor"や"toString"などの予約語やオブジェクトのプロパティ名を
- * 上書きするような名前も指定できるように、Mapを検討したが、そもそもそのような名前を
- * 指定することはないと考え、Mapを使わないことにした。
+ * Cache for structured path information.
+ * Uses plain object instead of Map since reserved words and object property names
+ * are not expected to be used as path patterns in practice.
  */
 const _cache$2 = {};
 /**
- * パターン情報を取得します
- * @param pattern パターン
- * @returns {IPatternInfo} パターン情報
+ * Class representing comprehensive structured information about a State property path.
+ * Analyzes path hierarchy, wildcard positions, parent-child relationships, and provides
+ * various access patterns for binding and dependency tracking.
+ *
+ * @class StructuredPathInfo
+ * @implements {IStructuredPathInfo}
  */
 class StructuredPathInfo {
     static id = 0;
@@ -1121,43 +1604,59 @@ class StructuredPathInfo {
     parentPath;
     parentInfo;
     wildcardCount;
-    children = {};
+    /**
+     * Constructs a StructuredPathInfo instance with comprehensive path analysis.
+     * Parses the pattern into segments, identifies wildcards, builds cumulative and wildcard paths,
+     * and establishes parent-child relationships for hierarchical navigation.
+     *
+     * @param {string} pattern - The property path pattern (e.g., "items.*.name" or "user.profile")
+     */
     constructor(pattern) {
+        // Helper to get or create StructuredPathInfo instances, avoiding redundant creation for self-reference
         const getPattern = (_pattern) => {
             return (pattern === _pattern) ? this : getStructuredPathInfo(_pattern);
         };
+        // Split the pattern into individual path segments (e.g., "items.*.name" → ["items", "*", "name"])
         const pathSegments = pattern.split(".");
+        // Arrays to track all cumulative paths from root to each segment
         const cumulativePaths = [];
         const cumulativeInfos = [];
+        // Arrays to track wildcard-specific information
         const wildcardPaths = [];
-        const indexByWildcardPath = {};
+        const indexByWildcardPath = {}; // Maps wildcard path to its index position
         const wildcardInfos = [];
-        const wildcardParentPaths = [];
+        const wildcardParentPaths = []; // Paths of parent segments for each wildcard
         const wildcardParentInfos = [];
         let currentPatternPath = "", prevPatternPath = "";
         let wildcardCount = 0;
+        // Iterate through each segment to build cumulative paths and identify wildcards
         for (let i = 0; i < pathSegments.length; i++) {
             currentPatternPath += pathSegments[i];
+            // If this segment is a wildcard, track it with all wildcard-specific metadata
             if (pathSegments[i] === "*") {
                 wildcardPaths.push(currentPatternPath);
-                indexByWildcardPath[currentPatternPath] = wildcardCount;
+                indexByWildcardPath[currentPatternPath] = wildcardCount; // Store wildcard's ordinal position
                 wildcardInfos.push(getPattern(currentPatternPath));
-                wildcardParentPaths.push(prevPatternPath);
+                wildcardParentPaths.push(prevPatternPath); // Parent path is the previous cumulative path
                 wildcardParentInfos.push(getPattern(prevPatternPath));
                 wildcardCount++;
             }
+            // Track all cumulative paths for hierarchical navigation (e.g., "items", "items.*", "items.*.name")
             cumulativePaths.push(currentPatternPath);
             cumulativeInfos.push(getPattern(currentPatternPath));
+            // Save current path as previous for next iteration, then add separator
             prevPatternPath = currentPatternPath;
             currentPatternPath += ".";
         }
+        // Determine the deepest (last) wildcard path and the parent path of the entire pattern
         const lastWildcardPath = wildcardPaths.length > 0 ? wildcardPaths[wildcardPaths.length - 1] : null;
         const parentPath = cumulativePaths.length > 1 ? cumulativePaths[cumulativePaths.length - 2] : null;
+        // Assign all analyzed data to readonly properties
         this.pattern = pattern;
         this.pathSegments = pathSegments;
         this.lastSegment = pathSegments[pathSegments.length - 1];
         this.cumulativePaths = cumulativePaths;
-        this.cumulativePathSet = new Set(cumulativePaths);
+        this.cumulativePathSet = new Set(cumulativePaths); // Set for fast lookup
         this.cumulativeInfos = cumulativeInfos;
         this.cumulativeInfoSet = new Set(cumulativeInfos);
         this.wildcardPaths = wildcardPaths;
@@ -1174,12 +1673,24 @@ class StructuredPathInfo {
         this.parentPath = parentPath;
         this.parentInfo = parentPath ? getPattern(parentPath) : null;
         this.wildcardCount = wildcardCount;
-        if (this.parentInfo) {
-            this.parentInfo.children[this.lastSegment] = this;
-        }
     }
 }
+/**
+ * Retrieves or creates a StructuredPathInfo instance for the given path pattern.
+ * Uses caching to avoid redundant parsing of the same path patterns.
+ * Validates that the path is not a reserved word before processing.
+ *
+ * @param {string} structuredPath - The property path pattern to analyze (e.g., "items.*.name")
+ * @returns {IStructuredPathInfo} Comprehensive structured information about the path
+ * @throws {Error} Throws STATE-202 error if the path is a reserved word
+ *
+ * @example
+ * const info = getStructuredPathInfo("items.*.name");
+ * console.log(info.wildcardCount); // 1
+ * console.log(info.cumulativePaths); // ["items", "items.*", "items.*.name"]
+ */
 function getStructuredPathInfo(structuredPath) {
+    // Validate that the path is not a reserved word to prevent conflicts
     if (RESERVED_WORD_SET.has(structuredPath)) {
         raiseError({
             code: 'STATE-202',
@@ -1188,19 +1699,31 @@ function getStructuredPathInfo(structuredPath) {
             docsUrl: './docs/error-codes.md#state',
         });
     }
+    // Return cached result if available
     const info = _cache$2[structuredPath];
     if (typeof info !== "undefined") {
         return info;
     }
+    // Create new StructuredPathInfo and cache it for future use
     return (_cache$2[structuredPath] = new StructuredPathInfo(structuredPath));
 }
 
+/**
+ * NodePath class represents a node in the property path tree.
+ * Manages hierarchical path structure with parent-child relationships.
+ */
 class NodePath {
     parentPath;
     currentPath;
     name;
     childNodeByName;
     level;
+    /**
+     * Creates a new NodePath instance.
+     * @param parentPath - Path of the parent node
+     * @param name - Name of this node
+     * @param level - Depth level in the tree (0 for root)
+     */
     constructor(parentPath, name, level) {
         this.parentPath = parentPath;
         this.currentPath = parentPath ? parentPath + "." + name : name;
@@ -1208,6 +1731,12 @@ class NodePath {
         this.level = level;
         this.childNodeByName = new Map();
     }
+    /**
+     * Finds a node by traversing path segments.
+     * @param segments - Array of path segments to traverse
+     * @param segIndex - Current segment index (default: 0)
+     * @returns Found node or null if not found
+     */
     find(segments, segIndex = 0) {
         if (segIndex >= segments.length) {
             return null;
@@ -1222,6 +1751,12 @@ class NodePath {
         }
         return null;
     }
+    /**
+     * Appends a child node with the given name.
+     * Creates new child if it doesn't exist, otherwise returns existing child.
+     * @param childName - Name of the child node to append
+     * @returns Child node (existing or newly created)
+     */
     appendChild(childName) {
         let childNode = this.childNodeByName.get(childName);
         if (!childNode) {
@@ -1232,10 +1767,20 @@ class NodePath {
         return childNode;
     }
 }
+/**
+ * Factory function to create the root node of the path tree.
+ * @returns Root node with empty path and name at level 0
+ */
 function createRootNode() {
     return new NodePath("", "", 0);
 }
 const cache$1 = new Map();
+/**
+ * Finds a path node by path string with caching.
+ * @param rootNode - Root node to search from
+ * @param path - Path string to find
+ * @returns Found node or null if not found
+ */
 function findPathNodeByPath(rootNode, path) {
     let nodeCache = cache$1.get(rootNode);
     if (!nodeCache) {
@@ -1251,6 +1796,12 @@ function findPathNodeByPath(rootNode, path) {
     nodeCache.set(path, cachedNode);
     return cachedNode;
 }
+/**
+ * Adds a path node to the tree, creating parent nodes if necessary.
+ * @param rootNode - Root node of the tree
+ * @param path - Path string to add
+ * @returns Created or existing node at the path
+ */
 function addPathNode(rootNode, path) {
     const info = getStructuredPathInfo(path);
     if (info.parentPath === null) {
@@ -1274,11 +1825,19 @@ const UpdatedCallbackSymbol = Symbol.for(`${symbolName$1}.UpdatedCallback`);
 const GetListIndexesByRefSymbol = Symbol.for(`${symbolName$1}.GetListIndexesByRef`);
 
 /**
- * プロパティ名に"constructor"や"toString"などの予約語やオブジェクトのプロパティ名を
- * 上書きするような名前も指定できるように、Mapを検討したが、そもそもそのような名前を
- * 指定することはないと考え、Mapを使わないことにした。
+ * Cache for resolved path information.
+ * Uses Map to safely handle property names including reserved words like "constructor" and "toString".
  */
 const _cache$1 = new Map();
+/**
+ * Class that parses and stores resolved path information.
+ *
+ * Analyzes property path strings to extract:
+ * - Path segments and their hierarchy
+ * - Wildcard locations and types
+ * - Numeric indexes vs unresolved wildcards
+ * - Wildcard type classification (none/context/all/partial)
+ */
 class ResolvedPathInfo {
     static id = 0;
     id = ++ResolvedPathInfo.id;
@@ -1289,19 +1848,30 @@ class ResolvedPathInfo {
     wildcardType;
     wildcardIndexes;
     info;
+    /**
+     * Constructs resolved path information from a property path string.
+     *
+     * Parses the path to identify wildcards (*) and numeric indexes,
+     * classifies the wildcard type, and generates structured path information.
+     *
+     * @param name - Property path string (e.g., "items.*.name" or "data.0.value")
+     */
     constructor(name) {
+        // Split path into individual segments
         const elements = name.split(".");
         const tmpPatternElements = elements.slice();
         const paths = [];
-        let incompleteCount = 0;
-        let completeCount = 0;
+        let incompleteCount = 0; // Count of unresolved wildcards (*)
+        let completeCount = 0; // Count of resolved wildcards (numeric indexes)
         let lastPath = "";
         let wildcardCount = 0;
         let wildcardType = "none";
         let wildcardIndexes = [];
+        // Process each segment to identify wildcards and indexes
         for (let i = 0; i < elements.length; i++) {
             const element = elements[i];
             if (element === "*") {
+                // Unresolved wildcard
                 tmpPatternElements[i] = "*";
                 wildcardIndexes.push(null);
                 incompleteCount++;
@@ -1310,26 +1880,33 @@ class ResolvedPathInfo {
             else {
                 const number = Number(element);
                 if (!Number.isNaN(number)) {
+                    // Numeric index - treat as resolved wildcard
                     tmpPatternElements[i] = "*";
                     wildcardIndexes.push(number);
                     completeCount++;
                     wildcardCount++;
                 }
             }
+            // Build cumulative path array
             lastPath += element;
             paths.push(lastPath);
             lastPath += (i < elements.length - 1 ? "." : "");
         }
+        // Generate pattern string with wildcards normalized
         const pattern = tmpPatternElements.join(".");
         const info = getStructuredPathInfo(pattern);
+        // Classify wildcard type based on resolved vs unresolved counts
         if (incompleteCount > 0 || completeCount > 0) {
             if (incompleteCount === wildcardCount) {
+                // All wildcards are unresolved - need context to resolve
                 wildcardType = "context";
             }
             else if (completeCount === wildcardCount) {
+                // All wildcards are resolved with numeric indexes
                 wildcardType = "all";
             }
             else {
+                // Mix of resolved and unresolved wildcards
                 wildcardType = "partial";
             }
         }
@@ -1342,85 +1919,200 @@ class ResolvedPathInfo {
         this.info = info;
     }
 }
+/**
+ * Retrieves or creates resolved path information for a property path.
+ *
+ * This function caches resolved path information for performance.
+ * On first access, it parses the path and creates a ResolvedPathInfo instance.
+ * Subsequent accesses return the cached result.
+ *
+ * @param name - Property path string (e.g., "items.*.name", "data.0.value")
+ * @returns Resolved path information containing segments, wildcards, and type classification
+ */
 function getResolvedPathInfo(name) {
     let nameInfo;
+    // Return cached value or create, cache, and return new instance
     return _cache$1.get(name) ?? (_cache$1.set(name, nameInfo = new ResolvedPathInfo(name)), nameInfo);
 }
 
+/**
+ * Class representing a unique reference to a State property.
+ * Combines structured path information with list index context for precise property identification.
+ * Uses WeakRef for memory-efficient list index storage and supports parent reference traversal.
+ *
+ * @class StatePropertyRef
+ * @implements {IStatePropertyRef}
+ */
 class StatePropertyRef {
+    /** Structured information about the property path pattern */
     info;
-    #listIndexRef;
+    /** Private WeakRef to the list index, allowing garbage collection when no longer referenced */
+    _listIndexRef;
+    /**
+     * Gets the list index for this property reference.
+     * Throws an error if the list index has been garbage collected.
+     *
+     * @returns {IListIndex | null} The list index, or null if this reference has no list context
+     * @throws {Error} Throws LIST-201 error if the listIndex was GC'd
+     */
     get listIndex() {
-        if (this.#listIndexRef === null)
+        if (this._listIndexRef === null)
             return null;
-        return this.#listIndexRef.deref() ?? raiseError({
+        // Attempt to dereference WeakRef; if GC'd, throw error
+        return this._listIndexRef.deref() ?? raiseError({
             code: "LIST-201",
             message: "listIndex is null",
             context: { sid: this.info.sid, key: this.key },
             docsUrl: "./docs/error-codes.md#list",
         });
     }
+    /**
+     * Unique string key composed from info.sid and listIndex.sid.
+     * Used for caching and fast lookups.
+     */
     key;
+    /**
+     * Constructs a StatePropertyRef instance.
+     * Creates a WeakRef for the listIndex to allow garbage collection.
+     * Generates a composite key for caching purposes.
+     *
+     * @param {IStructuredPathInfo} info - Structured path information
+     * @param {IListIndex | null} listIndex - Optional list index context
+     */
     constructor(info, listIndex) {
         this.info = info;
-        this.#listIndexRef = listIndex !== null ? new WeakRef(listIndex) : null;
+        // Store listIndex as WeakRef to allow GC when no longer needed elsewhere
+        this._listIndexRef = listIndex !== null ? new WeakRef(listIndex) : null;
+        // Compose key from info.sid and optionally listIndex.sid
         this.key = (listIndex == null) ? info.sid : (info.sid + "#" + listIndex.sid);
     }
+    /**
+     * Gets the parent property reference (one level up in the path hierarchy).
+     * Handles list index adjustment when the parent has fewer wildcards.
+     *
+     * @returns {IStatePropertyRef | null} Parent reference, or null if this is a root property
+     */
     get parentRef() {
         const parentInfo = this.info.parentInfo;
         if (!parentInfo)
             return null;
+        // If current path has more wildcards than parent, use parent's list index (drop last level)
+        // Otherwise, use the same list index
         const parentListIndex = (this.info.wildcardCount > parentInfo.wildcardCount ? this.listIndex?.at(-2) : this.listIndex) ?? null;
         return getStatePropertyRef(parentInfo, parentListIndex);
     }
 }
+/**
+ * Cache for StatePropertyRef instances with non-null list indexes.
+ * Uses WeakMap keyed by IListIndex to allow garbage collection when list indexes are no longer referenced.
+ * Each entry maps pattern strings to their corresponding StatePropertyRef instances.
+ */
 const refByInfoByListIndex = new WeakMap();
+/**
+ * Cache for StatePropertyRef instances with null list indexes.
+ * Uses a plain object keyed by pattern string since there's no WeakMap key available.
+ */
 const refByInfoByNull = {};
+/**
+ * Retrieves or creates a StatePropertyRef instance for the given path info and list index.
+ * Implements caching to ensure identical (info, listIndex) pairs return the same instance,
+ * enabling reference equality checks and stable Map keys.
+ *
+ * @param {IStructuredPathInfo} info - Structured path information
+ * @param {IListIndex | null} listIndex - Optional list index context
+ * @returns {IStatePropertyRef} Cached or newly created StatePropertyRef instance
+ *
+ * @example
+ * const ref1 = getStatePropertyRef(pathInfo, listIndex);
+ * const ref2 = getStatePropertyRef(pathInfo, listIndex);
+ * console.log(ref1 === ref2); // true - same instance returned
+ */
 function getStatePropertyRef(info, listIndex) {
     let ref = null;
     if (listIndex !== null) {
+        // Non-null listIndex: use WeakMap-based cache
         let refByInfo;
         if (typeof (refByInfo = refByInfoByListIndex.get(listIndex)) === "undefined") {
+            // First reference for this listIndex: create new ref and initialize cache entry
             ref = new StatePropertyRef(info, listIndex);
             refByInfoByListIndex.set(listIndex, { [info.pattern]: ref });
         }
         else {
+            // Cache entry exists for this listIndex: check for matching pattern
             if (typeof (ref = refByInfo[info.pattern]) === "undefined") {
+                // Pattern not found: create and cache new ref
                 return refByInfo[info.pattern] = new StatePropertyRef(info, listIndex);
             }
         }
     }
     else {
+        // Null listIndex: use plain object cache
         if (typeof (ref = refByInfoByNull[info.pattern]) === "undefined") {
+            // Pattern not found: create and cache new ref
             return refByInfoByNull[info.pattern] = new StatePropertyRef(info, null);
         }
     }
     return ref;
 }
 
+/**
+ * Retrieves the list index for the specified structured path from the current property reference scope.
+ *
+ * This function accesses the most recently accessed StatePropertyRef in the handler and extracts
+ * the list index corresponding to the given wildcard path. It supports nested loops and hierarchical
+ * wildcard structures.
+ *
+ * @param handler - State handler containing the reference stack
+ * @param structuredPath - Wildcard property path (e.g., "items.*", "data.*.children.*")
+ * @returns List index for the specified path, or null if not found or reference is invalid
+ */
 function getContextListIndex(handler, structuredPath) {
+    // Get the most recently accessed property reference from the stack
     const ref = handler.lastRefStack;
     if (ref == null) {
         return null;
     }
+    // Ensure the reference has structured path information
     if (ref.info == null) {
         return null;
     }
+    // Ensure the reference has list index information
     if (ref.listIndex == null) {
         return null;
     }
+    // Look up the wildcard level index for the specified path
     const index = ref.info.indexByWildcardPath[structuredPath];
     if (typeof index !== "undefined") {
+        // Return the list index at the corresponding wildcard level
         return ref.listIndex.at(index);
     }
+    // Path not found in the current reference
     return null;
 }
 
+/**
+ * Retrieves the list index for the given resolved path based on its wildcard type.
+ *
+ * This function handles different wildcard types:
+ * - "none": Returns null (no wildcards)
+ * - "context": Retrieves from current loop context
+ * - "all": Traverses wildcard hierarchy to build complete list index
+ * - "partial": Not yet supported, throws error
+ *
+ * @param resolvedPath - Resolved path information containing wildcard type and hierarchy
+ * @param receiver - State proxy object
+ * @param handler - State handler containing context and engine references
+ * @returns List index for the path, or null if no wildcards exist
+ * @throws {Error} STATE-202 - When required path components are missing
+ * @throws {Error} LIST-201 - When list index cannot be found for a wildcard level
+ */
 function getListIndex(resolvedPath, receiver, handler) {
     switch (resolvedPath.wildcardType) {
         case "none":
+            // No wildcards in path, no list index needed
             return null;
         case "context":
+            // Get the last wildcard path from resolved path info
             const lastWildcardPath = resolvedPath.info.lastWildcardPath ??
                 raiseError({
                     code: 'STATE-202',
@@ -1428,6 +2120,7 @@ function getListIndex(resolvedPath, receiver, handler) {
                     context: { where: 'getListIndex', pattern: resolvedPath.info.pattern },
                     docsUrl: '/docs/error-codes.md#state',
                 });
+            // Retrieve list index from current loop context
             return getContextListIndex(handler, lastWildcardPath) ??
                 raiseError({
                     code: 'LIST-201',
@@ -1436,8 +2129,10 @@ function getListIndex(resolvedPath, receiver, handler) {
                     docsUrl: '/docs/error-codes.md#list',
                 });
         case "all":
+            // Traverse all wildcard levels to build complete list index hierarchy
             let parentListIndex = null;
             for (let i = 0; i < resolvedPath.info.wildcardCount; i++) {
+                // Get the parent info for this wildcard level
                 const wildcardParentPattern = resolvedPath.info.wildcardParentInfos[i] ??
                     raiseError({
                         code: 'STATE-202',
@@ -1445,7 +2140,9 @@ function getListIndex(resolvedPath, receiver, handler) {
                         context: { where: 'getListIndex', pattern: resolvedPath.info.pattern, index: i },
                         docsUrl: '/docs/error-codes.md#state',
                     });
+                // Create a reference for the current wildcard level
                 const wildcardRef = getStatePropertyRef(wildcardParentPattern, parentListIndex);
+                // Get all list indexes at this wildcard level
                 const listIndexes = receiver[GetListIndexesByRefSymbol](wildcardRef) ??
                     raiseError({
                         code: 'LIST-201',
@@ -1453,6 +2150,7 @@ function getListIndex(resolvedPath, receiver, handler) {
                         context: { where: 'getListIndex', wildcardParent: wildcardParentPattern.pattern },
                         docsUrl: '/docs/error-codes.md#list',
                     });
+                // Get the specific index for this wildcard level
                 const wildcardIndex = resolvedPath.wildcardIndexes[i] ??
                     raiseError({
                         code: 'STATE-202',
@@ -1460,6 +2158,7 @@ function getListIndex(resolvedPath, receiver, handler) {
                         context: { where: 'getListIndex', pattern: resolvedPath.info.pattern, index: i },
                         docsUrl: '/docs/error-codes.md#state',
                     });
+                // Select the list index at the specified position for this level
                 parentListIndex = listIndexes[wildcardIndex] ??
                     raiseError({
                         code: 'LIST-201',
@@ -1468,8 +2167,10 @@ function getListIndex(resolvedPath, receiver, handler) {
                         docsUrl: '/docs/error-codes.md#list',
                     });
             }
+            // Return the final list index after traversing all levels
             return parentListIndex;
         case "partial":
+            // Partial wildcard support is not yet implemented
             raiseError({
                 code: 'STATE-202',
                 message: `Partial wildcard type is not supported yet: ${resolvedPath.info.pattern}`,
@@ -1482,40 +2183,43 @@ function getListIndex(resolvedPath, receiver, handler) {
 /**
  * trackDependency.ts
  *
- * StateClassのAPIとして、getterチェーン中に参照されたパス間の
- * 依存関係を動的に登録するための関数（trackDependency）の実装です。
+ * Implementation of trackDependency function for StateClass API to dynamically register
+ * dependencies between paths referenced during getter chains.
  *
- * 主な役割:
- * - 現在解決中のStatePropertyRef（lastRefStack）を取得
- * - pathManager.gettersに登録されているgetterの場合のみ依存を追跡
- * - 自身と同一パターンでない参照に対してaddDynamicDependencyを呼び出す
+ * Main responsibilities:
+ * - Retrieves currently resolving StatePropertyRef (lastRefStack)
+ * - Tracks dependencies only for getters registered in pathManager.getters
+ * - Calls addDynamicDependency for references with different patterns than itself
  *
- * 設計ポイント:
- * - lastRefStackが存在しない場合はSTATE-202エラーを発生させる
- * - getter同士の再帰（自己依存）は登録しない
- * - 動的依存はpathManagerに集約し、キャッシュの無効化に利用する
+ * Design points:
+ * - Raises STATE-202 error if lastRefStack doesn't exist
+ * - Does not register recursive getter dependencies (self-reference)
+ * - Dynamic dependencies are aggregated in pathManager and used for cache invalidation
  */
 /**
- * 現在解決中のgetterから、指定されたパスへの動的依存を登録する関数を返します。
+ * Returns a function to register dynamic dependency from currently resolving getter to specified path.
  *
- * - pathManager.gettersに登録されているgetterのみ依存追跡を行う
- * - 自己参照は除外し、異なるパターン間の依存だけを記録
- * - 動的依存はpathManager.addDynamicDependencyで集中管理される
+ * - Only tracks dependencies for getters registered in pathManager.getters
+ * - Excludes self-references, only recording dependencies between different patterns
+ * - Dynamic dependencies are centrally managed via pathManager.addDynamicDependency
  *
- * @param target   プロキシ対象オブジェクト
- * @param prop     アクセスされたプロパティキー
- * @param receiver プロキシレシーバ
- * @param handler  StateClassハンドラ
- * @returns        引数pathで指定されたパターンへの依存を登録する無名関数
+ * @param target   - Proxy target object
+ * @param prop     - Accessed property key
+ * @param receiver - Proxy receiver
+ * @param handler  - StateClass handler
+ * @returns        Anonymous function that registers dependency to pattern specified by path argument
  */
 function trackDependency(target, prop, receiver, handler) {
     return (path) => {
+        // Get the currently resolving getter's info from the stack
         const lastInfo = handler.lastRefStack?.info ?? raiseError({
             code: 'STATE-202',
             message: 'Internal error: lastRefStack is null',
             context: { where: 'trackDependency', path },
             docsUrl: '/docs/error-codes.md#state',
         });
+        // Only register dependency if source is a getter and target is different
+        // This prevents self-references and only tracks getter -> property dependencies
         if (handler.engine.pathManager.getters.has(lastInfo.pattern) &&
             lastInfo.pattern !== path) {
             handler.engine.pathManager.addDynamicDependency(lastInfo.pattern, path);
@@ -1524,8 +2228,8 @@ function trackDependency(target, prop, receiver, handler) {
 }
 
 /**
- * stackIndexByIndexName
- * インデックス名からスタックインデックスへのマッピング
+ * indexByIndexName
+ * Mapping from index name to stack index
  * $1 => 0
  * $2 => 1
  * :
@@ -1539,85 +2243,125 @@ for (let i = 0; i < MAX_WILDCARD_DEPTH; i++) {
 
 let version = 0;
 let id$1 = 0;
+/**
+ * ListIndex class manages hierarchical index information for nested loops.
+ * Tracks parent-child relationships and maintains version for change detection.
+ */
 class ListIndex {
-    #parentListIndex = null;
-    #pos = 0;
-    #index = 0;
-    #version;
-    #id = ++id$1;
-    #sid = this.#id.toString();
+    id = ++id$1;
+    sid = id$1.toString();
+    parentListIndex;
+    position;
+    length;
+    _index;
+    _version;
+    _indexes;
+    _listIndexes;
+    /**
+     * Creates a new ListIndex instance.
+     *
+     * @param parentListIndex - Parent list index for nested loops, or null for top-level
+     * @param index - Current index value in the loop
+     */
     constructor(parentListIndex, index) {
-        this.#parentListIndex = parentListIndex;
-        this.#pos = parentListIndex ? parentListIndex.position + 1 : 0;
-        this.#index = index;
-        this.#version = version;
+        this.parentListIndex = parentListIndex;
+        this.position = parentListIndex ? parentListIndex.position + 1 : 0;
+        this.length = this.position + 1;
+        this._index = index;
+        this._version = version;
     }
-    get parentListIndex() {
-        return this.#parentListIndex;
-    }
-    get id() {
-        return this.#id;
-    }
-    get sid() {
-        return this.#sid;
-    }
-    get position() {
-        return this.#pos;
-    }
-    get length() {
-        return this.#pos + 1;
-    }
+    /**
+     * Gets current index value.
+     *
+     * @returns Current index number
+     */
     get index() {
-        return this.#index;
+        return this._index;
     }
+    /**
+     * Sets index value and updates version.
+     *
+     * @param value - New index value
+     */
     set index(value) {
-        this.#index = value;
-        this.#version = ++version;
-        this.indexes[this.#pos] = value;
+        this._index = value;
+        this._version = ++version;
+        this.indexes[this.position] = value;
     }
+    /**
+     * Gets current version number for change detection.
+     *
+     * @returns Version number
+     */
     get version() {
-        return this.#version;
+        return this._version;
     }
+    /**
+     * Checks if parent indexes have changed since last access.
+     *
+     * @returns true if parent has newer version, false otherwise
+     */
     get dirty() {
-        if (this.#parentListIndex === null) {
+        if (this.parentListIndex === null) {
             return false;
         }
         else {
-            return this.#parentListIndex.dirty || this.#parentListIndex.version > this.#version;
+            return this.parentListIndex.dirty || this.parentListIndex.version > this._version;
         }
     }
-    #indexes;
+    /**
+     * Gets array of all index values from root to current level.
+     * Rebuilds array if parent indexes have changed (dirty).
+     *
+     * @returns Array of index values
+     */
     get indexes() {
-        if (this.#parentListIndex === null) {
-            if (typeof this.#indexes === "undefined") {
-                this.#indexes = [this.#index];
+        if (this.parentListIndex === null) {
+            if (typeof this._indexes === "undefined") {
+                this._indexes = [this._index];
             }
         }
         else {
-            if (typeof this.#indexes === "undefined" || this.dirty) {
-                this.#indexes = [...this.#parentListIndex.indexes, this.#index];
-                this.#version = version;
+            if (typeof this._indexes === "undefined" || this.dirty) {
+                this._indexes = [...this.parentListIndex.indexes, this._index];
+                this._version = version;
             }
         }
-        return this.#indexes;
+        return this._indexes;
     }
-    #listIndexes;
+    /**
+     * Gets array of WeakRef to all ListIndex instances from root to current level.
+     *
+     * @returns Array of WeakRef<IListIndex>
+     */
     get listIndexes() {
-        if (this.#parentListIndex === null) {
-            if (typeof this.#listIndexes === "undefined") {
-                this.#listIndexes = [new WeakRef(this)];
+        if (this.parentListIndex === null) {
+            if (typeof this._listIndexes === "undefined") {
+                this._listIndexes = [new WeakRef(this)];
             }
         }
         else {
-            if (typeof this.#listIndexes === "undefined") {
-                this.#listIndexes = [...this.#parentListIndex.listIndexes, new WeakRef(this)];
+            if (typeof this._listIndexes === "undefined") {
+                this._listIndexes = [...this.parentListIndex.listIndexes, new WeakRef(this)];
             }
         }
-        return this.#listIndexes;
+        return this._listIndexes;
     }
+    /**
+     * Gets variable name for this loop index ($1, $2, etc.).
+     *
+     * @returns Variable name string
+     */
     get varName() {
-        return `${this.position + 1}`;
+        return `$${this.position + 1}`;
     }
+    /**
+     * Gets ListIndex at specified position in hierarchy.
+     * Supports negative indexing from end.
+     *
+     * @param pos - Position index (0-based, negative for from end)
+     * @returns ListIndex at position or null if not found/garbage collected
+     */
     at(pos) {
         if (pos >= 0) {
             return this.listIndexes[pos]?.deref() || null;
@@ -1627,15 +2371,29 @@ class ListIndex {
         }
     }
 }
+/**
+ * Factory function to create ListIndex instance.
+ *
+ * @param parentListIndex - Parent list index for nested loops, or null for top-level
+ * @param index - Current index value in the loop
+ * @returns New IListIndex instance
+ */
 function createListIndex(parentListIndex, index) {
     return new ListIndex(parentListIndex, index);
 }
 
+/**
+ * Checks and registers dynamic dependency between the currently resolving getter and the referenced property.
+ * Only registers dependencies for getters that are not self-referencing.
+ * @param handler - State handler containing reference stack and path manager
+ * @param ref - State property reference being accessed
+ */
 function checkDependency(handler, ref) {
-    // 動的依存関係の登録
+    // Register dynamic dependency only if we're inside a getter resolution (refIndex >= 0)
     if (handler.refIndex >= 0) {
         const lastInfo = handler.lastRefStack?.info ?? null;
         if (lastInfo !== null) {
+            // Only register if source is a getter and not accessing itself
             if (handler.engine.pathManager.onlyGetters.has(lastInfo.pattern) &&
                 lastInfo.pattern !== ref.info.pattern) {
                 handler.engine.pathManager.addDynamicDependency(lastInfo.pattern, ref.info.pattern);
@@ -1644,6 +2402,12 @@ function checkDependency(handler, ref) {
     }
 }
 
+/**
+ * Checks if two lists are identical by comparing length and each element.
+ * @param oldList - Previous list to compare
+ * @param newList - New list to compare
+ * @returns True if lists are identical, false otherwise
+ */
 function isSameList(oldList, newList) {
     if (oldList.length !== newList.length) {
         return false;
@@ -1655,13 +2419,25 @@ function isSameList(oldList, newList) {
     }
     return true;
 }
+/**
+ * Creates or updates list indexes by comparing old and new lists.
+ * Optimizes by reusing existing list indexes when values match.
+ * @param parentListIndex - Parent list index for nested lists, or null for top-level
+ * @param oldList - Previous list (will be normalized to array)
+ * @param newList - New list (will be normalized to array)
+ * @param oldIndexes - Array of existing list indexes to potentially reuse
+ * @returns Array of list indexes for the new list
+ */
 function createListIndexes(parentListIndex, oldList, newList, oldIndexes) {
+    // Normalize inputs to arrays (handles null/undefined)
     oldList = Array.isArray(oldList) ? oldList : [];
     newList = Array.isArray(newList) ? newList : [];
     const newIndexes = [];
+    // Early return for empty list
     if (newList.length === 0) {
         return [];
     }
+    // If old list was empty, create all new indexes
     if (oldList.length === 0) {
         for (let i = 0; i < newList.length; i++) {
             const newListIndex = createListIndex(parentListIndex, i);
@@ -1669,26 +2445,29 @@ function createListIndexes(parentListIndex, oldList, newList, oldIndexes) {
         }
         return newIndexes;
     }
+    // If lists are identical, return existing indexes unchanged (optimization)
     if (isSameList(oldList, newList)) {
         return oldIndexes;
     }
-    // インデックスベースのマップを使用して効率化
+    // Use index-based map for efficiency
     const indexByValue = new Map();
     for (let i = 0; i < oldList.length; i++) {
-        // 重複値の場合は最後のインデックスが優先される（既存動作を維持）
+        // For duplicate values, the last index takes precedence (maintains existing behavior)
         indexByValue.set(oldList[i], i);
     }
+    // Build new indexes array by matching values with old list
     for (let i = 0; i < newList.length; i++) {
         const newValue = newList[i];
         const oldIndex = indexByValue.get(newValue);
         if (typeof oldIndex === "undefined") {
-            // 新しい要素
+            // New element
             const newListIndex = createListIndex(parentListIndex, i);
             newIndexes.push(newListIndex);
         }
         else {
-            // 既存要素の再利用
+            // Reuse existing element
             const existingListIndex = oldIndexes[oldIndex];
+            // Update index if position changed
             if (existingListIndex.index !== i) {
                 existingListIndex.index = i;
             }
@@ -1699,40 +2478,44 @@ function createListIndexes(parentListIndex, oldList, newList, oldIndexes) {
 }
 
 /**
- * 構造化パス情報(info, listIndex)をもとに、状態オブジェクト(target)から値を取得する。
+ * Retrieves value from state object (target) based on structured path info (info, listIndex).
  *
- * - 依存関係の自動登録（trackedGetters対応時はsetTrackingでラップ）
- * - キャッシュ機構（handler.cacheable時はrefKeyでキャッシュ）
- * - ネスト・ワイルドカード対応（親infoやlistIndexを辿って再帰的に値を取得）
- * - getter経由で値取得時はSetStatePropertyRefSymbolでスコープを一時設定
+ * - Automatic dependency registration (wrapped with setTracking when trackedGetters enabled)
+ * - Cache mechanism (caches by refKey when handler.cacheable)
+ * - Supports nesting and wildcards (recursively retrieves values by traversing parent info and listIndex)
+ * - Sets scope temporarily with SetStatePropertyRefSymbol when retrieving via getter
  *
- * @param target    状態オブジェクト
- * @param info      構造化パス情報
- * @param listIndex リストインデックス（多重ループ対応）
- * @param receiver  プロキシ
- * @param handler   状態ハンドラ
- * @returns         対象プロパティの値
+ * @param target    - State object
+ * @param ref       - State property reference
+ * @param receiver  - Proxy
+ * @param handler   - State handler
+ * @returns         Value of the target property
  */
 function getByRef(target, ref, receiver, handler) {
+    // Check and register dependency if called from within a getter
     checkDependency(handler, ref);
     let value;
+    // Determine if this path needs list management or caching
     const listable = handler.engine.pathManager.lists.has(ref.info.pattern);
     const cacheable = ref.info.wildcardCount > 0 ||
         handler.engine.pathManager.getters.has(ref.info.pattern);
     let lastCacheEntry = null;
     if (cacheable || listable) {
+        // Try to retrieve cached value and validate its freshness
         lastCacheEntry = handler.engine.getCacheEntry(ref);
         const versionRevision = handler.engine.versionRevisionByPath.get(ref.info.pattern);
         if (lastCacheEntry !== null) {
             if (typeof versionRevision === "undefined") {
-                // 更新なし
+                // No updates
                 return lastCacheEntry.value;
             }
             else {
+                // Check version to determine if cache is still valid
                 if (lastCacheEntry.version > handler.updater.version) {
-                    // これは非同期更新が発生した場合にありえる
+                    // This can occur when async updates happen
                     return lastCacheEntry.value;
                 }
+                // Compare versions and revisions to detect updates
                 if (lastCacheEntry.version < versionRevision.version || lastCacheEntry.revision < versionRevision.revision) ;
                 else {
                     return lastCacheEntry.value;
@@ -1740,37 +2523,42 @@ function getByRef(target, ref, receiver, handler) {
             }
         }
     }
-    // 親子関係のあるgetterが存在する場合は、外部依存から取得
-    // ToDo: stateにgetterが存在する（パスの先頭が一致する）場合はgetter経由で取得
+    // If getters with parent-child relationships exist, retrieve from external dependencies
+    // ToDo: When getters exist in state (path prefix matches), retrieve via getter
     if (handler.engine.stateOutput.startsWith(ref.info) && handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
         return handler.engine.stateOutput.get(ref);
     }
-    // パターンがtargetに存在する場合はgetter経由で取得
+    // If pattern exists in target, retrieve via getter
     if (ref.info.pattern in target) {
+        // Validate ref stack before pushing
         if (handler.refStack.length === 0) {
             raiseError({
                 code: 'STC-002',
                 message: 'handler.refStack is empty in getByRef',
             });
         }
+        // Push current ref onto stack for dependency tracking during getter execution
         handler.refIndex++;
         if (handler.refIndex >= handler.refStack.length) {
             handler.refStack.push(null);
         }
         handler.refStack[handler.refIndex] = handler.lastRefStack = ref;
         try {
+            // Execute the getter
             return value = Reflect.get(target, ref.info.pattern, receiver);
         }
         finally {
+            // Always restore ref stack state, even if getter throws
             handler.refStack[handler.refIndex] = null;
             handler.refIndex--;
             handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-            // キャッシュへ格納
+            // Store in cache
             if (cacheable || listable) {
                 let newListIndexes = null;
                 if (listable) {
-                    // リストインデックスを計算する必要がある
+                    // Need to calculate list indexes
                     if (handler.renderer !== null) {
+                        // Track last list info for diff calculation in renderer
                         if (!handler.renderer.lastListInfoByRef.has(ref)) {
                             const listInfo = {
                                 listIndexes: lastCacheEntry?.listIndexes ?? [],
@@ -1779,8 +2567,10 @@ function getByRef(target, ref, receiver, handler) {
                             handler.renderer.lastListInfoByRef.set(ref, listInfo);
                         }
                     }
+                    // Calculate new list indexes by comparing old and new values
                     newListIndexes = createListIndexes(ref.listIndex, lastCacheEntry?.value, value, lastCacheEntry?.listIndexes ?? []);
                 }
+                // Create or update cache entry with new value and metadata
                 let cacheEntry = lastCacheEntry ?? {
                     value: null,
                     listIndexes: null,
@@ -1796,7 +2586,7 @@ function getByRef(target, ref, receiver, handler) {
         }
     }
     else {
-        // 存在しない場合エラー
+        // Error if not exists
         raiseError({
             code: "STC-001",
             message: `Property "${ref.info.pattern}" does not exist in state.`,
@@ -1808,25 +2598,41 @@ function getByRef(target, ref, receiver, handler) {
 /**
  * setByRef.ts
  *
- * StateClassの内部APIとして、構造化パス情報（IStructuredPathInfo）とリストインデックス（IListIndex）を指定して
- * 状態オブジェクト（target）に値を設定するための関数（setByRef）の実装です。
+ * Internal API function for StateClass that sets values to the state object (target)
+ * by specifying structured path information (IStructuredPathInfo) and list index (IListIndex).
  *
- * 主な役割:
- * - 指定されたパス・インデックスに対応するState値を設定（多重ループやワイルドカードにも対応）
- * - getter/setter経由で値設定時はSetStatePropertyRefSymbolでスコープを一時設定
- * - 存在しない場合は親infoやlistIndexを辿って再帰的に値を設定
- * - 設定後はengine.updater.addUpdatedStatePropertyRefValueで更新情報を登録
+ * Main responsibilities:
+ * - Sets State values for specified path/index (supports multiple loops and wildcards)
+ * - Temporarily sets scope with SetStatePropertyRefSymbol when setting via getter/setter
+ * - Recursively sets values by traversing parent info and listIndex if not found
+ * - Registers update information via engine.updater.addUpdatedStatePropertyRefValue after setting
  *
- * 設計ポイント:
- * - ワイルドカードや多重ループにも柔軟に対応し、再帰的な値設定を実現
- * - finallyで必ず更新情報を登録し、再描画や依存解決に利用
- * - getter/setter経由のスコープ切り替えも考慮した設計
+ * Design points:
+ * - Flexibly supports wildcards and multiple loops, achieving recursive value setting
+ * - Always registers update information in finally block for re-rendering and dependency resolution
+ * - Design considers scope switching via getter/setter
+ */
+/**
+ * Sets a value to the state object for the specified property reference.
+ *
+ * This function handles value setting with support for wildcards, multiple loops, and nested structures.
+ * It manages scope switching for getter/setter execution and tracks swap operations for element updates.
+ * Update information is always registered in the finally block for re-rendering and dependency resolution.
+ *
+ * @param target - State object
+ * @param ref - State property reference indicating where to set the value
+ * @param value - Value to set
+ * @param receiver - State proxy object
+ * @param handler - State handler containing engine and updater references
+ * @returns Result of the set operation
+ * @throws {Error} STATE-202 - When required parent info or list index is missing
  */
 function setByRef(target, ref, value, receiver, handler) {
+    // Check if this path represents an element in a list
     const isElements = handler.engine.pathManager.elements.has(ref.info.pattern);
     let parentRef = null;
     let swapInfo = null;
-    // elementsの場合はswapInfoを準備
+    // Prepare swapInfo for elements to track value swapping in lists
     if (isElements) {
         parentRef = ref.parentRef ?? raiseError({
             code: 'STATE-202',
@@ -1834,6 +2640,7 @@ function setByRef(target, ref, value, receiver, handler) {
             context: { where: 'setByRef (element)', refPath: ref.info.pattern },
             docsUrl: '/docs/error-codes.md#state',
         });
+        // Get or create swap info for tracking list element changes
         swapInfo = handler.updater.swapInfoByRef.get(parentRef) || null;
         if (swapInfo === null) {
             swapInfo = {
@@ -1844,37 +2651,45 @@ function setByRef(target, ref, value, receiver, handler) {
         }
     }
     try {
-        // 親子関係のあるgetterが存在する場合は、外部依存を通じて値を設定
-        // ToDo: stateにgetterが存在する（パスの先頭が一致する）場合はgetter経由で取得
+        // If getters with parent-child relationships exist, set value through external dependencies
+        // TODO: When getter exists in state (path prefix matches), retrieve via getter
         if (handler.engine.stateOutput.startsWith(ref.info) && handler.engine.pathManager.setters.intersection(ref.info.cumulativePathSet).size === 0) {
             return handler.engine.stateOutput.set(ref, value);
         }
+        // If property exists directly in target, set via setter
         if (ref.info.pattern in target) {
+            // Push current ref onto stack for scope tracking during setter execution
             handler.refIndex++;
             if (handler.refIndex >= handler.refStack.length) {
                 handler.refStack.push(null);
             }
             handler.refStack[handler.refIndex] = handler.lastRefStack = ref;
             try {
+                // Execute the setter
                 return Reflect.set(target, ref.info.pattern, value, receiver);
             }
             finally {
+                // Always restore ref stack state
                 handler.refStack[handler.refIndex] = null;
                 handler.refIndex--;
                 handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
             }
         }
         else {
+            // Property doesn't exist directly, need to traverse parent hierarchy
             const parentInfo = ref.info.parentInfo ?? raiseError({
                 code: 'STATE-202',
                 message: 'propRef.stateProp.parentInfo is undefined',
                 context: { where: 'setByRef', refPath: ref.info.pattern },
                 docsUrl: '/docs/error-codes.md#state',
             });
+            // Calculate parent list index based on wildcard hierarchy
             const parentListIndex = parentInfo.wildcardCount < ref.info.wildcardCount ? (ref.listIndex?.parentListIndex ?? null) : ref.listIndex;
             const parentRef = getStatePropertyRef(parentInfo, parentListIndex);
+            // Get the parent value to set property on
             const parentValue = getByRef(target, parentRef, receiver, handler);
             const lastSegment = ref.info.lastSegment;
+            // Handle wildcard (array element) vs named property
             if (lastSegment === "*") {
                 const index = ref.listIndex?.index ?? raiseError({
                     code: 'STATE-202',
@@ -1890,21 +2705,25 @@ function setByRef(target, ref, value, receiver, handler) {
         }
     }
     finally {
+        // Always register this ref for update processing
         handler.updater.enqueueRef(ref);
         if (isElements) {
+            // Handle list element swap tracking
             const index = swapInfo.value.indexOf(value);
             const currentListIndexes = receiver[GetListIndexesByRefSymbol](parentRef) ?? [];
             const curIndex = ref.listIndex.index;
+            // Assign list index from swap info or create new one
             const listIndex = (index !== -1) ? swapInfo.listIndexes[index] : createListIndex(parentRef.listIndex, -1);
             currentListIndexes[curIndex] = listIndex;
-            // 重複チェック
-            // 重複していない場合、swapが完了したとみなし、インデックスを更新
+            // Check for duplicates to determine if swap is complete
+            // If no duplicates, consider swap complete and update indexes
             const listValueSet = new Set(receiver[GetByRefSymbol](parentRef) ?? []);
             if (listValueSet.size === swapInfo.value.length) {
+                // Swap complete, renormalize indexes to match current positions
                 for (let i = 0; i < currentListIndexes.length; i++) {
                     currentListIndexes[i].index = i;
                 }
-                // 完了したのでswapInfoを削除
+                // Delete swapInfo as swap is complete
                 handler.updater.swapInfoByRef.delete(parentRef);
             }
         }
@@ -1914,30 +2733,41 @@ function setByRef(target, ref, value, receiver, handler) {
 /**
  * resolve.ts
  *
- * StateClassのAPIとして、パス（path）とインデックス（indexes）を指定して
- * Stateの値を取得・設定するための関数（resolve）の実装です。
+ * Implementation of resolve function for StateClass API to get/set State values
+ * by specifying path and indexes.
  *
- * 主な役割:
- * - 文字列パス（path）とインデックス配列（indexes）から、該当するState値の取得・設定を行う
- * - ワイルドカードや多重ループを含むパスにも対応
- * - value未指定時は取得（getByRef）、指定時は設定（setByRef）を実行
+ * Main responsibilities:
+ * - Gets or sets State values from string path and index array
+ * - Supports paths with wildcards and nested loops
+ * - Executes get (getByRef) when value not specified, set (setByRef) when specified
  *
- * 設計ポイント:
- * - getStructuredPathInfoでパスを解析し、ワイルドカード階層ごとにリストインデックスを解決
- * - handler.engine.getListIndexesSetで各階層のリストインデックス集合を取得
- * - getByRef/setByRefで値の取得・設定を一元的に処理
- * - 柔軟なバインディングやAPI経由での利用が可能
+ * Design points:
+ * - Parses path with getStructuredPathInfo and resolves list indexes for each wildcard level
+ * - Gets list index collection for each level via handler.engine.getListIndexesSet
+ * - Centrally handles value get/set with getByRef/setByRef
+ * - Enables flexible binding and API-based usage
+ */
+/**
+ * Creates a resolve function to get/set State values by path and indexes.
+ * @param target - Target object to access
+ * @param prop - Property key (unused but part of signature)
+ * @param receiver - State proxy for context
+ * @param handler - State handler with engine and dependency tracking
+ * @returns Function that accepts path, indexes, and optional value
+ * @throws STATE-202 If indexes length insufficient or setting on readonly proxy
+ * @throws LIST-201 If list index not found at any wildcard level
  */
 function resolve(target, prop, receiver, handler) {
     return (path, indexes, value) => {
         const info = getStructuredPathInfo(path);
         const lastInfo = handler.lastRefStack?.info ?? null;
         if (lastInfo !== null && lastInfo.pattern !== info.pattern) {
-            // gettersに含まれる場合は依存関係を登録
+            // Register dependency if included in getters
             if (handler.engine.pathManager.onlyGetters.has(lastInfo.pattern)) {
                 handler.engine.pathManager.addDynamicDependency(lastInfo.pattern, info.pattern);
             }
         }
+        // Validate that enough indexes are provided for all wildcard levels
         if (info.wildcardParentInfos.length > indexes.length) {
             raiseError({
                 code: 'STATE-202',
@@ -1947,12 +2777,15 @@ function resolve(target, prop, receiver, handler) {
                 severity: 'error',
             });
         }
-        // ワイルドカード階層ごとにListIndexを解決していく
+        // Resolve ListIndex for each wildcard level by walking through the hierarchy
         let listIndex = null;
         for (let i = 0; i < info.wildcardParentInfos.length; i++) {
             const wildcardParentPattern = info.wildcardParentInfos[i];
+            // Get reference for current wildcard level
             const wildcardRef = getStatePropertyRef(wildcardParentPattern, listIndex);
+            // Access the value to ensure list exists
             getByRef(target, wildcardRef, receiver, handler);
+            // Get all list indexes at this level
             const listIndexes = receiver[GetListIndexesByRefSymbol](wildcardRef);
             if (listIndexes == null) {
                 raiseError({
@@ -1963,6 +2796,7 @@ function resolve(target, prop, receiver, handler) {
                     severity: 'error',
                 });
             }
+            // Get the specific list index for this level using provided index
             const index = indexes[i];
             listIndex = listIndexes[index] ?? raiseError({
                 code: 'LIST-201',
@@ -1972,9 +2806,11 @@ function resolve(target, prop, receiver, handler) {
                 severity: 'error',
             });
         }
-        // WritableかReadonlyかを判定して適切なメソッドを呼び出す
+        // Create reference with resolved list index and perform get or set
+        // Determine if Writable or Readonly and call appropriate method
         const ref = getStatePropertyRef(info, listIndex);
         const hasSetValue = typeof value !== "undefined";
+        // Check if receiver supports setting (has SetByRefSymbol)
         if (SetByRefSymbol in receiver) {
             if (!hasSetValue) {
                 return getByRef(target, ref, receiver, handler);
@@ -1988,7 +2824,7 @@ function resolve(target, prop, receiver, handler) {
                 return getByRef(target, ref, receiver, handler);
             }
             else {
-                // readonlyなので、setはできない
+                // Cannot set on readonly proxy
                 raiseError({
                     code: 'STATE-202',
                     message: `Cannot set value on a readonly proxy: ${path}`,
@@ -2004,17 +2840,25 @@ function resolve(target, prop, receiver, handler) {
 /**
  * connectedCallback.ts
  *
- * StateClassのライフサイクルフック「$connectedCallback」を呼び出すユーティリティ関数です。
+ * Utility function to invoke the StateClass lifecycle hook "$connectedCallback".
  *
- * 主な役割:
- * - オブジェクト（target）に$connectedCallbackメソッドが定義されていれば呼び出す
- * - コールバックはtargetのthisコンテキストで呼び出し、IReadonlyStateProxy（receiver）を引数として渡す
- * - 非同期関数として実行可能（await対応）
+ * Main responsibilities:
+ * - Invokes $connectedCallback method if defined on the object (target)
+ * - Callback is invoked with target's this context, passing IReadonlyStateProxy (receiver) as argument
+ * - Executable as async function (await compatible)
  *
- * 設計ポイント:
- * - Reflect.getで$connectedCallbackプロパティを安全に取得
- * - 存在しない場合は何もしない
- * - ライフサイクル管理やカスタム初期化処理に利用
+ * Design points:
+ * - Safely retrieves $connectedCallback property using Reflect.get
+ * - Does nothing if the callback doesn't exist
+ * - Used for lifecycle management and custom initialization logic
+ */
+/**
+ * Invokes the $connectedCallback lifecycle hook if defined on the target.
+ * @param target - Target object to check for callback
+ * @param prop - Property key (unused but part of signature)
+ * @param receiver - State proxy to pass as this context
+ * @param handler - State handler (unused but part of signature)
+ * @returns Promise or void depending on callback implementation
  */
 function connectedCallback(target, prop, receiver, handler) {
     const callback = Reflect.get(target, CONNECTED_CALLBACK_FUNC_NAME);
@@ -2026,17 +2870,24 @@ function connectedCallback(target, prop, receiver, handler) {
 /**
  * disconnectedCallback.ts
  *
- * StateClassのライフサイクルフック「$disconnectedCallback」を呼び出すユーティリティ関数です。
+ * Utility function to invoke the StateClass lifecycle hook "$disconnectedCallback".
  *
- * 主な役割:
- * - オブジェクト（target）に$disconnectedCallbackメソッドが定義されていれば呼び出す
- * - コールバックはtargetのthisコンテキストで呼び出し、IReadonlyStateProxy（receiver）を引数として渡す
- * - 非同期関数として実行可能（await対応）
+ * Main responsibilities:
+ * - Invokes $disconnectedCallback method if defined on the object (target)
+ * - Callback is invoked with target's this context, passing IReadonlyStateProxy (receiver) as argument
+ * - Executable as async function (await compatible)
  *
- * 設計ポイント:
- * - Reflect.getで$disconnectedCallbackプロパティを安全に取得
- * - 存在しない場合は何もしない
- * - ライフサイクル管理やクリーンアップ処理に利用
+ * Design points:
+ * - Safely retrieves $disconnectedCallback property using Reflect.get
+ * - Does nothing if the callback doesn't exist
+ * - Used for lifecycle management and cleanup logic
+ */
+/**
+ * Invokes the $disconnectedCallback lifecycle hook if defined on the target.
+ * @param target - Target object to check for callback
+ * @param prop - Property key (unused but part of signature)
+ * @param receiver - State proxy to pass as this context
+ * @param handler - State handler (unused but part of signature)
  */
 function disconnectedCallback(target, prop, receiver, handler) {
     const callback = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
@@ -2046,10 +2897,20 @@ function disconnectedCallback(target, prop, receiver, handler) {
 }
 
 /**
- * getAllReadonly
+ * getAll
  *
- * ワイルドカードを含む State パスから、対象となる全要素を配列で取得する。
- * Throws: LIST-201（インデックス未解決）、BIND-201（ワイルドカード情報不整合）
+ * Retrieves all elements as an array from a State path containing wildcards.
+ * Throws: LIST-201 (unresolved index), BIND-201 (wildcard information inconsistency)
+ */
+/**
+ * Creates a function to retrieve all elements from a wildcard path.
+ * @param target - Target object to retrieve from
+ * @param prop - Property key (unused but part of signature)
+ * @param receiver - State proxy for context
+ * @param handler - State handler with engine and dependency tracking
+ * @returns Function that accepts path and optional indexes, returns array of values
+ * @throws LIST-201 If list index not found
+ * @throws BIND-201 If wildcard information is inconsistent
  */
 function getAll(target, prop, receiver, handler) {
     const resolveFn = resolve(target, prop, receiver, handler);
@@ -2057,11 +2918,12 @@ function getAll(target, prop, receiver, handler) {
         const info = getStructuredPathInfo(path);
         const lastInfo = handler.lastRefStack?.info ?? null;
         if (lastInfo !== null && lastInfo.pattern !== info.pattern) {
-            // gettersに含まれる場合は依存関係を登録
+            // Register dependency if included in getters
             if (handler.engine.pathManager.onlyGetters.has(lastInfo.pattern)) {
                 handler.engine.pathManager.addDynamicDependency(lastInfo.pattern, info.pattern);
             }
         }
+        // If indexes not provided, try to extract from context
         if (typeof indexes === "undefined") {
             for (let i = 0; i < info.wildcardInfos.length; i++) {
                 const wildcardPattern = info.wildcardInfos[i] ?? raiseError({
@@ -2081,12 +2943,24 @@ function getAll(target, prop, receiver, handler) {
                 indexes = [];
             }
         }
+        /**
+         * Recursively walks through wildcard patterns to collect all matching indexes.
+         * @param wildcardParentInfos - Array of wildcard parent path infos
+         * @param wildardIndexPos - Current position in wildcard hierarchy
+         * @param listIndex - Current list index or null
+         * @param indexes - Array of specified indexes (empty for all)
+         * @param indexPos - Current position in indexes array
+         * @param parentIndexes - Accumulated parent indexes
+         * @param results - Output array to collect all matching index combinations
+         */
         const walkWildcardPattern = (wildcardParentInfos, wildardIndexPos, listIndex, indexes, indexPos, parentIndexes, results) => {
             const wildcardParentPattern = wildcardParentInfos[wildardIndexPos] ?? null;
+            // Base case: no more wildcards, add accumulated indexes to results
             if (wildcardParentPattern === null) {
                 results.push(parentIndexes);
                 return;
             }
+            // Get the list at current wildcard level
             const wildcardRef = getStatePropertyRef(wildcardParentPattern, listIndex);
             getByRef(target, wildcardRef, receiver, handler);
             const listIndexes = receiver[GetListIndexesByRefSymbol](wildcardRef);
@@ -2100,6 +2974,7 @@ function getAll(target, prop, receiver, handler) {
                 });
             }
             const index = indexes[indexPos] ?? null;
+            // If no specific index provided, iterate through all list items
             if (index === null) {
                 for (let i = 0; i < listIndexes.length; i++) {
                     const listIndex = listIndexes[i];
@@ -2107,6 +2982,7 @@ function getAll(target, prop, receiver, handler) {
                 }
             }
             else {
+                // Specific index provided, use it
                 const listIndex = listIndexes[index] ?? raiseError({
                     code: 'LIST-201',
                     message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
@@ -2114,17 +2990,20 @@ function getAll(target, prop, receiver, handler) {
                     docsUrl: '/docs/error-codes.md#list',
                     severity: 'error',
                 });
+                // Continue to next wildcard level if exists
                 if ((wildardIndexPos + 1) < wildcardParentInfos.length) {
                     walkWildcardPattern(wildcardParentInfos, wildardIndexPos + 1, listIndex, indexes, indexPos + 1, parentIndexes.concat(listIndex.index), results);
                 }
                 else {
-                    // 最終ワイルドカード層まで到達しているので、結果を確定
+                    // Reached the final wildcard layer, finalize the result
                     results.push(parentIndexes.concat(listIndex.index));
                 }
             }
         };
+        // Collect all matching index combinations
         const resultIndexes = [];
         walkWildcardPattern(info.wildcardParentInfos, 0, null, indexes, 0, [], resultIndexes);
+        // Resolve values for each collected index combination
         const resultValues = [];
         for (let i = 0; i < resultIndexes.length; i++) {
             resultValues.push(resolveFn(info.pattern, resultIndexes[i]));
@@ -2133,7 +3012,23 @@ function getAll(target, prop, receiver, handler) {
     };
 }
 
+/**
+ * Retrieves all list indexes for the specified property reference.
+ *
+ * This function ensures the reference points to a list path, then retrieves the list indexes
+ * either from stateOutput (if available) or from the cache after updating it via getByRef.
+ *
+ * @param target - State object
+ * @param ref - State property reference pointing to a list path
+ * @param receiver - State proxy object
+ * @param handler - State handler containing engine and cache references
+ * @returns Array of list indexes for the specified list path
+ * @throws {Error} LIST-201 - When the path is not registered as a list
+ * @throws {Error} LIST-202 - When cache entry is not found after update
+ * @throws {Error} LIST-203 - When list indexes are missing in the cache entry
+ */
 function getListIndexesByRef(target, ref, receiver, handler) {
+    // Validate that the path is registered as a list
     if (!handler.engine.pathManager.lists.has(ref.info.pattern)) {
         raiseError({
             code: 'LIST-201',
@@ -2142,11 +3037,14 @@ function getListIndexesByRef(target, ref, receiver, handler) {
             docsUrl: '/docs/error-codes.md#state',
         });
     }
+    // Try to retrieve from stateOutput first (optimization for external dependencies)
     if (handler.engine.stateOutput.startsWith(ref.info) && handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
         return handler.engine.stateOutput.getListIndexes(ref) ?? [];
     }
-    getByRef(target, ref, receiver, handler); // キャッシュ更新を兼ねる
+    // Update cache by calling getByRef, which also calculates list indexes
+    getByRef(target, ref, receiver, handler); // Also updates cache
     const cacheEntry = handler.engine.getCacheEntry(ref);
+    // Validate that cache entry exists
     if (cacheEntry === null) {
         raiseError({
             code: 'LIST-202',
@@ -2156,6 +3054,7 @@ function getListIndexesByRef(target, ref, receiver, handler) {
         });
     }
     const listIndexes = cacheEntry.listIndexes;
+    // Validate that list indexes exist in cache entry
     if (listIndexes == null) {
         raiseError({
             code: 'LIST-203',
@@ -2170,17 +3069,26 @@ function getListIndexesByRef(target, ref, receiver, handler) {
 /**
  * updatedCallback.ts
  *
- * StateClassのライフサイクルフック「$updatedCallback」を呼び出すユーティリティ関数です。
+ * Utility function to invoke the StateClass lifecycle hook "$updatedCallback".
  *
- * 主な役割:
- * - オブジェクト（target）に$updatedCallbackメソッドが定義されていれば呼び出す
- * - コールバックはtargetのthisコンテキストで呼び出し、IReadonlyStateProxy（receiver）を引数として渡す
- * - 非同期関数として実行可能（await対応）
+ * Main responsibilities:
+ * - Invokes $updatedCallback method if defined on the object (target)
+ * - Callback is invoked with target's this context, passing IReadonlyStateProxy (receiver) as argument
+ * - Executable as async function (await compatible)
  *
- * 設計ポイント:
- * - Reflect.getで$disconnectedCallbackプロパティを安全に取得
- * - 存在しない場合は何もしない
- * - ライフサイクル管理やクリーンアップ処理に利用
+ * Design points:
+ * - Safely retrieves $updatedCallback property using Reflect.get
+ * - Does nothing if the callback doesn't exist
+ * - Used for lifecycle management and update handling logic
+ */
+/**
+ * Invokes the $updatedCallback lifecycle hook if defined on the target.
+ * Aggregates updated paths and their indexes before passing to the callback.
+ * @param target - Target object to check for callback
+ * @param refs - Array of state property references that were updated
+ * @param receiver - State proxy to pass as this context
+ * @param handler - State handler (unused but part of signature)
+ * @returns Promise or void depending on callback implementation
  */
 function updatedCallback(target, refs, receiver, handler) {
     const callback = Reflect.get(target, UPDATED_CALLBACK_FUNC_NAME);
@@ -2208,24 +3116,44 @@ function updatedCallback(target, refs, receiver, handler) {
 /**
  * get.ts
  *
- * StateClassのProxyトラップとして、プロパティアクセス時の値取得処理を担う関数（get）の実装です。
+ * Implementation of the get function as a Proxy trap for StateClass,
+ * handling property access and value retrieval.
  *
- * 主な役割:
- * - 文字列プロパティの場合、特殊プロパティ（$1〜$9, $resolve, $getAll, $navigate）に応じた値やAPIを返却
- * - 通常のプロパティはgetResolvedPathInfoでパス情報を解決し、getListIndexでリストインデックスを取得
- * - getByRefで構造化パス・リストインデックスに対応した値を取得
- * - シンボルプロパティの場合はhandler.callableApi経由でAPIを呼び出し
- * - それ以外はReflect.getで通常のプロパティアクセスを実行
+ * Main responsibilities:
+ * - For string properties, returns values or APIs based on special properties ($1-$9, $resolve, $getAll, $navigate)
+ * - For regular properties, resolves path info via getResolvedPathInfo and retrieves list index via getListIndex
+ * - Retrieves values corresponding to structured path and list index via getByRef
+ * - For symbol properties, calls APIs via handler.callableApi
+ * - For other cases, executes normal property access via Reflect.get
  *
- * 設計ポイント:
- * - $1〜$9は直近のStatePropertyRefのリストインデックス値を返す特殊プロパティ
- * - $resolve, $getAll, $navigateはAPI関数やルーターインスタンスを返す
- * - 通常のプロパティアクセスもバインディングや多重ループに対応
- * - シンボルAPIやReflect.getで拡張性・互換性も確保
+ * Design points:
+ * - $1-$9 are special properties that return list index values from the most recent StatePropertyRef
+ * - $resolve, $getAll, $navigate return API functions or router instances
+ * - Regular property access also supports bindings and nested loops
+ * - Ensures extensibility and compatibility through symbol APIs and Reflect.get
+ */
+/**
+ * Proxy trap handler for property access on State objects.
+ *
+ * This function intercepts property access and handles:
+ * - Index name properties ($1-$9): Returns list index values from current context
+ * - Special properties ($resolve, $getAll, $navigate, etc.): Returns API functions
+ * - String properties: Resolves path and retrieves value via getByRef
+ * - Symbol properties: Returns internal API functions for StateClass operations
+ * - Other properties: Falls back to default Reflect.get behavior
+ *
+ * @param target - State object being accessed
+ * @param prop - Property key being accessed (string, symbol, or other)
+ * @param receiver - Proxy object that triggered this trap
+ * @param handler - State handler containing context and configuration
+ * @returns Value of the accessed property or an API function
+ * @throws {Error} LIST-201 - When list index is not found for index name properties
  */
 function get(target, prop, receiver, handler) {
+    // Check if property is an index name ($1-$9)
     const index = indexByIndexName[prop];
     if (typeof index !== "undefined") {
+        // Retrieve list index from the most recent property reference
         const listIndex = handler.lastRefStack?.listIndex;
         return listIndex?.indexes[index] ?? raiseError({
             code: 'LIST-201',
@@ -2235,7 +3163,9 @@ function get(target, prop, receiver, handler) {
             severity: 'error',
         });
     }
+    // Handle string properties
     if (typeof prop === "string") {
+        // Check for special properties starting with $
         if (prop[0] === "$") {
             switch (prop) {
                 case "$resolve":
@@ -2250,13 +3180,16 @@ function get(target, prop, receiver, handler) {
                     return handler.engine.owner;
             }
         }
+        // Regular property access: resolve path, get list index, and retrieve value
         const resolvedInfo = getResolvedPathInfo(prop);
         const listIndex = getListIndex(resolvedInfo, receiver, handler);
         const ref = getStatePropertyRef(resolvedInfo.info, listIndex);
         return getByRef(target, ref, receiver, handler);
     }
     else if (typeof prop === "symbol") {
+        // Handle symbol properties for internal APIs
         if (handler.symbols.has(prop)) {
+            // Return API functions based on symbol type
             switch (prop) {
                 case GetByRefSymbol:
                     return (ref) => getByRef(target, ref, receiver, handler);
@@ -2273,12 +3206,20 @@ function get(target, prop, receiver, handler) {
             }
         }
         else {
+            // Unknown symbol, use default behavior
             return Reflect.get(target, prop, receiver);
         }
     }
 }
 
+// Initial depth of the reference stack for tracking property access hierarchy
 const STACK_DEPTH$1 = 32;
+/**
+ * StateHandler class implementing read-only Proxy traps for State objects.
+ *
+ * This handler intercepts property access and prohibits property modifications,
+ * ensuring the State object remains immutable from the perspective of the proxy user.
+ */
 let StateHandler$1 = class StateHandler {
     engine;
     updater;
@@ -2289,14 +3230,44 @@ let StateHandler$1 = class StateHandler {
     loopContext = null;
     symbols = new Set([GetByRefSymbol, GetListIndexesByRefSymbol]);
     apis = new Set(["$resolve", "$getAll", "$trackDependency", "$navigate", "$component"]);
+    /**
+     * Constructs a new StateHandler for read-only state proxy.
+     *
+     * @param engine - Component engine containing state management infrastructure
+     * @param updater - Updater for tracking state changes
+     * @param renderer - Optional renderer for UI updates, null if not rendering
+     */
     constructor(engine, updater, renderer) {
         this.engine = engine;
         this.updater = updater;
         this.renderer = renderer;
     }
+    /**
+     * Proxy get trap for property access.
+     *
+     * Delegates to the shared get trap handler that supports bindings, API calls,
+     * and dependency tracking.
+     *
+     * @param target - State object being accessed
+     * @param prop - Property key being accessed
+     * @param receiver - Proxy object
+     * @returns Value of the accessed property
+     */
     get(target, prop, receiver) {
         return get(target, prop, receiver, this);
     }
+    /**
+     * Proxy set trap for property assignment.
+     *
+     * Always throws an error to prohibit modifications to the read-only state.
+     *
+     * @param target - State object being modified
+     * @param prop - Property key being set
+     * @param value - Value attempting to be assigned
+     * @param receiver - Proxy object
+     * @returns Never returns (always throws)
+     * @throws {Error} STATE-202 - Always thrown to prevent writes to readonly state
+     */
     set(target, prop, value, receiver) {
         raiseError({
             code: 'STATE-202',
@@ -2305,13 +3276,40 @@ let StateHandler$1 = class StateHandler {
             docsUrl: './docs/error-codes.md#state',
         });
     }
+    /**
+     * Proxy has trap for property existence checking.
+     *
+     * Returns true if the property exists in the target, or is a known symbol/API.
+     *
+     * @param target - State object being checked
+     * @param prop - Property key being checked for existence
+     * @returns true if property exists in target or is a known symbol/API
+     */
     has(target, prop) {
         return Reflect.has(target, prop) || this.symbols.has(prop) || this.apis.has(prop);
     }
 };
+/**
+ * Creates a read-only state handler instance.
+ *
+ * @param engine - Component engine containing state management infrastructure
+ * @param updater - Updater for tracking state changes
+ * @param renderer - Optional renderer for UI updates, null if not rendering
+ * @returns New readonly state handler instance
+ */
 function createReadonlyStateHandler(engine, updater, renderer) {
     return new StateHandler$1(engine, updater, renderer);
 }
+/**
+ * Creates a read-only proxy for a State object.
+ *
+ * The returned proxy allows property reading but throws an error on any write attempt.
+ * Supports special properties ($resolve, $getAll, etc.) and internal API symbols.
+ *
+ * @param state - State object to wrap in a read-only proxy
+ * @param handler - Read-only state handler implementing proxy traps
+ * @returns Read-only proxy wrapping the state object
+ */
 function createReadonlyStateProxy(state, handler) {
     return new Proxy(state, handler);
 }
@@ -2319,31 +3317,67 @@ function createReadonlyStateProxy(state, handler) {
 /**
  * set.ts
  *
- * StateClassのProxyトラップとして、プロパティ設定時の値セット処理を担う関数（set）の実装です。
+ * Implementation of the set function as a Proxy trap for StateClass,
+ * handling property setting and value assignment.
  *
- * 主な役割:
- * - 文字列プロパティの場合、getResolvedPathInfoでパス情報を解決し、getListIndexでリストインデックスを取得
- * - setByRefで構造化パス・リストインデックスに対応した値設定を実行
- * - それ以外（シンボル等）の場合はReflect.setで通常のプロパティ設定を実行
+ * Main responsibilities:
+ * - For string properties, resolves path info via getResolvedPathInfo and retrieves list index via getListIndex
+ * - Executes value setting corresponding to structured path and list index via setByRef
+ * - For other cases (symbols, etc.), executes normal property setting via Reflect.set
  *
- * 設計ポイント:
- * - バインディングや多重ループ、ワイルドカードを含むパスにも柔軟に対応
- * - setByRefを利用することで、依存解決や再描画などの副作用も一元管理
- * - Reflect.setで標準的なプロパティ設定の互換性も確保
+ * Design points:
+ * - Flexibly supports bindings, nested loops, and paths with wildcards
+ * - By utilizing setByRef, side effects like dependency resolution and re-rendering are centrally managed
+ * - Ensures compatibility with standard property setting via Reflect.set
+ */
+/**
+ * Proxy trap handler for property setting on State objects.
+ *
+ * This function intercepts property assignments and handles:
+ * - String properties: Resolves path info, retrieves list index, and sets value via setByRef
+ * - Other properties: Falls back to default Reflect.set behavior
+ *
+ * The setByRef call ensures proper handling of wildcards, nested loops, dependency tracking,
+ * and triggers necessary re-rendering and update callbacks.
+ *
+ * @param target - State object being modified
+ * @param prop - Property key being set (string, symbol, or other)
+ * @param value - Value to assign to the property
+ * @param receiver - Proxy object that triggered this trap
+ * @param handler - State handler containing context and configuration
+ * @returns true if the property was successfully set, false otherwise
  */
 function set(target, prop, value, receiver, handler) {
     if (typeof prop === "string") {
+        // Resolve path information and list index for structured property access
         const resolvedInfo = getResolvedPathInfo(prop);
         const listIndex = getListIndex(resolvedInfo, receiver, handler);
         const ref = getStatePropertyRef(resolvedInfo.info, listIndex);
+        // Set value via setByRef to handle dependencies and updates
         return setByRef(target, ref, value, receiver, handler);
     }
     else {
+        // For non-string properties (symbols, etc.), use default behavior
         return Reflect.set(target, prop, value, receiver);
     }
 }
 
+/**
+ * Temporarily sets a loop context and executes a callback within that scope.
+ *
+ * This function manages loop context scope for loop bindings and nested loops, ensuring
+ * proper context isolation. It handles both synchronous and asynchronous callbacks,
+ * guaranteeing context cleanup even if exceptions occur.
+ *
+ * @param handler - Writable state handler containing loop context state
+ * @param loopContext - Loop context to set, or null to execute without loop context
+ * @param callback - Callback function to execute within the loop context scope
+ * @returns Result of the callback execution
+ * @throws {Error} STATE-301 - When loop context is already set (nested context not allowed)
+ * @throws {Error} STC-002 - When ref stack is empty but loop context exists
+ */
 function setLoopContext(handler, loopContext, callback) {
+    // Ensure no existing loop context (prevent nested contexts)
     if (handler.loopContext) {
         raiseError({
             code: 'STATE-301',
@@ -2352,268 +3386,308 @@ function setLoopContext(handler, loopContext, callback) {
             docsUrl: '/docs/error-codes.md#state',
         });
     }
+    // Set the new loop context
     handler.loopContext = loopContext;
     let resultPromise;
     try {
         if (loopContext) {
+            // Validate ref stack before pushing loop context ref
             if (handler.refStack.length === 0) {
                 raiseError({
                     code: 'STC-002',
                     message: 'handler.refStack is empty in getByRef',
                 });
             }
+            // Push loop context ref onto stack for scope tracking
             handler.refIndex++;
             if (handler.refIndex >= handler.refStack.length) {
                 handler.refStack.push(null);
             }
             handler.refStack[handler.refIndex] = handler.lastRefStack = loopContext.ref;
             try {
+                // Execute callback within loop context scope
                 resultPromise = callback();
             }
             finally {
+                // Always restore ref stack state
                 handler.refStack[handler.refIndex] = null;
                 handler.refIndex--;
                 handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
             }
         }
         else {
+            // No loop context, execute callback directly
             resultPromise = callback();
         }
     }
     finally {
-        // Promiseの場合は新しいPromiseチェーンを返してfinallyを適用
+        // For Promise, return a new Promise chain with finally applied
         if (resultPromise instanceof Promise) {
             return resultPromise.finally(() => {
                 handler.loopContext = null;
             });
         }
-        // 同期の場合は即座にリセット
+        // For synchronous case, reset immediately
         handler.loopContext = null;
     }
     return resultPromise;
 }
 
+// Initial depth of the reference stack for tracking property access hierarchy
 const STACK_DEPTH = 32;
+/**
+ * StateHandler class implementing writable Proxy traps for State objects.
+ *
+ * This handler intercepts property access and modifications, supporting full
+ * read-write operations with dependency tracking, re-rendering, and update propagation.
+ */
 class StateHandler {
     engine;
+    updater;
+    renderer = null;
     refStack = Array(STACK_DEPTH).fill(null);
     refIndex = -1;
     lastRefStack = null;
     loopContext = null;
-    updater;
-    renderer = null;
     symbols = new Set([
         GetByRefSymbol, SetByRefSymbol, GetListIndexesByRefSymbol,
         ConnectedCallbackSymbol, DisconnectedCallbackSymbol,
         UpdatedCallbackSymbol
     ]);
     apis = new Set(["$resolve", "$getAll", "$trackDependency", "$navigate", "$component"]);
+    /**
+     * Constructs a new StateHandler for writable state proxy.
+     *
+     * @param engine - Component engine containing state management infrastructure
+     * @param updater - Updater for tracking and propagating state changes
+     */
     constructor(engine, updater) {
         this.engine = engine;
         this.updater = updater;
     }
+    /**
+     * Proxy get trap for property access.
+     *
+     * Delegates to the shared get trap handler that supports bindings, API calls,
+     * and dependency tracking.
+     *
+     * @param target - State object being accessed
+     * @param prop - Property key being accessed
+     * @param receiver - Proxy object
+     * @returns Value of the accessed property
+     */
     get(target, prop, receiver) {
         return get(target, prop, receiver, this);
     }
+    /**
+     * Proxy set trap for property assignment.
+     *
+     * Delegates to the shared set trap handler that handles value updates,
+     * dependency tracking, and triggers re-rendering.
+     *
+     * @param target - State object being modified
+     * @param prop - Property key being set
+     * @param value - Value to assign
+     * @param receiver - Proxy object
+     * @returns true if the property was successfully set
+     */
     set(target, prop, value, receiver) {
         return set(target, prop, value, receiver, this);
     }
+    /**
+     * Proxy has trap for property existence checking.
+     *
+     * Returns true if the property exists in the target, or is a known symbol/API.
+     *
+     * @param target - State object being checked
+     * @param prop - Property key being checked for existence
+     * @returns true if property exists in target or is a known symbol/API
+     */
     has(target, prop) {
         return Reflect.has(target, prop) || this.symbols.has(prop) || this.apis.has(prop);
     }
 }
+/**
+ * Creates a writable state proxy and executes a callback within a loop context scope.
+ *
+ * This function creates a temporary writable proxy for the state object, sets up a loop context
+ * (if provided), and executes the callback with the proxy and handler. The loop context is
+ * automatically cleaned up after callback execution, even if an exception occurs.
+ *
+ * Supports both synchronous and asynchronous callbacks.
+ *
+ * @param engine - Component engine containing state management infrastructure
+ * @param updater - Updater for tracking and propagating state changes
+ * @param state - State object to wrap in a writable proxy
+ * @param loopContext - Optional loop context for nested loop bindings, null if not in a loop
+ * @param callback - Function to execute with the writable state proxy
+ * @returns Result of the callback execution
+ */
 function useWritableStateProxy(engine, updater, state, loopContext, callback) {
+    // Create handler and proxy for writable state access
     const handler = new StateHandler(engine, updater);
     const stateProxy = new Proxy(state, handler);
+    // Execute callback within loop context scope (automatically cleaned up)
     return setLoopContext(handler, loopContext, () => {
         return callback(stateProxy, handler);
     });
 }
 
 /**
- * Renderer は、State の変更（参照 IStatePropertyRef の集合）に対応して、
- * PathTree を辿りつつ各 Binding（IBinding）へ applyChange を委譲するコーディネータです。
+ * Renderer is a coordinator that responds to State changes (a set of IStatePropertyRef references)
+ * by traversing the PathTree and delegating applyChange to each Binding (IBinding).
  *
- * 主な役割
- * - reorderList: 要素単位の並べ替え要求を収集し、親リスト単位の差分（IListDiff）へ変換して適用
- * - render: エントリポイント。ReadonlyState を生成し、reorder → 各 ref の描画（renderItem）の順で実行
- * - renderItem: 指定 ref に紐づく Binding を更新し、静的依存（子 PathNode）と動的依存を再帰的に辿る
+ * Main responsibilities
+ * - reorderList: Collects element-level reordering requests and converts them to parent list-level diffs (IListDiff) for application
+ * - render: Entry point. Creates ReadonlyState and executes in order: reorder → rendering each ref (renderItem)
+ * - renderItem: Updates bindings tied to specified ref and recursively traverses static dependencies (child PathNodes) and dynamic dependencies
  *
- * コントラクト
- * - Binding#applyChange(renderer): 変更があった場合は renderer.updatedBindings に自分自身を追加すること
- * - readonlyState[GetByRefSymbol](ref): ref の新しい値（読み取り専用ビュー）を返すこと
+ * Contract
+ * - Binding#applyChange(renderer): If there are changes, must add itself to renderer.updatedBindings
+ * - readonlyState[GetByRefSymbol](ref): Returns the new value (read-only view) of ref
  *
- * スレッド/再入
- * - 同期実行前提。
+ * Thread/Reentrancy
+ * - Assumes synchronous execution.
  *
- * 代表的な例外
- * - UPD-001/002: Engine/ReadonlyState の未初期化
- * - UPD-003/004/005/006: ListIndex/ParentInfo/OldList* の不整合や ListDiff 未生成
- * - PATH-101: PathNode が見つからない
+ * Common exceptions
+ * - UPD-001/002: Engine/ReadonlyState not initialized
+ * - UPD-003/004/005/006: ListIndex/ParentInfo/OldList* inconsistency or ListDiff not generated
+ * - PATH-101: PathNode not found
  */
 class Renderer {
-    #updatingRefs = [];
-    #updatingRefSet = new Set();
+    updatedBindings = new Set();
+    processedRefs = new Set();
+    lastListInfoByRef = new Map();
+    _engine;
+    _updater;
+    _updatingRefs = [];
+    _updatingRefSet = new Set();
+    _readonlyState = null;
+    _readonlyHandler = null;
     /**
-     * このレンダリングサイクルで「変更あり」となった Binding の集合。
-     * 注意: 実際に追加するのは各 binding.applyChange 実装側の責務。
+     * Constructs a new Renderer instance.
+     *
+     * @param {IComponentEngine} engine - The component engine to render
+     * @param {IUpdater} updater - The updater managing this renderer
      */
-    #updatedBindings = new Set();
-    /**
-     * 二重適用を避けるために処理済みとした参照。
-     * renderItem の再帰や依存関係の横断時に循環/重複を防ぐ。
-     */
-    #processedRefs = new Set();
-    /**
-     * レンダリング対象のエンジン。state, pathManager, bindings などのファサード。
-     */
-    #engine;
-    #readonlyState = null;
-    #readonlyHandler = null;
-    /**
-     * 親リスト参照ごとに「要素の新しい並び位置」を記録するためのインデックス配列。
-     * reorderList で収集し、後段で仮の IListDiff を生成するために用いる。
-     */
-    #reorderIndexesByRef = new Map();
-    #lastListInfoByRef = new Map();
-    #updater;
     constructor(engine, updater) {
-        this.#engine = engine;
-        this.#updater = updater;
+        this._engine = engine;
+        this._updater = updater;
     }
     get updatingRefs() {
-        return this.#updatingRefs;
+        return this._updatingRefs;
     }
     get updatingRefSet() {
-        return this.#updatingRefSet;
+        return this._updatingRefSet;
     }
     /**
-     * このサイクル中に更新された Binding の集合を返す（読み取り専用的に使用）。
-     */
-    get updatedBindings() {
-        return this.#updatedBindings;
-    }
-    /**
-     * 既に処理済みの参照集合を返す。二重適用の防止に利用する。
-     */
-    get processedRefs() {
-        return this.#processedRefs;
-    }
-    /**
-     * 読み取り専用 State ビューを取得する。render 実行中でなければ例外。
+     * Gets the read-only State view. Throws exception if not during render execution.
      * Throws: UPD-002
      */
     get readonlyState() {
-        if (!this.#readonlyState) {
+        if (!this._readonlyState) {
             raiseError({
                 code: "UPD-002",
                 message: "ReadonlyState not initialized",
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }
-        return this.#readonlyState;
+        return this._readonlyState;
     }
     get readonlyHandler() {
-        if (!this.#readonlyHandler) {
+        if (!this._readonlyHandler) {
             raiseError({
                 code: "UPD-002",
                 message: "ReadonlyHandler not initialized",
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }
-        return this.#readonlyHandler;
+        return this._readonlyHandler;
     }
     /**
-     * バッキングエンジンを取得する。未初期化の場合は例外。
-     * Throws: UPD-001
-     */
-    get engine() {
-        if (!this.#engine) {
-            raiseError({
-                code: "UPD-001",
-                message: "Engine not initialized",
-                docsUrl: "./docs/error-codes.md#upd",
-            });
-        }
-        return this.#engine;
-    }
-    get lastListInfoByRef() {
-        return this.#lastListInfoByRef;
-    }
-    /**
-     * リードオンリーな状態を生成し、コールバックに渡す
+     * Creates a read-only state and passes it to the callback
      * @param callback
      * @returns
      */
     createReadonlyState(callback) {
-        const handler = createReadonlyStateHandler(this.#engine, this.#updater, this);
-        const stateProxy = createReadonlyStateProxy(this.#engine.state, handler);
-        this.#readonlyState = stateProxy;
-        this.#readonlyHandler = handler;
+        const handler = createReadonlyStateHandler(this._engine, this._updater, this);
+        const stateProxy = createReadonlyStateProxy(this._engine.state, handler);
+        this._readonlyState = stateProxy;
+        this._readonlyHandler = handler;
         try {
             return callback(stateProxy, handler);
         }
         finally {
-            this.#readonlyState = null;
-            this.#readonlyHandler = null;
+            this._readonlyState = null;
+            this._readonlyHandler = null;
         }
     }
     /**
-     * レンダリングのエントリポイント。ReadonlyState を生成し、
-     * 並べ替え処理→各参照の描画の順に処理します。
+     * Entry point for rendering. Creates ReadonlyState and
+     * processes in order: reordering → rendering each reference.
      *
-     * 注意
-     * - readonlyState はこのメソッドのスコープ内でのみ有効。
-     * - SetCacheableSymbol により参照解決のキャッシュをまとめて有効化できる。
+     * Notes
+     * - readonlyState is only valid within this method's scope.
+     * - SetCacheableSymbol enables caching of reference resolution in bulk.
      */
     render(items) {
-        this.#reorderIndexesByRef.clear();
-        this.#processedRefs.clear();
-        this.#updatedBindings.clear();
-        this.#updatingRefs = [...items];
-        this.#updatingRefSet = new Set(items);
-        // 実際のレンダリングロジックを実装
+        this.processedRefs.clear();
+        this.updatedBindings.clear();
+        this._updatingRefs = [...items];
+        this._updatingRefSet = new Set(items);
+        // Implement actual rendering logic
         this.createReadonlyState((readonlyState, readonlyHandler) => {
-            // まずはリストの並び替えを処理
+            // First, process list reordering
             const remainItems = [];
             const itemsByListRef = new Map();
             const refSet = new Set();
+            // Phase 1: Classify refs into list elements and other refs
             for (let i = 0; i < items.length; i++) {
                 const ref = items[i];
                 refSet.add(ref);
-                if (!this.#engine.pathManager.elements.has(ref.info.pattern)) {
+                // Check if this ref represents a list element
+                if (!this._engine.pathManager.elements.has(ref.info.pattern)) {
+                    // Not a list element - handle later
                     remainItems.push(ref);
                     continue;
                 }
+                // This is a list element - group by parent list ref
                 const listRef = ref.parentRef ?? raiseError({
                     code: "UPD-004",
                     message: `ParentInfo is null for ref: ${ref.key}`,
                     context: { refKey: ref.key, pattern: ref.info.pattern },
                     docsUrl: "./docs/error-codes.md#upd",
                 });
+                // Group element refs by their parent list
                 if (!itemsByListRef.has(listRef)) {
                     itemsByListRef.set(listRef, new Set());
                 }
                 itemsByListRef.get(listRef).add(ref);
             }
+            // Phase 2: Apply changes to list bindings (for list reordering)
             for (const [listRef, refs] of itemsByListRef) {
+                // If the parent list itself is in the update set, skip individual elements
+                // (parent list update will handle all children)
                 if (refSet.has(listRef)) {
                     for (const ref of refs) {
-                        this.#processedRefs.add(ref); // 終了済み
+                        this.processedRefs.add(ref); // Completed
                     }
-                    continue; // 親リストが存在する場合はスキップ
+                    continue; // Skip if parent list exists
                 }
-                const bindings = this.#engine.getBindings(listRef);
+                // Apply list bindings (e.g., for reordering)
+                const bindings = this._engine.getBindings(listRef);
                 for (let i = 0; i < bindings.length; i++) {
-                    if (this.#updatedBindings.has(bindings[i]))
+                    if (this.updatedBindings.has(bindings[i]))
                         continue;
                     bindings[i].applyChange(this);
                 }
                 this.processedRefs.add(listRef);
             }
+            // Phase 3: Process remaining refs (non-list-elements)
             for (let i = 0; i < remainItems.length; i++) {
                 const ref = remainItems[i];
-                const node = findPathNodeByPath(this.#engine.pathManager.rootNode, ref.info.pattern);
+                // Find the PathNode for this ref pattern
+                const node = findPathNodeByPath(this._engine.pathManager.rootNode, ref.info.pattern);
                 if (node === null) {
                     raiseError({
                         code: "PATH-101",
@@ -2626,11 +3700,13 @@ class Renderer {
                     this.renderItem(ref, node);
                 }
             }
-            // 子コンポーネントへの再描画通知
-            if (this.#engine.structiveChildComponents.size > 0) {
-                for (const structiveComponent of this.#engine.structiveChildComponents) {
-                    const structiveComponentBindings = this.#engine.bindingsByComponent.get(structiveComponent) ?? new Set();
+            // Phase 4: Notify child Structive components of changes
+            // This allows nested components to update based on parent state changes
+            if (this._engine.structiveChildComponents.size > 0) {
+                for (const structiveComponent of this._engine.structiveChildComponents) {
+                    const structiveComponentBindings = this._engine.bindingsByComponent.get(structiveComponent) ?? new Set();
                     for (const binding of structiveComponentBindings) {
+                        // Notify each binding about refs that might affect it
                         binding.notifyRedraw(remainItems);
                     }
                 }
@@ -2638,43 +3714,49 @@ class Renderer {
         });
     }
     /**
-     * 単一の参照 ref と対応する PathNode を描画します。
+     * Renders a single reference ref and its corresponding PathNode.
      *
-     * - まず自身のバインディング適用
-     * - 次に静的依存（ワイルドカード含む）
-     * - 最後に動的依存（ワイルドカードは階層的に展開）
+     * - First applies its own bindings
+     * - Then static dependencies (including wildcards)
+     * - Finally dynamic dependencies (wildcards are expanded hierarchically)
      *
-     * 静的依存（子ノード）
-     * - それ以外: 親の listIndex を引き継いで子参照を生成して再帰描画
+     * Static dependencies (child nodes)
+     * - Otherwise: Inherit parent's listIndex to generate child reference and render recursively
      *
-     * 動的依存
-     * - pathManager.dynamicDependencies に登録されたパスを基に、ワイルドカードを展開しつつ描画を再帰
+     * Dynamic dependencies
+     * - Based on paths registered in pathManager.dynamicDependencies, render recursively while expanding wildcards
      *
      * Throws
-     * - UPD-006: WILDCARD 分岐で ListDiff が未計算（null）の場合
-     * - PATH-101: 動的依存の PathNode 未検出
+     * - UPD-006: ListDiff is not calculated (null) in WILDCARD branch
+     * - PATH-101: PathNode not detected for dynamic dependency
      */
     renderItem(ref, node) {
         this.processedRefs.add(ref);
-        // バインディングに変更を適用する
-        // 変更があったバインディングは updatedBindings に追加する（applyChange 実装の責務）
-        const bindings = this.#engine.getBindings(ref);
+        // Apply changes to bindings
+        // Bindings with changes must add themselves to updatedBindings (responsibility of applyChange implementation)
+        const bindings = this._engine.getBindings(ref);
         for (let i = 0; i < bindings.length; i++) {
-            if (this.#updatedBindings.has(bindings[i]))
+            if (this.updatedBindings.has(bindings[i]))
                 continue;
             bindings[i].applyChange(this);
         }
+        // Calculate which list indexes are new (added) since last render
+        // This optimization ensures we only traverse new list elements
         let diffListIndexes = new Set();
-        if (this.#engine.pathManager.lists.has(ref.info.pattern)) {
+        if (this._engine.pathManager.lists.has(ref.info.pattern)) {
+            // Get current list indexes for this ref
             const currentListIndexes = new Set(this.readonlyState[GetListIndexesByRefSymbol](ref) ?? []);
+            // Get previous list indexes from last render
             const { listIndexes } = this.lastListInfoByRef.get(ref) ?? {};
             const lastListIndexSet = new Set(listIndexes ?? []);
+            // Compute difference: new indexes = current - previous
             diffListIndexes = currentListIndexes.difference(lastListIndexSet);
         }
-        // 静的な依存関係を辿る
+        // Traverse static dependencies
         for (const [name, childNode] of node.childNodeByName) {
             const childInfo = getStructuredPathInfo(childNode.currentPath);
             if (name === WILDCARD) {
+                // Wildcard child: traverse only new list indexes
                 for (const listIndex of diffListIndexes) {
                     const childRef = getStatePropertyRef(childInfo, listIndex);
                     if (!this.processedRefs.has(childRef)) {
@@ -2683,18 +3765,19 @@ class Renderer {
                 }
             }
             else {
+                // Regular property child: inherit parent's listIndex
                 const childRef = getStatePropertyRef(childInfo, ref.listIndex);
                 if (!this.processedRefs.has(childRef)) {
                     this.renderItem(childRef, childNode);
                 }
             }
         }
-        // 動的な依存関係を辿る
-        const deps = this.#engine.pathManager.dynamicDependencies.get(ref.info.pattern);
+        // Traverse dynamic dependencies
+        const deps = this._engine.pathManager.dynamicDependencies.get(ref.info.pattern);
         if (deps) {
             for (const depPath of deps) {
                 const depInfo = getStructuredPathInfo(depPath);
-                const depNode = findPathNodeByPath(this.#engine.pathManager.rootNode, depInfo.pattern);
+                const depNode = findPathNodeByPath(this._engine.pathManager.rootNode, depInfo.pattern);
                 if (depNode === null) {
                     raiseError({
                         code: "PATH-101",
@@ -2704,16 +3787,22 @@ class Renderer {
                     });
                 }
                 if (depInfo.wildcardCount > 0) {
+                    // Dynamic dependency has wildcards - need hierarchical expansion
                     const infos = depInfo.wildcardParentInfos;
+                    // Recursive walker to expand wildcards level by level
                     const walk = (depRef, index, nextInfo) => {
+                        // Get list indexes at current wildcard level
                         const listIndexes = this.readonlyState[GetListIndexesByRefSymbol](depRef) || [];
                         if ((index + 1) < infos.length) {
+                            // More wildcard levels to traverse
                             for (let i = 0; i < listIndexes.length; i++) {
                                 const nextRef = getStatePropertyRef(nextInfo, listIndexes[i]);
+                                // Recurse to next wildcard level
                                 walk(nextRef, index + 1, infos[index + 1]);
                             }
                         }
                         else {
+                            // Reached final wildcard level - render all elements
                             for (let i = 0; i < listIndexes.length; i++) {
                                 const subDepRef = getStatePropertyRef(depInfo, listIndexes[i]);
                                 if (!this.processedRefs.has(subDepRef)) {
@@ -2722,10 +3811,12 @@ class Renderer {
                             }
                         }
                     };
+                    // Start traversal from first wildcard parent
                     const startRef = getStatePropertyRef(depInfo.wildcardParentInfos[0], null);
                     walk(startRef, 0, depInfo.wildcardParentInfos[1] || null);
                 }
                 else {
+                    // No wildcards - simple direct dependency
                     const depRef = getStatePropertyRef(depInfo, null);
                     if (!this.processedRefs.has(depRef)) {
                         this.renderItem(depRef, depNode);
@@ -2736,136 +3827,223 @@ class Renderer {
     }
 }
 /**
- * 便宜関数。Renderer のインスタンス化と render 呼び出しをまとめて行う。
+ * Convenience function. Creates a Renderer instance and calls render in one go.
  */
 function render(refs, engine, updater) {
     const renderer = new Renderer(engine, updater);
     renderer.render(refs);
 }
+/**
+ * Creates a new Renderer instance.
+ *
+ * @param {IComponentEngine} engine - The component engine to render
+ * @param {IUpdater} updater - The updater managing this renderer
+ * @returns {IRenderer} A new renderer instance
+ */
 function createRenderer(engine, updater) {
     return new Renderer(engine, updater);
 }
 
 /**
- * Updaterクラスは、状態管理と更新の中心的な役割を果たします。
- * 状態更新が必要な場合に、都度インスタンスを作成して使用します。
- * 主な機能は以下の通りです:
+ * The Updater class plays a central role in state management and updates.
+ * Instances are created on-demand when state updates are needed.
+ *
+ * Main features:
+ * - Queues state property references that need updating
+ * - Schedules and executes rendering cycles via microtasks
+ * - Manages version/revision tracking for cache invalidation
+ * - Collects dependent paths affected by state changes
+ * - Provides read-only and writable state contexts
+ *
+ * @class Updater
+ * @implements {IUpdater}
  */
 class Updater {
-    queue = [];
-    #rendering = false;
-    #engine;
-    #version;
-    #revision = 0;
-    #swapInfoByRef = new Map();
-    #saveQueue = [];
+    /** Map storing swap/reorder information for list elements */
+    swapInfoByRef = new Map();
+    /** Queue of state property references waiting to be rendered */
+    _queue = [];
+    /** Flag indicating if rendering is currently in progress */
+    _rendering = false;
+    /** Reference to the component engine being updated */
+    _engine;
+    /** Current version number for this update cycle */
+    _version;
+    /** Current revision number within the version */
+    _revision = 0;
+    /** Queue of refs saved for deferred updated callbacks */
+    _saveQueue = [];
+    /** Cache mapping paths to their dependent paths for optimization */
+    _cacheUpdatedPathsByPath = new Map();
+    /**
+     * Constructs a new Updater instance.
+     * Automatically increments the engine's version number.
+     *
+     * @param {IComponentEngine} engine - The component engine to manage updates for
+     */
     constructor(engine) {
-        this.#engine = engine;
-        this.#version = engine.versionUp();
-    }
-    get version() {
-        return this.#version;
-    }
-    get revision() {
-        return this.#revision;
-    }
-    get swapInfoByRef() {
-        return this.#swapInfoByRef;
+        this._engine = engine;
+        this._version = engine.versionUp();
     }
     /**
-     * 更新したRefをキューに追加し、レンダリングをスケジュールする
-     * @param ref
-     * @returns
+     * Gets the current version number.
+     * Version is incremented each time a new Updater is created.
+     *
+     * @returns {number} Current version number
+     */
+    get version() {
+        return this._version;
+    }
+    /**
+     * Gets the current revision number.
+     * Revision is incremented with each enqueueRef call within the same version.
+     *
+     * @returns {number} Current revision number
+     */
+    get revision() {
+        return this._revision;
+    }
+    /**
+     * Adds a state property reference to the update queue and schedules rendering.
+     * Increments revision, collects dependent paths, and schedules async rendering via microtask.
+     * If rendering is already in progress, the ref is queued but no new render is scheduled.
+     *
+     * @param {IStatePropertyRef} ref - The state property reference that changed
+     * @returns {void}
+     *
+     * @example
+     * updater.enqueueRef(getStatePropertyRef(pathInfo, listIndex));
      */
     enqueueRef(ref) {
-        this.#revision++;
-        this.queue.push(ref);
-        this.#saveQueue.push(ref);
-        this.collectMaybeUpdates(this.#engine, ref.info.pattern, this.#engine.versionRevisionByPath, this.#revision);
-        // レンダリング中はスキップ
-        if (this.#rendering)
+        // Increment revision to track sub-updates within this version
+        this._revision++;
+        // Add to both queues: render queue and save queue for callbacks
+        this._queue.push(ref);
+        this._saveQueue.push(ref);
+        // Collect all paths that might be affected by this change
+        this.collectMaybeUpdates(this._engine, ref.info.pattern, this._engine.versionRevisionByPath, this._revision);
+        // Skip scheduling if already rendering (will process queue on next iteration)
+        if (this._rendering)
             return;
-        this.#rendering = true;
+        this._rendering = true;
         queueMicrotask(() => {
-            // 非同期処理で中断するか、更新処理が完了した後にレンダリングを実行
+            // Execute rendering after async processing interruption or update completion
             this.rendering();
         });
     }
     /**
-     * 状態更新処理開始
-     * @param loopContext
-     * @param callback
+     * Executes a state update operation within a writable state context.
+     * Creates a writable proxy, executes the callback, and handles updated callbacks.
+     * Supports both synchronous and asynchronous update operations.
+     *
+     * @template R - The return type of the callback
+     * @param {ILoopContext | null} loopContext - Loop context for wildcard resolution, or null for root
+     * @param {function} callback - Callback that performs state modifications
+     * @returns {R} The result returned by the callback (may be a Promise)
+     *
+     * @example
+     * updater.update(null, (state) => {
+     *   state.count = 42;
+     * });
      */
     update(loopContext, callback) {
         let resultPromise;
-        resultPromise = useWritableStateProxy(this.#engine, this, this.#engine.state, loopContext, (state, handler) => {
-            // 状態更新処理
+        // Create writable state proxy and execute update callback
+        resultPromise = useWritableStateProxy(this._engine, this, this._engine.state, loopContext, (state, handler) => {
+            // Execute user's state modification callback
             return callback(state, handler);
         });
+        // Handler to process updated callbacks after state changes
         const updatedCallbackHandler = () => {
-            if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
-                const saveQueue = this.#saveQueue;
-                this.#saveQueue = [];
+            // If there are updated callbacks registered and refs in save queue
+            if (this._engine.pathManager.hasUpdatedCallback && this._saveQueue.length > 0) {
+                const saveQueue = this._saveQueue;
+                this._saveQueue = [];
+                // Schedule updated callbacks in next microtask
                 queueMicrotask(() => {
                     this.update(null, (state, handler) => {
+                        // Invoke updated callbacks with the saved refs
                         state[UpdatedCallbackSymbol](saveQueue);
                     });
                 });
             }
         };
+        // Handle both Promise and non-Promise results
         if (resultPromise instanceof Promise) {
+            // For async updates, run handler after promise completes
             resultPromise.finally(() => {
                 updatedCallbackHandler();
             });
         }
         else {
+            // For sync updates, run handler immediately
             updatedCallbackHandler();
         }
         return resultPromise;
     }
     /**
-     * レンダリング処理
+     * Executes the rendering process for all queued updates.
+     * Processes the queue in a loop until empty, allowing new updates during rendering.
+     * Ensures rendering flag is reset even if errors occur.
+     *
+     * @returns {void}
      */
     rendering() {
         try {
-            while (this.queue.length > 0) {
-                // キュー取得
-                const queue = this.queue;
-                this.queue = [];
-                // レンダリング実行
-                render(queue, this.#engine, this);
+            // Process queue until empty (new items may be added during rendering)
+            while (this._queue.length > 0) {
+                // Retrieve current queue and reset for new items
+                const queue = this._queue;
+                this._queue = [];
+                // Execute rendering for all refs in this batch
+                render(queue, this._engine, this);
             }
         }
         finally {
-            this.#rendering = false;
+            // Always reset rendering flag, even if errors occurred
+            this._rendering = false;
         }
     }
+    /**
+     * Performs the initial rendering of the component.
+     * Creates a renderer and passes it to the callback for setup.
+     *
+     * @param {function(IRenderer): void} callback - Callback receiving the renderer
+     * @returns {void}
+     */
     initialRender(callback) {
-        const renderer = createRenderer(this.#engine, this);
+        const renderer = createRenderer(this._engine, this);
         callback(renderer);
     }
     /**
-     * 更新したパスに対して影響があるパスを再帰的に収集する
-     * @param engine
-     * @param path
-     * @param node
-     * @param revisionByUpdatedPath
-     * @param revision
-     * @param visitedInfo
-     * @returns
+     * Recursively collects all paths that may be affected by a change to the given path.
+     * Traverses child nodes and dynamic dependencies to build a complete dependency graph.
+     * Uses visitedInfo set to prevent infinite recursion on circular dependencies.
+     *
+     * @param {IComponentEngine} engine - The component engine
+     * @param {string} path - The path that changed
+     * @param {IPathNode} node - The PathNode corresponding to the path
+     * @param {Set<string>} visitedInfo - Set tracking already visited paths
+     * @param {boolean} isSource - True if this is the source path that changed
+     * @returns {void}
      */
     recursiveCollectMaybeUpdates(engine, path, node, visitedInfo, isSource) {
+        // Skip if already processed this path
         if (visitedInfo.has(path))
             return;
-        // swapの場合スキップしたい
+        // Skip list elements when processing source to avoid redundant updates
+        // (list container updates will handle elements)
         if (isSource && engine.pathManager.elements.has(path)) {
             return;
         }
+        // Mark as visited
         visitedInfo.add(path);
+        // Collect all static child dependencies
         for (const [name, childNode] of node.childNodeByName.entries()) {
             const childPath = childNode.currentPath;
             this.recursiveCollectMaybeUpdates(engine, childPath, childNode, visitedInfo, false);
         }
+        // Collect all dynamic dependencies (registered via data-bind)
         const deps = engine.pathManager.dynamicDependencies.get(path) ?? [];
         for (const depPath of deps) {
             const depNode = findPathNodeByPath(engine.pathManager.rootNode, depPath);
@@ -2879,7 +4057,18 @@ class Updater {
             this.recursiveCollectMaybeUpdates(engine, depPath, depNode, visitedInfo, false);
         }
     }
-    #cacheUpdatedPathsByPath = new Map();
+    /**
+     * Collects all paths that might need updating based on a changed path.
+     * Uses caching to avoid redundant dependency traversal for the same paths.
+     * Updates the versionRevisionByPath map for cache invalidation.
+     *
+     * @param {IComponentEngine} engine - The component engine
+     * @param {string} path - The path that changed
+     * @param {Map<string, IVersionRevision>} versionRevisionByPath - Map to update with version info
+     * @param {number} revision - Current revision number
+     * @returns {void}
+     * @throws {Error} Throws UPD-003 if path node not found
+     */
     collectMaybeUpdates(engine, path, versionRevisionByPath, revision) {
         const node = findPathNodeByPath(engine.pathManager.rootNode, path);
         if (node === null) {
@@ -2889,37 +4078,62 @@ class Updater {
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }
-        // キャッシュ
-        let updatedPaths = this.#cacheUpdatedPathsByPath.get(path);
+        // Check cache for previously computed dependencies
+        let updatedPaths = this._cacheUpdatedPathsByPath.get(path);
         if (typeof updatedPaths === "undefined") {
+            // Cache miss: compute dependencies recursively
             updatedPaths = new Set();
             this.recursiveCollectMaybeUpdates(engine, path, node, updatedPaths, true);
         }
+        // Create version/revision marker for cache invalidation
         const versionRevision = {
             version: this.version,
             revision: revision,
         };
+        // Update version info for all affected paths
         for (const updatedPath of updatedPaths) {
             versionRevisionByPath.set(updatedPath, versionRevision);
         }
-        this.#cacheUpdatedPathsByPath.set(path, updatedPaths);
+        // Cache the computed dependencies for future use
+        this._cacheUpdatedPathsByPath.set(path, updatedPaths);
     }
     /**
-     * リードオンリーな状態を生成し、コールバックに渡す
-     * @param callback
-     * @returns
+     * Creates a read-only state context and executes a callback within it.
+     * Provides safe read access to state without modification capabilities.
+     *
+     * @template R - The return type of the callback
+     * @param {function} callback - Callback receiving read-only state and handler
+     * @returns {R} The result returned by the callback
+     *
+     * @example
+     * const value = updater.createReadonlyState((state) => {
+     *   return state.someProperty;
+     * });
      */
     createReadonlyState(callback) {
-        const handler = createReadonlyStateHandler(this.#engine, this, null);
-        const stateProxy = createReadonlyStateProxy(this.#engine.state, handler);
+        // Create read-only handler and proxy
+        const handler = createReadonlyStateHandler(this._engine, this, null);
+        const stateProxy = createReadonlyStateProxy(this._engine.state, handler);
+        // Execute callback with read-only state
         return callback(stateProxy, handler);
     }
 }
 /**
- * Updaterを生成しコールバックに渡す
- * スコープを明確にするための関数
- * @param engine
- * @param callback
+ * Creates a new Updater instance and passes it to a callback.
+ * This pattern provides clear scope management for update operations.
+ * The updater is created with an incremented version number.
+ *
+ * @template R - The return type of the callback
+ * @param {IComponentEngine} engine - The component engine to create updater for
+ * @param {function(IUpdater): R} callback - Callback receiving the updater instance
+ * @returns {R} The result returned by the callback
+ *
+ * @example
+ * createUpdater(engine, (updater) => {
+ *   updater.update(null, (state) => {
+ *     state.count++;
+ *   });
+ * });
  */
 function createUpdater(engine, callback) {
     const updater = new Updater(engine);
@@ -4014,24 +5228,85 @@ const symbolName = "component-state-input";
 const AssignStateSymbol = Symbol.for(`${symbolName}.AssignState`);
 const NotifyRedrawSymbol = Symbol.for(`${symbolName}.NotifyRedraw`);
 
+/**
+ * WeakMap storing parent-child relationships between Structive components.
+ * Uses WeakMap to allow automatic garbage collection when components are destroyed.
+ */
 const parentStructiveComponentByStructiveComponent = new WeakMap();
+/**
+ * Finds the parent Structive component for a given component.
+ * Returns the registered parent component or null if none exists.
+ *
+ * @param {StructiveComponent} el - The component to find the parent for
+ * @returns {StructiveComponent | null} The parent component or null if not found
+ *
+ * @example
+ * const parent = findStructiveParent(childComponent);
+ * if (parent) {
+ *   // Access parent component
+ * }
+ */
 function findStructiveParent(el) {
     return parentStructiveComponentByStructiveComponent.get(el) ?? null;
 }
+/**
+ * Registers a parent-child relationship between two Structive components.
+ * This allows child components to access their parent via findStructiveParent.
+ *
+ * @param {StructiveComponent} parentComponent - The parent component
+ * @param {StructiveComponent} component - The child component to register
+ * @returns {void}
+ *
+ * @example
+ * registerStructiveComponent(parentComponent, childComponent);
+ */
 function registerStructiveComponent(parentComponent, component) {
     parentStructiveComponentByStructiveComponent.set(component, parentComponent);
 }
+/**
+ * Removes a component from the parent-child relationship registry.
+ * Called during component cleanup/disconnection to prevent memory leaks.
+ *
+ * @param {StructiveComponent} component - The component to remove from registry
+ * @returns {void}
+ *
+ * @example
+ * removeStructiveComponent(component); // Called in disconnectedCallback
+ */
 function removeStructiveComponent(component) {
     parentStructiveComponentByStructiveComponent.delete(component);
 }
 
+/**
+ * Retrieves the custom element tag name from an HTMLElement.
+ *
+ * Handles both autonomous custom elements (tag names with hyphens like <my-element>)
+ * and customized built-in elements (standard elements with 'is' attribute like <button is="my-button">).
+ *
+ * @param {HTMLElement} component - The HTML element to extract the tag name from
+ * @returns {string} The custom element tag name in lowercase
+ * @throws {Error} CE-001 - When neither the tag name nor 'is' attribute contains a hyphen
+ *
+ * @example
+ * // Autonomous custom element
+ * const tagName = getCustomTagName(document.querySelector('my-element'));
+ * // Returns: 'my-element'
+ *
+ * @example
+ * // Customized built-in element
+ * const tagName = getCustomTagName(document.querySelector('[is="my-button"]'));
+ * // Returns: 'my-button'
+ */
 function getCustomTagName(component) {
+    // Check if it's an autonomous custom element (tag name contains hyphen)
     if (component.tagName.includes('-')) {
         return component.tagName.toLowerCase();
     }
+    // Check if it's a customized built-in element (has 'is' attribute with hyphen)
     else if (component.getAttribute('is')?.includes('-')) {
         return component.getAttribute('is').toLowerCase();
     }
+    // Neither format found - not a valid custom element
     else {
         raiseError({
             code: 'CE-001',
@@ -5798,55 +7073,97 @@ const getPathsSetById = (id) => {
 /**
  * removeEmptyTextNodes.ts
  *
- * DocumentFragment内の空テキストノードを削除するユーティリティ関数です。
+ * Utility function to remove empty text nodes from a DocumentFragment.
  *
- * 主な役割:
- * - content（DocumentFragment）の直下にある空白のみのテキストノードを検出し、削除する
+ * Main responsibilities:
+ * - Detects and removes whitespace-only text nodes directly under the content (DocumentFragment)
  *
- * 設計ポイント:
- * - childNodesをArray.fromで配列化し、forEachで全ノードを走査
- * - nodeTypeがTEXT_NODEかつ、nodeValueが空白のみの場合にremoveChildで削除
- * - テンプレート処理やクリーンなDOM生成時に利用
+ * Design points:
+ * - Converts childNodes to an array using Array.from and traverses all nodes with forEach
+ * - Removes nodes via removeChild when nodeType is TEXT_NODE and nodeValue contains only whitespace
+ * - Used for template processing and clean DOM generation
+ */
+/**
+ * Removes all whitespace-only text nodes from a DocumentFragment.
+ * This cleans up the DOM structure by removing unnecessary text nodes that contain
+ * only spaces, tabs, newlines, or other whitespace characters.
+ *
+ * @param {DocumentFragment} content - The DocumentFragment to clean up
+ * @returns {void}
+ *
+ * @example
+ * const template = document.createElement('template');
+ * template.innerHTML = `
+ *   <div>
+ *     <span>Hello</span>
+ *   </div>
+ * `;
+ * removeEmptyTextNodes(template.content); // Removes whitespace text nodes
  */
 function removeEmptyTextNodes(content) {
+    // Convert NodeList to array to safely iterate and remove nodes
     Array.from(content.childNodes).forEach(node => {
+        // Check if node is a text node and contains only whitespace
         if (node.nodeType === Node.TEXT_NODE && !(node.nodeValue ?? "").trim()) {
+            // Remove the empty text node from the fragment
             content.removeChild(node);
         }
     });
 }
 
 /**
- * HTMLTemplateElement を ID で登録・取得するための管理モジュール。
+ * Management module for registering and retrieving HTMLTemplateElement by ID.
  *
- * 役割:
- * - registerTemplate: 指定 ID でテンプレートを登録（空テキスト除去と data-bind 解析を実行）
- * - getTemplateById: 指定 ID のテンプレートを取得（未登録時はエラー）
+ * Responsibilities:
+ * - registerTemplate: Registers a template with a specified ID (removes empty text nodes and parses data-bind)
+ * - getTemplateById: Retrieves a template by ID (throws error if not registered)
  *
- * Throws（getTemplateById）:
- * - TMP-001 Template not found: 未登録のテンプレート ID を要求
+ * Throws (getTemplateById):
+ * - TMP-001 Template not found: Requested template ID is not registered
+ */
+/**
+ * Global registry for HTMLTemplateElement instances keyed by numeric ID.
+ * Stores processed templates after empty text node removal and data-bind parsing.
  */
 const templateById = {};
 /**
- * テンプレートを ID で登録し、内部インデックスと data-bind 情報を構築する。
+ * Registers a template by ID and builds internal index and data-bind information.
+ * Performs preprocessing to remove empty text nodes and parse data-bind attributes
+ * for efficient template instantiation and data binding.
  *
- * @param id       テンプレート ID
- * @param template HTMLTemplateElement
- * @param rootId   ルートテンプレート ID（ネスト解析用）
- * @returns       登録した ID
+ * @param {number} id - Unique template ID for registration and retrieval
+ * @param {HTMLTemplateElement} template - The template element to register
+ * @param {number} rootId - Root template ID used for nested template parsing and resolution
+ * @returns {number} The registered template ID (same as input id)
+ *
+ * @example
+ * const template = document.createElement('template');
+ * template.innerHTML = '<div data-bind="text:name"></div>';
+ * registerTemplate(1, template, 1);
  */
 function registerTemplate(id, template, rootId) {
+    // Remove whitespace-only text nodes to clean up the template structure
     removeEmptyTextNodes(template.content);
+    // Parse and index all data-bind attributes for efficient binding setup
     registerDataBindAttributes(id, template.content, rootId);
+    // Store the processed template in the global registry
     templateById[id] = template;
     return id;
 }
 /**
- * 登録済みテンプレートを取得する。
+ * Retrieves a registered template by its ID.
+ * Throws an error if the template has not been registered.
  *
- * @throws TMP-001 Template not found
+ * @param {number} id - The template ID to retrieve
+ * @returns {HTMLTemplateElement} The registered template element
+ * @throws {Error} Throws TMP-001 error if the template ID is not found in the registry
+ *
+ * @example
+ * const template = getTemplateById(1);
+ * const clone = template.content.cloneNode(true);
  */
 function getTemplateById(id) {
+    // Return the template if found, otherwise throw a descriptive error
     return templateById[id] ?? raiseError({
         code: "TMP-001",
         message: `Template not found: ${id}`,
@@ -5970,66 +7287,99 @@ function createBinding(parentBindContent, node, engine, createBindingNode, creat
     return new Binding(parentBindContent, node, engine, createBindingNode, createBindingState);
 }
 
+/**
+ * LoopContext class manages loop binding context with parent-child relationships.
+ * Provides efficient caching and traversal of loop hierarchy.
+ */
 class LoopContext {
-    #ref;
-    #info;
-    #bindContent;
+    info;
+    bindContent;
+    _ref;
+    _parentLoopContext;
+    _cache = {};
+    /**
+     * Creates a new LoopContext instance.
+     * @param ref - State property reference with path and index information
+     * @param bindContent - Bind content to associate with this loop context
+     */
     constructor(ref, bindContent) {
-        this.#ref = ref;
-        this.#info = ref.info;
-        this.#bindContent = bindContent;
+        this._ref = ref;
+        this.info = ref.info;
+        this.bindContent = bindContent;
     }
+    /**
+     * Gets the state property reference.
+     * @returns State property reference
+     * @throws STATE-202 If ref is null
+     */
     get ref() {
-        return this.#ref ?? raiseError({
+        return this._ref ?? raiseError({
             code: 'STATE-202',
             message: 'ref is null',
-            context: { where: 'LoopContext.ref', path: this.#info.pattern },
+            context: { where: 'LoopContext.ref', path: this.info.pattern },
             docsUrl: '/docs/error-codes.md#state',
         });
     }
+    /**
+     * Gets the path pattern from the reference.
+     * @returns Path pattern string
+     */
     get path() {
         return this.ref.info.pattern;
     }
-    get info() {
-        return this.ref.info;
-    }
+    /**
+     * Gets the list index from the reference.
+     * @returns List index instance
+     * @throws LIST-201 If listIndex is required but not present
+     */
     get listIndex() {
         return this.ref.listIndex ?? raiseError({
             code: 'LIST-201',
             message: 'listIndex is required',
-            context: { where: 'LoopContext.listIndex', path: this.#info.pattern },
+            context: { where: 'LoopContext.listIndex', path: this.info.pattern },
             docsUrl: '/docs/error-codes.md#list',
         });
     }
+    /**
+     * Assigns a new list index to this loop context.
+     * @param listIndex - New list index to assign
+     */
     assignListIndex(listIndex) {
-        this.#ref = getStatePropertyRef(this.#info, listIndex);
-        // 構造は変わらないので、#parentLoopContext、#cacheはクリアする必要はない
+        this._ref = getStatePropertyRef(this.info, listIndex);
+        // Structure doesn't change, so no need to clear _parentLoopContext and _cache
     }
+    /**
+     * Clears the list index reference.
+     */
     clearListIndex() {
-        this.#ref = null;
+        this._ref = null;
     }
-    get bindContent() {
-        return this.#bindContent;
-    }
-    #parentLoopContext;
+    /**
+     * Gets the parent loop context with lazy evaluation and caching.
+     * @returns Parent loop context or null if none exists
+     */
     get parentLoopContext() {
-        if (typeof this.#parentLoopContext === "undefined") {
+        if (typeof this._parentLoopContext === "undefined") {
             let currentBindContent = this.bindContent;
             while (currentBindContent !== null) {
                 if (currentBindContent.loopContext !== null && currentBindContent.loopContext !== this) {
-                    this.#parentLoopContext = currentBindContent.loopContext;
+                    this._parentLoopContext = currentBindContent.loopContext;
                     break;
                 }
                 currentBindContent = currentBindContent.parentBinding?.parentBindContent ?? null;
             }
-            if (typeof this.#parentLoopContext === "undefined")
-                this.#parentLoopContext = null;
+            if (typeof this._parentLoopContext === "undefined")
+                this._parentLoopContext = null;
         }
-        return this.#parentLoopContext;
+        return this._parentLoopContext;
     }
-    #cache = {};
+    /**
+     * Finds a loop context by path name in the hierarchy.
+     * @param name - Path name to search for
+     * @returns Loop context with matching path or null if not found
+     */
     find(name) {
-        let loopContext = this.#cache[name];
+        let loopContext = this._cache[name];
         if (typeof loopContext === "undefined") {
             let currentLoopContext = this;
             while (currentLoopContext !== null) {
@@ -6037,10 +7387,14 @@ class LoopContext {
                     break;
                 currentLoopContext = currentLoopContext.parentLoopContext;
             }
-            loopContext = this.#cache[name] = currentLoopContext;
+            loopContext = this._cache[name] = currentLoopContext;
         }
         return loopContext;
     }
+    /**
+     * Walks through the loop context hierarchy from current to root.
+     * @param callback - Function to call for each loop context
+     */
     walk(callback) {
         let currentLoopContext = this;
         while (currentLoopContext !== null) {
@@ -6048,6 +7402,10 @@ class LoopContext {
             currentLoopContext = currentLoopContext.parentLoopContext;
         }
     }
+    /**
+     * Serializes the loop context hierarchy to an array from root to current.
+     * @returns Array of loop contexts ordered from root to current
+     */
     serialize() {
         const results = [];
         this.walk((loopContext) => {
@@ -6056,8 +7414,13 @@ class LoopContext {
         return results;
     }
 }
-// 生成されたあと、IBindContentのloopContextに登録される
-// IBindContentにずっと保持される
+/**
+ * Factory function to create a new LoopContext instance.
+ * Created instance is registered to IBindContent's loopContext and retained permanently.
+ * @param ref - State property reference with path and index information
+ * @param bindContent - Bind content to associate with this loop context
+ * @returns New LoopContext instance
+ */
 function createLoopContext(ref, bindContent) {
     return new LoopContext(ref, bindContent);
 }
@@ -7373,38 +8736,60 @@ function createComponentEngine(config, component) {
 /**
  * replaceMustacheWithTemplateTag.ts
  *
- * Mustache構文（{{if:条件}}, {{for:式}}, {{endif}}, {{endfor}}, {{elseif:条件}}, {{else}} など）を
- * <template>タグやコメントノードに変換するユーティリティ関数です。
+ * Utility function to convert Mustache syntax ({{if:condition}}, {{for:expr}}, {{endif}}, {{endfor}},
+ * {{elseif:condition}}, {{else}}, etc.) into <template> tags or comment nodes.
  *
- * 主な役割:
- * - HTML文字列内のMustache構文を正規表現で検出し、<template data-bind="...">やコメントノードに変換
- * - if/for/endif/endfor/elseif/elseなどの制御構文をネスト対応で<template>タグに変換
- * - 通常の埋め込み式（{{expr}}）はコメントノード（<!--embed:expr-->）に変換
+ * Main responsibilities:
+ * - Detects Mustache syntax in HTML strings using regex and converts them to <template data-bind="..."> or comment nodes
+ * - Converts control structures like if/for/endif/endfor/elseif/else into <template> tags with nesting support
+ * - Converts regular embedded expressions ({{expr}}) into comment nodes (<!--embed:expr-->)
  *
- * 設計ポイント:
- * - stackでネスト構造を管理し、endif/endfor/elseif/elseの対応関係を厳密にチェック
- * - 不正なネストや対応しない構文にはraiseErrorで例外を発生
- * - elseif/elseはnot条件のtemplateを自動生成し、条件分岐を表現
- * - コメントノードへの変換で埋め込み式の安全なDOM挿入を実現
+ * Design points:
+ * - Uses a stack to manage nested structures and strictly checks correspondence of endif/endfor/elseif/else
+ * - Throws exceptions via raiseError for invalid nesting or unsupported syntax
+ * - elseif/else automatically generate templates with negated conditions to express conditional branching
+ * - Conversion to comment nodes enables safe DOM insertion of embedded expressions
  */
+/** Regular expression to match Mustache syntax: {{ ... }} */
 const MUSTACHE_REGEXP = /\{\{([^\}]+)\}\}/g;
+/** Set of recognized Mustache control structure types */
 const MUSTACHE_TYPES = new Set(['if', 'for', 'endif', 'endfor', 'elseif', 'else']);
+/**
+ * Converts Mustache syntax in HTML strings to template tags or comment nodes.
+ * Processes control structures (if/for/elseif/else) and embedded expressions,
+ * maintaining proper nesting through a stack-based parser.
+ *
+ * @param {string} html - HTML string containing Mustache syntax ({{...}})
+ * @returns {string} HTML string with Mustache syntax replaced by template tags and comments
+ * @throws {Error} Throws TMP-102 error for invalid nesting (endif without if, endfor without for, etc.)
+ *
+ * @example
+ * const html = '<div>{{if:active}}<span>{{name}}</span>{{endif}}</div>';
+ * const result = replaceMustacheWithTemplateTag(html);
+ * // Returns: '<div><template data-bind="if:active"><span><!--embed:name--></span></template></div>'
+ */
 function replaceMustacheWithTemplateTag(html) {
+    // Stack to track nested control structures (if/for/elseif)
     const stack = [];
     return html.replaceAll(MUSTACHE_REGEXP, (match, expr) => {
         expr = expr.trim();
+        // Extract the type (first part before ':')
         const [type] = expr.split(':');
+        // If not a control structure, treat as embedded expression
         if (!MUSTACHE_TYPES.has(type)) {
-            // embed
+            // Convert to comment node for later processing
             return `<!--${COMMENT_EMBED_MARK}${expr}-->`;
         }
+        // Extract the remaining expression after the type
         const remain = expr.slice(type.length + 1).trim();
         const currentInfo = { type, expr, remain };
+        // Handle opening tags (if/for): push to stack and generate opening template tag
         if (type === 'if' || type === 'for') {
             stack.push(currentInfo);
             return `<template data-bind="${expr}">`;
         }
         else if (type === 'endif') {
+            // Handle endif: pop stack until matching 'if' is found, closing all elseif branches
             const endTags = [];
             do {
                 const info = stack.pop() ?? raiseError({
@@ -7413,14 +8798,17 @@ function replaceMustacheWithTemplateTag(html) {
                     context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
                     docsUrl: './docs/error-codes.md#tmp',
                 });
+                // Found the matching 'if', close it and stop
                 if (info.type === 'if') {
                     endTags.push('</template>');
                     break;
                 }
                 else if (info.type === 'elseif') {
+                    // Close elseif branches (each elseif creates nested templates)
                     endTags.push('</template>');
                 }
                 else {
+                    // Invalid nesting: encountered non-if/elseif tag
                     raiseError({
                         code: 'TMP-102',
                         message: 'Endif without if',
@@ -7432,6 +8820,7 @@ function replaceMustacheWithTemplateTag(html) {
             return endTags.join('');
         }
         else if (type === 'endfor') {
+            // Handle endfor: pop stack and verify matching 'for'
             const info = stack.pop() ?? raiseError({
                 code: 'TMP-102',
                 message: 'Endfor without for',
@@ -7442,6 +8831,7 @@ function replaceMustacheWithTemplateTag(html) {
                 return '</template>';
             }
             else {
+                // Invalid nesting: endfor without corresponding for
                 raiseError({
                     code: 'TMP-102',
                     message: 'Endfor without for',
@@ -7471,6 +8861,7 @@ function replaceMustacheWithTemplateTag(html) {
             }
         }
         else if (type === 'else') {
+            // Handle else: verify it follows if, then create negated condition template
             const lastInfo = stack.at(-1) ?? raiseError({
                 code: 'TMP-102',
                 message: 'Else without if',
@@ -7478,9 +8869,12 @@ function replaceMustacheWithTemplateTag(html) {
                 docsUrl: './docs/error-codes.md#tmp',
             });
             if (lastInfo.type === 'if') {
+                // Close previous if branch and open negated condition for else
+                // Structure: </template><template data-bind="if:condition|not">
                 return `</template><template data-bind="if:${lastInfo.remain}|not">`;
             }
             else {
+                // Invalid: else must follow if
                 raiseError({
                     code: 'TMP-102',
                     message: 'Else without if',
@@ -7490,6 +8884,7 @@ function replaceMustacheWithTemplateTag(html) {
             }
         }
         else {
+            // Unrecognized Mustache type (should not reach here due to MUSTACHE_TYPES check)
             raiseError({
                 code: 'TMP-102',
                 message: 'Unknown type',
@@ -7503,40 +8898,64 @@ function replaceMustacheWithTemplateTag(html) {
 /**
  * replaceTemplateTagWithComment.ts
  *
- * <template>タグをコメントノードに置換し、テンプレートを再帰的に登録するユーティリティ関数です。
+ * Utility function to replace <template> tags with comment nodes and recursively register templates.
  *
- * 主な役割:
- * - 指定したHTMLTemplateElementをコメントノード（<!--template:id-->）に置換
- * - SVG内のtemplateタグは通常のtemplate要素に変換し、属性や子ノードを引き継ぐ
- * - テンプレート内の入れ子templateも再帰的に置換・登録
- * - registerTemplateでテンプレートをID付きで管理
+ * Main responsibilities:
+ * - Replaces the specified HTMLTemplateElement with a comment node (<!--template:id-->)
+ * - Converts template tags within SVG to regular template elements, preserving attributes and child nodes
+ * - Recursively replaces and registers nested templates within templates
+ * - Manages templates with IDs using registerTemplate
  *
- * 設計ポイント:
- * - テンプレートの階層構造を維持しつつ、DOM上はコメントノードでマーク
- * - SVG対応や属性引き継ぎなど、汎用的なテンプレート処理に対応
- * - generateIdでユニークIDを割り当て、テンプレート管理を一元化
+ * Design points:
+ * - Maintains template hierarchical structure while marking them as comment nodes in the DOM
+ * - Supports SVG and attribute inheritance for versatile template processing
+ * - Assigns unique IDs via generateId for centralized template management
  */
+/** SVG namespace URI for detecting SVG context */
 const SVG_NS = "http://www.w3.org/2000/svg";
+/**
+ * Replaces a template element with a comment node in the DOM and recursively processes nested templates.
+ * Handles special cases for SVG templates and preserves template hierarchies through registration.
+ *
+ * @param {number} id - Unique identifier for this template
+ * @param {HTMLTemplateElement} template - The template element to replace and register
+ * @param {number} [rootId=id] - Root template ID for tracking nested template hierarchies
+ * @returns {number} The template ID (same as input id)
+ *
+ * @example
+ * const template = document.createElement('template');
+ * template.innerHTML = '<div>{{name}}</div>';
+ * const templateId = replaceTemplateTagWithComment(1, template);
+ */
 function replaceTemplateTagWithComment(id, template, rootId = id) {
-    // テンプレートの親ノードが存在する場合は、テンプレートをコメントノードに置き換える
-    // デバッグ時、bindTextの内容をコメントに含める
+    // Replace the template element with a comment node in the DOM
+    // This preserves the template's position while removing it from the visible DOM
+    // Extract data-bind attribute for optional debug information
     const bindText = template.getAttribute(DATA_BIND_ATTRIBUTE);
+    // In debug mode, include binding expression in comment for easier debugging
     const bindTextForDebug = config$2.debug ? (bindText ?? "") : "";
+    // Replace template with comment marker (<!--template:id bindText-->)
     template.parentNode?.replaceChild(document.createComment(`${COMMENT_TEMPLATE_MARK}${id} ${bindTextForDebug}`), template);
+    // Special handling for templates within SVG context
     if (template.namespaceURI === SVG_NS) {
-        // SVGタグ内のtemplateタグを想定
+        // SVG doesn't support <template> natively, so convert to HTML template element
         const newTemplate = document.createElement("template");
+        // Move all child nodes from SVG template to new HTML template
         const childNodes = Array.from(template.childNodes);
         for (let i = 0; i < childNodes.length; i++) {
             const childNode = childNodes[i];
             newTemplate.content.appendChild(childNode);
         }
+        // Preserve data-bind attribute from original SVG template
         newTemplate.setAttribute(DATA_BIND_ATTRIBUTE, bindText ?? "");
         template = newTemplate;
     }
+    // Recursively process all nested templates within this template
+    // Each nested template gets its own unique ID and is registered separately
     template.content.querySelectorAll("template").forEach(template => {
         replaceTemplateTagWithComment(generateId(), template, rootId);
     });
+    // Register the processed template for later instantiation
     registerTemplate(id, template, rootId);
     return id;
 }
@@ -7544,47 +8963,112 @@ function replaceTemplateTagWithComment(id, template, rootId = id) {
 /**
  * registerHtml.ts
  *
- * HTML文字列をテンプレートとして登録するユーティリティ関数です。
+ * Utility function for registering HTML strings as templates.
  *
- * 主な役割:
- * - 指定IDでHTMLテンプレートを生成し、data-id属性を付与
- * - Mustache構文（{{ }})をテンプレートタグに変換（replaceMustacheWithTemplateTagを利用）
- * - テンプレートタグをコメントに置換（replaceTemplateTagWithCommentを利用）
+ * Main responsibilities:
+ * - Creates an HTML template with a specified ID and assigns a data-id attribute
+ * - Converts Mustache syntax ({{ }}) to template tags (using replaceMustacheWithTemplateTag)
+ * - Replaces template tags with comments (using replaceTemplateTagWithComment)
  *
- * 設計ポイント:
- * - テンプレートの動的生成・管理や、構文変換による柔軟なテンプレート処理に対応
- * - テンプレートはdocument.createElement("template")で生成し、data-idで識別
+ * Design points:
+ * - Supports dynamic template generation/management and flexible template processing through syntax conversion
+ * - Templates are created using document.createElement("template") and identified via data-id
+ */
+/**
+ * Registers an HTML template by converting Mustache syntax to template tags and then to comments.
+ * Creates a template element, assigns it an ID, and processes it for use in the template system.
+ *
+ * @param {number} id - Unique numeric identifier for the template
+ * @param {string} html - HTML string that may contain Mustache syntax ({{ }})
+ * @returns {void}
+ *
+ * @example
+ * registerHtml(1, `
+ *   <div>
+ *     <h1>{{ title }}</h1>
+ *     <p>{{ content }}</p>
+ *   </div>
+ * `);
  */
 function registerHtml(id, html) {
+    // Create a new template element
     const template = document.createElement("template");
+    // Assign the template ID as a data attribute for later retrieval
     template.dataset.id = id.toString();
+    // Convert Mustache syntax ({{ }}) to template tags, then set as innerHTML
     template.innerHTML = replaceMustacheWithTemplateTag(html);
+    // Replace template tags with comment nodes for data binding
     replaceTemplateTagWithComment(id, template);
 }
 
+/**
+ * Gets the base class constructor for a custom element.
+ *
+ * If extendTagName is provided, creates a temporary element to retrieve its constructor,
+ * enabling customized built-in elements (e.g., extending <button>, <input>).
+ * Otherwise, returns the standard HTMLElement constructor.
+ *
+ * @param {string | null} extendTagName - Tag name of the element to extend, or null for standard HTMLElement
+ * @returns {Constructor<HTMLElement>} The constructor of the specified element or HTMLElement
+ *
+ * @example
+ * // Get base class for extending a button
+ * const ButtonClass = getBaseClass('button'); // Returns HTMLButtonElement constructor
+ *
+ * @example
+ * // Get base class for standard custom element
+ * const BaseClass = getBaseClass(null); // Returns HTMLElement
+ */
 function getBaseClass(extendTagName) {
+    // If extending a built-in element, create a temporary instance to get its constructor
+    // Otherwise, use the standard HTMLElement class
     return extendTagName ? document.createElement(extendTagName).constructor : HTMLElement;
 }
 
 /**
  * getComponentConfig.ts
  *
- * ユーザー設定（IUserConfig）とグローバル設定を統合し、コンポーネントの設定（IComponentConfig）を生成するユーティリティ関数です。
+ * Utility function to merge user configuration (IUserConfig) with global configuration and generate component configuration (IComponentConfig).
  *
- * 主な役割:
- * - getGlobalConfigでグローバル設定を取得
- * - ユーザー設定が優先され、未指定の場合はグローバル設定値を利用
- * - shadowDomModeやextendsなどの設定値を一元的に返却
+ * Main responsibilities:
+ * - Retrieves global configuration via getGlobalConfig
+ * - User configuration takes priority, with global configuration values used for unspecified settings
+ * - Centrally returns configuration values such as shadowDomMode and extends
  *
- * 設計ポイント:
- * - ユーザーごとの個別設定と全体のデフォルト設定を柔軟に統合
- * - 設定値のデフォルト化や拡張性を考慮した設計
+ * Design points:
+ * - Flexibly merges individual user settings with overall default settings
+ * - Design that considers default configuration values and extensibility
+ */
+/**
+ * Generates component configuration by merging user-specific settings with global defaults.
+ *
+ * User-provided values take precedence over global configuration. If a setting is not
+ * specified in userConfig, the global default is used instead.
+ *
+ * @param {IUserConfig} userConfig - User-specific configuration for the component
+ * @returns {IComponentConfig} Merged configuration with all required settings
+ *
+ * @example
+ * const config = getComponentConfig({
+ *   shadowDomMode: 'open',
+ *   extends: 'button'
+ * });
+ * // Returns: { enableWebComponents: true, shadowDomMode: 'open', extends: 'button' }
+ *
+ * @example
+ * // Using global defaults
+ * const config = getComponentConfig({});
+ * // Returns configuration with global shadowDomMode and null for extends
  */
 function getComponentConfig(userConfig) {
+    // Retrieve global configuration as fallback
     const globalConfig = getGlobalConfig();
     return {
+        // Default to true if not explicitly set to false
         enableWebComponents: typeof userConfig.enableWebComponents === "undefined" ? true : userConfig.enableWebComponents,
+        // Use user's shadowDomMode if specified, otherwise fall back to global setting
         shadowDomMode: userConfig.shadowDomMode ?? globalConfig.shadowDomMode,
+        // Use user's extends value if specified, otherwise null (standard custom element)
         extends: userConfig.extends ?? null,
     };
 }
@@ -7592,27 +9076,46 @@ function getComponentConfig(userConfig) {
 /**
  * createAccessorFunctions.ts
  *
- * Stateプロパティのパス情報（IStructuredPathInfo）から、動的なgetter/setter関数を生成するユーティリティです。
+ * Utility for generating dynamic getter/setter functions from State property path information (IStructuredPathInfo).
  *
- * 主な役割:
- * - パス情報とgetter集合から、最適なアクセサ関数（get/set）を動的に生成
- * - ワイルドカード（*）やネストしたプロパティパスにも対応
- * - パスやセグメントのバリデーションも実施
+ * Main responsibilities:
+ * - Dynamically generates optimal accessor functions (get/set) from path information and getter sets
+ * - Supports wildcards (*) and nested property paths
+ * - Validates paths and segments
  *
- * 設計ポイント:
- * - matchPathsから最長一致のgetterパスを探索し、そこからの相対パスでアクセサを構築
- * - パスが一致しない場合はinfo.pathSegmentsから直接アクセサを生成
- * - new Functionで高速なgetter/setterを動的生成
- * - パスやセグメント名は正規表現で厳密にチェックし、安全性を担保
+ * Design points:
+ * - Searches for the longest matching getter path from matchPaths and constructs accessors from the relative path
+ * - If no path matches, generates accessors directly from info.pathSegments
+ * - Uses new Function to dynamically generate high-performance getter/setter
+ * - Strictly validates path and segment names with regular expressions to ensure safety
  */
+// Regular expression to validate segment names (must start with letter/underscore/$, followed by alphanumeric/underscore/$)
 const checkSegmentRegexp = /^[a-zA-Z_$][0-9a-zA-Z_$]*$/;
+// Regular expression to validate full property paths (segments separated by dots, wildcards allowed)
 const checkPathRegexp = /^[a-zA-Z_$][0-9a-zA-Z_$]*(\.[a-zA-Z_$][0-9a-zA-Z_$]*|\.\*)*$/;
+/**
+ * Creates dynamic getter and setter functions for a property path.
+ *
+ * This function generates optimized accessor functions by:
+ * 1. Finding the longest matching getter path from the cumulative paths
+ * 2. Building accessors relative to that getter (or from root if no match)
+ * 3. Handling wildcards by mapping them to $1, $2, etc.
+ * 4. Validating all path segments for safety
+ *
+ * @param info - Structured path information containing segments and wildcards
+ * @param getters - Set of getter paths available in the state
+ * @returns Object containing dynamically generated get and set functions
+ * @throws {Error} STATE-202 - When path or segment name is invalid
+ */
 function createAccessorFunctions(info, getters) {
+    // Find all cumulative paths that match available getters
     const matchPaths = new Set(info.cumulativePaths).intersection(getters);
     let len = -1;
     let matchPath = '';
+    // Find the longest matching path to use as base for accessor generation
     for (const curPath of matchPaths) {
         const pathSegments = curPath.split('.');
+        // Skip single-segment paths (not useful as base paths)
         if (pathSegments.length === 1) {
             continue;
         }
@@ -7621,7 +9124,9 @@ function createAccessorFunctions(info, getters) {
             matchPath = curPath;
         }
     }
+    // Case 1: Found a matching getter path - build accessor relative to it
     if (matchPath.length > 0) {
+        // Validate the matched path format
         if (!checkPathRegexp.test(matchPath)) {
             raiseError({
                 code: "STATE-202",
@@ -7630,16 +9135,20 @@ function createAccessorFunctions(info, getters) {
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
+        // Get structured info for the matched getter path
         const matchInfo = getStructuredPathInfo(matchPath);
         const segments = [];
         let count = matchInfo.wildcardCount;
+        // Build accessor path from the remaining segments after the match
         for (let i = matchInfo.pathSegments.length; i < info.pathSegments.length; i++) {
             const segment = info.pathSegments[i];
             if (segment === '*') {
+                // Wildcard: map to $1, $2, etc. based on wildcard position
                 segments.push("[this.$" + (count + 1) + "]");
                 count++;
             }
             else {
+                // Regular segment: validate and add as property access
                 if (!checkSegmentRegexp.test(segment)) {
                     raiseError({
                         code: "STATE-202",
@@ -7651,6 +9160,7 @@ function createAccessorFunctions(info, getters) {
                 segments.push("." + segment);
             }
         }
+        // Build final path string and generate getter/setter functions
         const path = segments.join('');
         const getterFuncText = `return this["${matchPath}"]${path};`;
         const setterFuncText = `this["${matchPath}"]${path} = value;`;
@@ -7661,15 +9171,18 @@ function createAccessorFunctions(info, getters) {
         };
     }
     else {
+        // Case 2: No matching getter path - build accessor from root
         const segments = [];
         let count = 0;
         for (let i = 0; i < info.pathSegments.length; i++) {
             const segment = info.pathSegments[i];
             if (segment === '*') {
+                // Wildcard: map to $1, $2, etc.
                 segments.push("[this.$" + (count + 1) + "]");
                 count++;
             }
             else {
+                // Regular segment: validate and add
                 if (!checkSegmentRegexp.test(segment)) {
                     raiseError({
                         code: "STATE-202",
@@ -7681,6 +9194,7 @@ function createAccessorFunctions(info, getters) {
                 segments.push((segments.length > 0 ? "." : "") + segment);
             }
         }
+        // Build final path and generate getter/setter functions from root
         const path = segments.join('');
         const getterFuncText = `return this.${path};`;
         const setterFuncText = `this.${path} = value;`;
@@ -7692,6 +9206,10 @@ function createAccessorFunctions(info, getters) {
     }
 }
 
+/**
+ * PathManager class manages property paths, dependencies, and accessor optimizations.
+ * Analyzes component class to build path hierarchy and dependency graph.
+ */
 class PathManager {
     alls = new Set();
     lists = new Set();
@@ -7708,12 +9226,18 @@ class PathManager {
     hasConnectedCallback = false;
     hasDisconnectedCallback = false;
     hasUpdatedCallback = false;
-    #id;
-    #stateClass;
+    _id;
+    _stateClass;
+    _dynamicDependencyKeys = new Set();
+    /**
+     * Creates a new PathManager instance.
+     * Analyzes component class to extract paths, getters, setters, and builds dependency graph.
+     * @param componentClass - Component class to analyze
+     */
     constructor(componentClass) {
-        this.#id = componentClass.id;
-        this.#stateClass = componentClass.stateClass;
-        const alls = getPathsSetById(this.#id);
+        this._id = componentClass.id;
+        this._stateClass = componentClass.stateClass;
+        const alls = getPathsSetById(this._id);
         const listsFromAlls = new Set();
         for (const path of alls) {
             const info = getStructuredPathInfo(path);
@@ -7726,13 +9250,13 @@ class PathManager {
                 }
             }
         }
-        const lists = getListPathsSetById(this.#id);
+        const lists = getListPathsSetById(this._id);
         this.lists = this.lists.union(lists).union(listsFromAlls);
         for (const listPath of this.lists) {
             const elementPath = listPath + ".*";
             this.elements.add(elementPath);
         }
-        let currentProto = this.#stateClass.prototype;
+        let currentProto = this._stateClass.prototype;
         while (currentProto && currentProto !== Object.prototype) {
             const getters = Object.getOwnPropertyDescriptors(currentProto);
             if (getters) {
@@ -7773,7 +9297,7 @@ class PathManager {
             }
             currentProto = Object.getPrototypeOf(currentProto);
         }
-        // 最適化対象のパスを決定し、最適化する
+        // Determine optimization target paths and optimize them
         for (const path of this.alls) {
             if (this.getters.has(path)) {
                 continue;
@@ -7786,7 +9310,7 @@ class PathManager {
                 continue;
             }
             const funcs = createAccessorFunctions(info, this.getters);
-            Object.defineProperty(this.#stateClass.prototype, path, {
+            Object.defineProperty(this._stateClass.prototype, path, {
                 get: funcs.get,
                 set: funcs.set,
                 enumerable: true,
@@ -7794,7 +9318,7 @@ class PathManager {
             });
             this.optimizes.add(path);
         }
-        // 静的依存関係の設定
+        // Configure static dependencies
         for (const path of this.alls) {
             addPathNode(this.rootNode, path);
             const info = getStructuredPathInfo(path);
@@ -7804,6 +9328,12 @@ class PathManager {
             }
         }
     }
+    /**
+     * Adds a new path to the manager dynamically.
+     * Updates path hierarchy, creates optimized accessors, and registers dependencies.
+     * @param addPath - Path to add
+     * @param isList - Whether the path represents a list (default: false)
+     */
     addPath(addPath, isList = false) {
         const info = getStructuredPathInfo(addPath);
         if (isList && !this.lists.has(addPath)) {
@@ -7827,7 +9357,7 @@ class PathManager {
             }
             if (pathInfo.pathSegments.length > 1) {
                 const funcs = createAccessorFunctions(pathInfo, this.getters);
-                Object.defineProperty(this.#stateClass.prototype, path, {
+                Object.defineProperty(this._stateClass.prototype, path, {
                     get: funcs.get,
                     set: funcs.set,
                     enumerable: true,
@@ -7841,20 +9371,30 @@ class PathManager {
             }
         }
     }
-    #dynamicDependencyKeys = new Set();
+    /**
+     * Adds a dynamic dependency between source and target paths.
+     * Ensures source path exists before registering dependency.
+     * @param target - Target path that depends on source
+     * @param source - Source path that target depends on
+     */
     addDynamicDependency(target, source) {
         const key = source + "=>" + target;
-        if (this.#dynamicDependencyKeys.has(key)) {
+        if (this._dynamicDependencyKeys.has(key)) {
             return;
         }
         if (!this.alls.has(source)) {
             this.addPath(source);
         }
-        this.#dynamicDependencyKeys.add(key);
+        this._dynamicDependencyKeys.add(key);
         this.dynamicDependencies.get(source)?.add(target) ??
             this.dynamicDependencies.set(source, new Set([target]));
     }
 }
+/**
+ * Factory function to create a new PathManager instance.
+ * @param componentClass - Component class to analyze and manage
+ * @returns New PathManager instance
+ */
 function createPathManager(componentClass) {
     return new PathManager(componentClass);
 }
@@ -7862,76 +9402,71 @@ function createPathManager(componentClass) {
 /**
  * createComponentClass.ts
  *
- * StructiveのWeb Components用カスタム要素クラスを動的に生成するユーティリティです。
+ * Utility for dynamically generating custom element classes for Structive Web Components.
  *
- * 主な役割:
- * - ユーザー定義のcomponentData（stateClass, html, css等）からWeb Componentsクラスを生成
- * - StateClass/テンプレート/CSS/バインディング情報などをIDで一元管理・登録
- * - 独自のget/setトラップやバインディング、親子コンポーネント探索、フィルター拡張など多機能な基盤を提供
- * - 静的プロパティでテンプレート・スタイル・StateClass・フィルター・getter情報などにアクセス可能
- * - defineメソッドでカスタム要素として登録
+ * Main responsibilities:
+ * - Generates Web Components classes from user-defined componentData (stateClass, html, css, etc.)
+ * - Centrally manages and registers StateClass/template/CSS/binding information by ID
+ * - Provides a feature-rich foundation including custom get/set traps, bindings, parent-child component discovery, and filter extensions
+ * - Provides access to template, styles, StateClass, filters, and getter information via static properties
+ * - Registers custom elements via the define method
  *
- * 設計ポイント:
- * - findStructiveParentで親Structiveコンポーネントを探索し、階層的な状態管理を実現
- * - getter/setter/バインディング最適化に対応
- * - テンプレート・CSS・StateClass・バインディング情報をIDで一元管理し、再利用性・拡張性を確保
- * - フィルターやバインディング情報も静的プロパティで柔軟に拡張可能
+ * Design points:
+ * - Uses findStructiveParent to discover parent Structive components, enabling hierarchical state management
+ * - Supports getter/setter/binding optimization
+ * - Centrally manages template/CSS/StateClass/binding information by ID, ensuring reusability and extensibility
+ * - Filters and binding information can be flexibly extended via static properties
+ */
+/**
+ * Creates a custom Web Component class from user-defined component data.
+ *
+ * This factory function generates a fully-configured custom element class that:
+ * - Extends the appropriate base class (HTMLElement or specified custom element)
+ * - Registers all templates, styles, and state management
+ * - Provides static accessors for component resources (template, stylesheet, stateClass, filters)
+ * - Implements the IComponent interface with lifecycle hooks and state management
+ *
+ * @param {IUserComponentData} componentData - Configuration object containing stateClass, html, and css
+ * @returns {StructiveComponentClass} A custom element class ready to be registered via customElements.define()
+ *
+ * @example
+ * const MyComponent = createComponentClass({
+ *   stateClass: { count: 0 },
+ *   html: '<div>{{count}}</div>',
+ *   css: 'div { color: blue; }'
+ * });
+ * MyComponent.define('my-component');
  */
 function createComponentClass(componentData) {
+    // Extract and process component configuration
     const config = (componentData.stateClass.$config ?? {});
     const componentConfig = getComponentConfig(config);
+    // Generate unique ID for this component class
     const id = generateId();
     const { html, css, stateClass } = componentData;
+    // Initialize filter collections with built-in filters
     const inputFilters = Object.assign({}, inputBuiltinFilters);
     const outputFilters = Object.assign({}, outputBuiltinFilters);
+    // Mark as Structive component and register all resources
     stateClass.$isStructive = true;
     registerHtml(id, html);
     registerCss(id, css);
     registerStateClass(id, stateClass);
+    // Determine base class to extend (HTMLElement or custom element)
     const baseClass = getBaseClass(componentConfig.extends);
     const extendTagName = componentConfig.extends;
     return class extends baseClass {
-        #engine;
-        constructor() {
-            super();
-            this.#engine = createComponentEngine(componentConfig, this);
-            this.#engine.setup();
-        }
-        connectedCallback() {
-            this.#engine.connectedCallback();
-        }
-        disconnectedCallback() {
-            this.#engine.disconnectedCallback();
-        }
-        #parentStructiveComponent;
-        get parentStructiveComponent() {
-            if (typeof this.#parentStructiveComponent === "undefined") {
-                this.#parentStructiveComponent = findStructiveParent(this);
-            }
-            return this.#parentStructiveComponent;
-        }
-        get state() {
-            return this.#engine.stateInput;
-        }
-        get stateBinding() {
-            return this.#engine.stateBinding;
-        }
-        get isStructive() {
-            return this.#engine.stateClass.$isStructive ?? false;
-        }
-        get readyResolvers() {
-            return this.#engine.readyResolvers;
-        }
-        getBindingsFromChild(component) {
-            return this.#engine.bindingsByComponent.get(component) ?? null;
-        }
-        registerChildComponent(component) {
-            this.#engine.registerChildComponent(component);
-        }
-        unregisterChildComponent(component) {
-            this.#engine.unregisterChildComponent(component);
-        }
+        /**
+         * Registers this component class as a custom element.
+         *
+         * @param {string} tagName - The custom element tag name (must contain a hyphen)
+         * @returns {void}
+         *
+         * @example
+         * MyComponent.define('my-component');
+         */
         static define(tagName) {
+            // Register as extended built-in element if extends is specified
             if (extendTagName) {
                 customElements.define(tagName, this, { extends: extendTagName });
             }
@@ -7939,124 +9474,342 @@ function createComponentClass(componentData) {
                 customElements.define(tagName, this);
             }
         }
+        /** Gets the unique numeric ID for this component class */
         static get id() {
             return id;
         }
-        static #html = html;
+        /** HTML template string for this component */
+        static _html = html;
         static get html() {
-            return this.#html;
+            return this._html;
         }
+        /**
+         * Updates the HTML template and invalidates cached template/pathManager.
+         * This allows dynamic template modification after component class creation.
+         */
         static set html(value) {
-            this.#html = value;
+            this._html = value;
             registerHtml(this.id, value);
-            this.#template = null;
-            this.#pathManager = null; // パス情報をリセット
+            this._template = null;
+            this._pathManager = null; // Reset path information when template changes
         }
-        static #css = css;
+        /** CSS stylesheet string for this component */
+        static _css = css;
         static get css() {
-            return this.#css;
+            return this._css;
         }
+        /**
+         * Updates the CSS stylesheet and invalidates cached stylesheet.
+         * Allows dynamic style modification after component class creation.
+         */
         static set css(value) {
-            this.#css = value;
+            this._css = value;
             registerCss(this.id, value);
-            this.#styleSheet = null;
+            this._styleSheet = null;
         }
-        static #template = null;
+        /** Cached HTMLTemplateElement instance */
+        static _template = null;
+        /**
+         * Gets the compiled HTMLTemplateElement for this component.
+         * Lazily loads and caches on first access.
+         */
         static get template() {
-            if (!this.#template) {
-                this.#template = getTemplateById(this.id);
+            if (!this._template) {
+                this._template = getTemplateById(this.id);
             }
-            return this.#template;
+            return this._template;
         }
-        static #styleSheet = null;
+        /** Cached CSSStyleSheet instance */
+        static _styleSheet = null;
+        /**
+         * Gets the CSSStyleSheet for this component.
+         * Lazily loads and caches on first access.
+         */
         static get styleSheet() {
-            if (!this.#styleSheet) {
-                this.#styleSheet = getStyleSheetById(this.id);
+            if (!this._styleSheet) {
+                this._styleSheet = getStyleSheetById(this.id);
             }
-            return this.#styleSheet;
+            return this._styleSheet;
         }
-        static #stateClass = null;
+        /** Cached state class definition */
+        static _stateClass = null;
+        /**
+         * Gets the state class definition for this component.
+         * Lazily loads and caches on first access.
+         */
         static get stateClass() {
-            if (!this.#stateClass) {
-                this.#stateClass = getStateClassById(this.id);
+            if (!this._stateClass) {
+                this._stateClass = getStateClassById(this.id);
             }
-            return this.#stateClass;
+            return this._stateClass;
         }
-        static #inputFilters = inputFilters;
+        /** Input filters for data binding transformations */
+        static _inputFilters = inputFilters;
         static get inputFilters() {
-            return this.#inputFilters;
+            return this._inputFilters;
         }
-        static #outputFilters = outputFilters;
+        /** Output filters for data binding transformations */
+        static _outputFilters = outputFilters;
         static get outputFilters() {
-            return this.#outputFilters;
+            return this._outputFilters;
         }
-        static #pathManager = null;
+        /** Cached PathManager instance for managing state paths and bindings */
+        static _pathManager = null;
+        /**
+         * Gets the PathManager for analyzing and managing state property paths.
+         * Lazily creates and caches on first access.
+         */
         static get pathManager() {
-            if (!this.#pathManager) {
-                this.#pathManager = createPathManager(this);
+            if (!this._pathManager) {
+                this._pathManager = createPathManager(this);
             }
-            return this.#pathManager;
+            return this._pathManager;
+        }
+        /** Component engine that manages lifecycle, state, and rendering */
+        _engine;
+        /** Cached reference to parent Structive component (undefined = not yet searched) */
+        _parentStructiveComponent;
+        /**
+         * Constructs a new component instance.
+         * Creates the component engine and performs initial setup.
+         */
+        constructor() {
+            super();
+            // Create the component engine with configuration
+            this._engine = createComponentEngine(componentConfig, this);
+            // Initialize bindings, state, and prepare for rendering
+            this._engine.setup();
+        }
+        /**
+         * Called when the element is inserted into the DOM.
+         * Triggers component initialization and rendering.
+         */
+        connectedCallback() {
+            this._engine.connectedCallback();
+        }
+        /**
+         * Called when the element is removed from the DOM.
+         * Performs cleanup and resource disposal.
+         */
+        disconnectedCallback() {
+            this._engine.disconnectedCallback();
+        }
+        /**
+         * Gets the nearest parent Structive component in the DOM tree.
+         * Result is cached after first lookup for performance.
+         *
+         * @returns {StructiveComponent | null} Parent component or null if none found
+         */
+        get parentStructiveComponent() {
+            if (typeof this._parentStructiveComponent === "undefined") {
+                // Search up the DOM tree for parent Structive component
+                this._parentStructiveComponent = findStructiveParent(this);
+            }
+            return this._parentStructiveComponent;
+        }
+        /**
+         * Gets the state input interface for accessing and modifying component state.
+         *
+         * @returns {IComponentStateInput} State input interface
+         */
+        get state() {
+            return this._engine.stateInput;
+        }
+        /**
+         * Gets the state binding interface for managing bindings between parent and child components.
+         *
+         * @returns {IComponentStateBinding} State binding interface
+         */
+        get stateBinding() {
+            return this._engine.stateBinding;
+        }
+        /**
+         * Checks if this is a Structive component.
+         *
+         * @returns {boolean} True if this is a Structive component
+         */
+        get isStructive() {
+            return this._engine.stateClass.$isStructive ?? false;
+        }
+        /**
+         * Gets the Promise resolvers for component ready state.
+         * Allows external code to wait for component initialization to complete.
+         *
+         * @returns {PromiseWithResolvers<void>} Promise resolvers for ready state
+         */
+        get readyResolvers() {
+            return this._engine.readyResolvers;
+        }
+        /**
+         * Retrieves the set of bindings associated with a specific child component.
+         *
+         * @param {IComponent} component - The child component to query
+         * @returns {Set<IBinding> | null} Set of bindings or null if component not found
+         */
+        getBindingsFromChild(component) {
+            return this._engine.bindingsByComponent.get(component) ?? null;
+        }
+        /**
+         * Registers a child component, establishing parent-child relationship.
+         * Called when a child Structive component is connected.
+         *
+         * @param {StructiveComponent} component - The child component to register
+         * @returns {void}
+         */
+        registerChildComponent(component) {
+            this._engine.registerChildComponent(component);
+        }
+        /**
+         * Unregisters a child component, cleaning up the parent-child relationship.
+         * Called when a child Structive component is disconnected.
+         *
+         * @param {StructiveComponent} component - The child component to unregister
+         * @returns {void}
+         */
+        unregisterChildComponent(component) {
+            this._engine.unregisterChildComponent(component);
         }
     };
 }
 
+/**
+ * Loads and merges all importmaps from the document.
+ *
+ * Searches for all <script type="importmap"> elements in the document and combines
+ * their imports into a single IImportMap object. If multiple importmap tags exist,
+ * their imports are merged with later entries overwriting earlier ones.
+ *
+ * @returns {IImportMap} Merged importmap containing all imports from all script tags
+ *
+ * @example
+ * // HTML:
+ * // <script type="importmap">
+ * //   { "imports": { "@components/button": "./button.sfc" } }
+ * // </script>
+ * // <script type="importmap">
+ * //   { "imports": { "@routes/home": "./home.sfc" } }
+ * // </script>
+ *
+ * const importmap = loadImportmap();
+ * // Returns: { imports: { "@components/button": "./button.sfc", "@routes/home": "./home.sfc" } }
+ */
 function loadImportmap() {
+    // Initialize empty importmap object
     const importmap = {};
+    // Find all importmap script tags in the document
     document.querySelectorAll("script[type='importmap']").forEach(script => {
+        // Parse the JSON content of each script tag
         const scriptImportmap = JSON.parse(script.innerHTML);
+        // Merge imports if they exist in this script
         if (scriptImportmap.imports) {
+            // Merge with existing imports (later entries override earlier ones)
             importmap.imports = Object.assign(importmap.imports || {}, scriptImportmap.imports);
         }
     });
     return importmap;
 }
 
+/**
+ * Escapes Mustache template expressions by converting them to HTML comments.
+ * This prevents the browser's HTML parser from interpreting {{}} as invalid syntax.
+ *
+ * @param {string} html - HTML string containing Mustache expressions
+ * @returns {string} HTML with {{...}} converted to <!--{{...}}-->
+ *
+ * @example
+ * escapeEmbed('{{name}}') // Returns '<!--{{name}}-->'
+ */
 function escapeEmbed(html) {
     return html.replaceAll(/\{\{([^\}]+)\}\}/g, (match, expr) => {
         return `<!--{{${expr}}}-->`;
     });
 }
+/**
+ * Restores escaped Mustache expressions from HTML comments back to original form.
+ * This reverses the escapeEmbed operation after safe HTML parsing.
+ *
+ * @param {string} html - HTML string with escaped Mustache expressions
+ * @returns {string} HTML with <!--{{...}}--> converted back to {{...}}
+ *
+ * @example
+ * unescapeEmbed('<!--{{name}}-->') // Returns '{{name}}'
+ */
 function unescapeEmbed(html) {
     return html.replaceAll(/<!--\{\{([^\}]+)\}\}-->/g, (match, expr) => {
         return `{{${expr}}}`;
     });
 }
+/** Counter for generating unique IDs for dynamically imported scripts */
 let id = 0;
+/**
+ * Parses a Single File Component (SFC) and extracts its template, script, and style sections.
+ *
+ * The SFC format consists of:
+ * - <template>: HTML template with Mustache syntax
+ * - <script type="module">: JavaScript module exporting the state class
+ * - <style>: CSS styles for the component
+ *
+ * @param {string} path - File path or identifier for source mapping in error messages
+ * @param {string} text - Raw SFC text content to parse
+ * @returns {Promise<IUserComponentData>} Parsed component data including html, css, and stateClass
+ *
+ * @example
+ * const componentData = await createSingleFileComponent('MyComponent.sfc', `
+ *   <template><div>{{message}}</div></template>
+ *   <script type="module">
+ *     export default class { message = 'Hello'; }
+ *   </script>
+ *   <style>div { color: blue; }</style>
+ * `);
+ */
 async function createSingleFileComponent(path, text) {
+    // Create a temporary template element for safe HTML parsing
     const template = document.createElement("template");
+    // Escape Mustache expressions to prevent parsing issues
     template.innerHTML = escapeEmbed(text);
+    // Extract and remove the <template> section
     const html = template.content.querySelector("template");
     html?.remove();
+    // Extract and remove the <script type="module"> section
     const script = template.content.querySelector("script[type=module]");
     let scriptModule = {};
     if (script) {
+        // Add unique comment for debugging and source mapping
         const uniq_comment = `\n// uniq id: ${id++}\n//# sourceURL=${path}\n`;
-        // blob URLを使用（ブラウザ環境）
-        // テスト環境（jsdom）ではURL.createObjectURLが存在しないためフォールバック
+        // Use blob URL (browser environment)
+        // Fallback for test environment (jsdom) where URL.createObjectURL doesn't exist
         if (typeof URL.createObjectURL === 'function') {
+            // Create a blob URL for the script and dynamically import it
             const blob = new Blob([script.text + uniq_comment], { type: "application/javascript" });
             const url = URL.createObjectURL(blob);
             try {
                 scriptModule = await import(url);
             }
             finally {
+                // Clean up blob URL to prevent memory leak
                 URL.revokeObjectURL(url);
             }
         }
         else {
-            // フォールバック: Base64エンコード方式（テスト環境用）
+            // Fallback: Base64 encoding method (for test environment)
+            // Convert script to Base64 and import via data: URL
             const b64 = btoa(String.fromCodePoint(...new TextEncoder().encode(script.text + uniq_comment)));
             scriptModule = await import("data:application/javascript;base64," + b64);
         }
     }
     script?.remove();
+    // Extract and remove the <style> section
     const style = template.content.querySelector("style");
     style?.remove();
+    // Use default export as state class, or empty class if not provided
     const stateClass = (scriptModule.default ?? class {
     });
+    // Return parsed component data
     return {
         text,
+        // Restore Mustache expressions and trim whitespace from template
         html: unescapeEmbed(html?.innerHTML ?? "").trim(),
+        // Extract CSS text content or use empty string
         css: style?.textContent ?? "",
         stateClass,
     };
@@ -8065,92 +9818,214 @@ async function createSingleFileComponent(path, text) {
 /**
  * loadSingleFileComponent.ts
  *
- * 指定パスのシングルファイルコンポーネント（SFC）をfetchし、パースしてIUserComponentDataとして返すユーティリティ関数です。
+ * Utility function to fetch a Single File Component (SFC) from a specified path, parse it, and return as IUserComponentData.
  *
- * 主な役割:
- * - fetchで指定パスのSFCファイルを取得
- * - テキストとして読み込み、createSingleFileComponentでパース
- * - パース結果（IUserComponentData）を返却
+ * Main responsibilities:
+ * - Fetches the SFC file from the specified path using fetch
+ * - Loads as text and parses via createSingleFileComponent
+ * - Returns the parsed result (IUserComponentData)
  *
- * 設計ポイント:
- * - import.meta.resolveを利用し、パス解決の柔軟性を確保
- * - 非同期処理で動的なコンポーネントロードに対応
+ * Design points:
+ * - Uses import.meta.resolve for flexible path resolution
+ * - Supports dynamic component loading via asynchronous processing
+ */
+/**
+ * Loads a Single File Component from the specified path.
+ *
+ * Fetches the SFC file, reads its contents as text, and parses it to extract
+ * the template, script, and style sections into a component data object.
+ *
+ * @param {string} path - Path or alias to the SFC file (e.g., './components/button.sfc' or '@components/button')
+ * @returns {Promise<IUserComponentData>} Parsed component data containing html, css, stateClass, and text
+ * @throws {Error} If fetch fails or the file cannot be read
+ *
+ * @example
+ * // Load from relative path
+ * const buttonData = await loadSingleFileComponent('./button.sfc');
+ *
+ * @example
+ * // Load from importmap alias
+ * const chartData = await loadSingleFileComponent('@components/chart');
  */
 async function loadSingleFileComponent(path) {
-    // Node/Vitest 等の SSR 環境では import.meta.resolve が存在しない場合があるためフォールバック
+    // Resolve path using import.meta.resolve if available
+    // Fallback to raw path for SSR environments (Node/Vitest) where import.meta.resolve may not exist
     const resolved = import.meta.resolve ? import.meta.resolve(path) : path;
+    // Fetch the SFC file from the resolved path
     const response = await fetch(resolved);
+    // Read the response body as text
     const text = await response.text();
+    // Parse the SFC text into component data (template, script, style)
     return createSingleFileComponent(path, text);
 }
 
+/**
+ * Registers a Structive component class as a custom element.
+ *
+ * This is a convenience wrapper around the component class's define method,
+ * which internally calls customElements.define() with the appropriate configuration.
+ *
+ * @param {string} tagName - The custom element tag name (must contain a hyphen, e.g., 'my-button')
+ * @param {StructiveComponentClass} componentClass - The component class to register
+ * @returns {void}
+ * @throws {DOMException} If the tag name is invalid or already registered
+ *
+ * @example
+ * const ButtonComponent = createComponentClass({
+ *   stateClass: { count: 0 },
+ *   html: '<button>{{count}}</button>',
+ *   css: 'button { color: blue; }'
+ * });
+ * registerComponentClass('my-button', ButtonComponent);
+ * // Now <my-button> can be used in HTML
+ */
 function registerComponentClass(tagName, componentClass) {
+    // Delegates to the component class's define method, which handles customElements.define()
     componentClass.define(tagName);
 }
 
 /**
- * loadFromImportMap
+ * loadFromImportMap.ts
  *
- * importmap のエイリアスを走査し、ルート/コンポーネントを自動登録する。
- * - @routes/*: entryRoute でルーティング登録（/root → / に正規化）
- * - @components/*: SFC を読み込み、ComponentClass を生成して registerComponentClass
- * - #lazy サフィックスが付与されている場合は遅延ロード用に保持
+ * Automatically registers routes and components by scanning importmap aliases.
  *
- * 戻り値: Promise<void>
- * Throws: 重大な例外は基本なし（見つからないエイリアスは warn として扱う）
+ * Processes two types of imports:
+ * - @routes/*: Registers routing via entryRoute (/root normalized to /)
+ * - @components/*: Loads SFC, generates ComponentClass, and registers via registerComponentClass
+ * - #lazy suffix: Defers loading until component is actually needed
+ *
+ * @module loadFromImportMap
  */
+/** Prefix for route aliases in importmap */
 const ROUTES_KEY = "@routes/";
+/** Prefix for component aliases in importmap */
 const COMPONENTS_KEY = "@components/";
+/** Suffix indicating a lazy-loaded component */
 const LAZY_LOAD_SUFFIX = "#lazy";
+/** Length of the lazy load suffix for efficient slicing */
 const LAZY_LOAD_SUFFIX_LEN = LAZY_LOAD_SUFFIX.length;
+/** Registry of lazy-loadable component aliases indexed by tag name */
 const lazyLoadComponentAliasByTagName = {};
+/**
+ * Loads and registers all routes and components from the importmap.
+ *
+ * This function scans the importmap for @routes/* and @components/* entries:
+ * - Route entries create routing configurations via entryRoute
+ * - Component entries load SFC files and register them as custom elements
+ * - Entries with #lazy suffix are deferred until explicitly loaded
+ *
+ * @returns {Promise<void>} Resolves when all non-lazy components are loaded and registered
+ *
+ * @example
+ * // Importmap example:
+ * // {
+ * //   "imports": {
+ * //     "@routes/home": "./routes/home.sfc",
+ * //     "@components/my-button": "./components/button.sfc",
+ * //     "@components/heavy-chart#lazy": "./components/chart.sfc"
+ * //   }
+ * // }
+ * await loadFromImportMap();
+ * // 'routes-home' and 'my-button' are now registered
+ * // 'heavy-chart' will be loaded on demand
+ */
 async function loadFromImportMap() {
+    // Load the importmap from the document
     const importmap = loadImportmap();
     if (importmap.imports) {
+        // Collect non-lazy components to load immediately
         const loadAliasByTagName = new Map();
+        // Phase 1: Scan all aliases and classify them
         for (const [alias, value] of Object.entries(importmap.imports)) {
             let tagName, isLazyLoad;
+            // Process route aliases (@routes/*)
             if (alias.startsWith(ROUTES_KEY)) {
                 isLazyLoad = alias.endsWith(LAZY_LOAD_SUFFIX);
-                // remove the prefix '@routes' and the suffix '#lazy' if it exists
+                // Extract path: '@routes/users/:id' -> '/users/:id'
                 const path = alias.slice(ROUTES_KEY.length - 1, isLazyLoad ? -LAZY_LOAD_SUFFIX_LEN : undefined);
-                const pathWithoutParams = path.replace(/:[^\s/]+/g, ""); // remove the params
-                tagName = "routes" + pathWithoutParams.replace(/\//g, "-"); // replace '/' with '-'
-                entryRoute(tagName, path === "/root" ? "/" : path); // routing
+                // Remove route parameters to create tag name: '/users/:id' -> '/users/'
+                const pathWithoutParams = path.replace(/:[^\s/]+/g, "");
+                // Convert path to tag name: '/users/' -> 'routes-users-'
+                tagName = "routes" + pathWithoutParams.replace(/\//g, "-");
+                // Register route (normalize '/root' to '/')
+                entryRoute(tagName, path === "/root" ? "/" : path);
             }
+            // Process component aliases (@components/*)
             if (alias.startsWith(COMPONENTS_KEY)) {
                 isLazyLoad = alias.endsWith(LAZY_LOAD_SUFFIX);
-                // remove the prefix '@components/' and the suffix '#lazy' if it exists
+                // Extract tag name: '@components/my-button' -> 'my-button'
                 tagName = alias.slice(COMPONENTS_KEY.length, isLazyLoad ? -LAZY_LOAD_SUFFIX_LEN : undefined);
             }
+            // Skip if not a recognized alias format
             if (!tagName) {
                 continue;
             }
+            // Defer lazy-load components
             if (isLazyLoad) {
-                // Lazy Load用のコンポーネントのエイリアスを格納
+                // Store alias for later loading
                 lazyLoadComponentAliasByTagName[tagName] = alias;
-                continue; // Lazy Loadの場合はここでスキップ
+                continue;
             }
+            // Queue non-lazy component for immediate loading
             loadAliasByTagName.set(tagName, alias);
         }
+        // Phase 2: Load and register all non-lazy components
         for (const [tagName, alias] of loadAliasByTagName.entries()) {
-            // 非Lazy Loadのコンポーネントはここで登録
+            // Load the SFC file
             const componentData = await loadSingleFileComponent(alias);
+            // Create the component class
             const componentClass = createComponentClass(componentData);
+            // Register as custom element
             registerComponentClass(tagName, componentClass);
         }
     }
 }
+/**
+ * Checks if there are any lazy-loadable components registered.
+ *
+ * @returns {boolean} True if at least one lazy-load component is registered
+ *
+ * @example
+ * if (hasLazyLoadComponents()) {
+ *   console.log('Lazy loading is available');
+ * }
+ */
 function hasLazyLoadComponents() {
     return Object.keys(lazyLoadComponentAliasByTagName).length > 0;
 }
+/**
+ * Checks if a specific tag name is registered as a lazy-load component.
+ *
+ * @param {string} tagName - The custom element tag name to check
+ * @returns {boolean} True if the component is registered for lazy loading
+ *
+ * @example
+ * if (isLazyLoadComponent('heavy-chart')) {
+ *   loadLazyLoadComponent('heavy-chart');
+ * }
+ */
 function isLazyLoadComponent(tagName) {
     return lazyLoadComponentAliasByTagName.hasOwnProperty(tagName);
 }
+/**
+ * Triggers lazy loading of a component by tag name.
+ *
+ * Loads the component asynchronously via microtask queue and removes it from
+ * the lazy-load registry to prevent duplicate loading.
+ *
+ * @param {string} tagName - The custom element tag name to load
+ * @returns {void}
+ *
+ * @example
+ * // When component is needed
+ * loadLazyLoadComponent('heavy-chart');
+ * // Component loads asynchronously in next microtask
+ */
 function loadLazyLoadComponent(tagName) {
     const alias = lazyLoadComponentAliasByTagName[tagName];
+    // Check if alias exists
     if (!alias) {
-        // 警告として扱うが、構造化メタ情報を付加
+        // Treat as warning with structured metadata
         const err = {
             code: "IMP-201",
             message: `Alias not found for tagName: ${tagName}`,
@@ -8158,14 +10033,19 @@ function loadLazyLoadComponent(tagName) {
             docsUrl: "./docs/error-codes.md#imp",
             severity: "warn",
         };
-        // 既存挙動は warn + return のため、throw はせず console.warn にメタを付与
+        // Log warning instead of throwing to maintain existing behavior
         console.warn(err.message, { code: err.code, context: err.context, docsUrl: err.docsUrl, severity: err.severity });
         return;
     }
-    delete lazyLoadComponentAliasByTagName[tagName]; // 一度ロードしたら削除
+    // Remove from registry to prevent duplicate loading
+    delete lazyLoadComponentAliasByTagName[tagName];
+    // Load component asynchronously in microtask queue
     queueMicrotask(async () => {
+        // Load the SFC file
         const componentData = await loadSingleFileComponent(alias);
+        // Create the component class
         const componentClass = createComponentClass(componentData);
+        // Register as custom element
         registerComponentClass(tagName, componentClass);
     });
 }
@@ -8173,19 +10053,19 @@ function loadLazyLoadComponent(tagName) {
 /**
  * Router.ts
  *
- * シングルページアプリケーション（SPA）向けのカスタムエレメント Router の実装です。
+ * Implementation of Router custom element for single-page applications (SPA).
  *
- * 主な役割:
- * - ルート定義（entryRoute）に基づき、URLパスに応じてカスタム要素を動的に生成・表示
- * - pushState/popstateイベントを利用した履歴管理とルーティング制御
- * - ルートパラメータの抽出とカスタム要素への受け渡し
- * - 404ページ（未定義ルート時）の表示
+ * Main responsibilities:
+ * - Dynamically creates and displays custom elements based on URL path according to route definitions (entryRoute)
+ * - History management and routing control using pushState/popstate events
+ * - Route parameter extraction and passing to custom elements
+ * - Display 404 page for undefined routes
  *
- * 設計ポイント:
- * - entryRouteでルートパスとカスタム要素タグ名のペアを登録
- * - popstateイベントでURL変更時に自動で再描画
- * - ルートパスのパラメータ（:id等）も正規表現で抽出し、data-state属性で渡す
- * - getRouterでグローバルなRouterインスタンスを取得可能
+ * Design points:
+ * - Register route path and custom element tag name pairs via entryRoute
+ * - Automatically re-render on URL change via popstate event
+ * - Extract route path parameters (:id etc.) using regex and pass via data-state attribute
+ * - Global Router instance accessible via getRouter
  */
 const DEFAULT_ROUTE_PATH = '/'; // Default route path
 const ROUTE_PATH_PREFIX = 'routes:'; // Prefix for route paths
@@ -8196,44 +10076,70 @@ const ROUTE_PATH_PREFIX = 'routes:'; // Prefix for route paths
  */
 const routeEntries = [];
 let globalRouter = null;
+/**
+ * Router custom element for SPA routing.
+ * Manages URL-based navigation and dynamic component rendering.
+ */
 class Router extends HTMLElement {
-    originalPathName = window.location.pathname; // Store the original path name
-    originalFileName = window.location.pathname.split('/').pop() || ''; // Store the original file name
-    basePath = document.querySelector('base')?.href.replace(window.location.origin, "") || DEFAULT_ROUTE_PATH;
+    _originalFileName = window.location.pathname.split('/').pop() || ''; // Store the original file name
+    _basePath = document.querySelector('base')?.href.replace(window.location.origin, "") || DEFAULT_ROUTE_PATH;
     _popstateHandler;
+    /**
+     * Creates a new Router instance and binds popstate handler.
+     */
     constructor() {
         super();
         this._popstateHandler = this.popstateHandler.bind(this);
     }
+    /**
+     * Web Component lifecycle callback invoked when element is connected to DOM.
+     * Sets up routing and triggers initial render.
+     */
     connectedCallback() {
         globalRouter = this;
         this.innerHTML = '<slot name="content"></slot>';
         window.addEventListener('popstate', this._popstateHandler);
         window.dispatchEvent(new Event("popstate")); // Dispatch popstate event to trigger the initial render
     }
+    /**
+     * Web Component lifecycle callback invoked when element is disconnected from DOM.
+     * Cleans up event listeners.
+     */
     disconnectedCallback() {
         window.removeEventListener('popstate', this._popstateHandler);
         globalRouter = null;
     }
+    /**
+     * Handles popstate events for browser navigation.
+     * @param event - PopStateEvent from browser history navigation
+     */
     popstateHandler(event) {
         event.preventDefault();
         this.render();
     }
+    /**
+     * Navigates to a new route.
+     * @param to - Target path to navigate to
+     */
     navigate(to) {
-        const toPath = to[0] === '/' ? (this.basePath + to.slice(1)) : to; // Ensure the path starts with '/'
+        const toPath = to[0] === '/' ? (this._basePath + to.slice(1)) : to; // Ensure the path starts with '/'
         history.pushState({}, '', toPath);
         this.render();
     }
+    /**
+     * Renders the current route by creating and displaying the matching custom element.
+     * Displays 404 if no route matches the current path.
+     */
     render() {
-        // スロットコンテントをクリア
+        // Clear slot content
         const slotChildren = Array.from(this.childNodes).filter(n => n.getAttribute?.('slot') === 'content');
         slotChildren.forEach(n => this.removeChild(n));
         const paths = window.location.pathname.split('/');
-        if (paths.at(-1) === this.originalFileName) {
+        if (paths.at(-1) === this._originalFileName) {
             paths[paths.length - 1] = ''; // Ensure the last path is empty for root
         }
         const pathName = paths.join('/');
-        const replacedPath = pathName.replace(this.basePath, ''); // Remove base path and ensure default route
+        const replacedPath = pathName.replace(this._basePath, ''); // Remove base path and ensure default route
         const currentPath = replacedPath[0] !== '/' ? '/' + replacedPath : replacedPath; // Ensure the path starts with '/'
         let tagName = undefined;
         let params = {};
@@ -8274,12 +10180,21 @@ class Router extends HTMLElement {
         }
     }
 }
+/**
+ * Registers a route entry mapping a custom element tag to a URL path.
+ * @param tagName - Custom element tag name to render for this route
+ * @param routePath - URL path pattern (supports parameters like :id)
+ */
 function entryRoute(tagName, routePath) {
     if (routePath.startsWith(ROUTE_PATH_PREFIX)) {
         routePath = routePath.substring(ROUTE_PATH_PREFIX.length); // Remove 'routes:' prefix
     }
     routeEntries.push([routePath, tagName]);
 }
+/**
+ * Gets the global Router instance.
+ * @returns Current Router instance or null if not connected
+ */
 function getRouter() {
     return globalRouter;
 }
@@ -8287,27 +10202,53 @@ function getRouter() {
 /**
  * registerSingleFileComponents.ts
  *
- * 複数のシングルファイルコンポーネント（SFC）をまとめてStructiveのWeb Componentsとして登録するユーティリティ関数です。
+ * Utility function to register multiple Single File Components (SFC) in bulk as Structive Web Components.
  *
- * 主な役割:
- * - singleFileComponents（tagNameとパスのマップ）を走査し、各SFCを非同期で取得・パース
- * - enableRouterが有効な場合はentryRouteでルーティング情報も登録
- * - createComponentClassでWeb Componentsクラスを生成し、registerComponentClassでカスタム要素として登録
+ * Main responsibilities:
+ * - Iterates through singleFileComponents (map of tagName to path) and asynchronously fetches and parses each SFC
+ * - Registers routing information via entryRoute if enableRouter is active
+ * - Generates Web Components classes via createComponentClass and registers them as custom elements via registerComponentClass
  *
- * 設計ポイント:
- * - SFCのロードからWeb Components登録、ルーティング登録までを一括で自動化
- * - 非同期処理で複数コンポーネントの動的登録に対応
- * - ルートパス"/root"の正規化や、@routesプレフィックスの除去など柔軟なパス処理
+ * Design points:
+ * - Automates everything from SFC loading to Web Components registration and routing registration in bulk
+ * - Supports dynamic registration of multiple components via asynchronous processing
+ * - Flexible path processing including normalization of root path "/root" and removal of @routes prefix
+ */
+/**
+ * Registers multiple SFC files as custom elements and optionally as routes.
+ *
+ * This function processes each SFC sequentially, loading the file, creating
+ * a component class, and registering it. If routing is enabled and the path
+ * starts with '@routes', it also registers the component as a route.
+ *
+ * @param {SingleFileComponents} singleFileComponents - Object mapping tag names to SFC file paths
+ * @returns {Promise<void>} Resolves when all components are registered
+ * @throws {Error} If any file cannot be fetched, parsed, or registered
+ * @throws {DOMException} If any tag name is invalid or already registered
+ *
+ * @example
+ * await registerSingleFileComponents({
+ *   'my-button': './components/button.sfc',
+ *   'user-card': '@components/user-card',
+ *   'home-page': '@routes/home'  // Also registers as route if enableRouter is true
+ * });
  */
 async function registerSingleFileComponents(singleFileComponents) {
+    // Process each component sequentially to maintain order
     for (const [tagName, path] of Object.entries(singleFileComponents)) {
         let componentData = null;
+        // If router is enabled and path looks like a route, register routing info
         if (config$2.enableRouter) {
-            const routePath = path.startsWith("@routes") ? path.slice(7) : path; // remove the prefix 'routes:'
-            entryRoute(tagName, routePath === "/root" ? "/" : routePath); // routing
+            // Remove '@routes' prefix if present (e.g., '@routes/home' -> '/home')
+            const routePath = path.startsWith("@routes") ? path.slice(7) : path;
+            // Normalize '/root' to '/' for the root route
+            entryRoute(tagName, routePath === "/root" ? "/" : routePath);
         }
+        // Load and parse the SFC file
         componentData = await loadSingleFileComponent(path);
+        // Generate a Web Components class from the parsed data
         const componentClass = createComponentClass(componentData);
+        // Register the class as a custom element
         registerComponentClass(tagName, componentClass);
     }
 }
@@ -8315,36 +10256,56 @@ async function registerSingleFileComponents(singleFileComponents) {
 /**
  * MainWrapper.ts
  *
- * アプリ全体のレイアウトやルーティングを管理するカスタムエレメント MainWrapper の実装です。
+ * Implementation of MainWrapper custom element that manages application-wide layout and routing.
  *
- * 主な役割:
- * - Shadow DOMの有効化やレイアウトテンプレートの動的読み込み
- * - レイアウトテンプレートやスタイルの適用
- * - ルーター要素（routerTagName）の動的追加
+ * Main responsibilities:
+ * - Enables Shadow DOM and dynamically loads layout templates
+ * - Applies layout templates and styles
+ * - Dynamically adds router element (routerTagName)
  *
- * 設計ポイント:
- * - config.shadowDomMode で Shadow DOMの有効/無効を切り替え
- * - config.layoutPath が指定されていればfetchでレイアウトHTMLを取得し、テンプレート・スタイルを適用
- * - スタイルはadoptedStyleSheetsでShadowRootまたはdocumentに適用
- * - レイアウトが指定されていない場合はデフォルトのslotを挿入
- * - config.enableRouter が有効な場合はrouter要素をslotに追加
+ * Design points:
+ * - Toggles Shadow DOM enable/disable via config.shadowDomMode
+ * - If config.layoutPath is specified, fetches layout HTML and applies template and styles
+ * - Applies styles to ShadowRoot or document using adoptedStyleSheets
+ * - Inserts default slot if no layout is specified
+ * - Adds router element to slot if config.enableRouter is enabled
  */
 const SLOT_KEY = "router";
 const DEFAULT_LAYOUT = `<slot name="${SLOT_KEY}"></slot>`;
+/**
+ * MainWrapper custom element for managing application layout and routing.
+ * Extends HTMLElement to provide layout template loading and router integration.
+ */
 class MainWrapper extends HTMLElement {
+    /**
+     * Creates a new MainWrapper instance and initializes Shadow DOM if configured.
+     */
     constructor() {
         super();
         if (config$2.shadowDomMode !== "none") {
             this.attachShadow({ mode: 'open' });
         }
     }
+    /**
+     * Web Component lifecycle callback invoked when element is connected to DOM.
+     * Loads layout and renders the component.
+     */
     async connectedCallback() {
         await this.loadLayout();
         this.render();
     }
+    /**
+     * Gets the root element for content insertion (ShadowRoot or this element).
+     * @returns ShadowRoot if Shadow DOM is enabled, otherwise the element itself
+     */
     get root() {
         return this.shadowRoot ?? this;
     }
+    /**
+     * Loads layout template from configured path or uses default layout.
+     * Fetches HTML, extracts template and styles, and applies them to root.
+     * @throws TMP-101 If layout fetch fails
+     */
     async loadLayout() {
         if (config$2.layoutPath) {
             const response = await fetch(config$2.layoutPath);
@@ -8377,8 +10338,10 @@ class MainWrapper extends HTMLElement {
             this.root.innerHTML = DEFAULT_LAYOUT;
         }
     }
+    /**
+     * Renders the component by adding router element if enabled.
+     */
     render() {
-        // add router
         if (config$2.enableRouter) {
             const router = document.createElement(config$2.routerTagName);
             router.setAttribute('slot', SLOT_KEY);
@@ -8390,27 +10353,59 @@ class MainWrapper extends HTMLElement {
 /**
  * bootstrap.ts
  *
- * Structiveアプリケーションの初期化処理を行うエントリーポイントです。
+ * Entry point for initializing a Structive application.
  *
- * 主な役割:
- * - グローバル設定(config)に従い、必要なコンポーネントやルーター、メインラッパーを登録・初期化
- * - autoLoadFromImportMapが有効な場合はimportmapからルートやコンポーネントを動的ロード
- * - enableRouterが有効な場合はRouterコンポーネントをカスタム要素として登録
- * - enableMainWrapperが有効な場合はMainWrapperをカスタム要素として登録し、autoInsertMainWrapperが有効ならbodyに自動挿入
+ * Main responsibilities:
+ * - Registers and initializes necessary components, router, and main wrapper according to global configuration (config)
+ * - Dynamically loads routes and components from importmap if autoLoadFromImportMap is enabled
+ * - Registers Router component as a custom element if enableRouter is enabled
+ * - Registers MainWrapper as a custom element if enableMainWrapper is enabled, and automatically inserts it into body if autoInsertMainWrapper is enabled
  *
- * 設計ポイント:
- * - 設定値に応じて初期化処理を柔軟に制御
- * - importmapやカスタム要素の登録、DOMへの自動挿入など、Structiveの起動に必要な処理を一元化
+ * Design points:
+ * - Flexibly controls initialization processing according to configuration values
+ * - Centralizes all processing necessary for Structive startup, including importmap, custom element registration, and automatic DOM insertion
+ */
+/**
+ * Bootstraps the Structive application with configured features.
+ *
+ * This function initializes the application by:
+ * 1. Loading components from importmap (if enabled)
+ * 2. Registering the router component (if enabled)
+ * 3. Registering the main wrapper and optionally inserting it into DOM (if enabled)
+ *
+ * Call this function once during application startup, typically after DOM is ready.
+ *
+ * @returns {Promise<void>} Resolves when bootstrap is complete
+ * @throws {Error} If importmap loading fails or component registration encounters errors
+ * @throws {DOMException} If custom element names are invalid or already registered
+ *
+ * @example
+ * // Basic usage
+ * await bootstrap();
+ *
+ * @example
+ * // With configuration
+ * import { config } from './WebComponents/getGlobalConfig';
+ * config.enableRouter = true;
+ * config.autoLoadFromImportMap = true;
+ * await bootstrap();
  */
 async function bootstrap() {
+    // Phase 1: Load components and routes from importmap if configured
     if (config$2.autoLoadFromImportMap) {
+        // Scans <script type="importmap"> tags and registers @routes/* and @components/*
         await loadFromImportMap();
     }
+    // Phase 2: Register router component if routing is enabled
     if (config$2.enableRouter) {
+        // Registers the Router component with the configured tag name (default: 'view-router')
         customElements.define(config$2.routerTagName, Router);
     }
+    // Phase 3: Register and optionally insert main wrapper
     if (config$2.enableMainWrapper) {
+        // Register MainWrapper component with the configured tag name (default: 'app-main')
         customElements.define(config$2.mainTagName, MainWrapper);
+        // Automatically insert main wrapper into document body if configured
         if (config$2.autoInsertMainWrapper) {
             const mainWrapper = document.createElement(config$2.mainTagName);
             document.body.appendChild(mainWrapper);
@@ -8421,28 +10416,85 @@ async function bootstrap() {
 /**
  * exports.ts
  *
- * Structiveの主要なエントリーポイント・APIを外部公開するモジュールです。
+ * Module for publicly exposing Structive's primary entry points and APIs.
  *
- * 主な役割:
- * - registerSingleFileComponents, bootstrap, config などの主要APIをエクスポート
- * - defineComponents: SFC群をまとめて登録し、autoInitが有効なら自動で初期化
- * - bootstrapStructive: 初期化処理を一度だけ実行
+ * Main responsibilities:
+ * - Exports main APIs such as registerSingleFileComponents, bootstrap, and config
+ * - defineComponents: Registers a group of SFCs and automatically initializes if autoInit is enabled
+ * - bootstrapStructive: Executes initialization processing only once
  *
- * 設計ポイント:
- * - グローバル設定(config)を外部から参照・変更可能
- * - 初期化処理の多重実行を防止し、安全な起動を保証
+ * Design points:
+ * - Makes global configuration (config) accessible and modifiable from external code
+ * - Prevents multiple executions of initialization processing, ensuring safe startup
  */
 const config = config$2;
+/** Flag to prevent multiple initialization */
 let initialized = false;
+/**
+ * Defines and registers multiple Single File Components.
+ *
+ * This is the primary API for declaring components in a Structive application.
+ * If config.autoInit is true, this function also automatically calls bootstrapStructive()
+ * to initialize the application framework (router, main wrapper, etc.).
+ *
+ * @param {Record<string, string>} singleFileComponents - Object mapping tag names to SFC file paths
+ * @returns {Promise<void>} Resolves when all components are registered (and bootstrap is complete if autoInit is true)
+ * @throws {Error} If component loading, registration, or bootstrap fails
+ *
+ * @example
+ * // Define components with auto-initialization
+ * await defineComponents({
+ *   'my-button': './components/button.sfc',
+ *   'user-card': '@components/user-card',
+ *   'home-page': '@routes/home'
+ * });
+ *
+ * @example
+ * // Define components without auto-initialization
+ * config.autoInit = false;
+ * await defineComponents({
+ *   'my-component': './component.sfc'
+ * });
+ * await bootstrapStructive(); // Manually bootstrap later
+ */
 async function defineComponents(singleFileComponents) {
+    // Register all provided SFC components
     await registerSingleFileComponents(singleFileComponents);
+    // Automatically bootstrap if configured
     if (config.autoInit) {
         await bootstrapStructive();
     }
 }
+/**
+ * Bootstraps the Structive application framework.
+ *
+ * This function initializes core features like the router and main wrapper based
+ * on the global configuration. It ensures bootstrap only runs once, even if called
+ * multiple times, making it safe to call from multiple places.
+ *
+ * Typically called automatically by defineComponents() if config.autoInit is true,
+ * but can be manually invoked for more control over initialization timing.
+ *
+ * @returns {Promise<void>} Resolves when bootstrap is complete
+ * @throws {Error} If bootstrap initialization fails
+ *
+ * @example
+ * // Manual bootstrap
+ * config.autoInit = false;
+ * await defineComponents({ 'my-app': './app.sfc' });
+ * await bootstrapStructive(); // Explicitly initialize framework
+ *
+ * @example
+ * // Safe to call multiple times (only runs once)
+ * await bootstrapStructive();
+ * await bootstrapStructive(); // No-op, already initialized
+ */
 async function bootstrapStructive() {
+    // Guard against multiple initialization
     if (!initialized) {
+        // Execute core bootstrap process
         await bootstrap();
+        // Mark as initialized to prevent re-execution
         initialized = true;
     }
 }

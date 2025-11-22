@@ -1,36 +1,70 @@
 /**
  * getGlobalConfig.ts
  *
- * Structive全体で利用するグローバル設定（IConfig）を定義・取得するユーティリティです。
+ * Utility for defining and retrieving global configuration (IConfig) used throughout Structive.
  *
- * 主な役割:
- * - globalConfig: デフォルトのグローバル設定値（debug, locale, shadowDomMode等）を定義
- * - getGlobalConfig: グローバル設定オブジェクトを返す関数
- * - config: getGlobalConfig()のエイリアスとして即時取得用にエクスポート
+ * Main responsibilities:
+ * - globalConfig: Defines default global configuration values (debug, locale, shadowDomMode, etc.)
+ * - getGlobalConfig: Function that returns the global configuration object
+ * - config: Exported as an alias of getGlobalConfig() for immediate access
  *
- * 設計ポイント:
- * - コンポーネント全体で共通利用する設定値を一元管理
- * - デフォルト値を明示し、拡張やカスタマイズにも対応しやすい設計
+ * Design points:
+ * - Centrally manages configuration values commonly used across all components
+ * - Explicitly defines default values, making it easy to extend and customize
  */
 import { IConfig } from "./types";
 
+/**
+ * Global configuration object with default values for all Structive components.
+ * This object can be modified directly to change application-wide behavior.
+ */
 const globalConfig: IConfig = {
+  /** Enable debug mode for verbose logging */
   "debug"                : false,
-  "locale"               : "en-US", // The locale of the component, ex. "en-US", default is "en-US"
-  "shadowDomMode"        : "auto", // Shadow DOM mode: "auto" (default) | "none" | "force"
-  "enableMainWrapper"    : true, // Whether to use the main wrapper or not
-  "enableRouter"         : true, // Whether to use the router or not
-  "autoInsertMainWrapper": false, // Whether to automatically insert the main wrapper or not
-  "autoInit"             : true, // Whether to automatically initialize the component or not
-  "mainTagName"          : "app-main", // The tag name of the main wrapper, default is "app-main"
-  "routerTagName"        : "view-router", // The tag name of the router, default is "view-router"
-  "layoutPath"           : "", // The path to the layout file, default is ""
-  "autoLoadFromImportMap": false, // Whether to automatically load the component from the import map or not
+  /** Locale for internationalization (e.g., "en-US", "ja-JP") */
+  "locale"               : "en-US",
+  /** Shadow DOM mode: "auto" (default) uses Shadow DOM when supported, "none" disables it, "force" requires it */
+  "shadowDomMode"        : "auto",
+  /** Enable the main wrapper component */
+  "enableMainWrapper"    : true,
+  /** Enable the router component */
+  "enableRouter"         : true,
+  /** Automatically insert the main wrapper into the document */
+  "autoInsertMainWrapper": false,
+  /** Automatically initialize components on page load */
+  "autoInit"             : true,
+  /** Custom tag name for the main wrapper element */
+  "mainTagName"          : "app-main",
+  /** Custom tag name for the router element */
+  "routerTagName"        : "view-router",
+  /** Path to the layout template file */
+  "layoutPath"           : "",
+  /** Automatically load components referenced in import maps */
+  "autoLoadFromImportMap": false,
 };
 
-
+/**
+ * Retrieves the global configuration object.
+ * Returns a reference to the live configuration object, so modifications
+ * will affect all components.
+ * 
+ * @returns {IConfig} The global configuration object
+ * 
+ * @example
+ * const config = getGlobalConfig();
+ * config.debug = true; // Enable debug mode
+ * config.shadowDomMode = 'none'; // Disable Shadow DOM
+ */
 export function getGlobalConfig():IConfig {
   return globalConfig;
 }
 
+/**
+ * Pre-initialized global configuration for convenient access.
+ * This is a direct reference to the result of getGlobalConfig().
+ * 
+ * @example
+ * import { config } from './getGlobalConfig';
+ * console.log(config.locale); // 'en-US'
+ */
 export const config = getGlobalConfig();

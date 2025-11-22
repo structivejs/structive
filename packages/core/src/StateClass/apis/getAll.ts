@@ -1,8 +1,8 @@
 /**
- * getAllReadonly
+ * getAll
  *
- * ワイルドカードを含む State パスから、対象となる全要素を配列で取得する。
- * Throws: LIST-201（インデックス未解決）、BIND-201（ワイルドカード情報不整合）
+ * Retrieves all elements as an array from a State path containing wildcards.
+ * Throws: LIST-201 (unresolved index), BIND-201 (wildcard information inconsistency)
  */
 import { getStructuredPathInfo } from "../../StateProperty/getStructuredPathInfo.js";
 import { IStructuredPathInfo } from "../../StateProperty/types";
@@ -15,6 +15,16 @@ import { resolve } from "./resolve.js";
 import { getByRef } from "../methods/getByRef.js";
 import { GetListIndexesByRefSymbol } from "../symbols.js";
 
+/**
+ * Creates a function to retrieve all elements from a wildcard path.
+ * @param target - Target object to retrieve from
+ * @param prop - Property key (unused but part of signature)
+ * @param receiver - State proxy for context
+ * @param handler - State handler with engine and dependency tracking
+ * @returns Function that accepts path and optional indexes, returns array of values
+ * @throws LIST-201 If list index not found
+ * @throws BIND-201 If wildcard information is inconsistent
+ */
 export function getAll(
   target: Object, 
   prop: PropertyKey, 
@@ -26,12 +36,13 @@ export function getAll(
       const info = getStructuredPathInfo(path);
       const lastInfo = handler.lastRefStack?.info ?? null;
       if (lastInfo !== null && lastInfo.pattern !== info.pattern) {
-        // gettersに含まれる場合は依存関係を登録
+        // Register dependency if included in getters
         if (handler.engine.pathManager.onlyGetters.has(lastInfo.pattern)) {
           handler.engine.pathManager.addDynamicDependency(lastInfo.pattern, info.pattern);
         }
       }
   
+      // If indexes not provided, try to extract from context
       if (typeof indexes === "undefined") {
         for(let i = 0; i < info.wildcardInfos.length; i++) {
           const wildcardPattern = info.wildcardInfos[i] ?? raiseError({
@@ -51,6 +62,16 @@ export function getAll(
           indexes = [];
         }
       }
+      /**
+       * Recursively walks through wildcard patterns to collect all matching indexes.
+       * @param wildcardParentInfos - Array of wildcard parent path infos
+       * @param wildardIndexPos - Current position in wildcard hierarchy
+       * @param listIndex - Current list index or null
+       * @param indexes - Array of specified indexes (empty for all)
+       * @param indexPos - Current position in indexes array
+       * @param parentIndexes - Accumulated parent indexes
+       * @param results - Output array to collect all matching index combinations
+       */
       const walkWildcardPattern = (
         wildcardParentInfos: IStructuredPathInfo[],
         wildardIndexPos: number,
@@ -61,10 +82,12 @@ export function getAll(
         results: number[][]
       ) => {
         const wildcardParentPattern = wildcardParentInfos[wildardIndexPos] ?? null;
+        // Base case: no more wildcards, add accumulated indexes to results
         if (wildcardParentPattern === null) {
           results.push(parentIndexes);
           return;
         }
+        // Get the list at current wildcard level
         const wildcardRef = getStatePropertyRef(wildcardParentPattern, listIndex);
         const tmpValue = getByRef(target, wildcardRef, receiver, handler);
         const listIndexes = receiver[GetListIndexesByRefSymbol](wildcardRef);
@@ -78,6 +101,7 @@ export function getAll(
           });
         }
         const index = indexes[indexPos] ?? null;
+        // If no specific index provided, iterate through all list items
         if (index === null) {
           for(let i = 0; i < listIndexes.length; i++) {
             const listIndex = listIndexes[i];
@@ -91,6 +115,7 @@ export function getAll(
               results);
           }
         } else {
+          // Specific index provided, use it
           const listIndex = listIndexes[index] ?? raiseError({
             code: 'LIST-201',
             message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
@@ -98,6 +123,7 @@ export function getAll(
             docsUrl: '/docs/error-codes.md#list',
             severity: 'error',
           });
+          // Continue to next wildcard level if exists
           if ((wildardIndexPos + 1) < wildcardParentInfos.length) {
             walkWildcardPattern(
               wildcardParentInfos, 
@@ -109,11 +135,12 @@ export function getAll(
               results
             );
           } else {
-            // 最終ワイルドカード層まで到達しているので、結果を確定
+            // Reached the final wildcard layer, finalize the result
             results.push(parentIndexes.concat(listIndex.index));
           }
         }
       }
+      // Collect all matching index combinations
       const resultIndexes: number[][] = [];
       walkWildcardPattern(
         info.wildcardParentInfos, 
@@ -124,6 +151,7 @@ export function getAll(
         [], 
         resultIndexes
       );
+      // Resolve values for each collected index combination
       const resultValues: any[] = [];
       for(let i = 0; i < resultIndexes.length; i++) {
         resultValues.push(resolveFn(

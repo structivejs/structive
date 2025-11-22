@@ -8,29 +8,40 @@ import { Constructor } from "../types";
 import { StructiveComponentClass } from "../WebComponents/types";
 import { Dependencies, IPathManager } from "./types";
 
+/**
+ * PathManager class manages property paths, dependencies, and accessor optimizations.
+ * Analyzes component class to build path hierarchy and dependency graph.
+ */
 class PathManager implements IPathManager {
-  alls: Set<string> = new Set<string>();
-  lists: Set<string> = new Set<string>();
-  elements: Set<string> = new Set<string>();
-  funcs: Set<string> = new Set<string>();
-  getters: Set<string> = new Set<string>();
-  onlyGetters: Set<string> = new Set<string>();
-  setters: Set<string> = new Set<string>();
-  getterSetters: Set<string> = new Set<string>();
-  optimizes: Set<string> = new Set<string>();
-  staticDependencies: Dependencies<string> = new Map<string, Set<string>>();
-  dynamicDependencies: Dependencies<string> = new Map<string, Set<string>>();
-  rootNode: IPathNode = createRootNode();
-  hasConnectedCallback: boolean = false;
-  hasDisconnectedCallback: boolean = false;
-  hasUpdatedCallback: boolean = false;
-  #id: number;
-  #stateClass: Constructor<any>;
+  readonly alls: Set<string> = new Set<string>();
+  readonly lists: Set<string> = new Set<string>();
+  readonly elements: Set<string> = new Set<string>();
+  readonly funcs: Set<string> = new Set<string>();
+  readonly getters: Set<string> = new Set<string>();
+  readonly onlyGetters: Set<string> = new Set<string>();
+  readonly setters: Set<string> = new Set<string>();
+  readonly getterSetters: Set<string> = new Set<string>();
+  readonly optimizes: Set<string> = new Set<string>();
+  readonly staticDependencies: Dependencies<string> = new Map<string, Set<string>>();
+  readonly dynamicDependencies: Dependencies<string> = new Map<string, Set<string>>();
+  readonly rootNode: IPathNode = createRootNode();
+  readonly hasConnectedCallback: boolean = false;
+  readonly hasDisconnectedCallback: boolean = false;
+  readonly hasUpdatedCallback: boolean = false;
 
+  private _id: number;
+  private _stateClass: Constructor<any>;
+  private _dynamicDependencyKeys = new Set<string>();
+
+  /**
+   * Creates a new PathManager instance.
+   * Analyzes component class to extract paths, getters, setters, and builds dependency graph.
+   * @param componentClass - Component class to analyze
+   */
   constructor(componentClass: StructiveComponentClass) {
-    this.#id = componentClass.id;
-    this.#stateClass = componentClass.stateClass;
-    const alls = getPathsSetById(this.#id);
+    this._id = componentClass.id;
+    this._stateClass = componentClass.stateClass;
+    const alls = getPathsSetById(this._id);
     const listsFromAlls = new Set<string>();
     for(const path of alls) {
       const info = getStructuredPathInfo(path);
@@ -43,13 +54,13 @@ class PathManager implements IPathManager {
         }
       }
     }
-    const lists = getListPathsSetById(this.#id);
+    const lists = getListPathsSetById(this._id);
     this.lists = this.lists.union(lists).union(listsFromAlls);
     for(const listPath of this.lists) {
       const elementPath = listPath + ".*";
       this.elements.add(elementPath);
     }
-    let currentProto = this.#stateClass.prototype;
+    let currentProto = this._stateClass.prototype;
     while (currentProto && currentProto !== Object.prototype) {
       const getters = Object.getOwnPropertyDescriptors(currentProto);
       if (getters) {
@@ -90,7 +101,7 @@ class PathManager implements IPathManager {
       }
       currentProto = Object.getPrototypeOf(currentProto);
     }
-    // 最適化対象のパスを決定し、最適化する
+    // Determine optimization target paths and optimize them
     for(const path of this.alls) {
       if (this.getters.has(path)) {
         continue;
@@ -103,7 +114,7 @@ class PathManager implements IPathManager {
         continue;
       }
       const funcs = createAccessorFunctions(info, this.getters);
-      Object.defineProperty(this.#stateClass.prototype, path, {
+      Object.defineProperty(this._stateClass.prototype, path, {
         get: funcs.get,
         set: funcs.set,
         enumerable: true,
@@ -111,7 +122,7 @@ class PathManager implements IPathManager {
       });
       this.optimizes.add(path);
     }
-    // 静的依存関係の設定
+    // Configure static dependencies
     for(const path of this.alls) {
       addPathNode(this.rootNode, path);
       const info = getStructuredPathInfo(path);
@@ -122,6 +133,12 @@ class PathManager implements IPathManager {
     }
   }
   
+  /**
+   * Adds a new path to the manager dynamically.
+   * Updates path hierarchy, creates optimized accessors, and registers dependencies.
+   * @param addPath - Path to add
+   * @param isList - Whether the path represents a list (default: false)
+   */
   addPath(addPath: string, isList: boolean = false): void {
     const info = getStructuredPathInfo(addPath);
     if (isList && !this.lists.has(addPath)) {
@@ -143,7 +160,7 @@ class PathManager implements IPathManager {
       }      
       if (pathInfo.pathSegments.length > 1) {
         const funcs = createAccessorFunctions(pathInfo, this.getters);
-        Object.defineProperty(this.#stateClass.prototype, path, {
+        Object.defineProperty(this._stateClass.prototype, path, {
           get: funcs.get,
           set: funcs.set,
           enumerable: true,
@@ -158,21 +175,31 @@ class PathManager implements IPathManager {
       }
     }
   }
-  #dynamicDependencyKeys = new Set<string>();
+  /**
+   * Adds a dynamic dependency between source and target paths.
+   * Ensures source path exists before registering dependency.
+   * @param target - Target path that depends on source
+   * @param source - Source path that target depends on
+   */
   addDynamicDependency(target: string, source: string) {
     const key = source + "=>" + target;
-    if (this.#dynamicDependencyKeys.has(key)) {
+    if (this._dynamicDependencyKeys.has(key)) {
       return;
     }
     if (!this.alls.has(source)) {
       this.addPath(source)
     }
-    this.#dynamicDependencyKeys.add(key);
+    this._dynamicDependencyKeys.add(key);
     this.dynamicDependencies.get(source)?.add(target) ?? 
       this.dynamicDependencies.set(source, new Set([target]));
   }
 }
 
+/**
+ * Factory function to create a new PathManager instance.
+ * @param componentClass - Component class to analyze and manage
+ * @returns New PathManager instance
+ */
 export function createPathManager(componentClass: StructiveComponentClass): IPathManager {
   return new PathManager(componentClass);
 }

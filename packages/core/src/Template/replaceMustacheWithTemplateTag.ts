@@ -1,48 +1,82 @@
 /**
  * replaceMustacheWithTemplateTag.ts
  *
- * Mustache構文（{{if:条件}}, {{for:式}}, {{endif}}, {{endfor}}, {{elseif:条件}}, {{else}} など）を
- * <template>タグやコメントノードに変換するユーティリティ関数です。
+ * Utility function to convert Mustache syntax ({{if:condition}}, {{for:expr}}, {{endif}}, {{endfor}}, 
+ * {{elseif:condition}}, {{else}}, etc.) into <template> tags or comment nodes.
  *
- * 主な役割:
- * - HTML文字列内のMustache構文を正規表現で検出し、<template data-bind="...">やコメントノードに変換
- * - if/for/endif/endfor/elseif/elseなどの制御構文をネスト対応で<template>タグに変換
- * - 通常の埋め込み式（{{expr}}）はコメントノード（<!--embed:expr-->）に変換
+ * Main responsibilities:
+ * - Detects Mustache syntax in HTML strings using regex and converts them to <template data-bind="..."> or comment nodes
+ * - Converts control structures like if/for/endif/endfor/elseif/else into <template> tags with nesting support
+ * - Converts regular embedded expressions ({{expr}}) into comment nodes (<!--embed:expr-->)
  *
- * 設計ポイント:
- * - stackでネスト構造を管理し、endif/endfor/elseif/elseの対応関係を厳密にチェック
- * - 不正なネストや対応しない構文にはraiseErrorで例外を発生
- * - elseif/elseはnot条件のtemplateを自動生成し、条件分岐を表現
- * - コメントノードへの変換で埋め込み式の安全なDOM挿入を実現
+ * Design points:
+ * - Uses a stack to manage nested structures and strictly checks correspondence of endif/endfor/elseif/else
+ * - Throws exceptions via raiseError for invalid nesting or unsupported syntax
+ * - elseif/else automatically generate templates with negated conditions to express conditional branching
+ * - Conversion to comment nodes enables safe DOM insertion of embedded expressions
  */
 import { COMMENT_EMBED_MARK } from "../constants.js";
 import { raiseError } from "../utils.js";
 
+/** Regular expression to match Mustache syntax: {{ ... }} */
 const MUSTACHE_REGEXP = /\{\{([^\}]+)\}\}/g;
+
+/** Set of recognized Mustache control structure types */
 const MUSTACHE_TYPES:Set<string> = new Set(['if', 'for', 'endif', 'endfor', 'elseif', 'else']);
 
+/** Union type for all supported Mustache control structures */
 type MustacheType = 'if' | 'for' | 'endif' | 'endfor' | 'elseif' | 'else';
+
+/** Information about a parsed Mustache tag */
 type MustacheInfo = {
+  /** The control structure type (if, for, etc.) */
   type: MustacheType;
-  remain: string; // after first ':'
+  /** The expression after the first ':' character */
+  remain: string;
+  /** The full expression string */
   expr: string;
 }
 
+/**
+ * Converts Mustache syntax in HTML strings to template tags or comment nodes.
+ * Processes control structures (if/for/elseif/else) and embedded expressions,
+ * maintaining proper nesting through a stack-based parser.
+ * 
+ * @param {string} html - HTML string containing Mustache syntax ({{...}})
+ * @returns {string} HTML string with Mustache syntax replaced by template tags and comments
+ * @throws {Error} Throws TMP-102 error for invalid nesting (endif without if, endfor without for, etc.)
+ * 
+ * @example
+ * const html = '<div>{{if:active}}<span>{{name}}</span>{{endif}}</div>';
+ * const result = replaceMustacheWithTemplateTag(html);
+ * // Returns: '<div><template data-bind="if:active"><span><!--embed:name--></span></template></div>'
+ */
 export function replaceMustacheWithTemplateTag(html: string): string {
+  // Stack to track nested control structures (if/for/elseif)
   const stack:MustacheInfo[] = [];
+  
   return html.replaceAll(MUSTACHE_REGEXP, (match, expr) => {
     expr = expr.trim();
+    
+    // Extract the type (first part before ':')
     const [ type ] = expr.split(':');
+    
+    // If not a control structure, treat as embedded expression
     if (!MUSTACHE_TYPES.has(type)) {
-      // embed
+      // Convert to comment node for later processing
       return `<!--${COMMENT_EMBED_MARK}${expr}-->`;
     }
+    
+    // Extract the remaining expression after the type
     const remain = expr.slice(type.length + 1).trim();
     const currentInfo:MustacheInfo = { type, expr, remain };
+    
+    // Handle opening tags (if/for): push to stack and generate opening template tag
     if (type === 'if' || type === 'for') {
       stack.push(currentInfo);
       return `<template data-bind="${expr}">`;
     } else if (type === 'endif') {
+      // Handle endif: pop stack until matching 'if' is found, closing all elseif branches
       const endTags = [];
       do {
         const info = stack.pop() ?? raiseError({
@@ -51,12 +85,16 @@ export function replaceMustacheWithTemplateTag(html: string): string {
           context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
           docsUrl: './docs/error-codes.md#tmp',
         });
+        
+        // Found the matching 'if', close it and stop
         if (info.type === 'if') {
           endTags.push('</template>');
           break;
         } else if (info.type === 'elseif') {
+          // Close elseif branches (each elseif creates nested templates)
           endTags.push('</template>');
         } else {
+          // Invalid nesting: encountered non-if/elseif tag
           raiseError({
             code: 'TMP-102',
             message: 'Endif without if',
@@ -67,15 +105,18 @@ export function replaceMustacheWithTemplateTag(html: string): string {
       } while(true);
       return endTags.join('');
     } else if (type === 'endfor') {
+      // Handle endfor: pop stack and verify matching 'for'
       const info = stack.pop() ?? raiseError({
         code: 'TMP-102',
         message: 'Endfor without for',
         context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
         docsUrl: './docs/error-codes.md#tmp',
       });
+      
       if (info.type === 'for') {
         return '</template>';
       } else {
+        // Invalid nesting: endfor without corresponding for
         raiseError({
           code: 'TMP-102',
           message: 'Endfor without for',
@@ -102,15 +143,20 @@ export function replaceMustacheWithTemplateTag(html: string): string {
         });
       }
     } else if (type === 'else') {
+      // Handle else: verify it follows if, then create negated condition template
       const lastInfo = stack.at(-1) ?? raiseError({
         code: 'TMP-102',
         message: 'Else without if',
         context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
         docsUrl: './docs/error-codes.md#tmp',
       });
+      
       if (lastInfo.type === 'if') {
+        // Close previous if branch and open negated condition for else
+        // Structure: </template><template data-bind="if:condition|not">
         return `</template><template data-bind="if:${lastInfo.remain}|not">`;
       } else {
+        // Invalid: else must follow if
         raiseError({
           code: 'TMP-102',
           message: 'Else without if',
@@ -119,6 +165,7 @@ export function replaceMustacheWithTemplateTag(html: string): string {
         });
       }
     } else {
+      // Unrecognized Mustache type (should not reach here due to MUSTACHE_TYPES check)
       raiseError({
         code: 'TMP-102',
         message: 'Unknown type',

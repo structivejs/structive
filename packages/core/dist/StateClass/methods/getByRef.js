@@ -2,42 +2,46 @@ import { raiseError } from "../../utils";
 import { checkDependency } from "./checkDependency";
 import { createListIndexes } from "./createListIndexes";
 /**
- * 構造化パス情報(info, listIndex)をもとに、状態オブジェクト(target)から値を取得する。
+ * Retrieves value from state object (target) based on structured path info (info, listIndex).
  *
- * - 依存関係の自動登録（trackedGetters対応時はsetTrackingでラップ）
- * - キャッシュ機構（handler.cacheable時はrefKeyでキャッシュ）
- * - ネスト・ワイルドカード対応（親infoやlistIndexを辿って再帰的に値を取得）
- * - getter経由で値取得時はSetStatePropertyRefSymbolでスコープを一時設定
+ * - Automatic dependency registration (wrapped with setTracking when trackedGetters enabled)
+ * - Cache mechanism (caches by refKey when handler.cacheable)
+ * - Supports nesting and wildcards (recursively retrieves values by traversing parent info and listIndex)
+ * - Sets scope temporarily with SetStatePropertyRefSymbol when retrieving via getter
  *
- * @param target    状態オブジェクト
- * @param info      構造化パス情報
- * @param listIndex リストインデックス（多重ループ対応）
- * @param receiver  プロキシ
- * @param handler   状態ハンドラ
- * @returns         対象プロパティの値
+ * @param target    - State object
+ * @param ref       - State property reference
+ * @param receiver  - Proxy
+ * @param handler   - State handler
+ * @returns         Value of the target property
  */
 export function getByRef(target, ref, receiver, handler) {
+    // Check and register dependency if called from within a getter
     checkDependency(handler, ref);
     let value;
+    // Determine if this path needs list management or caching
     const listable = handler.engine.pathManager.lists.has(ref.info.pattern);
     const cacheable = ref.info.wildcardCount > 0 ||
         handler.engine.pathManager.getters.has(ref.info.pattern);
     let lastCacheEntry = null;
     if (cacheable || listable) {
+        // Try to retrieve cached value and validate its freshness
         lastCacheEntry = handler.engine.getCacheEntry(ref);
         const versionRevision = handler.engine.versionRevisionByPath.get(ref.info.pattern);
         if (lastCacheEntry !== null) {
             if (typeof versionRevision === "undefined") {
-                // 更新なし
+                // No updates
                 return lastCacheEntry.value;
             }
             else {
+                // Check version to determine if cache is still valid
                 if (lastCacheEntry.version > handler.updater.version) {
-                    // これは非同期更新が発生した場合にありえる
+                    // This can occur when async updates happen
                     return lastCacheEntry.value;
                 }
+                // Compare versions and revisions to detect updates
                 if (lastCacheEntry.version < versionRevision.version || lastCacheEntry.revision < versionRevision.revision) {
-                    // 更新あり
+                    // Updates detected
                 }
                 else {
                     return lastCacheEntry.value;
@@ -45,37 +49,42 @@ export function getByRef(target, ref, receiver, handler) {
             }
         }
     }
-    // 親子関係のあるgetterが存在する場合は、外部依存から取得
-    // ToDo: stateにgetterが存在する（パスの先頭が一致する）場合はgetter経由で取得
+    // If getters with parent-child relationships exist, retrieve from external dependencies
+    // ToDo: When getters exist in state (path prefix matches), retrieve via getter
     if (handler.engine.stateOutput.startsWith(ref.info) && handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
         return handler.engine.stateOutput.get(ref);
     }
-    // パターンがtargetに存在する場合はgetter経由で取得
+    // If pattern exists in target, retrieve via getter
     if (ref.info.pattern in target) {
+        // Validate ref stack before pushing
         if (handler.refStack.length === 0) {
             raiseError({
                 code: 'STC-002',
                 message: 'handler.refStack is empty in getByRef',
             });
         }
+        // Push current ref onto stack for dependency tracking during getter execution
         handler.refIndex++;
         if (handler.refIndex >= handler.refStack.length) {
             handler.refStack.push(null);
         }
         handler.refStack[handler.refIndex] = handler.lastRefStack = ref;
         try {
+            // Execute the getter
             return value = Reflect.get(target, ref.info.pattern, receiver);
         }
         finally {
+            // Always restore ref stack state, even if getter throws
             handler.refStack[handler.refIndex] = null;
             handler.refIndex--;
             handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-            // キャッシュへ格納
+            // Store in cache
             if (cacheable || listable) {
                 let newListIndexes = null;
                 if (listable) {
-                    // リストインデックスを計算する必要がある
+                    // Need to calculate list indexes
                     if (handler.renderer !== null) {
+                        // Track last list info for diff calculation in renderer
                         if (!handler.renderer.lastListInfoByRef.has(ref)) {
                             const listInfo = {
                                 listIndexes: lastCacheEntry?.listIndexes ?? [],
@@ -84,8 +93,10 @@ export function getByRef(target, ref, receiver, handler) {
                             handler.renderer.lastListInfoByRef.set(ref, listInfo);
                         }
                     }
+                    // Calculate new list indexes by comparing old and new values
                     newListIndexes = createListIndexes(ref.listIndex, lastCacheEntry?.value, value, lastCacheEntry?.listIndexes ?? []);
                 }
+                // Create or update cache entry with new value and metadata
                 let cacheEntry = lastCacheEntry ?? {
                     value: null,
                     listIndexes: null,
@@ -101,7 +112,7 @@ export function getByRef(target, ref, receiver, handler) {
         }
     }
     else {
-        // 存在しない場合エラー
+        // Error if not exists
         raiseError({
             code: "STC-001",
             message: `Property "${ref.info.pattern}" does not exist in state.`,

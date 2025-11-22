@@ -1,84 +1,124 @@
 let version = 0;
 let id = 0;
+/**
+ * ListIndex class manages hierarchical index information for nested loops.
+ * Tracks parent-child relationships and maintains version for change detection.
+ */
 class ListIndex {
-    #parentListIndex = null;
-    #pos = 0;
-    #index = 0;
-    #version;
-    #id = ++id;
-    #sid = this.#id.toString();
+    id = ++id;
+    sid = id.toString();
+    parentListIndex;
+    position;
+    length;
+    _index;
+    _version;
+    _indexes;
+    _listIndexes;
+    /**
+     * Creates a new ListIndex instance.
+     *
+     * @param parentListIndex - Parent list index for nested loops, or null for top-level
+     * @param index - Current index value in the loop
+     */
     constructor(parentListIndex, index) {
-        this.#parentListIndex = parentListIndex;
-        this.#pos = parentListIndex ? parentListIndex.position + 1 : 0;
-        this.#index = index;
-        this.#version = version;
+        this.parentListIndex = parentListIndex;
+        this.position = parentListIndex ? parentListIndex.position + 1 : 0;
+        this.length = this.position + 1;
+        this._index = index;
+        this._version = version;
     }
-    get parentListIndex() {
-        return this.#parentListIndex;
-    }
-    get id() {
-        return this.#id;
-    }
-    get sid() {
-        return this.#sid;
-    }
-    get position() {
-        return this.#pos;
-    }
-    get length() {
-        return this.#pos + 1;
-    }
+    /**
+     * Gets current index value.
+     *
+     * @returns Current index number
+     */
     get index() {
-        return this.#index;
+        return this._index;
     }
+    /**
+     * Sets index value and updates version.
+     *
+     * @param value - New index value
+     */
     set index(value) {
-        this.#index = value;
-        this.#version = ++version;
-        this.indexes[this.#pos] = value;
+        this._index = value;
+        this._version = ++version;
+        this.indexes[this.position] = value;
     }
+    /**
+     * Gets current version number for change detection.
+     *
+     * @returns Version number
+     */
     get version() {
-        return this.#version;
+        return this._version;
     }
+    /**
+     * Checks if parent indexes have changed since last access.
+     *
+     * @returns true if parent has newer version, false otherwise
+     */
     get dirty() {
-        if (this.#parentListIndex === null) {
+        if (this.parentListIndex === null) {
             return false;
         }
         else {
-            return this.#parentListIndex.dirty || this.#parentListIndex.version > this.#version;
+            return this.parentListIndex.dirty || this.parentListIndex.version > this._version;
         }
     }
-    #indexes;
+    /**
+     * Gets array of all index values from root to current level.
+     * Rebuilds array if parent indexes have changed (dirty).
+     *
+     * @returns Array of index values
+     */
     get indexes() {
-        if (this.#parentListIndex === null) {
-            if (typeof this.#indexes === "undefined") {
-                this.#indexes = [this.#index];
+        if (this.parentListIndex === null) {
+            if (typeof this._indexes === "undefined") {
+                this._indexes = [this._index];
             }
         }
         else {
-            if (typeof this.#indexes === "undefined" || this.dirty) {
-                this.#indexes = [...this.#parentListIndex.indexes, this.#index];
-                this.#version = version;
+            if (typeof this._indexes === "undefined" || this.dirty) {
+                this._indexes = [...this.parentListIndex.indexes, this._index];
+                this._version = version;
             }
         }
-        return this.#indexes;
+        return this._indexes;
     }
-    #listIndexes;
+    /**
+     * Gets array of WeakRef to all ListIndex instances from root to current level.
+     *
+     * @returns Array of WeakRef<IListIndex>
+     */
     get listIndexes() {
-        if (this.#parentListIndex === null) {
-            if (typeof this.#listIndexes === "undefined") {
-                this.#listIndexes = [new WeakRef(this)];
+        if (this.parentListIndex === null) {
+            if (typeof this._listIndexes === "undefined") {
+                this._listIndexes = [new WeakRef(this)];
             }
         }
         else {
-            if (typeof this.#listIndexes === "undefined") {
-                this.#listIndexes = [...this.#parentListIndex.listIndexes, new WeakRef(this)];
+            if (typeof this._listIndexes === "undefined") {
+                this._listIndexes = [...this.parentListIndex.listIndexes, new WeakRef(this)];
             }
         }
-        return this.#listIndexes;
+        return this._listIndexes;
     }
+    /**
+     * Gets variable name for this loop index ($1, $2, etc.).
+     *
+     * @returns Variable name string
+     */
     get varName() {
-        return `${this.position + 1}`;
+        return `$${this.position + 1}`;
     }
+    /**
+     * Gets ListIndex at specified position in hierarchy.
+     * Supports negative indexing from end.
+     *
+     * @param pos - Position index (0-based, negative for from end)
+     * @returns ListIndex at position or null if not found/garbage collected
+     */
     at(pos) {
         if (pos >= 0) {
             return this.listIndexes[pos]?.deref() || null;
@@ -88,6 +128,13 @@ class ListIndex {
         }
     }
 }
+/**
+ * Factory function to create ListIndex instance.
+ *
+ * @param parentListIndex - Parent list index for nested loops, or null for top-level
+ * @param index - Current index value in the loop
+ * @returns New IListIndex instance
+ */
 export function createListIndex(parentListIndex, index) {
     return new ListIndex(parentListIndex, index);
 }

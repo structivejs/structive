@@ -9,125 +9,213 @@ import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { raiseError } from "../utils";
 import { createRenderer, render } from "./Renderer";
-import { IListInfo, IRenderer, IUpdater, ReadonlyStateCallback, UpdateCallback } from "./types";
+import { IListSnapshot, IRenderer, IUpdater } from "./types";
 
 
 /**
- * Updaterクラスは、状態管理と更新の中心的な役割を果たします。
- * 状態更新が必要な場合に、都度インスタンスを作成して使用します。
- * 主な機能は以下の通りです:
+ * The Updater class plays a central role in state management and updates.
+ * Instances are created on-demand when state updates are needed.
+ * 
+ * Main features:
+ * - Queues state property references that need updating
+ * - Schedules and executes rendering cycles via microtasks
+ * - Manages version/revision tracking for cache invalidation
+ * - Collects dependent paths affected by state changes
+ * - Provides read-only and writable state contexts
+ * 
+ * @class Updater
+ * @implements {IUpdater}
  */
 class Updater implements IUpdater {
-  queue: IStatePropertyRef[] = [];
-  #rendering: boolean = false;
-  #engine: IComponentEngine;
+  /** Map storing swap/reorder information for list elements */
+  readonly swapInfoByRef: Map<IStatePropertyRef, IListSnapshot> = new Map();
 
-  #version: number;
-  #revision: number = 0;
-  #swapInfoByRef: Map<IStatePropertyRef, IListInfo> = new Map();
-  #saveQueue: IStatePropertyRef[] = [];
+  /** Queue of state property references waiting to be rendered */
+  private _queue: IStatePropertyRef[] = [];
+  
+  /** Flag indicating if rendering is currently in progress */
+  private _rendering: boolean = false;
+  
+  /** Reference to the component engine being updated */
+  private _engine: IComponentEngine;
+  
+  /** Current version number for this update cycle */
+  private _version: number;
+  
+  /** Current revision number within the version */
+  private _revision: number = 0;
+  
+  /** Queue of refs saved for deferred updated callbacks */
+  private _saveQueue: IStatePropertyRef[] = [];
+  
+  /** Cache mapping paths to their dependent paths for optimization */
+  private _cacheUpdatedPathsByPath: Map<string, Set<string>> = new Map();
 
+  /**
+   * Constructs a new Updater instance.
+   * Automatically increments the engine's version number.
+   * 
+   * @param {IComponentEngine} engine - The component engine to manage updates for
+   */
   constructor(engine: IComponentEngine) {
-    this.#engine = engine;
-    this.#version = engine.versionUp();
-  }
-
-  get version(): number {
-    return this.#version;
-  }
-
-  get revision(): number {
-    return this.#revision;
-  }
-
-  get swapInfoByRef(): Map<IStatePropertyRef, IListInfo> {
-    return this.#swapInfoByRef;
+    this._engine = engine;
+    this._version = engine.versionUp();
   }
 
   /**
-   * 更新したRefをキューに追加し、レンダリングをスケジュールする
-   * @param ref 
-   * @returns 
+   * Gets the current version number.
+   * Version is incremented each time a new Updater is created.
+   * 
+   * @returns {number} Current version number
+   */
+  get version(): number {
+    return this._version;
+  }
+
+  /**
+   * Gets the current revision number.
+   * Revision is incremented with each enqueueRef call within the same version.
+   * 
+   * @returns {number} Current revision number
+   */
+  get revision(): number {
+    return this._revision;
+  }
+
+  /**
+   * Adds a state property reference to the update queue and schedules rendering.
+   * Increments revision, collects dependent paths, and schedules async rendering via microtask.
+   * If rendering is already in progress, the ref is queued but no new render is scheduled.
+   * 
+   * @param {IStatePropertyRef} ref - The state property reference that changed
+   * @returns {void}
+   * 
+   * @example
+   * updater.enqueueRef(getStatePropertyRef(pathInfo, listIndex));
    */
   enqueueRef(ref: IStatePropertyRef): void {
-    this.#revision++;
-    this.queue.push(ref);
-    this.#saveQueue.push(ref);
-    this.collectMaybeUpdates(this.#engine, ref.info.pattern, this.#engine.versionRevisionByPath, this.#revision);
-    // レンダリング中はスキップ
-    if (this.#rendering) return;
-    this.#rendering = true;
+    // Increment revision to track sub-updates within this version
+    this._revision++;
+    
+    // Add to both queues: render queue and save queue for callbacks
+    this._queue.push(ref);
+    this._saveQueue.push(ref);
+    
+    // Collect all paths that might be affected by this change
+    this.collectMaybeUpdates(this._engine, ref.info.pattern, this._engine.versionRevisionByPath, this._revision);
+    
+    // Skip scheduling if already rendering (will process queue on next iteration)
+    if (this._rendering) return;
+    this._rendering = true;
     queueMicrotask(() => {
-      // 非同期処理で中断するか、更新処理が完了した後にレンダリングを実行
+      // Execute rendering after async processing interruption or update completion
       this.rendering();
     });
   }
 
   /**
-   * 状態更新処理開始
-   * @param loopContext 
-   * @param callback 
+   * Executes a state update operation within a writable state context.
+   * Creates a writable proxy, executes the callback, and handles updated callbacks.
+   * Supports both synchronous and asynchronous update operations.
+   * 
+   * @template R - The return type of the callback
+   * @param {ILoopContext | null} loopContext - Loop context for wildcard resolution, or null for root
+   * @param {function} callback - Callback that performs state modifications
+   * @returns {R} The result returned by the callback (may be a Promise)
+   * 
+   * @example
+   * updater.update(null, (state) => {
+   *   state.count = 42;
+   * });
    */
   update<R>(
     loopContext: ILoopContext | null, 
     callback: (state: IWritableStateProxy, handler: IWritableStateHandler) => R
   ): R {
     let resultPromise: R;
-    resultPromise = useWritableStateProxy<R>(this.#engine, this, this.#engine.state, loopContext, (state:IWritableStateProxy, handler:IWritableStateHandler): R => {
-      // 状態更新処理
+    
+    // Create writable state proxy and execute update callback
+    resultPromise = useWritableStateProxy<R>(this._engine, this, this._engine.state, loopContext, (state:IWritableStateProxy, handler:IWritableStateHandler): R => {
+      // Execute user's state modification callback
       return callback(state, handler);
     });
+    
+    // Handler to process updated callbacks after state changes
     const updatedCallbackHandler = () =>{
-      if (this.#engine.pathManager.hasUpdatedCallback && this.#saveQueue.length > 0) {
-        const saveQueue = this.#saveQueue;
-        this.#saveQueue = [];
+      // If there are updated callbacks registered and refs in save queue
+      if (this._engine.pathManager.hasUpdatedCallback && this._saveQueue.length > 0) {
+        const saveQueue = this._saveQueue;
+        this._saveQueue = [];
+        
+        // Schedule updated callbacks in next microtask
         queueMicrotask(() => {
           this.update<void>(null, (state, handler) => {
+            // Invoke updated callbacks with the saved refs
             state[UpdatedCallbackSymbol](saveQueue);
           });
         });
       }
     };
+    
+    // Handle both Promise and non-Promise results
     if (resultPromise instanceof Promise) {
+      // For async updates, run handler after promise completes
       resultPromise.finally(() => {
         updatedCallbackHandler();
       });
     } else {
+      // For sync updates, run handler immediately
       updatedCallbackHandler();
     }
     return resultPromise;
  }
 
   /**
-   * レンダリング処理
+   * Executes the rendering process for all queued updates.
+   * Processes the queue in a loop until empty, allowing new updates during rendering.
+   * Ensures rendering flag is reset even if errors occur.
+   * 
+   * @returns {void}
    */
   rendering(): void {
     try {
-      while( this.queue.length > 0 ) {
-        // キュー取得
-        const queue = this.queue;
-        this.queue = [];
-        // レンダリング実行
-        render(queue, this.#engine, this);
+      // Process queue until empty (new items may be added during rendering)
+      while( this._queue.length > 0 ) {
+        // Retrieve current queue and reset for new items
+        const queue = this._queue;
+        this._queue = [];
+        
+        // Execute rendering for all refs in this batch
+        render(queue, this._engine, this);
       }
     } finally {
-      this.#rendering = false;
+      // Always reset rendering flag, even if errors occurred
+      this._rendering = false;
     }
   }
 
+  /**
+   * Performs the initial rendering of the component.
+   * Creates a renderer and passes it to the callback for setup.
+   * 
+   * @param {function(IRenderer): void} callback - Callback receiving the renderer
+   * @returns {void}
+   */
   initialRender(callback: (renderer: IRenderer) => void): void {
-    const renderer = createRenderer(this.#engine, this);
+    const renderer = createRenderer(this._engine, this);
     callback(renderer);
   }
   /**
-   * 更新したパスに対して影響があるパスを再帰的に収集する
-   * @param engine 
-   * @param path 
-   * @param node 
-   * @param revisionByUpdatedPath 
-   * @param revision 
-   * @param visitedInfo 
-   * @returns 
+   * Recursively collects all paths that may be affected by a change to the given path.
+   * Traverses child nodes and dynamic dependencies to build a complete dependency graph.
+   * Uses visitedInfo set to prevent infinite recursion on circular dependencies.
+   * 
+   * @param {IComponentEngine} engine - The component engine
+   * @param {string} path - The path that changed
+   * @param {IPathNode} node - The PathNode corresponding to the path
+   * @param {Set<string>} visitedInfo - Set tracking already visited paths
+   * @param {boolean} isSource - True if this is the source path that changed
+   * @returns {void}
    */
   recursiveCollectMaybeUpdates(
     engine: IComponentEngine,
@@ -136,18 +224,25 @@ class Updater implements IUpdater {
     visitedInfo: Set<string>,
     isSource: boolean
   ): void {
+    // Skip if already processed this path
     if (visitedInfo.has(path)) return;
-    // swapの場合スキップしたい
+    
+    // Skip list elements when processing source to avoid redundant updates
+    // (list container updates will handle elements)
     if (isSource && engine.pathManager.elements.has(path)) {
       return;
     }
+    
+    // Mark as visited
     visitedInfo.add(path);
 
+    // Collect all static child dependencies
     for(const [name, childNode] of node.childNodeByName.entries()) {
       const childPath = childNode.currentPath;
       this.recursiveCollectMaybeUpdates(engine, childPath, childNode, visitedInfo, false);
     }
 
+    // Collect all dynamic dependencies (registered via data-bind)
     const deps = engine.pathManager.dynamicDependencies.get(path) ?? [];
     for(const depPath of deps) {
       const depNode = findPathNodeByPath(engine.pathManager.rootNode, depPath);
@@ -162,7 +257,18 @@ class Updater implements IUpdater {
     }
   }
 
-  #cacheUpdatedPathsByPath: Map<string, Set<string>> = new Map();
+  /**
+   * Collects all paths that might need updating based on a changed path.
+   * Uses caching to avoid redundant dependency traversal for the same paths.
+   * Updates the versionRevisionByPath map for cache invalidation.
+   * 
+   * @param {IComponentEngine} engine - The component engine
+   * @param {string} path - The path that changed
+   * @param {Map<string, IVersionRevision>} versionRevisionByPath - Map to update with version info
+   * @param {number} revision - Current revision number
+   * @returns {void}
+   * @throws {Error} Throws UPD-003 if path node not found
+   */
   collectMaybeUpdates(engine: IComponentEngine, path: string, versionRevisionByPath: Map<string, IVersionRevision>, revision: number): void {
     const node = findPathNodeByPath(engine.pathManager.rootNode, path);
     if (node === null) {
@@ -173,41 +279,70 @@ class Updater implements IUpdater {
       });
     }
 
-    // キャッシュ
-    let updatedPaths = this.#cacheUpdatedPathsByPath.get(path);
+    // Check cache for previously computed dependencies
+    let updatedPaths = this._cacheUpdatedPathsByPath.get(path);
     if (typeof updatedPaths === "undefined") {
+      // Cache miss: compute dependencies recursively
       updatedPaths = new Set<string>();
       this.recursiveCollectMaybeUpdates(engine, path, node, updatedPaths, true);
     }
+    
+    // Create version/revision marker for cache invalidation
     const versionRevision = {
       version: this.version,
       revision: revision,
     } 
+    
+    // Update version info for all affected paths
     for(const updatedPath of updatedPaths) {
       versionRevisionByPath.set(updatedPath, versionRevision);
     }
-    this.#cacheUpdatedPathsByPath.set(path, updatedPaths);
+    
+    // Cache the computed dependencies for future use
+    this._cacheUpdatedPathsByPath.set(path, updatedPaths);
   }
 
   /**
-   * リードオンリーな状態を生成し、コールバックに渡す
-   * @param callback 
-   * @returns 
+   * Creates a read-only state context and executes a callback within it.
+   * Provides safe read access to state without modification capabilities.
+   * 
+   * @template R - The return type of the callback
+   * @param {function} callback - Callback receiving read-only state and handler
+   * @returns {R} The result returned by the callback
+   * 
+   * @example
+   * const value = updater.createReadonlyState((state) => {
+   *   return state.someProperty;
+   * });
    */
   createReadonlyState<R>(
     callback: (state: IReadonlyStateProxy, handler: IReadonlyStateHandler) => R
   ): R {
-    const handler = createReadonlyStateHandler(this.#engine, this, null);
-    const stateProxy = createReadonlyStateProxy(this.#engine.state, handler);
+    // Create read-only handler and proxy
+    const handler = createReadonlyStateHandler(this._engine, this, null);
+    const stateProxy = createReadonlyStateProxy(this._engine.state, handler);
+    
+    // Execute callback with read-only state
     return callback(stateProxy, handler);
   }
 }
 
 /**
- * Updaterを生成しコールバックに渡す
- * スコープを明確にするための関数
- * @param engine 
- * @param callback 
+ * Creates a new Updater instance and passes it to a callback.
+ * This pattern provides clear scope management for update operations.
+ * The updater is created with an incremented version number.
+ * 
+ * @template R - The return type of the callback
+ * @param {IComponentEngine} engine - The component engine to create updater for
+ * @param {function(IUpdater): R} callback - Callback receiving the updater instance
+ * @returns {R} The result returned by the callback
+ * 
+ * @example
+ * createUpdater(engine, (updater) => {
+ *   updater.update(null, (state) => {
+ *     state.count++;
+ *   });
+ * });
  */
 export function createUpdater<R>(
   engine: IComponentEngine, 

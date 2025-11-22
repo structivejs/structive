@@ -1,65 +1,98 @@
 import { getStatePropertyRef } from "../StatePropertyRef/StatepropertyRef";
 import { raiseError } from "../utils.js";
+/**
+ * LoopContext class manages loop binding context with parent-child relationships.
+ * Provides efficient caching and traversal of loop hierarchy.
+ */
 class LoopContext {
-    #ref;
-    #info;
-    #bindContent;
+    info;
+    bindContent;
+    _ref;
+    _parentLoopContext;
+    _cache = {};
+    /**
+     * Creates a new LoopContext instance.
+     * @param ref - State property reference with path and index information
+     * @param bindContent - Bind content to associate with this loop context
+     */
     constructor(ref, bindContent) {
-        this.#ref = ref;
-        this.#info = ref.info;
-        this.#bindContent = bindContent;
+        this._ref = ref;
+        this.info = ref.info;
+        this.bindContent = bindContent;
     }
+    /**
+     * Gets the state property reference.
+     * @returns State property reference
+     * @throws STATE-202 If ref is null
+     */
     get ref() {
-        return this.#ref ?? raiseError({
+        return this._ref ?? raiseError({
             code: 'STATE-202',
             message: 'ref is null',
-            context: { where: 'LoopContext.ref', path: this.#info.pattern },
+            context: { where: 'LoopContext.ref', path: this.info.pattern },
             docsUrl: '/docs/error-codes.md#state',
         });
     }
+    /**
+     * Gets the path pattern from the reference.
+     * @returns Path pattern string
+     */
     get path() {
         return this.ref.info.pattern;
     }
-    get info() {
-        return this.ref.info;
-    }
+    /**
+     * Gets the list index from the reference.
+     * @returns List index instance
+     * @throws LIST-201 If listIndex is required but not present
+     */
     get listIndex() {
         return this.ref.listIndex ?? raiseError({
             code: 'LIST-201',
             message: 'listIndex is required',
-            context: { where: 'LoopContext.listIndex', path: this.#info.pattern },
+            context: { where: 'LoopContext.listIndex', path: this.info.pattern },
             docsUrl: '/docs/error-codes.md#list',
         });
     }
+    /**
+     * Assigns a new list index to this loop context.
+     * @param listIndex - New list index to assign
+     */
     assignListIndex(listIndex) {
-        this.#ref = getStatePropertyRef(this.#info, listIndex);
-        // 構造は変わらないので、#parentLoopContext、#cacheはクリアする必要はない
+        this._ref = getStatePropertyRef(this.info, listIndex);
+        // Structure doesn't change, so no need to clear _parentLoopContext and _cache
     }
+    /**
+     * Clears the list index reference.
+     */
     clearListIndex() {
-        this.#ref = null;
+        this._ref = null;
     }
-    get bindContent() {
-        return this.#bindContent;
-    }
-    #parentLoopContext;
+    /**
+     * Gets the parent loop context with lazy evaluation and caching.
+     * @returns Parent loop context or null if none exists
+     */
     get parentLoopContext() {
-        if (typeof this.#parentLoopContext === "undefined") {
+        if (typeof this._parentLoopContext === "undefined") {
             let currentBindContent = this.bindContent;
             while (currentBindContent !== null) {
                 if (currentBindContent.loopContext !== null && currentBindContent.loopContext !== this) {
-                    this.#parentLoopContext = currentBindContent.loopContext;
+                    this._parentLoopContext = currentBindContent.loopContext;
                     break;
                 }
                 currentBindContent = currentBindContent.parentBinding?.parentBindContent ?? null;
             }
-            if (typeof this.#parentLoopContext === "undefined")
-                this.#parentLoopContext = null;
+            if (typeof this._parentLoopContext === "undefined")
+                this._parentLoopContext = null;
         }
-        return this.#parentLoopContext;
+        return this._parentLoopContext;
     }
-    #cache = {};
+    /**
+     * Finds a loop context by path name in the hierarchy.
+     * @param name - Path name to search for
+     * @returns Loop context with matching path or null if not found
+     */
     find(name) {
-        let loopContext = this.#cache[name];
+        let loopContext = this._cache[name];
         if (typeof loopContext === "undefined") {
             let currentLoopContext = this;
             while (currentLoopContext !== null) {
@@ -67,10 +100,14 @@ class LoopContext {
                     break;
                 currentLoopContext = currentLoopContext.parentLoopContext;
             }
-            loopContext = this.#cache[name] = currentLoopContext;
+            loopContext = this._cache[name] = currentLoopContext;
         }
         return loopContext;
     }
+    /**
+     * Walks through the loop context hierarchy from current to root.
+     * @param callback - Function to call for each loop context
+     */
     walk(callback) {
         let currentLoopContext = this;
         while (currentLoopContext !== null) {
@@ -78,6 +115,10 @@ class LoopContext {
             currentLoopContext = currentLoopContext.parentLoopContext;
         }
     }
+    /**
+     * Serializes the loop context hierarchy to an array from root to current.
+     * @returns Array of loop contexts ordered from root to current
+     */
     serialize() {
         const results = [];
         this.walk((loopContext) => {
@@ -86,8 +127,13 @@ class LoopContext {
         return results;
     }
 }
-// 生成されたあと、IBindContentのloopContextに登録される
-// IBindContentにずっと保持される
+/**
+ * Factory function to create a new LoopContext instance.
+ * Created instance is registered to IBindContent's loopContext and retained permanently.
+ * @param ref - State property reference with path and index information
+ * @param bindContent - Bind content to associate with this loop context
+ * @returns New LoopContext instance
+ */
 export function createLoopContext(ref, bindContent) {
     return new LoopContext(ref, bindContent);
 }

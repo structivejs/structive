@@ -3,87 +3,91 @@ import { IPathNode } from "../PathTree/types";
 export type Dependencies<T = string> = Map<T, Set<T>>;
 
 /**
- * パスマネージャー
- * ComponentClassごとに1つのインスタンスが生成される
+ * PathManager interface manages property paths and dependencies.
+ * One instance is created per ComponentClass.
  */
 export interface IPathManager {
   /**
-   * 全てのパスのセット
+   * Set of all paths
    */
-  alls: Set<string>;
+  readonly alls: Set<string>;
   /**
-   * リストのパスのセット
-   * {{ for: }}から取得される
+   * Set of list paths
+   * Obtained from {{ for: }}
    */
-  lists: Set<string>;
+  readonly lists: Set<string>;
   /**
-   * リスト要素のパスのセット
-   * リストパスから導出される list -> list.* など必ず*で終わる
+   * Set of list element paths
+   * Derived from list paths, e.g., list -> list.*, always ending with *
    */
-  elements: Set<string>;
+  readonly elements: Set<string>;
   /**
-   * 関数のパスのセット
+   * Set of function paths
    */
-  funcs: Set<string>;
+  readonly funcs: Set<string>;
   /**
-   * getter定義のあるパスのセット
-   * prototype.getDefineProperties()から取得される
+   * Set of paths with getter definitions
+   * Obtained from prototype.getOwnPropertyDescriptors()
    */
-  getters: Set<string>;
+  readonly getters: Set<string>;
   /**
-   * getterのみ定義のあるパスのセット
-   * prototype.getDefineProperties()から取得される
+   * Set of paths with only getter definitions
+   * Obtained from prototype.getOwnPropertyDescriptors()
    */
-  onlyGetters: Set<string>;
+  readonly onlyGetters: Set<string>;
   /**
-   * setter定義のあるパスのセット
-   * prototype.getDefineProperties()から取得される
+   * Set of paths with setter definitions
+   * Obtained from prototype.getOwnPropertyDescriptors()
    */
-  setters: Set<string>;
+  readonly setters: Set<string>;
   /**
-   * getter/setter両方定義のあるパスのセット
-   * prototype.getDefineProperties()から取得される
+   * Set of paths with both getter and setter definitions
+   * Obtained from prototype.getOwnPropertyDescriptors()
    */
-  getterSetters: Set<string>;
+  readonly getterSetters: Set<string>;
   /**
-   * 最適化されたgetter/setterパスのセット
+   * Set of optimized getter/setter paths
    */
-  optimizes: Set<string>;
+  readonly optimizes: Set<string>;
   /**
-   * 静的依存関係のマップ
-   * key: 依存元のパス
-   * value: 依存先のパスのセット
+   * Map of static dependencies
+   * key: source path
+   * value: set of dependent paths
    */
-  staticDependencies: Dependencies<string>;
+  readonly staticDependencies: Dependencies<string>;
   /**
-   * 動的依存関係のマップ
-   * key: 依存元のパス
-   * value: 依存先のパスのセット
+   * Map of dynamic dependencies
+   * key: source path
+   * value: set of dependent paths
    */
-  dynamicDependencies: Dependencies<string>;
+  readonly dynamicDependencies: Dependencies<string>;
   /**
-   * 動的依存関係を追加する
-   * @param target 依存先のパス
-   * @param source 依存元のパス
+   * Root node of the path tree
+   */
+  readonly rootNode: IPathNode;
+  /**
+   * Whether connected callback exists
+   */
+  readonly hasConnectedCallback: boolean;
+  /**
+   * Whether disconnected callback exists
+   */
+  readonly hasDisconnectedCallback: boolean;
+  /**
+   * Whether updated callback exists
+   */
+  readonly hasUpdatedCallback: boolean;
+  /**
+   * Adds a dynamic dependency between source and target paths.
+   * @param target - Dependent path
+   * @param source - Source path
    */
   addDynamicDependency(target: string, source: string): void;
+  /**
+   * Adds a new path to the manager dynamically.
+   * @param path - Path to add
+   * @param isList - Whether the path represents a list (default: false)
+   */
   addPath(path: string, isList?: boolean): void;
-  /**
-   * パスツリーのルートノード
-   */
-  rootNode: IPathNode;
-
-  /**
-   * 接続コールバックが存在するかどうか
-   */
-  hasConnectedCallback: boolean;
-  /**
-   * 切断コールバックが存在するかどうか
-   */
-  hasDisconnectedCallback: boolean;
-  /**
-   * 更新コールバックが存在するかどうか
-   */
-  hasUpdatedCallback: boolean;
 
 }

@@ -1,19 +1,19 @@
 /**
  * createWritableStateProxy.ts
  *
- * StateClassの「書き込み可能」プロキシを生成するための実装ファイルです。
+ * Implementation file for creating "writable" proxies for StateClass.
  *
- * 主な役割:
- * - Stateオブジェクトに対して、書き込み可能なProxyを作成
- * - StateHandlerクラスで各種APIやトラップ（get/set）を実装
- * - getトラップでバインディングやAPI呼び出し、依存解決などに対応
- * - setトラップで値の書き込みや副作用（依存解決・再描画）を一元管理
+ * Main responsibilities:
+ * - Creates a writable Proxy for State objects
+ * - StateHandler class implements various APIs and traps (get/set)
+ * - get trap supports bindings, API calls, dependency resolution, etc.
+ * - set trap centrally manages value writes and side effects (dependency resolution, re-rendering)
  *
- * 設計ポイント:
- * - StateHandlerはIWritableStateHandlerを実装し、状態管理やAPI呼び出しの基盤となる
- * - callableApiに各種APIシンボルと関数をマッピングし、柔軟なAPI拡張が可能
- * - createWritableStateProxyで一貫した生成・利用が可能
- * - 依存解決やキャッシュ、ループ・プロパティ参照スコープ管理など多機能な設計
+ * Design points:
+ * - StateHandler implements IWritableStateHandler and serves as the foundation for state management and API calls
+ * - Maps various API symbols and functions to callableApi for flexible API extension
+ * - Enables consistent creation and usage via createWritableStateProxy
+ * - Multi-functional design including dependency resolution, caching, loop/property reference scope management
  */
 import { IComponentEngine } from "../ComponentEngine/types";
 import { IState, IWritableStateHandler, IWritableStateProxy } from "./types";
@@ -25,28 +25,52 @@ import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol, UpdatedCallbackSymbol } from "./symbols";
 import { get as trapGet } from "./traps/get.js";
 
+// Initial depth of the reference stack for tracking property access hierarchy
 const STACK_DEPTH = 32;
 
+/**
+ * StateHandler class implementing writable Proxy traps for State objects.
+ * 
+ * This handler intercepts property access and modifications, supporting full
+ * read-write operations with dependency tracking, re-rendering, and update propagation.
+ */
 class StateHandler implements IWritableStateHandler {
-  engine: IComponentEngine;
-  refStack: (IStatePropertyRef | null)[] = Array(STACK_DEPTH).fill(null);
+  readonly engine: IComponentEngine;
+  readonly updater: IUpdater;
+  readonly renderer: IRenderer | null = null;
+  readonly refStack: (IStatePropertyRef | null)[] = Array(STACK_DEPTH).fill(null);
   refIndex: number = -1;
   lastRefStack: IStatePropertyRef | null = null;
   loopContext: ILoopContext | null = null;
-  updater: IUpdater;
-  renderer: IRenderer | null = null;
-  symbols: Set<PropertyKey> = new Set<PropertyKey>([ 
+  readonly symbols: Set<PropertyKey> = new Set<PropertyKey>([ 
     GetByRefSymbol, SetByRefSymbol, GetListIndexesByRefSymbol, 
     ConnectedCallbackSymbol, DisconnectedCallbackSymbol,
     UpdatedCallbackSymbol
   ]);
-  apis: Set<PropertyKey> = new Set<PropertyKey>([ "$resolve", "$getAll", "$trackDependency", "$navigate", "$component" ]);
+  readonly apis: Set<PropertyKey> = new Set<PropertyKey>([ "$resolve", "$getAll", "$trackDependency", "$navigate", "$component" ]);
   
+  /**
+   * Constructs a new StateHandler for writable state proxy.
+   * 
+   * @param engine - Component engine containing state management infrastructure
+   * @param updater - Updater for tracking and propagating state changes
+   */
   constructor(engine: IComponentEngine, updater: IUpdater) {
     this.engine = engine;
     this.updater = updater;
   }
 
+  /**
+   * Proxy get trap for property access.
+   * 
+   * Delegates to the shared get trap handler that supports bindings, API calls,
+   * and dependency tracking.
+   * 
+   * @param target - State object being accessed
+   * @param prop - Property key being accessed
+   * @param receiver - Proxy object
+   * @returns Value of the accessed property
+   */
   get(
     target  : Object, 
     prop    : PropertyKey, 
@@ -55,6 +79,18 @@ class StateHandler implements IWritableStateHandler {
     return trapGet(target, prop, receiver, this);
   }
 
+  /**
+   * Proxy set trap for property assignment.
+   * 
+   * Delegates to the shared set trap handler that handles value updates,
+   * dependency tracking, and triggers re-rendering.
+   * 
+   * @param target - State object being modified
+   * @param prop - Property key being set
+   * @param value - Value to assign
+   * @param receiver - Proxy object
+   * @returns true if the property was successfully set
+   */
   set(
     target  : Object, 
     prop    : PropertyKey, 
@@ -64,6 +100,15 @@ class StateHandler implements IWritableStateHandler {
     return trapSet(target, prop, value, receiver, this);
   }
 
+  /**
+   * Proxy has trap for property existence checking.
+   * 
+   * Returns true if the property exists in the target, or is a known symbol/API.
+   * 
+   * @param target - State object being checked
+   * @param prop - Property key being checked for existence
+   * @returns true if property exists in target or is a known symbol/API
+   */
   has(
     target: Object, 
     prop  : PropertyKey
@@ -72,6 +117,22 @@ class StateHandler implements IWritableStateHandler {
   }
 }
 
+/**
+ * Creates a writable state proxy and executes a callback within a loop context scope.
+ * 
+ * This function creates a temporary writable proxy for the state object, sets up a loop context
+ * (if provided), and executes the callback with the proxy and handler. The loop context is
+ * automatically cleaned up after callback execution, even if an exception occurs.
+ * 
+ * Supports both synchronous and asynchronous callbacks.
+ * 
+ * @param engine - Component engine containing state management infrastructure
+ * @param updater - Updater for tracking and propagating state changes
+ * @param state - State object to wrap in a writable proxy
+ * @param loopContext - Optional loop context for nested loop bindings, null if not in a loop
+ * @param callback - Function to execute with the writable state proxy
+ * @returns Result of the callback execution
+ */
 export function useWritableStateProxy<R extends Promise<any> | any>(
   engine: IComponentEngine, 
   updater: IUpdater,
@@ -79,8 +140,10 @@ export function useWritableStateProxy<R extends Promise<any> | any>(
   loopContext: ILoopContext | null,
   callback: (stateProxy: IWritableStateProxy, handler: IWritableStateHandler) => R
 ): R {
+  // Create handler and proxy for writable state access
   const handler = new StateHandler(engine, updater);
   const stateProxy = new Proxy<IState>(state, handler) as IWritableStateProxy;
+  // Execute callback within loop context scope (automatically cleaned up)
   return setLoopContext<R>(handler, loopContext, () => {
     return callback(stateProxy, handler);
   });

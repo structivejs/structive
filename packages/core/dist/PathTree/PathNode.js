@@ -1,10 +1,20 @@
 import { getStructuredPathInfo } from "../StateProperty/getStructuredPathInfo";
+/**
+ * NodePath class represents a node in the property path tree.
+ * Manages hierarchical path structure with parent-child relationships.
+ */
 class NodePath {
     parentPath;
     currentPath;
     name;
     childNodeByName;
     level;
+    /**
+     * Creates a new NodePath instance.
+     * @param parentPath - Path of the parent node
+     * @param name - Name of this node
+     * @param level - Depth level in the tree (0 for root)
+     */
     constructor(parentPath, name, level) {
         this.parentPath = parentPath;
         this.currentPath = parentPath ? parentPath + "." + name : name;
@@ -12,6 +22,12 @@ class NodePath {
         this.level = level;
         this.childNodeByName = new Map();
     }
+    /**
+     * Finds a node by traversing path segments.
+     * @param segments - Array of path segments to traverse
+     * @param segIndex - Current segment index (default: 0)
+     * @returns Found node or null if not found
+     */
     find(segments, segIndex = 0) {
         if (segIndex >= segments.length) {
             return null;
@@ -26,6 +42,12 @@ class NodePath {
         }
         return null;
     }
+    /**
+     * Appends a child node with the given name.
+     * Creates new child if it doesn't exist, otherwise returns existing child.
+     * @param childName - Name of the child node to append
+     * @returns Child node (existing or newly created)
+     */
     appendChild(childName) {
         let childNode = this.childNodeByName.get(childName);
         if (!childNode) {
@@ -36,10 +58,20 @@ class NodePath {
         return childNode;
     }
 }
+/**
+ * Factory function to create the root node of the path tree.
+ * @returns Root node with empty path and name at level 0
+ */
 export function createRootNode() {
     return new NodePath("", "", 0);
 }
 const cache = new Map();
+/**
+ * Finds a path node by path string with caching.
+ * @param rootNode - Root node to search from
+ * @param path - Path string to find
+ * @returns Found node or null if not found
+ */
 export function findPathNodeByPath(rootNode, path) {
     let nodeCache = cache.get(rootNode);
     if (!nodeCache) {
@@ -55,6 +87,12 @@ export function findPathNodeByPath(rootNode, path) {
     nodeCache.set(path, cachedNode);
     return cachedNode;
 }
+/**
+ * Adds a path node to the tree, creating parent nodes if necessary.
+ * @param rootNode - Root node of the tree
+ * @param path - Path string to add
+ * @returns Created or existing node at the path
+ */
 export function addPathNode(rootNode, path) {
     const info = getStructuredPathInfo(path);
     if (info.parentPath === null) {

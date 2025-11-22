@@ -1,19 +1,19 @@
 /**
  * Router.ts
  *
- * シングルページアプリケーション（SPA）向けのカスタムエレメント Router の実装です。
+ * Implementation of Router custom element for single-page applications (SPA).
  *
- * 主な役割:
- * - ルート定義（entryRoute）に基づき、URLパスに応じてカスタム要素を動的に生成・表示
- * - pushState/popstateイベントを利用した履歴管理とルーティング制御
- * - ルートパラメータの抽出とカスタム要素への受け渡し
- * - 404ページ（未定義ルート時）の表示
+ * Main responsibilities:
+ * - Dynamically creates and displays custom elements based on URL path according to route definitions (entryRoute)
+ * - History management and routing control using pushState/popstate events
+ * - Route parameter extraction and passing to custom elements
+ * - Display 404 page for undefined routes
  *
- * 設計ポイント:
- * - entryRouteでルートパスとカスタム要素タグ名のペアを登録
- * - popstateイベントでURL変更時に自動で再描画
- * - ルートパスのパラメータ（:id等）も正規表現で抽出し、data-state属性で渡す
- * - getRouterでグローバルなRouterインスタンスを取得可能
+ * Design points:
+ * - Register route path and custom element tag name pairs via entryRoute
+ * - Automatically re-render on URL change via popstate event
+ * - Extract route path parameters (:id etc.) using regex and pass via data-state attribute
+ * - Global Router instance accessible via getRouter
  */
 import { isLazyLoadComponent, loadLazyLoadComponent } from "../WebComponents/loadFromImportMap";
 import { IRouter } from "./types";
@@ -29,17 +29,27 @@ const routeEntries: Array<[string, string]> = [];
 
 let globalRouter : Router | null = null;
 
+/**
+ * Router custom element for SPA routing.
+ * Manages URL-based navigation and dynamic component rendering.
+ */
 export class Router extends HTMLElement implements IRouter {
-  originalPathName = window.location.pathname; // Store the original path name
-  originalFileName = window.location.pathname.split('/').pop() || ''; // Store the original file name
-  basePath = document.querySelector('base')?.href.replace(window.location.origin, "") || DEFAULT_ROUTE_PATH;
+  private _originalFileName = window.location.pathname.split('/').pop() || ''; // Store the original file name
+  private _basePath = document.querySelector('base')?.href.replace(window.location.origin, "") || DEFAULT_ROUTE_PATH;
+  private _popstateHandler: (event: PopStateEvent) => void;
 
-  _popstateHandler: (event: PopStateEvent) => void;
+  /**
+   * Creates a new Router instance and binds popstate handler.
+   */
   constructor() {
     super();
     this._popstateHandler = this.popstateHandler.bind(this);
   }
 
+  /**
+   * Web Component lifecycle callback invoked when element is connected to DOM.
+   * Sets up routing and triggers initial render.
+   */
   connectedCallback() {
     globalRouter = this;
     this.innerHTML = '<slot name="content"></slot>';
@@ -47,35 +57,51 @@ export class Router extends HTMLElement implements IRouter {
     window.dispatchEvent(new Event("popstate")); // Dispatch popstate event to trigger the initial render
   }
 
+  /**
+   * Web Component lifecycle callback invoked when element is disconnected from DOM.
+   * Cleans up event listeners.
+   */
   disconnectedCallback() {
     window.removeEventListener('popstate', this._popstateHandler);
     globalRouter = null;
   }
 
+  /**
+   * Handles popstate events for browser navigation.
+   * @param event - PopStateEvent from browser history navigation
+   */
   popstateHandler(event: PopStateEvent) {
     event.preventDefault();
     this.render();
   }
 
+  /**
+   * Navigates to a new route.
+   * @param to - Target path to navigate to
+   */
   navigate(to: string) {
-    const toPath = to[0] === '/' ? (this.basePath + to.slice(1)) : to; // Ensure the path starts with '/'
+    const toPath = to[0] === '/' ? (this._basePath + to.slice(1)) : to; // Ensure the path starts with '/'
     history.pushState({}, '', toPath);
     this.render();
   }
 
+  /**
+   * Renders the current route by creating and displaying the matching custom element.
+   * Displays 404 if no route matches the current path.
+   */
   render() {
-    // スロットコンテントをクリア
+    // Clear slot content
     const slotChildren = Array.from(this.childNodes).filter(
       n => (n as HTMLElement).getAttribute?.('slot') === 'content'
     );
     slotChildren.forEach(n => this.removeChild(n));
 
     const paths = window.location.pathname.split('/');
-    if (paths.at(-1) === this.originalFileName) {
+    if (paths.at(-1) === this._originalFileName) {
       paths[paths.length - 1] = ''; // Ensure the last path is empty for root
     }
     const pathName = paths.join('/');
-    const replacedPath = pathName.replace(this.basePath, ''); // Remove base path and ensure default route
+    const replacedPath = pathName.replace(this._basePath, ''); // Remove base path and ensure default route
     const currentPath = replacedPath[0] !== '/' ? '/' + replacedPath : replacedPath; // Ensure the path starts with '/'
     let tagName: string | undefined = undefined;
     let params: Record<string, string> = {};
@@ -117,6 +143,11 @@ export class Router extends HTMLElement implements IRouter {
 
 }
 
+/**
+ * Registers a route entry mapping a custom element tag to a URL path.
+ * @param tagName - Custom element tag name to render for this route
+ * @param routePath - URL path pattern (supports parameters like :id)
+ */
 export function entryRoute(tagName: string, routePath: string): void {
   if (routePath.startsWith(ROUTE_PATH_PREFIX)) {
     routePath = routePath.substring(ROUTE_PATH_PREFIX.length); // Remove 'routes:' prefix
@@ -124,6 +155,10 @@ export function entryRoute(tagName: string, routePath: string): void {
   routeEntries.push([routePath, tagName]);
 }
 
+/**
+ * Gets the global Router instance.
+ * @returns Current Router instance or null if not connected
+ */
 export function getRouter(): Router | null {
   return globalRouter;
 }

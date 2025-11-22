@@ -1,8 +1,8 @@
 import { MAX_WILDCARD_DEPTH } from "../../constants";
 
 /**
- * stackIndexByIndexName
- * インデックス名からスタックインデックスへのマッピング
+ * indexByIndexName
+ * Mapping from index name to stack index
  * $1 => 0
  * $2 => 1
  * :

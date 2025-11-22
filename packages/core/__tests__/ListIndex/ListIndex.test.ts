@@ -13,7 +13,7 @@ describe('ListIndex', () => {
       expect(listIndex.length).toBe(1);
       expect(listIndex.indexes).toEqual([5]);
       expect(listIndex.indexes).toBe(listIndex.indexes); // キャッシュ済み分岐
-      expect(listIndex.varName).toBe('1');
+      expect(listIndex.varName).toBe('$1');
       expect(typeof listIndex.id).toBe('number');
       expect(typeof listIndex.sid).toBe('string');
       expect(listIndex.dirty).toBe(false);
@@ -34,7 +34,7 @@ describe('ListIndex', () => {
       expect(child.indexes).toEqual([2, 7]);
       const cachedIndexes = child.indexes;
       expect(child.indexes).toBe(cachedIndexes); // dirty false 分岐
-      expect(child.varName).toBe('2');
+      expect(child.varName).toBe('$2');
       const firstRefs = child.listIndexes;
       expect(child.listIndexes).toBe(firstRefs); // listIndexes キャッシュ確認
     });
@@ -47,7 +47,7 @@ describe('ListIndex', () => {
       expect(level2.position).toBe(2);
       expect(level2.length).toBe(3);
       expect(level2.indexes).toEqual([1, 2, 3]);
-      expect(level2.varName).toBe('3');
+      expect(level2.varName).toBe('$3');
     });
 
     it('should handle index updates', () => {
