@@ -76,7 +76,7 @@ class BindingNodeFor extends BindingNodeBlock {
      */
     get loopInfo() {
         if (typeof this._loopInfo === "undefined") {
-            const loopPath = this.binding.bindingState.pattern + ".*";
+            const loopPath = `${this.binding.bindingState.pattern}.*`;
             this._loopInfo = getStructuredPathInfo(loopPath);
         }
         return this._loopInfo;
@@ -147,13 +147,15 @@ class BindingNodeFor extends BindingNodeBlock {
         const changeIndexesSet = new Set();
         const overwritesSet = new Set();
         // Classify updating refs into changeIndexes or overwrites
-        const elementsPath = this.binding.bindingState.info.pattern + ".*";
+        const elementsPath = `${this.binding.bindingState.info.pattern}.*`;
         for (let i = 0; i < renderer.updatingRefs.length; i++) {
             const updatingRef = renderer.updatingRefs[i];
-            if (updatingRef.info.pattern !== elementsPath)
+            if (updatingRef.info.pattern !== elementsPath) {
                 continue;
-            if (renderer.processedRefs.has(updatingRef))
+            }
+            if (renderer.processedRefs.has(updatingRef)) {
                 continue;
+            }
             const listIndex = updatingRef.listIndex;
             if (listIndex === null) {
                 raiseError({
@@ -280,8 +282,9 @@ class BindingNodeFor extends BindingNodeBlock {
             for (const listIndex of changeListIndexes) {
                 const bindings = this.binding.bindingsByListIndex.get(listIndex) ?? [];
                 for (const binding of bindings) {
-                    if (renderer.updatedBindings.has(binding))
+                    if (renderer.updatedBindings.has(binding)) {
                         continue;
+                    }
                     binding.applyChange(renderer);
                 }
             }

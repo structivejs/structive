@@ -17,7 +17,7 @@ class NodePath {
      */
     constructor(parentPath, name, level) {
         this.parentPath = parentPath;
-        this.currentPath = parentPath ? parentPath + "." + name : name;
+        this.currentPath = parentPath ? `${parentPath}.${name}` : name;
         this.name = name;
         this.level = level;
         this.childNodeByName = new Map();
@@ -51,7 +51,7 @@ class NodePath {
     appendChild(childName) {
         let childNode = this.childNodeByName.get(childName);
         if (!childNode) {
-            const currentPath = this.parentPath ? this.parentPath + "." + this.name : this.name;
+            const currentPath = this.parentPath ? `${this.parentPath}.${this.name}` : this.name;
             childNode = new NodePath(currentPath, childName, this.level + 1);
             this.childNodeByName.set(childName, childNode);
         }

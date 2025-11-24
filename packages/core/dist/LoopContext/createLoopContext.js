@@ -81,8 +81,9 @@ class LoopContext {
                 }
                 currentBindContent = currentBindContent.parentBinding?.parentBindContent ?? null;
             }
-            if (typeof this._parentLoopContext === "undefined")
+            if (typeof this._parentLoopContext === "undefined") {
                 this._parentLoopContext = null;
+            }
         }
         return this._parentLoopContext;
     }
@@ -96,8 +97,9 @@ class LoopContext {
         if (typeof loopContext === "undefined") {
             let currentLoopContext = this;
             while (currentLoopContext !== null) {
-                if (currentLoopContext.path === name)
+                if (currentLoopContext.path === name) {
                     break;
+                }
                 currentLoopContext = currentLoopContext.parentLoopContext;
             }
             loopContext = this._cache[name] = currentLoopContext;

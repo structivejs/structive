@@ -89,12 +89,12 @@ export class Router extends HTMLElement {
         }
         const pathName = paths.join('/');
         const replacedPath = pathName.replace(this._basePath, ''); // Remove base path and ensure default route
-        const currentPath = replacedPath[0] !== '/' ? '/' + replacedPath : replacedPath; // Ensure the path starts with '/'
+        const currentPath = replacedPath[0] !== '/' ? `/${replacedPath}` : replacedPath; // Ensure the path starts with '/'
         let tagName = undefined;
-        let params = {};
+        const params = {};
         // Check if the routePath matches any of the defined routes
         for (const [path, tag] of routeEntries) {
-            const regex = new RegExp("^" + path.replace(/:[^\s/]+/g, '([^/]+)') + "$");
+            const regex = new RegExp(`^${path.replace(/:[^\s/]+/g, '([^/]+)')}$`);
             if (regex.test(currentPath)) {
                 tagName = tag;
                 // Extract the parameters from the routePath

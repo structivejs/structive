@@ -141,8 +141,9 @@ class BindContent {
         if (typeof this._currentLoopContext === "undefined") {
             let bindContent = this;
             while (bindContent !== null) {
-                if (bindContent.loopContext !== null)
+                if (bindContent.loopContext !== null) {
                     break;
+                }
                 ;
                 bindContent = bindContent.parentBinding?.parentBindContent ?? null;
             }
@@ -240,13 +241,14 @@ class BindContent {
      * @throws BIND-201 LoopContext is null
      */
     assignListIndex(listIndex) {
-        if (this.loopContext == null)
+        if (this.loopContext == null) {
             raiseError({
                 code: "BIND-201",
                 message: "LoopContext is null",
                 context: { where: 'BindContent.assignListIndex', templateId: this.id },
                 docsUrl: "./docs/error-codes.md#bind",
             });
+        }
         this.loopContext.assignListIndex(listIndex);
     }
     /**
@@ -262,8 +264,9 @@ class BindContent {
         }
         for (let i = 0; i < this.bindings.length; i++) {
             const binding = this.bindings[i];
-            if (renderer.updatedBindings.has(binding))
+            if (renderer.updatedBindings.has(binding)) {
                 continue;
+            }
             binding.applyChange(renderer);
         }
     }

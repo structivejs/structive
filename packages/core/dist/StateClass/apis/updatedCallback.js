@@ -33,7 +33,7 @@ export function updatedCallback(target, refs, receiver, handler) {
             paths.add(path);
             if (ref.info.wildcardCount > 0) {
                 const index = ref.listIndex.index;
-                let indexes = indexesByPath[path];
+                const indexes = indexesByPath[path];
                 if (typeof indexes === "undefined") {
                     indexesByPath[path] = [index];
                 }

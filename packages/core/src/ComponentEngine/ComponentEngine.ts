@@ -5,7 +5,7 @@ import { IState, IStructiveState } from "../StateClass/types";
 import { ComponentType, IComponentConfig, IComponentStatic, StructiveComponent } from "../WebComponents/types";
 import { attachShadow } from "./attachShadow.js";
 import { IComponentEngine, ICacheEntry, IVersionRevision, IPropertyRefMetadata } from "./types";
-import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol, SetCacheableSymbol } from "../StateClass/symbols.js";
+import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol } from "../StateClass/symbols.js";
 import { getStructuredPathInfo } from "../StateProperty/getStructuredPathInfo.js";
 import { raiseError } from "../utils.js";
 import { IComponentStateBinding } from "../ComponentStateBinding/types.js";
@@ -22,7 +22,6 @@ import { getStatePropertyRef } from "../StatePropertyRef/StatepropertyRef.js";
 import { RESERVED_WORD_SET } from "../constants.js";
 import { addPathNode } from "../PathTree/PathNode.js";
 import { IStatePropertyRef } from "../StatePropertyRef/types.js";
-import { getCustomTagName } from "../WebComponents/getCustomTagName.js";
 
 /**
  * ComponentEngine integrates state, dependencies, bindings, lifecycle, and rendering
@@ -241,7 +240,7 @@ class ComponentEngine implements IComponentEngine {
     // Initialize component state from data-state attribute if present
     if (this.owner.dataset.state) {
       try {
-        const json = JSON.parse(this.owner.dataset.state);
+        const json = JSON.parse(this.owner.dataset.state) as Record<string, unknown>;
         this.stateInput[AssignStateSymbol](json);
       } catch(e) {
         raiseError({
@@ -249,6 +248,7 @@ class ComponentEngine implements IComponentEngine {
           message: 'Failed to parse state from dataset',
           context: { where: 'ComponentEngine.connectedCallback', datasetState: this.owner.dataset.state },
           docsUrl: './docs/error-codes.md#state',
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           cause: e as any,
         });
       }
@@ -258,7 +258,7 @@ class ComponentEngine implements IComponentEngine {
     createUpdater<void>(this, (updater) => {
       updater.initialRender((renderer) => {
         this.bindContent.activate();
-        renderer.createReadonlyState( (readonlyState, readonlyHandler) => {
+        renderer.createReadonlyState( () => {
           this.bindContent.applyChange(renderer);
         } );
       });
@@ -266,9 +266,9 @@ class ComponentEngine implements IComponentEngine {
 
     // Call state's connectedCallback if implemented
     if (this.pathManager.hasConnectedCallback) {
-      const resultPromise = createUpdater<Promise<void>>(this, async (updater) => {
-        return updater.update(null, async (stateProxy, handler) => {
-          stateProxy[ConnectedCallbackSymbol]();
+      const resultPromise = createUpdater<Promise<void> | void>(this, (updater) => {
+        return updater.update(null, (stateProxy, ) => {
+          return stateProxy[ConnectedCallbackSymbol]();
         });
       });
       if (resultPromise instanceof Promise) {
@@ -285,7 +285,7 @@ class ComponentEngine implements IComponentEngine {
    * - Removes block placeholder if in block mode
    * - Inactivates and unmounts bindContent
    */
-  async disconnectedCallback(): Promise<void> {
+  disconnectedCallback(): void {
     // Ignore if flag is set (during replaceWith in connectedCallback)
     if (this._ignoreDissconnectedCallback) {return;}
 
@@ -293,7 +293,7 @@ class ComponentEngine implements IComponentEngine {
       // Call state's disconnectedCallback if implemented (synchronous)
       if (this.pathManager.hasDisconnectedCallback) {
         createUpdater<void>(this, (updater) => {
-          updater.update(null, (stateProxy, handler) => {
+          updater.update(null, (stateProxy, ) => {
             stateProxy[DisconnectedCallbackSymbol]();
           });
         });
@@ -308,7 +308,7 @@ class ComponentEngine implements IComponentEngine {
       }
       // Inactivate state and unmount (bindContent.unmount is called within inactivate)
       createUpdater<void>(this, (updater) => {
-        updater.initialRender((renderer) => {
+        updater.initialRender(() => {
           this.bindContent.inactivate();
         });
       });
@@ -329,8 +329,8 @@ class ComponentEngine implements IComponentEngine {
     }
     let value: IListIndex[] | null = null;
     // Synchronous operation
-    createUpdater<any>(this, (updater) => {
-      value = updater.createReadonlyState<IListIndex[] | null>((stateProxy, handler) => {
+    createUpdater<IListIndex[] | null>(this, (updater) => {
+      return value = updater.createReadonlyState<IListIndex[] | null>((stateProxy, ) => {
         return stateProxy[GetListIndexesByRefSymbol](ref);
       });
     });
@@ -344,11 +344,15 @@ class ComponentEngine implements IComponentEngine {
    * @param ref - State property reference
    * @returns Property value
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getPropertyValue(ref: IStatePropertyRef): any {
-    let value;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let value: any;
     // Synchronous operation
-    createUpdater<any>(this, (updater) => {
-      value = updater.createReadonlyState<any>((stateProxy, handler) => {
+    createUpdater(this, (updater) => {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      value = updater.createReadonlyState((stateProxy, ) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return stateProxy[GetByRefSymbol](ref);
       });
     });
@@ -362,10 +366,11 @@ class ComponentEngine implements IComponentEngine {
    * @param ref - State property reference
    * @param value - New value to set
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setPropertyValue(ref: IStatePropertyRef, value: any): void {
     // Synchronous operation
     createUpdater<void>(this, (updater) => {
-      updater.update(null, (stateProxy, handler) => {
+      updater.update(null, (stateProxy, ) => {
         stateProxy[SetByRefSymbol](ref, value);
       });
     });

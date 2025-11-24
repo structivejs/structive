@@ -24,7 +24,7 @@ function escapeEmbed(html) {
  * unescapeEmbed('<!--{{name}}-->') // Returns '{{name}}'
  */
 function unescapeEmbed(html) {
-    return html.replaceAll(/<!--\{\{([^\}]+)\}\}-->/g, (match, expr) => {
+    return html.replaceAll(/<!--\{\{([^\}]+)}}-->/g, (match, expr) => {
         return `{{${expr}}}`;
     });
 }
@@ -83,7 +83,7 @@ export async function createSingleFileComponent(path, text) {
             // Fallback: Base64 encoding method (for test environment)
             // Convert script to Base64 and import via data: URL
             const b64 = btoa(String.fromCodePoint(...new TextEncoder().encode(script.text + uniq_comment)));
-            scriptModule = await import("data:application/javascript;base64," + b64);
+            scriptModule = await import(`data:application/javascript;base64,${b64}`);
         }
     }
     script?.remove();

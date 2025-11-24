@@ -30,15 +30,16 @@
 export function getAbsoluteNodePath(node) {
     // Array to store result (indexes arranged from root to leaf)
     let routeIndexes = [];
+    let currentNode = node;
     // Loop while parent node exists (until reaching root)
-    while (node.parentNode !== null) {
+    while (currentNode.parentNode !== null) {
         // Convert parent node's childNodes to array
-        const childNodes = Array.from(node.parentNode.childNodes);
+        const childNodes = Array.from(currentNode.parentNode.childNodes);
         // Get index of current node within parent's childNodes and prepend to array
         // Prepending maintains root→leaf order
-        routeIndexes = [childNodes.indexOf(node), ...routeIndexes];
+        routeIndexes = [childNodes.indexOf(currentNode), ...routeIndexes];
         // Move to parent node for next iteration
-        node = node.parentNode;
+        currentNode = currentNode.parentNode;
     }
     // Return index array from root
     return routeIndexes;

@@ -20,8 +20,9 @@ class StatePropertyRef {
      * @throws {Error} Throws LIST-201 error if the listIndex was GC'd
      */
     get listIndex() {
-        if (this._listIndexRef === null)
+        if (this._listIndexRef === null) {
             return null;
+        }
         // Attempt to dereference WeakRef; if GC'd, throw error
         return this._listIndexRef.deref() ?? raiseError({
             code: "LIST-201",
@@ -48,7 +49,7 @@ class StatePropertyRef {
         // Store listIndex as WeakRef to allow GC when no longer needed elsewhere
         this._listIndexRef = listIndex !== null ? new WeakRef(listIndex) : null;
         // Compose key from info.sid and optionally listIndex.sid
-        this.key = (listIndex == null) ? info.sid : (info.sid + "#" + listIndex.sid);
+        this.key = (listIndex == null) ? info.sid : (`${info.sid}#${listIndex.sid}`);
     }
     /**
      * Gets the parent property reference (one level up in the path hierarchy).
@@ -58,8 +59,9 @@ class StatePropertyRef {
      */
     get parentRef() {
         const parentInfo = this.info.parentInfo;
-        if (!parentInfo)
+        if (!parentInfo) {
             return null;
+        }
         // If current path has more wildcards than parent, use parent's list index (drop last level)
         // Otherwise, use the same list index
         const parentListIndex = (this.info.wildcardCount > parentInfo.wildcardCount ? this.listIndex?.at(-2) : this.listIndex) ?? null;

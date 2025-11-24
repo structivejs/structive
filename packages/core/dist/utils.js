@@ -53,15 +53,20 @@ export function raiseError(messageOrPayload) {
     const err = new Error(message);
     // Attach additional metadata as properties (keeping message for existing compatibility)
     err.code = code;
-    if (context)
+    if (context) {
         err.context = context;
-    if (hint)
+    }
+    if (hint) {
         err.hint = hint;
-    if (docsUrl)
+    }
+    if (docsUrl) {
         err.docsUrl = docsUrl;
-    if (severity)
+    }
+    if (severity) {
         err.severity = severity;
-    if (cause)
+    }
+    if (cause) {
         err.cause = cause;
+    }
     throw err;
 }

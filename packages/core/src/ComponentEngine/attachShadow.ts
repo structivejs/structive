@@ -1,4 +1,3 @@
-import { raiseError } from "../utils.js";
 import { IComponentConfig } from "../WebComponents/types";
 import { canHaveShadowRoot } from "./canHaveShadowRoot.js";
 

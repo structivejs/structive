@@ -41,7 +41,7 @@ class ResolvedPathInfo {
         let lastPath = "";
         let wildcardCount = 0;
         let wildcardType = "none";
-        let wildcardIndexes = [];
+        const wildcardIndexes = [];
         // Process each segment to identify wildcards and indexes
         for (let i = 0; i < elements.length; i++) {
             const element = elements[i];

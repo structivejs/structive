@@ -106,16 +106,21 @@ function raiseError(messageOrPayload) {
     const err = new Error(message);
     // Attach additional metadata as properties (keeping message for existing compatibility)
     err.code = code;
-    if (context)
+    if (context) {
         err.context = context;
-    if (hint)
+    }
+    if (hint) {
         err.hint = hint;
-    if (docsUrl)
+    }
+    if (docsUrl) {
         err.docsUrl = docsUrl;
-    if (severity)
+    }
+    if (severity) {
         err.severity = severity;
-    if (cause)
+    }
+    if (cause) {
         err.cause = cause;
+    }
     throw err;
 }
 
@@ -242,8 +247,9 @@ const eq = (options) => {
         // Align types for comparison
         if (typeof value === 'number') {
             const optValue = Number(opt);
-            if (isNaN(optValue))
+            if (isNaN(optValue)) {
                 optionMustBeNumber('eq');
+            }
             return value === optValue;
         }
         if (typeof value === 'string') {
@@ -267,8 +273,9 @@ const ne = (options) => {
         // Align types for comparison
         if (typeof value === 'number') {
             const optValue = Number(opt);
-            if (isNaN(optValue))
+            if (isNaN(optValue)) {
                 optionMustBeNumber('ne');
+            }
             return value !== optValue;
         }
         if (typeof value === 'string') {
@@ -287,8 +294,9 @@ const ne = (options) => {
  */
 const not = (options) => {
     return (value) => {
-        if (typeof value !== 'boolean')
+        if (typeof value !== 'boolean') {
             valueMustBeBoolean('not');
+        }
         return !value;
     };
 };
@@ -304,11 +312,13 @@ const not = (options) => {
 const lt = (options) => {
     const opt = options?.[0] ?? optionsRequired('lt');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('lt');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('lt');
+        }
         return value < optValue;
     };
 };
@@ -324,11 +334,13 @@ const lt = (options) => {
 const le = (options) => {
     const opt = options?.[0] ?? optionsRequired('le');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('le');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('le');
+        }
         return value <= optValue;
     };
 };
@@ -344,11 +356,13 @@ const le = (options) => {
 const gt = (options) => {
     const opt = options?.[0] ?? optionsRequired('gt');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('gt');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('gt');
+        }
         return value > optValue;
     };
 };
@@ -364,11 +378,13 @@ const gt = (options) => {
 const ge = (options) => {
     const opt = options?.[0] ?? optionsRequired('ge');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('ge');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('ge');
+        }
         return value >= optValue;
     };
 };
@@ -384,11 +400,13 @@ const ge = (options) => {
 const inc = (options) => {
     const opt = options?.[0] ?? optionsRequired('inc');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('inc');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('inc');
+        }
         return value + optValue;
     };
 };
@@ -404,11 +422,13 @@ const inc = (options) => {
 const dec = (options) => {
     const opt = options?.[0] ?? optionsRequired('dec');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('dec');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('dec');
+        }
         return value - optValue;
     };
 };
@@ -424,11 +444,13 @@ const dec = (options) => {
 const mul = (options) => {
     const opt = options?.[0] ?? optionsRequired('mul');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('mul');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('mul');
+        }
         return value * optValue;
     };
 };
@@ -444,11 +466,13 @@ const mul = (options) => {
 const div = (options) => {
     const opt = options?.[0] ?? optionsRequired('div');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('div');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('div');
+        }
         return value / optValue;
     };
 };
@@ -464,11 +488,13 @@ const div = (options) => {
 const mod = (options) => {
     const opt = options?.[0] ?? optionsRequired('mod');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('mod');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('mod');
+        }
         return value % optValue;
     };
 };
@@ -483,11 +509,13 @@ const mod = (options) => {
 const fix = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('fix');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('fix');
+        }
         return value.toFixed(optValue);
     };
 };
@@ -501,8 +529,9 @@ const fix = (options) => {
 const locale = (options) => {
     const opt = options?.[0] ?? config$1.locale;
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('locale');
+        }
         return value.toLocaleString(opt);
     };
 };
@@ -537,10 +566,12 @@ const lc = (options) => {
 const cap = (options) => {
     return (value) => {
         const v = value.toString();
-        if (v.length === 0)
+        if (v.length === 0) {
             return v;
-        if (v.length === 1)
+        }
+        if (v.length === 1) {
             return v.toUpperCase();
+        }
         return v.charAt(0).toUpperCase() + v.slice(1);
     };
 };
@@ -566,8 +597,9 @@ const trim$1 = (options) => {
 const slice = (options) => {
     const opt = options?.[0] ?? optionsRequired('slice');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('slice');
+    }
     return (value) => {
         return value.toString().slice(optValue);
     };
@@ -583,12 +615,14 @@ const slice = (options) => {
 const substr = (options) => {
     const opt1 = options?.[0] ?? optionsRequired('substr');
     const opt1Value = Number(opt1);
-    if (isNaN(opt1Value))
+    if (isNaN(opt1Value)) {
         optionMustBeNumber('substr');
+    }
     const opt2 = options?.[1] ?? optionsRequired('substr');
     const opt2Value = Number(opt2);
-    if (isNaN(opt2Value))
+    if (isNaN(opt2Value)) {
         optionMustBeNumber('substr');
+    }
     return (value) => {
         return value.toString().substr(opt1Value, opt2Value);
     };
@@ -604,8 +638,9 @@ const substr = (options) => {
 const pad = (options) => {
     const opt1 = options?.[0] ?? optionsRequired('pad');
     const opt1Value = Number(opt1);
-    if (isNaN(opt1Value))
+    if (isNaN(opt1Value)) {
         optionMustBeNumber('pad');
+    }
     const opt2 = options?.[1] ?? '0';
     const opt2Value = opt2;
     return (value) => {
@@ -623,8 +658,9 @@ const pad = (options) => {
 const rep = (options) => {
     const opt = options?.[0] ?? optionsRequired('rep');
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('rep');
+    }
     return (value) => {
         return value.toString().repeat(optValue);
     };
@@ -673,11 +709,13 @@ const float = (options) => {
 const round = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Math.pow(10, Number(opt));
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('round');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('round');
+        }
         return Math.round(value * optValue) / optValue;
     };
 };
@@ -692,11 +730,13 @@ const round = (options) => {
 const floor = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Math.pow(10, Number(opt));
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('floor');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('floor');
+        }
         return Math.floor(value * optValue) / optValue;
     };
 };
@@ -711,11 +751,13 @@ const floor = (options) => {
 const ceil = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Math.pow(10, Number(opt));
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('ceil');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('ceil');
+        }
         return Math.ceil(value * optValue) / optValue;
     };
 };
@@ -730,12 +772,14 @@ const ceil = (options) => {
 const percent = (options) => {
     const opt = options?.[0] ?? 0;
     const optValue = Number(opt);
-    if (isNaN(optValue))
+    if (isNaN(optValue)) {
         optionMustBeNumber('percent');
+    }
     return (value) => {
-        if (typeof value !== 'number')
+        if (typeof value !== 'number') {
             valueMustBeNumber('percent');
-        return (value * 100).toFixed(optValue) + '%';
+        }
+        return `${(value * 100).toFixed(optValue)}%`;
     };
 };
 /**
@@ -748,8 +792,9 @@ const percent = (options) => {
 const date = (options) => {
     const opt = options?.[0] ?? config$1.locale;
     return (value) => {
-        if (!(value instanceof Date))
+        if (!(value instanceof Date)) {
             valueMustBeDate('date');
+        }
         return value.toLocaleDateString(opt);
     };
 };
@@ -763,8 +808,9 @@ const date = (options) => {
 const time = (options) => {
     const opt = options?.[0] ?? config$1.locale;
     return (value) => {
-        if (!(value instanceof Date))
+        if (!(value instanceof Date)) {
             valueMustBeDate('time');
+        }
         return value.toLocaleTimeString(opt);
     };
 };
@@ -778,8 +824,9 @@ const time = (options) => {
 const datetime = (options) => {
     const opt = options?.[0] ?? config$1.locale;
     return (value) => {
-        if (!(value instanceof Date))
+        if (!(value instanceof Date)) {
             valueMustBeDate('datetime');
+        }
         return value.toLocaleString(opt);
     };
 };
@@ -793,8 +840,9 @@ const datetime = (options) => {
 const ymd = (options) => {
     const opt = options?.[0] ?? '-';
     return (value) => {
-        if (!(value instanceof Date))
+        if (!(value instanceof Date)) {
             valueMustBeDate('ymd');
+        }
         const year = value.getFullYear().toString();
         const month = (value.getMonth() + 1).toString().padStart(2, '0');
         const day = value.getDate().toString().padStart(2, '0');
@@ -829,8 +877,9 @@ const truthy = (options) => {
 const defaults = (options) => {
     const opt = options?.[0] ?? optionsRequired('defaults');
     return (value) => {
-        if (value === false || value === null || value === undefined || value === 0 || value === '' || Number.isNaN(value))
+        if (value === false || value === null || value === undefined || value === 0 || value === '' || Number.isNaN(value)) {
             return opt;
+        }
         return value;
     };
 };
@@ -1134,16 +1183,18 @@ function resolveNodeFromPath(root, path) {
     // Step 1: Set root node as starting point
     let node = root;
     // Step 2: Return root node if path is empty
-    if (path.length === 0)
+    if (path.length === 0) {
         return node;
+    }
     // Step 3: Traverse each index in path sequentially
     // Using for loop instead of path.reduce() to explicitly check and break when null
     for (let i = 0; i < path.length; i++) {
         // Get childNodes[index] of current node (null if doesn't exist)
         node = node?.childNodes[path[i]] ?? null;
         // Break loop if node doesn't exist
-        if (node === null)
+        if (node === null) {
             break;
+        }
     }
     // Step 4: Return final node (or null)
     return node;
@@ -1181,15 +1232,16 @@ function resolveNodeFromPath(root, path) {
 function getAbsoluteNodePath(node) {
     // Array to store result (indexes arranged from root to leaf)
     let routeIndexes = [];
+    let currentNode = node;
     // Loop while parent node exists (until reaching root)
-    while (node.parentNode !== null) {
+    while (currentNode.parentNode !== null) {
         // Convert parent node's childNodes to array
-        const childNodes = Array.from(node.parentNode.childNodes);
+        const childNodes = Array.from(currentNode.parentNode.childNodes);
         // Get index of current node within parent's childNodes and prepend to array
         // Prepending maintains root→leaf order
-        routeIndexes = [childNodes.indexOf(node), ...routeIndexes];
+        routeIndexes = [childNodes.indexOf(currentNode), ...routeIndexes];
         // Move to parent node for next iteration
-        node = node.parentNode;
+        currentNode = currentNode.parentNode;
     }
     // Return index array from root
     return routeIndexes;
@@ -1726,7 +1778,7 @@ class NodePath {
      */
     constructor(parentPath, name, level) {
         this.parentPath = parentPath;
-        this.currentPath = parentPath ? parentPath + "." + name : name;
+        this.currentPath = parentPath ? `${parentPath}.${name}` : name;
         this.name = name;
         this.level = level;
         this.childNodeByName = new Map();
@@ -1760,7 +1812,7 @@ class NodePath {
     appendChild(childName) {
         let childNode = this.childNodeByName.get(childName);
         if (!childNode) {
-            const currentPath = this.parentPath ? this.parentPath + "." + this.name : this.name;
+            const currentPath = this.parentPath ? `${this.parentPath}.${this.name}` : this.name;
             childNode = new NodePath(currentPath, childName, this.level + 1);
             this.childNodeByName.set(childName, childNode);
         }
@@ -1866,7 +1918,7 @@ class ResolvedPathInfo {
         let lastPath = "";
         let wildcardCount = 0;
         let wildcardType = "none";
-        let wildcardIndexes = [];
+        const wildcardIndexes = [];
         // Process each segment to identify wildcards and indexes
         for (let i = 0; i < elements.length; i++) {
             const element = elements[i];
@@ -1956,8 +2008,9 @@ class StatePropertyRef {
      * @throws {Error} Throws LIST-201 error if the listIndex was GC'd
      */
     get listIndex() {
-        if (this._listIndexRef === null)
+        if (this._listIndexRef === null) {
             return null;
+        }
         // Attempt to dereference WeakRef; if GC'd, throw error
         return this._listIndexRef.deref() ?? raiseError({
             code: "LIST-201",
@@ -1984,7 +2037,7 @@ class StatePropertyRef {
         // Store listIndex as WeakRef to allow GC when no longer needed elsewhere
         this._listIndexRef = listIndex !== null ? new WeakRef(listIndex) : null;
         // Compose key from info.sid and optionally listIndex.sid
-        this.key = (listIndex == null) ? info.sid : (info.sid + "#" + listIndex.sid);
+        this.key = (listIndex == null) ? info.sid : (`${info.sid}#${listIndex.sid}`);
     }
     /**
      * Gets the parent property reference (one level up in the path hierarchy).
@@ -1994,8 +2047,9 @@ class StatePropertyRef {
      */
     get parentRef() {
         const parentInfo = this.info.parentInfo;
-        if (!parentInfo)
+        if (!parentInfo) {
             return null;
+        }
         // If current path has more wildcards than parent, use parent's list index (drop last level)
         // Otherwise, use the same list index
         const parentListIndex = (this.info.wildcardCount > parentInfo.wildcardCount ? this.listIndex?.at(-2) : this.listIndex) ?? null;
@@ -2571,7 +2625,7 @@ function getByRef(target, ref, receiver, handler) {
                     newListIndexes = createListIndexes(ref.listIndex, lastCacheEntry?.value, value, lastCacheEntry?.listIndexes ?? []);
                 }
                 // Create or update cache entry with new value and metadata
-                let cacheEntry = lastCacheEntry ?? {
+                const cacheEntry = lastCacheEntry ?? {
                     value: null,
                     listIndexes: null,
                     version: 0,
@@ -3100,7 +3154,7 @@ function updatedCallback(target, refs, receiver, handler) {
             paths.add(path);
             if (ref.info.wildcardCount > 0) {
                 const index = ref.listIndex.index;
-                let indexes = indexesByPath[path];
+                const indexes = indexesByPath[path];
                 if (typeof indexes === "undefined") {
                     indexesByPath[path] = [index];
                 }
@@ -3636,7 +3690,7 @@ class Renderer {
         this._updatingRefs = [...items];
         this._updatingRefSet = new Set(items);
         // Implement actual rendering logic
-        this.createReadonlyState((readonlyState, readonlyHandler) => {
+        this.createReadonlyState(() => {
             // First, process list reordering
             const remainItems = [];
             const itemsByListRef = new Map();
@@ -3677,8 +3731,9 @@ class Renderer {
                 // Apply list bindings (e.g., for reordering)
                 const bindings = this._engine.getBindings(listRef);
                 for (let i = 0; i < bindings.length; i++) {
-                    if (this.updatedBindings.has(bindings[i]))
+                    if (this.updatedBindings.has(bindings[i])) {
                         continue;
+                    }
                     bindings[i].applyChange(this);
                 }
                 this.processedRefs.add(listRef);
@@ -3736,8 +3791,9 @@ class Renderer {
         // Bindings with changes must add themselves to updatedBindings (responsibility of applyChange implementation)
         const bindings = this._engine.getBindings(ref);
         for (let i = 0; i < bindings.length; i++) {
-            if (this.updatedBindings.has(bindings[i]))
+            if (this.updatedBindings.has(bindings[i])) {
                 continue;
+            }
             bindings[i].applyChange(this);
         }
         // Calculate which list indexes are new (added) since last render
@@ -3923,8 +3979,9 @@ class Updater {
         // Collect all paths that might be affected by this change
         this.collectMaybeUpdates(this._engine, ref.info.pattern, this._engine.versionRevisionByPath, this._revision);
         // Skip scheduling if already rendering (will process queue on next iteration)
-        if (this._rendering)
+        if (this._rendering) {
             return;
+        }
         this._rendering = true;
         queueMicrotask(() => {
             // Execute rendering after async processing interruption or update completion
@@ -3947,9 +4004,8 @@ class Updater {
      * });
      */
     update(loopContext, callback) {
-        let resultPromise;
         // Create writable state proxy and execute update callback
-        resultPromise = useWritableStateProxy(this._engine, this, this._engine.state, loopContext, (state, handler) => {
+        const resultPromise = useWritableStateProxy(this._engine, this, this._engine.state, loopContext, (state, handler) => {
             // Execute user's state modification callback
             return callback(state, handler);
         });
@@ -3961,17 +4017,32 @@ class Updater {
                 this._saveQueue = [];
                 // Schedule updated callbacks in next microtask
                 queueMicrotask(() => {
-                    this.update(null, (state, handler) => {
+                    const updatedPromise = this.update(null, (state) => {
                         // Invoke updated callbacks with the saved refs
-                        state[UpdatedCallbackSymbol](saveQueue);
+                        return state[UpdatedCallbackSymbol](saveQueue);
                     });
+                    if (updatedPromise instanceof Promise) {
+                        updatedPromise.catch(() => {
+                            raiseError({
+                                code: 'UPD-005',
+                                message: 'An error occurred during asynchronous state update.',
+                                docsUrl: "./docs/error-codes.md#upd",
+                            });
+                        });
+                    }
                 });
             }
         };
         // Handle both Promise and non-Promise results
         if (resultPromise instanceof Promise) {
             // For async updates, run handler after promise completes
-            resultPromise.finally(() => {
+            resultPromise.catch(() => {
+                raiseError({
+                    code: 'UPD-005',
+                    message: 'An error occurred during asynchronous state update.',
+                    docsUrl: "./docs/error-codes.md#upd",
+                });
+            }).finally(() => {
                 updatedCallbackHandler();
             });
         }
@@ -4029,8 +4100,9 @@ class Updater {
      */
     recursiveCollectMaybeUpdates(engine, path, node, visitedInfo, isSource) {
         // Skip if already processed this path
-        if (visitedInfo.has(path))
+        if (visitedInfo.has(path)) {
             return;
+        }
         // Skip list elements when processing source to avoid redundant updates
         // (list container updates will handle elements)
         if (isSource && engine.pathManager.elements.has(path)) {
@@ -4039,7 +4111,7 @@ class Updater {
         // Mark as visited
         visitedInfo.add(path);
         // Collect all static child dependencies
-        for (const [name, childNode] of node.childNodeByName.entries()) {
+        for (const [, childNode] of node.childNodeByName.entries()) {
             const childPath = childNode.currentPath;
             this.recursiveCollectMaybeUpdates(engine, childPath, childNode, visitedInfo, false);
         }
@@ -4185,11 +4257,13 @@ class BindingNodeCheckbox extends BindingNode {
     constructor(binding, node, name, subName, filters, decorates) {
         super(binding, node, name, subName, filters, decorates);
         const isInputElement = this.node instanceof HTMLInputElement;
-        if (!isInputElement)
+        if (!isInputElement) {
             return;
+        }
         const inputElement = this.node;
-        if (inputElement.type !== "checkbox")
+        if (inputElement.type !== "checkbox") {
             return;
+        }
         if (decorates.length > 1) {
             raiseError({
                 code: "BIND-201",
@@ -4201,8 +4275,9 @@ class BindingNodeCheckbox extends BindingNode {
         }
         const event = (decorates[0]?.startsWith("on") ? decorates[0]?.slice(2) : decorates[0]) ?? null;
         const eventName = event ?? "input";
-        if (eventName === "readonly" || eventName === "ro")
+        if (eventName === "readonly" || eventName === "ro") {
             return;
+        }
         const engine = this.binding.engine;
         this.node.addEventListener(eventName, async (e) => {
             const loopContext = this.binding.parentBindContent.currentLoopContext;
@@ -4664,7 +4739,7 @@ class BindingNodeFor extends BindingNodeBlock {
      */
     get loopInfo() {
         if (typeof this._loopInfo === "undefined") {
-            const loopPath = this.binding.bindingState.pattern + ".*";
+            const loopPath = `${this.binding.bindingState.pattern}.*`;
             this._loopInfo = getStructuredPathInfo(loopPath);
         }
         return this._loopInfo;
@@ -4735,13 +4810,15 @@ class BindingNodeFor extends BindingNodeBlock {
         const changeIndexesSet = new Set();
         const overwritesSet = new Set();
         // Classify updating refs into changeIndexes or overwrites
-        const elementsPath = this.binding.bindingState.info.pattern + ".*";
+        const elementsPath = `${this.binding.bindingState.info.pattern}.*`;
         for (let i = 0; i < renderer.updatingRefs.length; i++) {
             const updatingRef = renderer.updatingRefs[i];
-            if (updatingRef.info.pattern !== elementsPath)
+            if (updatingRef.info.pattern !== elementsPath) {
                 continue;
-            if (renderer.processedRefs.has(updatingRef))
+            }
+            if (renderer.processedRefs.has(updatingRef)) {
                 continue;
+            }
             const listIndex = updatingRef.listIndex;
             if (listIndex === null) {
                 raiseError({
@@ -4868,8 +4945,9 @@ class BindingNodeFor extends BindingNodeBlock {
             for (const listIndex of changeListIndexes) {
                 const bindings = this.binding.bindingsByListIndex.get(listIndex) ?? [];
                 for (const binding of bindings) {
-                    if (renderer.updatedBindings.has(binding))
+                    if (renderer.updatedBindings.has(binding)) {
                         continue;
+                    }
                     binding.applyChange(renderer);
                 }
             }
@@ -5034,13 +5112,16 @@ class BindingNodeProperty extends BindingNode {
     constructor(binding, node, name, subName, filters, decorates) {
         super(binding, node, name, subName, filters, decorates);
         const isElement = this.node instanceof HTMLElement;
-        if (!isElement)
+        if (!isElement) {
             return;
-        if (!isTwoWayBindable(this.node))
+        }
+        if (!isTwoWayBindable(this.node)) {
             return;
+        }
         const defaultNames = getTwoWayPropertiesHTMLElement(this.node);
-        if (!defaultNames.has(this.name))
+        if (!defaultNames.has(this.name)) {
             return;
+        }
         if (decorates.length > 1) {
             raiseError({
                 code: "BIND-201",
@@ -5052,8 +5133,9 @@ class BindingNodeProperty extends BindingNode {
         }
         const event = (decorates[0]?.startsWith("on") ? decorates[0]?.slice(2) : decorates[0]) ?? null;
         const eventName = event ?? defaultEventByName[this.name] ?? "readonly";
-        if (eventName === "readonly" || eventName === "ro")
+        if (eventName === "readonly" || eventName === "ro") {
             return;
+        }
         const engine = this.binding.engine;
         this.node.addEventListener(eventName, async () => {
             const loopContext = this.binding.parentBindContent.currentLoopContext;
@@ -5135,11 +5217,13 @@ class BindingNodeRadio extends BindingNode {
     constructor(binding, node, name, subName, filters, decorates) {
         super(binding, node, name, subName, filters, decorates);
         const isInputElement = this.node instanceof HTMLInputElement;
-        if (!isInputElement)
+        if (!isInputElement) {
             return;
+        }
         const inputElement = this.node;
-        if (inputElement.type !== "radio")
+        if (inputElement.type !== "radio") {
             return;
+        }
         if (decorates.length > 1) {
             raiseError({
                 code: "BIND-201",
@@ -5151,8 +5235,9 @@ class BindingNodeRadio extends BindingNode {
         }
         const event = (decorates[0]?.startsWith("on") ? decorates[0]?.slice(2) : decorates[0]) ?? null;
         const eventName = event ?? "input";
-        if (eventName === "readonly" || eventName === "ro")
+        if (eventName === "readonly" || eventName === "ro") {
             return;
+        }
         const engine = this.binding.engine;
         this.node.addEventListener(eventName, async (e) => {
             const loopContext = this.binding.parentBindContent.currentLoopContext;
@@ -5436,7 +5521,7 @@ class BindingNodeComponent extends BindingNode {
     inactivate() {
         const engine = this.binding.engine;
         removeStructiveComponent(this.node);
-        let bindings = engine.bindingsByComponent.get(this.node);
+        const bindings = engine.bindingsByComponent.get(this.node);
         if (typeof bindings !== "undefined") {
             bindings.delete(this.binding);
         }
@@ -5611,7 +5696,7 @@ function getBindingNodeCreator(node, propertyName, filterTexts, decorates) {
     const isComment = node instanceof Comment;
     const isElement = node instanceof Element;
     // Generate cache key (concatenate with tab separator)
-    const key = isComment + "\t" + isElement + "\t" + propertyName;
+    const key = `${isComment}\t${isElement}\t${propertyName}`;
     // Get from cache, if not exists, determine and save to cache
     const fn = _cache[key] ?? (_cache[key] = _getBindingNodeCreator(isComment, isElement, propertyName));
     // Execute obtained creator function with property name, filters, and decorates
@@ -6101,7 +6186,7 @@ function getDataBindText(nodeType, node) {
             // Get text after comment mark (e.g., "@@:") and trim
             // Add "textContent:" prefix to create binding expression
             const text = node.textContent?.slice(COMMENT_EMBED_MARK_LEN).trim() ?? "";
-            return "textContent:" + text;
+            return `textContent:${text}`;
         }
         case "HTMLElement": {
             // Case 2: HTMLElement (regular HTML element)
@@ -6154,7 +6239,7 @@ function getDataBindText(nodeType, node) {
  * @param node - Node to generate key from
  * @returns Cache key string
  */
-const createNodeKey = (node) => node.constructor.name + "\t" + ((node instanceof Comment) ? (node.textContent?.[2] ?? "") : "");
+const createNodeKey = (node) => `${node.constructor.name}\t${(node instanceof Comment) ? (node.textContent?.[2] ?? "") : ""}`;
 const nodeTypeByNodeKey = {};
 /**
  * Internal function that actually determines NodeType from node.
@@ -6752,11 +6837,11 @@ class DataBindAttributes {
         // Step 3: Replace comment nodes with Text nodes
         // (Restores Text nodes that were converted to comments during template preprocessing)
         // Note: Directly modifies template.content
-        node = replaceTextNodeFromComment(node, this.nodeType);
+        const textNode = replaceTextNodeFromComment(node, this.nodeType);
         // Step 4: Remove data-bind attribute (no longer needed after parsing, prevents duplicate processing)
-        removeDataBindAttribute(node, this.nodeType);
+        removeDataBindAttribute(textNode, this.nodeType);
         // Step 5: Calculate absolute node path (index array from parent nodes)
-        this.nodePath = getAbsoluteNodePath(node);
+        this.nodePath = getAbsoluteNodePath(textNode);
         // Step 6: Parse binding expression into structured metadata
         // (Array of IBindText containing nodeProperty, stateProperty, filters, decorates)
         this.bindTexts = parseBindText(text);
@@ -6767,7 +6852,7 @@ class DataBindAttributes {
             // - createBindingNode: Factory for BindingNode subclass (Attribute/Event/For/If, etc.)
             // - createBindingState: Factory for BindingState subclass (normal/Index/Component, etc.)
             const creator = {
-                createBindingNode: getBindingNodeCreator(node, bindText.nodeProperty, bindText.inputFilterTexts, bindText.decorates),
+                createBindingNode: getBindingNodeCreator(textNode, bindText.nodeProperty, bindText.inputFilterTexts, bindText.decorates),
                 createBindingState: getBindingStateCreator(bindText.stateProperty, bindText.outputFilterTexts),
             };
             // Associate bind text with factory function pair
@@ -7246,8 +7331,9 @@ class Binding {
      * @param renderer - Renderer instance managing update cycle
      */
     applyChange(renderer) {
-        if (renderer.updatedBindings.has(this))
+        if (renderer.updatedBindings.has(this)) {
             return;
+        }
         renderer.updatedBindings.add(this);
         this.bindingNode.applyChange(renderer);
         const ref = this.bindingState.ref;
@@ -7368,8 +7454,9 @@ class LoopContext {
                 }
                 currentBindContent = currentBindContent.parentBinding?.parentBindContent ?? null;
             }
-            if (typeof this._parentLoopContext === "undefined")
+            if (typeof this._parentLoopContext === "undefined") {
                 this._parentLoopContext = null;
+            }
         }
         return this._parentLoopContext;
     }
@@ -7383,8 +7470,9 @@ class LoopContext {
         if (typeof loopContext === "undefined") {
             let currentLoopContext = this;
             while (currentLoopContext !== null) {
-                if (currentLoopContext.path === name)
+                if (currentLoopContext.path === name) {
                     break;
+                }
                 currentLoopContext = currentLoopContext.parentLoopContext;
             }
             loopContext = this._cache[name] = currentLoopContext;
@@ -7561,8 +7649,9 @@ class BindContent {
         if (typeof this._currentLoopContext === "undefined") {
             let bindContent = this;
             while (bindContent !== null) {
-                if (bindContent.loopContext !== null)
+                if (bindContent.loopContext !== null) {
                     break;
+                }
                 bindContent = bindContent.parentBinding?.parentBindContent ?? null;
             }
             this._currentLoopContext = bindContent?.loopContext ?? null;
@@ -7659,13 +7748,14 @@ class BindContent {
      * @throws BIND-201 LoopContext is null
      */
     assignListIndex(listIndex) {
-        if (this.loopContext == null)
+        if (this.loopContext == null) {
             raiseError({
                 code: "BIND-201",
                 message: "LoopContext is null",
                 context: { where: 'BindContent.assignListIndex', templateId: this.id },
                 docsUrl: "./docs/error-codes.md#bind",
             });
+        }
         this.loopContext.assignListIndex(listIndex);
     }
     /**
@@ -7681,8 +7771,9 @@ class BindContent {
         }
         for (let i = 0; i < this.bindings.length; i++) {
             const binding = this.bindings[i];
-            if (renderer.updatedBindings.has(binding))
+            if (renderer.updatedBindings.has(binding)) {
                 continue;
+            }
             binding.applyChange(renderer);
         }
     }
@@ -7744,7 +7835,7 @@ function canHaveShadowRoot(tagName) {
             return false;
         }
         // Attempt to attach a ShadowRoot temporarily
-        const shadowRoot = element.attachShadow({ mode: 'open' });
+        element.attachShadow({ mode: 'open' });
         return true;
     }
     catch {
@@ -8520,6 +8611,7 @@ class ComponentEngine {
                     message: 'Failed to parse state from dataset',
                     context: { where: 'ComponentEngine.connectedCallback', datasetState: this.owner.dataset.state },
                     docsUrl: './docs/error-codes.md#state',
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     cause: e,
                 });
             }
@@ -8528,16 +8620,16 @@ class ComponentEngine {
         createUpdater(this, (updater) => {
             updater.initialRender((renderer) => {
                 this.bindContent.activate();
-                renderer.createReadonlyState((readonlyState, readonlyHandler) => {
+                renderer.createReadonlyState(() => {
                     this.bindContent.applyChange(renderer);
                 });
             });
         });
         // Call state's connectedCallback if implemented
         if (this.pathManager.hasConnectedCallback) {
-            const resultPromise = createUpdater(this, async (updater) => {
-                return updater.update(null, async (stateProxy, handler) => {
-                    stateProxy[ConnectedCallbackSymbol]();
+            const resultPromise = createUpdater(this, (updater) => {
+                return updater.update(null, (stateProxy) => {
+                    return stateProxy[ConnectedCallbackSymbol]();
                 });
             });
             if (resultPromise instanceof Promise) {
@@ -8553,15 +8645,16 @@ class ComponentEngine {
      * - Removes block placeholder if in block mode
      * - Inactivates and unmounts bindContent
      */
-    async disconnectedCallback() {
+    disconnectedCallback() {
         // Ignore if flag is set (during replaceWith in connectedCallback)
-        if (this._ignoreDissconnectedCallback)
+        if (this._ignoreDissconnectedCallback) {
             return;
+        }
         try {
             // Call state's disconnectedCallback if implemented (synchronous)
             if (this.pathManager.hasDisconnectedCallback) {
                 createUpdater(this, (updater) => {
-                    updater.update(null, (stateProxy, handler) => {
+                    updater.update(null, (stateProxy) => {
                         stateProxy[DisconnectedCallbackSymbol]();
                     });
                 });
@@ -8577,7 +8670,7 @@ class ComponentEngine {
             }
             // Inactivate state and unmount (bindContent.unmount is called within inactivate)
             createUpdater(this, (updater) => {
-                updater.initialRender((renderer) => {
+                updater.initialRender(() => {
                     this.bindContent.inactivate();
                 });
             });
@@ -8597,7 +8690,7 @@ class ComponentEngine {
         let value = null;
         // Synchronous operation
         createUpdater(this, (updater) => {
-            value = updater.createReadonlyState((stateProxy, handler) => {
+            return value = updater.createReadonlyState((stateProxy) => {
                 return stateProxy[GetListIndexesByRefSymbol](ref);
             });
         });
@@ -8610,11 +8703,15 @@ class ComponentEngine {
      * @param ref - State property reference
      * @returns Property value
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getPropertyValue(ref) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let value;
         // Synchronous operation
         createUpdater(this, (updater) => {
-            value = updater.createReadonlyState((stateProxy, handler) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            value = updater.createReadonlyState((stateProxy) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                 return stateProxy[GetByRefSymbol](ref);
             });
         });
@@ -8627,10 +8724,11 @@ class ComponentEngine {
      * @param ref - State property reference
      * @param value - New value to set
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setPropertyValue(ref, value) {
         // Synchronous operation
         createUpdater(this, (updater) => {
-            updater.update(null, (stateProxy, handler) => {
+            updater.update(null, (stateProxy) => {
                 stateProxy[SetByRefSymbol](ref, value);
             });
         });
@@ -8671,7 +8769,7 @@ class ComponentEngine {
      * @param entry - Cache entry to set
      */
     setCacheEntry(ref, entry) {
-        let metadata = this._propertyRefMetadataByRef.get(ref);
+        const metadata = this._propertyRefMetadataByRef.get(ref);
         if (typeof metadata === "undefined") {
             this._propertyRefMetadataByRef.set(ref, { bindings: [], cacheEntry: entry });
         }
@@ -9144,7 +9242,7 @@ function createAccessorFunctions(info, getters) {
             const segment = info.pathSegments[i];
             if (segment === '*') {
                 // Wildcard: map to $1, $2, etc. based on wildcard position
-                segments.push("[this.$" + (count + 1) + "]");
+                segments.push(`[this.$${count + 1}]`);
                 count++;
             }
             else {
@@ -9157,7 +9255,7 @@ function createAccessorFunctions(info, getters) {
                         docsUrl: "./docs/error-codes.md#state",
                     });
                 }
-                segments.push("." + segment);
+                segments.push(`.${segment}`);
             }
         }
         // Build final path string and generate getter/setter functions
@@ -9178,7 +9276,7 @@ function createAccessorFunctions(info, getters) {
             const segment = info.pathSegments[i];
             if (segment === '*') {
                 // Wildcard: map to $1, $2, etc.
-                segments.push("[this.$" + (count + 1) + "]");
+                segments.push(`[this.$${count + 1}]`);
                 count++;
             }
             else {
@@ -9253,7 +9351,7 @@ class PathManager {
         const lists = getListPathsSetById(this._id);
         this.lists = this.lists.union(lists).union(listsFromAlls);
         for (const listPath of this.lists) {
-            const elementPath = listPath + ".*";
+            const elementPath = `${listPath}.*`;
             this.elements.add(elementPath);
         }
         let currentProto = this._stateClass.prototype;
@@ -9338,7 +9436,7 @@ class PathManager {
         const info = getStructuredPathInfo(addPath);
         if (isList && !this.lists.has(addPath)) {
             this.lists.add(addPath);
-            const elementPath = addPath + ".*";
+            const elementPath = `${addPath}.*`;
             this.elements.add(elementPath);
         }
         else if (info.lastSegment === "*") {
@@ -9346,8 +9444,9 @@ class PathManager {
             this.lists.add(info.parentPath);
         }
         for (const path of info.cumulativePathSet) {
-            if (this.alls.has(path))
+            if (this.alls.has(path)) {
                 continue;
+            }
             this.alls.add(path);
             addPathNode(this.rootNode, path);
             const pathInfo = getStructuredPathInfo(path);
@@ -9378,7 +9477,7 @@ class PathManager {
      * @param source - Source path that target depends on
      */
     addDynamicDependency(target, source) {
-        const key = source + "=>" + target;
+        const key = `${source}=>${target}`;
         if (this._dynamicDependencyKeys.has(key)) {
             return;
         }
@@ -9735,7 +9834,7 @@ function escapeEmbed(html) {
  * unescapeEmbed('<!--{{name}}-->') // Returns '{{name}}'
  */
 function unescapeEmbed(html) {
-    return html.replaceAll(/<!--\{\{([^\}]+)\}\}-->/g, (match, expr) => {
+    return html.replaceAll(/<!--\{\{([^\}]+)}}-->/g, (match, expr) => {
         return `{{${expr}}}`;
     });
 }
@@ -9794,7 +9893,7 @@ async function createSingleFileComponent(path, text) {
             // Fallback: Base64 encoding method (for test environment)
             // Convert script to Base64 and import via data: URL
             const b64 = btoa(String.fromCodePoint(...new TextEncoder().encode(script.text + uniq_comment)));
-            scriptModule = await import("data:application/javascript;base64," + b64);
+            scriptModule = await import(`data:application/javascript;base64,${b64}`);
         }
     }
     script?.remove();
@@ -9946,7 +10045,7 @@ async function loadFromImportMap() {
                 // Remove route parameters to create tag name: '/users/:id' -> '/users/'
                 const pathWithoutParams = path.replace(/:[^\s/]+/g, "");
                 // Convert path to tag name: '/users/' -> 'routes-users-'
-                tagName = "routes" + pathWithoutParams.replace(/\//g, "-");
+                tagName = `routes${pathWithoutParams.replace(/\//g, "-")}`;
                 // Register route (normalize '/root' to '/')
                 entryRoute(tagName, path === "/root" ? "/" : path);
             }
@@ -10140,12 +10239,12 @@ class Router extends HTMLElement {
         }
         const pathName = paths.join('/');
         const replacedPath = pathName.replace(this._basePath, ''); // Remove base path and ensure default route
-        const currentPath = replacedPath[0] !== '/' ? '/' + replacedPath : replacedPath; // Ensure the path starts with '/'
+        const currentPath = replacedPath[0] !== '/' ? `/${replacedPath}` : replacedPath; // Ensure the path starts with '/'
         let tagName = undefined;
-        let params = {};
+        const params = {};
         // Check if the routePath matches any of the defined routes
         for (const [path, tag] of routeEntries) {
-            const regex = new RegExp("^" + path.replace(/:[^\s/]+/g, '([^/]+)') + "$");
+            const regex = new RegExp(`^${path.replace(/:[^\s/]+/g, '([^/]+)')}$`);
             if (regex.test(currentPath)) {
                 tagName = tag;
                 // Extract the parameters from the routePath

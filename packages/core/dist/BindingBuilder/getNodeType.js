@@ -17,7 +17,7 @@ import { raiseError } from "../utils.js";
  * @param node - Node to generate key from
  * @returns Cache key string
  */
-const createNodeKey = (node) => node.constructor.name + "\t" + ((node instanceof Comment) ? (node.textContent?.[2] ?? "") : "");
+const createNodeKey = (node) => `${node.constructor.name}\t${(node instanceof Comment) ? (node.textContent?.[2] ?? "") : ""}`;
 const nodeTypeByNodeKey = {};
 /**
  * Internal function that actually determines NodeType from node.

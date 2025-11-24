@@ -87,13 +87,16 @@ class BindingNodeProperty extends BindingNode {
     constructor(binding, node, name, subName, filters, decorates) {
         super(binding, node, name, subName, filters, decorates);
         const isElement = this.node instanceof HTMLElement;
-        if (!isElement)
+        if (!isElement) {
             return;
-        if (!isTwoWayBindable(this.node))
+        }
+        if (!isTwoWayBindable(this.node)) {
             return;
+        }
         const defaultNames = getTwoWayPropertiesHTMLElement(this.node);
-        if (!defaultNames.has(this.name))
+        if (!defaultNames.has(this.name)) {
             return;
+        }
         if (decorates.length > 1) {
             raiseError({
                 code: "BIND-201",
@@ -105,8 +108,9 @@ class BindingNodeProperty extends BindingNode {
         }
         const event = (decorates[0]?.startsWith("on") ? decorates[0]?.slice(2) : decorates[0]) ?? null;
         const eventName = event ?? defaultEventByName[this.name] ?? "readonly";
-        if (eventName === "readonly" || eventName === "ro")
+        if (eventName === "readonly" || eventName === "ro") {
             return;
+        }
         const engine = this.binding.engine;
         this.node.addEventListener(eventName, async () => {
             const loopContext = this.binding.parentBindContent.currentLoopContext;

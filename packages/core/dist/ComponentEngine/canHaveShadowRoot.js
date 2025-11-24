@@ -16,7 +16,7 @@ export function canHaveShadowRoot(tagName) {
             return false;
         }
         // Attempt to attach a ShadowRoot temporarily
-        const shadowRoot = element.attachShadow({ mode: 'open' });
+        element.attachShadow({ mode: 'open' });
         return true;
     }
     catch {

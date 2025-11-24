@@ -65,7 +65,7 @@ export async function loadFromImportMap() {
                 // Remove route parameters to create tag name: '/users/:id' -> '/users/'
                 const pathWithoutParams = path.replace(/:[^\s/]+/g, "");
                 // Convert path to tag name: '/users/' -> 'routes-users-'
-                tagName = "routes" + pathWithoutParams.replace(/\//g, "-");
+                tagName = `routes${pathWithoutParams.replace(/\//g, "-")}`;
                 // Register route (normalize '/root' to '/')
                 entryRoute(tagName, path === "/root" ? "/" : path);
             }

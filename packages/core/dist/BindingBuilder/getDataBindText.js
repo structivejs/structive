@@ -55,7 +55,7 @@ export function getDataBindText(nodeType, node) {
             // Get text after comment mark (e.g., "@@:") and trim
             // Add "textContent:" prefix to create binding expression
             const text = node.textContent?.slice(COMMENT_EMBED_MARK_LEN).trim() ?? "";
-            return "textContent:" + text;
+            return `textContent:${text}`;
         }
         case "HTMLElement": {
             // Case 2: HTMLElement (regular HTML element)

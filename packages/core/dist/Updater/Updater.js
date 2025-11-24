@@ -83,8 +83,9 @@ class Updater {
         // Collect all paths that might be affected by this change
         this.collectMaybeUpdates(this._engine, ref.info.pattern, this._engine.versionRevisionByPath, this._revision);
         // Skip scheduling if already rendering (will process queue on next iteration)
-        if (this._rendering)
+        if (this._rendering) {
             return;
+        }
         this._rendering = true;
         queueMicrotask(() => {
             // Execute rendering after async processing interruption or update completion
@@ -107,9 +108,8 @@ class Updater {
      * });
      */
     update(loopContext, callback) {
-        let resultPromise;
         // Create writable state proxy and execute update callback
-        resultPromise = useWritableStateProxy(this._engine, this, this._engine.state, loopContext, (state, handler) => {
+        const resultPromise = useWritableStateProxy(this._engine, this, this._engine.state, loopContext, (state, handler) => {
             // Execute user's state modification callback
             return callback(state, handler);
         });
@@ -121,17 +121,32 @@ class Updater {
                 this._saveQueue = [];
                 // Schedule updated callbacks in next microtask
                 queueMicrotask(() => {
-                    this.update(null, (state, handler) => {
+                    const updatedPromise = this.update(null, (state) => {
                         // Invoke updated callbacks with the saved refs
-                        state[UpdatedCallbackSymbol](saveQueue);
+                        return state[UpdatedCallbackSymbol](saveQueue);
                     });
+                    if (updatedPromise instanceof Promise) {
+                        updatedPromise.catch(() => {
+                            raiseError({
+                                code: 'UPD-005',
+                                message: 'An error occurred during asynchronous state update.',
+                                docsUrl: "./docs/error-codes.md#upd",
+                            });
+                        });
+                    }
                 });
             }
         };
         // Handle both Promise and non-Promise results
         if (resultPromise instanceof Promise) {
             // For async updates, run handler after promise completes
-            resultPromise.finally(() => {
+            resultPromise.catch(() => {
+                raiseError({
+                    code: 'UPD-005',
+                    message: 'An error occurred during asynchronous state update.',
+                    docsUrl: "./docs/error-codes.md#upd",
+                });
+            }).finally(() => {
                 updatedCallbackHandler();
             });
         }
@@ -189,8 +204,9 @@ class Updater {
      */
     recursiveCollectMaybeUpdates(engine, path, node, visitedInfo, isSource) {
         // Skip if already processed this path
-        if (visitedInfo.has(path))
+        if (visitedInfo.has(path)) {
             return;
+        }
         // Skip list elements when processing source to avoid redundant updates
         // (list container updates will handle elements)
         if (isSource && engine.pathManager.elements.has(path)) {
@@ -199,7 +215,7 @@ class Updater {
         // Mark as visited
         visitedInfo.add(path);
         // Collect all static child dependencies
-        for (const [name, childNode] of node.childNodeByName.entries()) {
+        for (const [, childNode] of node.childNodeByName.entries()) {
             const childPath = childNode.currentPath;
             this.recursiveCollectMaybeUpdates(engine, childPath, childNode, visitedInfo, false);
         }

@@ -47,11 +47,11 @@ class DataBindAttributes {
         // Step 3: Replace comment nodes with Text nodes
         // (Restores Text nodes that were converted to comments during template preprocessing)
         // Note: Directly modifies template.content
-        node = replaceTextNodeFromComment(node, this.nodeType);
+        const textNode = replaceTextNodeFromComment(node, this.nodeType);
         // Step 4: Remove data-bind attribute (no longer needed after parsing, prevents duplicate processing)
-        removeDataBindAttribute(node, this.nodeType);
+        removeDataBindAttribute(textNode, this.nodeType);
         // Step 5: Calculate absolute node path (index array from parent nodes)
-        this.nodePath = getAbsoluteNodePath(node);
+        this.nodePath = getAbsoluteNodePath(textNode);
         // Step 6: Parse binding expression into structured metadata
         // (Array of IBindText containing nodeProperty, stateProperty, filters, decorates)
         this.bindTexts = parseBindText(text);
@@ -62,7 +62,7 @@ class DataBindAttributes {
             // - createBindingNode: Factory for BindingNode subclass (Attribute/Event/For/If, etc.)
             // - createBindingState: Factory for BindingState subclass (normal/Index/Component, etc.)
             const creator = {
-                createBindingNode: getBindingNodeCreator(node, bindText.nodeProperty, bindText.inputFilterTexts, bindText.decorates),
+                createBindingNode: getBindingNodeCreator(textNode, bindText.nodeProperty, bindText.inputFilterTexts, bindText.decorates),
                 createBindingState: getBindingStateCreator(bindText.stateProperty, bindText.outputFilterTexts),
             };
             // Associate bind text with factory function pair

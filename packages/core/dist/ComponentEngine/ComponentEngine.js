@@ -226,6 +226,7 @@ class ComponentEngine {
                     message: 'Failed to parse state from dataset',
                     context: { where: 'ComponentEngine.connectedCallback', datasetState: this.owner.dataset.state },
                     docsUrl: './docs/error-codes.md#state',
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     cause: e,
                 });
             }
@@ -234,16 +235,16 @@ class ComponentEngine {
         createUpdater(this, (updater) => {
             updater.initialRender((renderer) => {
                 this.bindContent.activate();
-                renderer.createReadonlyState((readonlyState, readonlyHandler) => {
+                renderer.createReadonlyState(() => {
                     this.bindContent.applyChange(renderer);
                 });
             });
         });
         // Call state's connectedCallback if implemented
         if (this.pathManager.hasConnectedCallback) {
-            const resultPromise = createUpdater(this, async (updater) => {
-                return updater.update(null, async (stateProxy, handler) => {
-                    stateProxy[ConnectedCallbackSymbol]();
+            const resultPromise = createUpdater(this, (updater) => {
+                return updater.update(null, (stateProxy) => {
+                    return stateProxy[ConnectedCallbackSymbol]();
                 });
             });
             if (resultPromise instanceof Promise) {
@@ -259,15 +260,16 @@ class ComponentEngine {
      * - Removes block placeholder if in block mode
      * - Inactivates and unmounts bindContent
      */
-    async disconnectedCallback() {
+    disconnectedCallback() {
         // Ignore if flag is set (during replaceWith in connectedCallback)
-        if (this._ignoreDissconnectedCallback)
+        if (this._ignoreDissconnectedCallback) {
             return;
+        }
         try {
             // Call state's disconnectedCallback if implemented (synchronous)
             if (this.pathManager.hasDisconnectedCallback) {
                 createUpdater(this, (updater) => {
-                    updater.update(null, (stateProxy, handler) => {
+                    updater.update(null, (stateProxy) => {
                         stateProxy[DisconnectedCallbackSymbol]();
                     });
                 });
@@ -283,7 +285,7 @@ class ComponentEngine {
             }
             // Inactivate state and unmount (bindContent.unmount is called within inactivate)
             createUpdater(this, (updater) => {
-                updater.initialRender((renderer) => {
+                updater.initialRender(() => {
                     this.bindContent.inactivate();
                 });
             });
@@ -303,7 +305,7 @@ class ComponentEngine {
         let value = null;
         // Synchronous operation
         createUpdater(this, (updater) => {
-            value = updater.createReadonlyState((stateProxy, handler) => {
+            return value = updater.createReadonlyState((stateProxy) => {
                 return stateProxy[GetListIndexesByRefSymbol](ref);
             });
         });
@@ -316,11 +318,15 @@ class ComponentEngine {
      * @param ref - State property reference
      * @returns Property value
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getPropertyValue(ref) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let value;
         // Synchronous operation
         createUpdater(this, (updater) => {
-            value = updater.createReadonlyState((stateProxy, handler) => {
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            value = updater.createReadonlyState((stateProxy) => {
+                // eslint-disable-next-line @typescript-eslint/no-unsafe-return
                 return stateProxy[GetByRefSymbol](ref);
             });
         });
@@ -333,10 +339,11 @@ class ComponentEngine {
      * @param ref - State property reference
      * @param value - New value to set
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setPropertyValue(ref, value) {
         // Synchronous operation
         createUpdater(this, (updater) => {
-            updater.update(null, (stateProxy, handler) => {
+            updater.update(null, (stateProxy) => {
                 stateProxy[SetByRefSymbol](ref, value);
             });
         });
@@ -377,7 +384,7 @@ class ComponentEngine {
      * @param entry - Cache entry to set
      */
     setCacheEntry(ref, entry) {
-        let metadata = this._propertyRefMetadataByRef.get(ref);
+        const metadata = this._propertyRefMetadataByRef.get(ref);
         if (typeof metadata === "undefined") {
             this._propertyRefMetadataByRef.set(ref, { bindings: [], cacheEntry: entry });
         }

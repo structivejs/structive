@@ -97,7 +97,7 @@ export function getByRef(target, ref, receiver, handler) {
                     newListIndexes = createListIndexes(ref.listIndex, lastCacheEntry?.value, value, lastCacheEntry?.listIndexes ?? []);
                 }
                 // Create or update cache entry with new value and metadata
-                let cacheEntry = lastCacheEntry ?? {
+                const cacheEntry = lastCacheEntry ?? {
                     value: null,
                     listIndexes: null,
                     version: 0,

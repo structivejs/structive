@@ -108,7 +108,7 @@ class Renderer {
         this._updatingRefs = [...items];
         this._updatingRefSet = new Set(items);
         // Implement actual rendering logic
-        this.createReadonlyState((readonlyState, readonlyHandler) => {
+        this.createReadonlyState(() => {
             // First, process list reordering
             const remainItems = [];
             const itemsByListRef = new Map();
@@ -149,8 +149,9 @@ class Renderer {
                 // Apply list bindings (e.g., for reordering)
                 const bindings = this._engine.getBindings(listRef);
                 for (let i = 0; i < bindings.length; i++) {
-                    if (this.updatedBindings.has(bindings[i]))
+                    if (this.updatedBindings.has(bindings[i])) {
                         continue;
+                    }
                     bindings[i].applyChange(this);
                 }
                 this.processedRefs.add(listRef);
@@ -208,8 +209,9 @@ class Renderer {
         // Bindings with changes must add themselves to updatedBindings (responsibility of applyChange implementation)
         const bindings = this._engine.getBindings(ref);
         for (let i = 0; i < bindings.length; i++) {
-            if (this.updatedBindings.has(bindings[i]))
+            if (this.updatedBindings.has(bindings[i])) {
                 continue;
+            }
             bindings[i].applyChange(this);
         }
         // Calculate which list indexes are new (added) since last render

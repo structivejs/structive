@@ -70,7 +70,7 @@ export interface IComponentEngine {
   removeBinding(ref: IStatePropertyRef, binding: IBinding): void;
   setup(): void;
   connectedCallback(): Promise<void>;
-  disconnectedCallback(): Promise<void>;
+  disconnectedCallback(): void;
   getListIndexes(ref: IStatePropertyRef): IListIndex[] | null;
   /** Gets the property value by reference */
   getPropertyValue(ref: IStatePropertyRef): any;

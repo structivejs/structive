@@ -72,8 +72,9 @@ class Binding {
      * @param renderer - Renderer instance managing update cycle
      */
     applyChange(renderer) {
-        if (renderer.updatedBindings.has(this))
+        if (renderer.updatedBindings.has(this)) {
             return;
+        }
         renderer.updatedBindings.add(this);
         this.bindingNode.applyChange(renderer);
         const ref = this.bindingState.ref;
