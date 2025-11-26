@@ -10,6 +10,7 @@ export interface IComponentStateInputHandler {
    * Assigns state properties to the component.
    * @param object - The state object to assign
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   assignState(object: any): void;
   
   /**
@@ -25,10 +26,12 @@ export interface IComponentStateInputHandler {
  */
 export interface IComponentStateInput {
   /** Dynamic state properties accessible by string keys */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key:string]: any;
   
   /** Symbol-based method to assign state from JSON data */
-  [AssignStateSymbol]: (json: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [AssignStateSymbol]: (json: Record<string, any>) => void;
   
   /** Symbol-based method to notify component of state changes requiring redraw */
   [NotifyRedrawSymbol]: (refs: IStatePropertyRef[]) => void;

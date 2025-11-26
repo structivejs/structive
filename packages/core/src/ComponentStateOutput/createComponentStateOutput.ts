@@ -37,12 +37,13 @@ class ComponentStateOutput implements IComponentStateOutput {
    * @throws CSO-101 No child path found for path
    * @throws CSO-102 No binding found for child path
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get(ref: IStatePropertyRef): any {
     const childPath = this._binding.startsWithByChildPath(ref.info);
     if (childPath === null) {
       raiseError({
         code: 'CSO-101',
-        message: `No child path found for path "${ref.info.toString()}".`,
+        message: `No child path found for path "${ref.info.pattern}".`,
         context: { where: 'ComponentStateOutput.get', path: ref.info.pattern },
         docsUrl: './docs/error-codes.md#cso',
       });
@@ -77,12 +78,13 @@ class ComponentStateOutput implements IComponentStateOutput {
    * @throws CSO-101 No child path found for path
    * @throws CSO-102 No binding found for child path
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   set(ref: IStatePropertyRef, value: any): boolean {
     const childPath = this._binding.startsWithByChildPath(ref.info);
     if (childPath === null) {
       raiseError({
         code: 'CSO-101',
-        message: `No child path found for path "${ref.info.toString()}".`,
+        message: `No child path found for path "${ref.info.pattern}".`,
         context: { where: 'ComponentStateOutput.set', path: ref.info.pattern },
         docsUrl: './docs/error-codes.md#cso',
       });
@@ -132,7 +134,7 @@ class ComponentStateOutput implements IComponentStateOutput {
     if (childPath === null) {
       raiseError({
         code: 'CSO-101',
-        message: `No child path found for path "${ref.info.toString()}".`,
+        message: `No child path found for path "${ref.info.pattern}".`,
         context: { where: 'ComponentStateOutput.getListIndexes', path: ref.info.pattern },
         docsUrl: './docs/error-codes.md#cso',
       });
@@ -164,6 +166,9 @@ class ComponentStateOutput implements IComponentStateOutput {
  * @param childEngine - Child component engine for accessing child state metadata
  * @returns Component state output interface
  */
-export function createComponentStateOutput(binding: IComponentStateBinding, childEngine: IComponentEngine): IComponentStateOutput {
+export function createComponentStateOutput(
+  binding: IComponentStateBinding, 
+  childEngine: IComponentEngine
+): IComponentStateOutput {
   return new ComponentStateOutput(binding, childEngine);
 }

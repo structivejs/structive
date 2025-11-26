@@ -12,6 +12,7 @@ export interface IComponentStateOutput {
    * @param ref - Child state property reference
    * @returns The value from the parent component state
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get(ref: IStatePropertyRef): any;
   
   /**
@@ -20,6 +21,7 @@ export interface IComponentStateOutput {
    * @param value - New value to set
    * @returns true if the operation succeeded
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   set(ref: IStatePropertyRef, value: any): boolean;
   
   /**

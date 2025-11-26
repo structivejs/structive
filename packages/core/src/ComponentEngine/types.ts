@@ -73,8 +73,10 @@ export interface IComponentEngine {
   disconnectedCallback(): void;
   getListIndexes(ref: IStatePropertyRef): IListIndex[] | null;
   /** Gets the property value by reference */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getPropertyValue(ref: IStatePropertyRef): any;
   /** Sets the property value by reference */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setPropertyValue(ref: IStatePropertyRef, value: any): void;
   /** Registers a Structive component as a child */
   registerChildComponent(component: StructiveComponent): void;
@@ -150,6 +152,7 @@ export interface IPropertyRefMetadata {
  * - Fields CANNOT be readonly due to mutation requirements
  */
 export interface ICacheEntry {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   value: any;
   listIndexes: IListIndex[] | null;
   version: number;

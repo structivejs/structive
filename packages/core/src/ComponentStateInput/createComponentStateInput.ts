@@ -33,10 +33,11 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
    * 
    * @param object - Key-value pairs of state properties to assign
    */
-  assignState(object: any): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  assignState(object: Record<string, any>): void {
     // Synchronous processing
     createUpdater<void>(this._engine, (updater) => {
-      updater.update(null, (stateProxy, handler) => {
+      updater.update(null, (stateProxy, ) => {
         for(const [key, value] of Object.entries(object)) {
           const childPathInfo = getStructuredPathInfo(key);
           const childRef = getStatePropertyRef(childPathInfo, null);
@@ -59,7 +60,7 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
         let childPath;
         try {
           childPath = this._componentStateBinding.toChildPathFromParentPath(parentPathRef.info.pattern);
-        } catch(e) {
+        } catch(_e) {
           // Ignore non-target paths
           continue;
         }
@@ -79,7 +80,6 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
           });
         }
         const childRef = getStatePropertyRef(childPathInfo, childListIndex);
-        const value = this._engine.getPropertyValue(childRef);
         // Add to state update queue based on ref information
         updater.enqueueRef(childRef);
       }
@@ -95,7 +95,8 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
    * @returns Property value or bound method
    * @throws Error if property is not supported
    */
-  get(target:any, prop:PropertyKey, receiver:IComponentStateInput) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get(_target: any, prop: PropertyKey, _receiver: IComponentStateInput): any {
     if (prop === AssignStateSymbol) {
       return this.assignState.bind(this);
     } else if (prop === NotifyRedrawSymbol) {
@@ -117,7 +118,8 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
    * @returns true if set operation succeeded
    * @throws Error if property is not supported
    */
-  set(target:any, prop:PropertyKey, value:any, receiver:IComponentStateInput): boolean {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  set(_target: any, prop: PropertyKey, value: any, _receiver: IComponentStateInput): boolean {
     if (typeof prop === "string") {
       const ref = getStatePropertyRef(getStructuredPathInfo(prop), null);
       this._engine.setPropertyValue(ref, value);
