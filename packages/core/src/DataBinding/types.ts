@@ -3,7 +3,7 @@ import { ILoopContext } from "../LoopContext/types";
 import { IComponentEngine } from "../ComponentEngine/types";     
 import { IBindingNode } from "./BindingNode/types";             
 import { IBindingState } from "./BindingState/types";           
-import { IReadonlyStateProxy, IWritableStateHandler, IWritableStateProxy } from "../StateClass/types"; 
+import { IWritableStateHandler, IWritableStateProxy } from "../StateClass/types"; 
 import { IStatePropertyRef } from "../StatePropertyRef/types";   
 import { IListIndex } from "../ListIndex/types";                 
 import { IRenderer } from "../Updater/types";
@@ -62,6 +62,7 @@ export interface IBindingBase {
   readonly bindingState: IBindingState;
   readonly bindContents: IBindContent[];
   readonly bindingsByListIndex: WeakMap<IListIndex, Set<IBinding>>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateStateValue(writeState: IWritableStateProxy, handler: IWritableStateHandler, value: any): void;
   notifyRedraw(refs: IStatePropertyRef[]): void;
 }

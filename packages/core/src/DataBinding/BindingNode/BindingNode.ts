@@ -1,6 +1,5 @@
 import { Filters } from "../../Filter/types";
 import { IListIndex } from "../../ListIndex/types";
-import { IReadonlyStateProxy } from "../../StateClass/types";
 import { IStatePropertyRef } from "../../StatePropertyRef/types";
 import { IRenderer } from "../../Updater/types";
 import { raiseError } from "../../utils.js";
@@ -156,7 +155,8 @@ export class BindingNode implements IBindingNode {
    * @param value - Value to assign to DOM
    * @throws BIND-301 Not implemented
    */
-  assignValue(value: any): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  assignValue(_value: any): void {
     raiseError({
       code: 'BIND-301',
       message: 'Not implemented',
@@ -174,7 +174,8 @@ export class BindingNode implements IBindingNode {
    * @param values - Array of values
    * @throws BIND-301 Not implemented
    */
-  updateElements(listIndexes: IListIndex[], values: any[]) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  updateElements(_listIndexes: IListIndex[], _values: any[]) {
     raiseError({
       code: 'BIND-301',
       message: 'Not implemented',
@@ -190,7 +191,7 @@ export class BindingNode implements IBindingNode {
    *
    * @param refs - Array of state references for redraw
    */
-  notifyRedraw(refs: IStatePropertyRef[]): void {
+  notifyRedraw(_refs: IStatePropertyRef[]): void {
     // Subclasses can implement notification considering parent-child relationships
   }
   
@@ -203,6 +204,7 @@ export class BindingNode implements IBindingNode {
    * @param renderer - Renderer instance for state access
    */
   applyChange(renderer: IRenderer): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
     this.assignValue(filteredValue);
   }
@@ -242,6 +244,7 @@ export class BindingNode implements IBindingNode {
    * 
    * @returns Current value or null
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get value():any {
     return null;
   }
@@ -252,6 +255,7 @@ export class BindingNode implements IBindingNode {
    * 
    * @returns Filtered value or null
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get filteredValue():any {
     return null;
   }

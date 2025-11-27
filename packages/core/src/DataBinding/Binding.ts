@@ -74,6 +74,7 @@ class Binding implements IBinding {
    * @param handler - State update handler
    * @param value - Value to assign to state
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateStateValue(writeState:IWritableStateProxy, handler: IWritableStateHandler, value: any) {
     return this.bindingState.assignValue(writeState, handler, value);
   }

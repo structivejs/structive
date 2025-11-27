@@ -11,7 +11,6 @@ import { hasLazyLoadComponents, loadLazyLoadComponent } from "../WebComponents/l
 import { IListIndex } from "../ListIndex/types.js";
 import { IRenderer } from "../Updater/types.js";
 import { IStatePropertyRef } from "../StatePropertyRef/types.js";
-import { BindingNode } from "./BindingNode/BindingNode.js";
 
 /**
  * Internal helper function to generate DocumentFragment from template ID.
@@ -78,7 +77,7 @@ function createBindings(
     const node = resolveNodeFromPath(content, attribute.nodePath) ?? 
       raiseError({
         code: "BIND-102",
-        message: `Node not found: ${attribute.nodePath}`,
+        message: `Node not found: attribute.nodePath`,
         context: { where: 'BindContent.createBindings', templateId: id, nodePath: attribute.nodePath },
       docsUrl: "./docs/error-codes.md#bind",
     });
@@ -89,7 +88,7 @@ function createBindings(
       const creator = attribute.creatorByText.get(bindText) ??
         raiseError({
           code: "BIND-103",
-          message: `Creator not found: ${bindText}`,
+          message: `Creator not found: bindText`,
           context: { where: 'BindContent.createBindings', templateId: id, bindText },
           docsUrl: "./docs/error-codes.md#bind",
         });
@@ -177,7 +176,11 @@ class BindContent implements IBindContent {
    */
   get currentLoopContext(): ILoopContext | null {
     if (typeof this._currentLoopContext === "undefined") {
-      let bindContent: IBindContent | null = this;
+      if (this.loopContext !== null) {
+        this._currentLoopContext = this.loopContext;
+        return this._currentLoopContext;
+      }
+      let bindContent: IBindContent | null = this.parentBinding?.parentBindContent ?? null;
       while(bindContent !== null) {
         if (bindContent.loopContext !== null) {break;} ;
         bindContent = bindContent.parentBinding?.parentBindContent ?? null;
@@ -293,12 +296,14 @@ class BindContent implements IBindContent {
    * @throws BIND-201 LoopContext is null
    */
   assignListIndex(listIndex: IListIndex): void {
-    if (this.loopContext == null) {raiseError({
-      code: "BIND-201",
-      message: "LoopContext is null",
-      context: { where: 'BindContent.assignListIndex', templateId: this.id },
-      docsUrl: "./docs/error-codes.md#bind",
-    });}
+    if (this.loopContext === null) {
+      raiseError({
+        code: "BIND-201",
+        message: "LoopContext is null",
+        context: { where: 'BindContent.assignListIndex', templateId: this.id },
+        docsUrl: "./docs/error-codes.md#bind",
+      });
+    }
     this.loopContext.assignListIndex(listIndex);
   }
 

@@ -1,6 +1,6 @@
 import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { IFilterText } from "../../BindingBuilder/types";
-import { Filters, FilterWithOptions } from "../../Filter/types";
+import { FilterWithOptions } from "../../Filter/types";
 import { IBinding } from "../types";
 import { BindingNode } from "./BindingNode.js";
 import { CreateBindingNodeFn } from "./types";
@@ -16,15 +16,20 @@ class BindingNodeAttribute extends BindingNode {
    * 
    * @param value - Value to assign to attribute
    */
-  assignValue(value:any) {
-    if (value === null || value === undefined || Number.isNaN(value)) {
-      value = "";
-    }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  assignValue(value: any): void {
     const element = this.node as Element;
-    element.setAttribute(this.subName, value.toString());
+    
+    const stringValue = 
+      value === null || 
+      value === undefined || 
+      (typeof value === "number" && Number.isNaN(value))
+        ? ""
+        : String(value);
+    
+    element.setAttribute(this.subName, stringValue);
   }
 }
-
 /**
  * Factory function to generate attribute binding node.
  * 

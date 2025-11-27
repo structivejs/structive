@@ -54,7 +54,7 @@ class BindingNodeEvent extends BindingNode {
    * @returns Promise if handler returns Promise, void otherwise
    * @throws BIND-201 Binding value is not a function
    */
-  async handler(e: Event) {
+  handler(e: Event): void {
     const engine = this.binding.engine;
     const loopContext = this.binding.parentBindContent.currentLoopContext;
     const indexes = loopContext?.serialize().map((context) => context.listIndex.index) ?? [];
@@ -69,8 +69,12 @@ class BindingNodeEvent extends BindingNode {
     
     const resultPromise = createUpdater<Promise<void> | void>(engine, (updater) => {
       return updater.update<Promise<void> | void>(loopContext, (state, handler) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const func = this.binding.bindingState.getValue(state, handler);
-        if (typeof func !== "function") {
+        if (typeof func === "function") {
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+          return Reflect.apply(func, state, [e, ...indexes]);
+        } else {
           raiseError({
             code: 'BIND-201',
             message: `${this.name} is not a function`,
@@ -79,12 +83,20 @@ class BindingNodeEvent extends BindingNode {
             severity: 'error',
           });
         }
-        return Reflect.apply(func, state, [e, ...indexes]);
       });
     });
     
     if (resultPromise instanceof Promise) {
-      await resultPromise;
+      resultPromise.catch((error: unknown) => {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        raiseError({
+          code: 'BIND-202',
+          message: `Error in event handler for ${this.name}: ${errorMessage}`,
+          context: { where: 'BindingNodeEvent.handler', name: this.name },
+          docsUrl: '/docs/error-codes.md#bind',
+          severity: 'error',
+        });
+      });
     }
   }
   
@@ -93,7 +105,7 @@ class BindingNodeEvent extends BindingNode {
    * 
    * @param renderer - Renderer instance (unused)
    */
-  applyChange(renderer: IRenderer): void {
+  applyChange(_renderer: IRenderer): void {
   }
 }
 

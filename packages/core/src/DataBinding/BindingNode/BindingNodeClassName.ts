@@ -1,6 +1,6 @@
 import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { IFilterText } from "../../BindingBuilder/types";
-import { Filters, FilterWithOptions } from "../../Filter/types";
+import { FilterWithOptions } from "../../Filter/types";
 import { raiseError } from "../../utils.js";
 import { IBinding } from "../types";
 import { BindingNode } from "./BindingNode.js";
@@ -19,6 +19,7 @@ class BindingNodeClassName extends BindingNode {
    * @param value - Boolean value (true: add class, false: remove class)
    * @throws BIND-201 Value is not boolean
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   assignValue(value:any) {
     if (typeof value !== "boolean") {
       raiseError({

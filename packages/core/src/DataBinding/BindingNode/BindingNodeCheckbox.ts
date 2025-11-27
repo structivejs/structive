@@ -21,6 +21,7 @@ class BindingNodeCheckbox extends BindingNode {
    * 
    * @returns Value attribute string
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get value(): any {
     const element = this.node as HTMLInputElement;
     return element.value;
@@ -31,11 +32,15 @@ class BindingNodeCheckbox extends BindingNode {
    * 
    * @returns Filtered value
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   get filteredValue(): any {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     let value = this.value;
     for (let i = 0; i < this.filters.length; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       value = this.filters[i](value);
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return value;
   }
   
@@ -82,12 +87,11 @@ class BindingNodeCheckbox extends BindingNode {
     if (eventName === "readonly" || eventName === "ro") {return;}
     
     const engine = this.binding.engine;
-    this.node.addEventListener(eventName, async (e) => {
+    this.node.addEventListener(eventName, (_e) => {
       const loopContext = this.binding.parentBindContent.currentLoopContext;
-      const value = this.filteredValue;
       createUpdater<void>(engine, (updater) => {
         updater.update(loopContext, (state, handler) => {
-          binding.updateStateValue(state, handler, value);
+          binding.updateStateValue(state, handler, this.filteredValue);
         });
       });
     });
@@ -99,7 +103,8 @@ class BindingNodeCheckbox extends BindingNode {
    * @param value - Array of checked values
    * @throws BIND-201 Value is not array
    */
-  assignValue(value:any) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  assignValue(value: any) {
     if (!Array.isArray(value)) {
       raiseError({
         code: 'BIND-201',
@@ -110,9 +115,8 @@ class BindingNodeCheckbox extends BindingNode {
       });
     }
     
-    const filteredValue = this.filteredValue;
     const element = this.node as HTMLInputElement;
-    element.checked = value.includes(filteredValue);
+    element.checked = value.includes(this.filteredValue);
   }
 }
 
