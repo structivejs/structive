@@ -77,7 +77,7 @@ function createBindings(
     const node = resolveNodeFromPath(content, attribute.nodePath) ?? 
       raiseError({
         code: "BIND-102",
-        message: `Node not found: attribute.nodePath`,
+        message: `Node not found: ${String(attribute.nodePath)}`,
         context: { where: 'BindContent.createBindings', templateId: id, nodePath: attribute.nodePath },
       docsUrl: "./docs/error-codes.md#bind",
     });
@@ -88,7 +88,7 @@ function createBindings(
       const creator = attribute.creatorByText.get(bindText) ??
         raiseError({
           code: "BIND-103",
-          message: `Creator not found: bindText`,
+          message: `Creator not found: ${String(bindText)}`,
           context: { where: 'BindContent.createBindings', templateId: id, bindText },
           docsUrl: "./docs/error-codes.md#bind",
         });

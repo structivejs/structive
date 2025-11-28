@@ -192,21 +192,6 @@ function valueMustBeNumber(fnName) {
     });
 }
 /**
- * Throws error when filter requires numeric value but non-number provided.
- *
- * @param fnName - Name of the filter function
- * @returns Never returns (always throws)
- * @throws FLT-202 Filter requires a number value
- */
-function valueMustBeString(fnName) {
-    raiseError({
-        code: "FLT-202",
-        message: `${fnName} requires a string value`,
-        context: { fnName },
-        docsUrl: "./docs/error-codes.md#flt",
-    });
-}
-/**
  * Throws error when filter requires boolean value but non-boolean provided.
  *
  * @param fnName - Name of the filter function
@@ -273,7 +258,7 @@ const eq = (options) => {
     return (value) => {
         // Align types for comparison
         if (typeof value === 'number') {
-            if (validateNumberString(opt)) {
+            if (!validateNumberString(opt)) {
                 optionMustBeNumber('eq');
             }
             return value === Number(opt);
@@ -298,7 +283,7 @@ const ne = (options) => {
     return (value) => {
         // Align types for comparison
         if (typeof value === 'number') {
-            if (validateNumberString(opt)) {
+            if (!validateNumberString(opt)) {
                 optionMustBeNumber('ne');
             }
             return value !== Number(opt);
@@ -336,7 +321,7 @@ const not = (_options) => {
  */
 const lt = (options) => {
     const opt = options?.[0] ?? optionsRequired('lt');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('lt');
     }
     return (value) => {
@@ -357,7 +342,7 @@ const lt = (options) => {
  */
 const le = (options) => {
     const opt = options?.[0] ?? optionsRequired('le');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('le');
     }
     return (value) => {
@@ -378,7 +363,7 @@ const le = (options) => {
  */
 const gt = (options) => {
     const opt = options?.[0] ?? optionsRequired('gt');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('gt');
     }
     return (value) => {
@@ -399,7 +384,7 @@ const gt = (options) => {
  */
 const ge = (options) => {
     const opt = options?.[0] ?? optionsRequired('ge');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('ge');
     }
     return (value) => {
@@ -420,7 +405,7 @@ const ge = (options) => {
  */
 const inc = (options) => {
     const opt = options?.[0] ?? optionsRequired('inc');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('inc');
     }
     return (value) => {
@@ -441,7 +426,7 @@ const inc = (options) => {
  */
 const dec = (options) => {
     const opt = options?.[0] ?? optionsRequired('dec');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('dec');
     }
     return (value) => {
@@ -462,7 +447,7 @@ const dec = (options) => {
  */
 const mul = (options) => {
     const opt = options?.[0] ?? optionsRequired('mul');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('mul');
     }
     return (value) => {
@@ -483,7 +468,7 @@ const mul = (options) => {
  */
 const div = (options) => {
     const opt = options?.[0] ?? optionsRequired('div');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('div');
     }
     return (value) => {
@@ -504,7 +489,7 @@ const div = (options) => {
  */
 const mod = (options) => {
     const opt = options?.[0] ?? optionsRequired('mod');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('mod');
     }
     return (value) => {
@@ -524,7 +509,7 @@ const mod = (options) => {
  */
 const fix = (options) => {
     const opt = options?.[0] ?? "0";
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('fix');
     }
     return (value) => {
@@ -558,10 +543,7 @@ const locale = (options) => {
  */
 const uc = (_options) => {
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('uc');
-        }
-        return value.toUpperCase();
+        return String(value).toUpperCase();
     };
 };
 /**
@@ -572,10 +554,7 @@ const uc = (_options) => {
  */
 const lc = (_options) => {
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('lc');
-        }
-        return value.toLowerCase();
+        return String(value).toLowerCase();
     };
 };
 /**
@@ -586,10 +565,7 @@ const lc = (_options) => {
  */
 const cap = (_options) => {
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('cap');
-        }
-        const v = (value ?? "").toString();
+        const v = String(value);
         if (v.length === 0) {
             return v;
         }
@@ -607,10 +583,7 @@ const cap = (_options) => {
  */
 const trim$1 = (_options) => {
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('trim');
-        }
-        return value.trim();
+        return String(value).trim();
     };
 };
 /**
@@ -623,14 +596,11 @@ const trim$1 = (_options) => {
  */
 const slice = (options) => {
     const opt = options?.[0] ?? optionsRequired('slice');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('slice');
     }
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('slice');
-        }
-        return value.slice(Number(opt));
+        return String(value).slice(Number(opt));
     };
 };
 /**
@@ -643,18 +613,15 @@ const slice = (options) => {
  */
 const substr = (options) => {
     const opt1 = options?.[0] ?? optionsRequired('substr');
-    if (validateNumberString(opt1)) {
+    if (!validateNumberString(opt1)) {
         optionMustBeNumber('substr');
     }
     const opt2 = options?.[1] ?? optionsRequired('substr');
-    if (validateNumberString(opt2)) {
+    if (!validateNumberString(opt2)) {
         optionMustBeNumber('substr');
     }
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('substr');
-        }
-        return value.substr(Number(opt1), Number(opt2));
+        return String(value).substr(Number(opt1), Number(opt2));
     };
 };
 /**
@@ -667,15 +634,12 @@ const substr = (options) => {
  */
 const pad = (options) => {
     const opt1 = options?.[0] ?? optionsRequired('pad');
-    if (validateNumberString(opt1)) {
+    if (!validateNumberString(opt1)) {
         optionMustBeNumber('pad');
     }
     const opt2 = options?.[1] ?? '0';
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('pad');
-        }
-        return value.padStart(Number(opt1), opt2);
+        return String(value).padStart(Number(opt1), opt2);
     };
 };
 /**
@@ -688,14 +652,11 @@ const pad = (options) => {
  */
 const rep = (options) => {
     const opt = options?.[0] ?? optionsRequired('rep');
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('rep');
     }
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('rep');
-        }
-        return value.repeat(Number(opt));
+        return String(value).repeat(Number(opt));
     };
 };
 /**
@@ -706,10 +667,7 @@ const rep = (options) => {
  */
 const rev = (_options) => {
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('rev');
-        }
-        return value.split('').reverse().join('');
+        return String(value).split('').reverse().join('');
     };
 };
 /**
@@ -720,10 +678,7 @@ const rev = (_options) => {
  */
 const int = (_options) => {
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('int');
-        }
-        return parseInt(value, 10);
+        return parseInt(String(value), 10);
     };
 };
 /**
@@ -734,10 +689,7 @@ const int = (_options) => {
  */
 const float = (_options) => {
     return (value) => {
-        if (typeof value !== 'string') {
-            valueMustBeString('float');
-        }
-        return parseFloat(value);
+        return parseFloat(String(value));
     };
 };
 /**
@@ -750,7 +702,7 @@ const float = (_options) => {
  */
 const round = (options) => {
     const opt = options?.[0] ?? '0';
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('round');
     }
     return (value) => {
@@ -771,7 +723,7 @@ const round = (options) => {
  */
 const floor = (options) => {
     const opt = options?.[0] ?? '0';
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('floor');
     }
     return (value) => {
@@ -792,7 +744,7 @@ const floor = (options) => {
  */
 const ceil = (options) => {
     const opt = options?.[0] ?? '0';
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('ceil');
     }
     return (value) => {
@@ -813,7 +765,7 @@ const ceil = (options) => {
  */
 const percent = (options) => {
     const opt = options?.[0] ?? '0';
-    if (validateNumberString(opt)) {
+    if (!validateNumberString(opt)) {
         optionMustBeNumber('percent');
     }
     return (value) => {

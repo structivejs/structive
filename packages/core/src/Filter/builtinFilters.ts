@@ -41,7 +41,7 @@ const eq = (options?:string[]): FilterFn<boolean> => {
   return (value: unknown): boolean => {
     // Align types for comparison
     if (typeof value === 'number') {
-      if (validateNumberString(opt)) {optionMustBeNumber('eq');}
+      if (!validateNumberString(opt)) {optionMustBeNumber('eq');}
       return value === Number(opt);
     }
     if (typeof value === 'string') {
@@ -65,7 +65,7 @@ const ne = (options?:string[]): FilterFn<boolean> => {
   return (value: unknown): boolean => {
     // Align types for comparison
     if (typeof value === 'number') {
-      if (validateNumberString(opt)) {optionMustBeNumber('ne');}
+      if (!validateNumberString(opt)) {optionMustBeNumber('ne');}
       return value !== Number(opt);
     }
     if (typeof value === 'string') {
@@ -101,7 +101,7 @@ const not = (_options?:string[]): FilterFn<boolean> => {
  */
 const lt = (options?:string[]): FilterFn<boolean> => {
   const opt = options?.[0] ?? optionsRequired('lt');
-  if (validateNumberString(opt)) {optionMustBeNumber('lt');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('lt');}
   return (value: unknown): boolean => {
     if (typeof value !== 'number') {valueMustBeNumber('lt');}
     return value < Number(opt);
@@ -119,7 +119,7 @@ const lt = (options?:string[]): FilterFn<boolean> => {
  */
 const le = (options?:string[]): FilterFn<boolean> => {
   const opt = options?.[0] ?? optionsRequired('le');
-  if (validateNumberString(opt)) {optionMustBeNumber('le');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('le');}
   return (value: unknown): boolean => {
     if (typeof value !== 'number') {valueMustBeNumber('le');}
     return value <= Number(opt);
@@ -137,7 +137,7 @@ const le = (options?:string[]): FilterFn<boolean> => {
  */
 const gt = (options?:string[]): FilterFn<boolean> => {
   const opt = options?.[0] ?? optionsRequired('gt');
-  if (validateNumberString(opt)) {optionMustBeNumber('gt');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('gt');}
   return (value: unknown): boolean => {
     if (typeof value !== 'number') {valueMustBeNumber('gt');}
     return value > Number(opt);
@@ -155,7 +155,7 @@ const gt = (options?:string[]): FilterFn<boolean> => {
  */
 const ge = (options?:string[]): FilterFn<boolean> => {
   const opt = options?.[0] ?? optionsRequired('ge');
-  if (validateNumberString(opt)) {optionMustBeNumber('ge');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('ge');}
   return (value: unknown): boolean => {
     if (typeof value !== 'number') {valueMustBeNumber('ge');}
     return value >= Number(opt);
@@ -173,7 +173,7 @@ const ge = (options?:string[]): FilterFn<boolean> => {
  */
 const inc = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? optionsRequired('inc');
-  if (validateNumberString(opt)) {optionMustBeNumber('inc');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('inc');}
   return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('inc');}
     return value + Number(opt);
@@ -191,7 +191,7 @@ const inc = (options?:string[]): FilterFn<number> => {
  */
 const dec = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? optionsRequired('dec');
-  if (validateNumberString(opt)) {optionMustBeNumber('dec');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('dec');}
   return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('dec');}
     return value - Number(opt);
@@ -209,7 +209,7 @@ const dec = (options?:string[]): FilterFn<number> => {
  */
 const mul = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? optionsRequired('mul');
-  if (validateNumberString(opt)) {optionMustBeNumber('mul');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('mul');}
   return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('mul');}
     return value * Number(opt);
@@ -227,7 +227,7 @@ const mul = (options?:string[]): FilterFn<number> => {
  */
 const div = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? optionsRequired('div');
-  if (validateNumberString(opt)) {optionMustBeNumber('div');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('div');}
   return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('div');}
     return value / Number(opt);
@@ -245,7 +245,7 @@ const div = (options?:string[]): FilterFn<number> => {
  */
 const mod = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? optionsRequired('mod');
-  if (validateNumberString(opt)) {optionMustBeNumber('mod');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('mod');}
   return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('mod');}
     return value % Number(opt);
@@ -262,7 +262,7 @@ const mod = (options?:string[]): FilterFn<number> => {
  */
 const fix = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? "0";
-  if (validateNumberString(opt)) {optionMustBeNumber('fix');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('fix');}
   return (value: unknown): string => {
     if (typeof value !== 'number') {valueMustBeNumber('fix');}
     return value.toFixed(Number(opt));
@@ -292,8 +292,7 @@ const locale = (options?:string[]): FilterFn<string> => {
  */
 const uc = (_options?:string[]): FilterFn<string> => {
   return (value: unknown): string => {
-    if (typeof value !== 'string') {valueMustBeString('uc');}
-    return value.toUpperCase();
+    return String(value).toUpperCase();
   }
 }
 
@@ -305,8 +304,7 @@ const uc = (_options?:string[]): FilterFn<string> => {
  */
 const lc = (_options?:string[]): FilterFn<string> => {
   return (value: unknown): string => {
-    if (typeof value !== 'string') {valueMustBeString('lc');}
-    return value.toLowerCase();
+    return String(value).toLowerCase();
   }
 }
 
@@ -318,8 +316,7 @@ const lc = (_options?:string[]): FilterFn<string> => {
  */
 const cap = (_options?:string[]): FilterFn<string> => {
   return (value: unknown): string => {
-    if (typeof value !== 'string') {valueMustBeString('cap');}
-    const v = (value ?? "").toString();
+    const v = String(value);
     if (v.length === 0) {return v;}
     if (v.length === 1) {return v.toUpperCase();}
     return v.charAt(0).toUpperCase() + v.slice(1);
@@ -334,8 +331,7 @@ const cap = (_options?:string[]): FilterFn<string> => {
  */
 const trim = (_options?:string[]): FilterFn<string> => {
   return (value: unknown): string => {
-    if (typeof value !== 'string') {valueMustBeString('trim');}
-    return value.trim();
+    return String(value).trim();
   }
 }
 
@@ -349,10 +345,9 @@ const trim = (_options?:string[]): FilterFn<string> => {
  */
 const slice = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? optionsRequired('slice');
-  if (validateNumberString(opt)) {optionMustBeNumber('slice');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('slice');}
   return (value: unknown): string => {
-    if (typeof value !== 'string') {valueMustBeString('slice');}
-    return value.slice(Number(opt));
+    return String(value).slice(Number(opt));
   }
 }
 
@@ -366,12 +361,11 @@ const slice = (options?:string[]): FilterFn<string> => {
  */
 const substr = (options?:string[]): FilterFn<string> => {
   const opt1 = options?.[0] ?? optionsRequired('substr');
-  if (validateNumberString(opt1)) {optionMustBeNumber('substr');}
+  if (!validateNumberString(opt1)) {optionMustBeNumber('substr');}
   const opt2 = options?.[1] ?? optionsRequired('substr');
-  if (validateNumberString(opt2)) {optionMustBeNumber('substr');}
+  if (!validateNumberString(opt2)) {optionMustBeNumber('substr');}
   return (value: unknown): string => {
-    if (typeof value !== 'string') {valueMustBeString('substr');}
-    return value.substr(Number(opt1), Number(opt2));
+    return String(value).substr(Number(opt1), Number(opt2));
   }
 }
 
@@ -385,11 +379,10 @@ const substr = (options?:string[]): FilterFn<string> => {
  */
 const pad = (options?:string[]): FilterFn<string> => {
   const opt1 = options?.[0] ?? optionsRequired('pad');
-  if (validateNumberString(opt1)) {optionMustBeNumber('pad');}
+  if (!validateNumberString(opt1)) {optionMustBeNumber('pad');}
   const opt2 = options?.[1] ?? '0';
   return (value: unknown): string => {
-    if (typeof value !== 'string') {valueMustBeString('pad');}
-    return value.padStart(Number(opt1), opt2);
+    return String(value).padStart(Number(opt1), opt2);
   }
 }
 
@@ -403,10 +396,9 @@ const pad = (options?:string[]): FilterFn<string> => {
  */
 const rep = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? optionsRequired('rep');
-  if (validateNumberString(opt)) {optionMustBeNumber('rep');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('rep');}
   return (value: unknown): string => {
-    if (typeof value !== 'string') {valueMustBeString('rep');}
-    return value.repeat(Number(opt));
+    return String(value).repeat(Number(opt));
   }
 }
 
@@ -418,8 +410,7 @@ const rep = (options?:string[]): FilterFn<string> => {
  */
 const rev = (_options?:string[]): FilterFn<string> => {
   return (value: unknown): string => {
-    if (typeof value !== 'string') {valueMustBeString('rev');}
-    return value.split('').reverse().join('');
+    return String(value).split('').reverse().join('');
   }
 }
 
@@ -431,8 +422,7 @@ const rev = (_options?:string[]): FilterFn<string> => {
  */
 const int = (_options?:string[]): FilterFn<number> => {
   return (value: unknown): number => {
-    if (typeof value !== 'string') {valueMustBeString('int');}
-    return parseInt(value, 10);
+    return parseInt(String(value), 10);
   }
 }
 
@@ -444,8 +434,7 @@ const int = (_options?:string[]): FilterFn<number> => {
  */
 const float = (_options?:string[]): FilterFn<number> => {
   return (value: unknown): number => {
-    if (typeof value !== 'string') {valueMustBeString('float');}
-    return parseFloat(value);
+    return parseFloat(String(value));
   }
 }
 
@@ -459,7 +448,7 @@ const float = (_options?:string[]): FilterFn<number> => {
  */
 const round = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? '0';
-  if (validateNumberString(opt)) {optionMustBeNumber('round');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('round');}
   return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('round');}
     const optValue = Math.pow(10, Number(opt));
@@ -477,7 +466,7 @@ const round = (options?:string[]): FilterFn<number> => {
  */
 const floor = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? '0';
-  if (validateNumberString(opt)) {optionMustBeNumber('floor');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('floor');}
   return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('floor');}
     const optValue = Math.pow(10, Number(opt));
@@ -495,7 +484,7 @@ const floor = (options?:string[]): FilterFn<number> => {
  */
 const ceil = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? '0';
-  if (validateNumberString(opt)) {optionMustBeNumber('ceil');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('ceil');}
   return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('ceil');}
     const optValue = Math.pow(10, Number(opt));
@@ -513,7 +502,7 @@ const ceil = (options?:string[]): FilterFn<number> => {
  */
 const percent = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? '0';
-  if (validateNumberString(opt)) {optionMustBeNumber('percent');}
+  if (!validateNumberString(opt)) {optionMustBeNumber('percent');}
   return (value: unknown): string => {
     if (typeof value !== 'number') {valueMustBeNumber('percent');}
     return `${(value * 100).toFixed(Number(opt))}%`;

@@ -270,6 +270,14 @@ raiseError({
 - `CE-*`: ComponentEngine
 - `IMP-*`: Importmap/WebComponents
 
+### Built-in Filters
+
+When adding or updating functions in `src/Filter/builtinFilters.ts`, follow these typing rules:
+
+- **Comparison / arithmetic / formatting filters** (`eq`, `ne`, `lt`, `le`, `gt`, `ge`, `inc`, `dec`, `mul`, `div`, `mod`, `fix`, `round`, `floor`, `ceil`, `percent`, etc.) **must** validate both options and incoming values as numbers. Use the existing `optionMustBeNumber` / `valueMustBeNumber` helpers and fail fast when coercion would silently produce `NaN`.
+- **String / type-conversion filters** (`uc`, `lc`, `trim`, `pad`, `rep`, `rev`, `int`, `float`, `string`, `number`, etc.) should be permissive: convert the input with `String(value)` (or the corresponding JavaScript primitive conversion) and then apply the transformation. These filters should only throw when their semantics fundamentally require a specific type (e.g., `cap` depends on string indexing).
+- Always document the accepted value types in JSDoc and keep the behavior consistent with the tests under `__tests__/Filter/builtinFilters.test.ts`.
+
 ### Test Files
 
 **Rule**: Test files use the `*.test.ts` suffix and follow the same structure as their corresponding source files.
