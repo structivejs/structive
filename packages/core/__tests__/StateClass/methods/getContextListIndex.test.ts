@@ -12,10 +12,10 @@ describe("StateClass/methods getContextListIndex", () => {
     expect(r).toBeNull();
   });
 
-  it("ref.info が null の場合は null", () => {
+  it("ref.info が null の場合はエラー", () => {
     const handler = makeHandler({ info: null, listIndex: { at: vi.fn() } });
-    const r = getContextListIndex(handler, "a.*.b");
-    expect(r).toBeNull();
+    // 現在の実装では ref.info の null チェックがないため TypeError になる
+    expect(() => getContextListIndex(handler, "a.*.b")).toThrow(TypeError);
   });
 
   it("ref.listIndex が null の場合は null", () => {

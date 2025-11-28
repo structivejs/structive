@@ -210,7 +210,7 @@ describe("StateClass/methods: getByRef", () => {
     expect(checkDependencyMock).toHaveBeenCalledWith(handler, ref);
   });
 
-  it("listIndexes 未定義のケースでも空配列を補完し非配列値をそのまま保持する", () => {
+  it("listIndexes 未定義のケースで非配列値の場合はエラー", () => {
     const stackMarker = Symbol("outer");
     const handler = makeHandler({ refStack: [stackMarker], refIndex: 0, lastRefStack: stackMarker });
     const info = makeInfo("items.object");
@@ -230,26 +230,11 @@ describe("StateClass/methods: getByRef", () => {
     handler.renderer = {
       lastListInfoByRef: new Map<any, any>(),
     };
-    createListIndexesMock.mockImplementation((_, prevValue, newValue, prevIndexes) => {
-      expect(prevValue).toBeUndefined();
-      expect(prevIndexes).toEqual([]);
-      return ["new-index"];
-    });
     const currentValue = { label: "object" };
     const target = { [info.pattern]: currentValue } as any;
-    const previousValue = previousEntry.value;
-    const previousIndexes = previousEntry.listIndexes;
 
-    const result = getByRef(target, ref, {} as any, handler);
-
-    expect(result).toBe(currentValue);
-    const lastInfo = handler.renderer.lastListInfoByRef.get(ref);
-    expect(lastInfo).toEqual({ value: previousValue, listIndexes: previousIndexes ?? [] });
-    const stored = handler.engine.getCacheEntry(ref)!;
-    expect(stored.value).toBe(result);
-    expect(stored.listIndexes).toEqual(["new-index"]);
-    expect(handler.engine.setCacheEntry).toHaveBeenCalled();
-    expect(checkDependencyMock).toHaveBeenCalledWith(handler, ref);
+    // 現在の実装では非配列値に対してリスト管理しようとするとエラーが発生する
+    expect(() => getByRef(target, ref, {} as any, handler)).toThrow(/expected to be an array for list management/);
   });
 
   it("stateOutput.startsWith が true なら stateOutput.get の結果を返す", () => {

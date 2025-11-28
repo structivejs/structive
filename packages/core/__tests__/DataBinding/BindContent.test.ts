@@ -216,13 +216,34 @@ describe("BindContent", () => {
   vi.spyOn(bindingMod, "createBinding").mockReturnValue({ activate: vi.fn(), node: template.content.firstElementChild!, bindContents: [], bindingNode: { isBlock: false } } as any);
 
     const parentLoopCtx = { any: 1 } as any;
-    const parentBinding = { parentBindContent: { loopContext: parentLoopCtx } } as any;
+    const grandParentBindContent = { loopContext: parentLoopCtx, parentBinding: null } as any;
+    const intermediateBinding = { parentBindContent: grandParentBindContent } as any;
+    const parentBindContent = { loopContext: null, parentBinding: intermediateBinding } as any;
+    const parentBinding = { parentBindContent } as any;
     const bc = createBindContent(parentBinding, templateId, engine, { listIndex: null } as any);
 
     const c1 = (bc as any).currentLoopContext;
     const c2 = (bc as any).currentLoopContext;
     expect(c1).toBe(parentLoopCtx);
     expect(c2).toBe(parentLoopCtx);
+  });
+
+  it("currentLoopContext: 自身の loopContext が存在する場合はそのまま返す", () => {
+    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t"], creatorByText: new Map([["t", {}]]) }];
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValue(attrs as any);
+    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValue(template.content.firstElementChild!);
+    vi.spyOn(bindingMod, "createBinding").mockReturnValue({ activate: vi.fn(), node: template.content.firstElementChild!, bindContents: [], bindingNode: { isBlock: false } } as any);
+
+    const mockListIndex = { sid: "self", at: vi.fn() } as any;
+    const bc = createBindContent(null, templateId, engine, { listIndex: mockListIndex } as any);
+
+    const loopContext = (bc as any).loopContext;
+    expect(loopContext).not.toBeNull();
+
+    const ctx1 = (bc as any).currentLoopContext;
+    const ctx2 = (bc as any).currentLoopContext;
+    expect(ctx1).toBe(loopContext);
+    expect(ctx2).toBe(loopContext);
   });
 
   it("currentLoopContext: どこにも LoopContext が無ければ null", () => {
@@ -243,6 +264,22 @@ describe("BindContent", () => {
     (bc as any).loopContext = null;
     expect((bc as any).currentLoopContext).toBeNull();
     expect((bc as any).currentLoopContext).toBeNull();
+  });
+
+  it("currentLoopContext: 親 binding が無いルートでも null を返す", () => {
+    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t"], creatorByText: new Map([["t", {}]]) }];
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(attrs as any);
+    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValueOnce(template.content.firstElementChild!);
+    vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce({
+      activate: vi.fn(),
+      node: template.content.firstElementChild!,
+      bindContents: [],
+      bindingNode: { isBlock: false },
+    } as any);
+
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    expect((bc as any).currentLoopContext).toBeNull();
+    expect((bc as any)._currentLoopContext).toBeNull();
   });
 
   it("assignListIndex: loopContext が null の場合はエラー", () => {

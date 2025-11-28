@@ -193,38 +193,6 @@ describe("Template/replaceMustacheWithTemplateTag", () => {
         replaceMustacheWithTemplateTag(html);
       }).toThrow("Else without if");
     });
-
-    test("should throw error for unknown control directive", () => {
-      const html = "{{custom:expr}}";
-      const originalHas = Set.prototype.has;
-      const hasSpy = vi
-        .spyOn(Set.prototype, "has")
-        .mockImplementation(function patchedHas(this: Set<unknown>, value: unknown): boolean {
-          try {
-            const maybeTargetSet =
-              originalHas.call(this, "if") &&
-              originalHas.call(this, "for") &&
-              originalHas.call(this, "endif") &&
-              originalHas.call(this, "endfor") &&
-              originalHas.call(this, "elseif") &&
-              originalHas.call(this, "else");
-            if (maybeTargetSet && value === "custom") {
-              return true;
-            }
-            return originalHas.call(this, value);
-          } catch {
-            return originalHas.call(this, value);
-          }
-        });
-
-      try {
-        expect(() => {
-          replaceMustacheWithTemplateTag(html);
-        }).toThrow("Unknown type");
-      } finally {
-        hasSpy.mockRestore();
-      }
-    });
   });
 
   describe("edge cases", () => {

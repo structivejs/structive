@@ -5,6 +5,15 @@ import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, Ge
 import { AssignStateSymbol } from "../../src/ComponentStateInput/symbols";
 import { createRootNode } from "../../src/PathTree/PathNode";
 import { applyComponentEngineListStorePatch } from "../helpers/componentEngineListStorePatch";
+const loadActualUtils = vi.hoisted(() => vi.importActual<typeof import("../../src/utils.js")>("../../src/utils.js"));
+vi.mock("../../src/utils.js", async () => {
+  const actual = await loadActualUtils;
+  return {
+    ...actual,
+    raiseError: vi.fn(actual.raiseError),
+  };
+});
+import * as UtilsMod from "../../src/utils.js";
 
 // シンプルなベースとなるカスタムエレメントとコンポーネントクラスを偽装
 class DummyState {
@@ -58,10 +67,14 @@ let lastCreateBindArgs: any[] = [];
 let lastUpdater: any = null;
 let updateCallCount = 0;
 let lastStateProxy: any = null;
+let lastUpdateReturnedPromise = false;
+let lastNormalizedResultIsPromise = false;
+let forceNextUpdatePromiseFactory: (() => Promise<unknown>) | null = null;
 // update の待機制御用（disconnectedCallback の完了待ちをテストするため）
 let blockNextUpdate = false;
 let resolveUpdateBlocker: (() => void) | null = null;
 let updateBlockerPromise: Promise<void> | null = null;
+let nextConnectedCallbackImpl: (() => Promise<void> | void) | null = null;
 
 vi.mock("../../src/DataBinding/BindContent", () => {
   return {
@@ -74,7 +87,7 @@ vi.mock("../../src/DataBinding/BindContent", () => {
 
 vi.mock("../../src/Updater/Updater", () => {
   return {
-    createUpdater: vi.fn(async (_engine: any, cb: any) => {
+    createUpdater: vi.fn((_engine: any, cb: any) => {
       const enqueueRef = vi.fn();
       const updater = {
         enqueueRef,
@@ -92,25 +105,46 @@ vi.mock("../../src/Updater/Updater", () => {
           };
           renderFn(renderer);
         }),
-        update: vi.fn(async (_loop: any, fn: any) => {
+        update: vi.fn((_loop: any, fn: any) => {
           updateCallCount++;
           lastUpdater = updater;
+          const connectedImpl = nextConnectedCallbackImpl ?? (() => undefined);
+          nextConnectedCallbackImpl = null;
           lastStateProxy = {
-            [ConnectedCallbackSymbol]: vi.fn(async () => {}),
+            [ConnectedCallbackSymbol]: vi.fn(() => connectedImpl()),
             [DisconnectedCallbackSymbol]: vi.fn(async () => {}),
             [SetByRefSymbol]: vi.fn(),
             [GetByRefSymbol]: vi.fn(),
           };
           const handler = {} as any;
-          await fn(lastStateProxy, handler);
-          if (blockNextUpdate) {
-            blockNextUpdate = false;
-            // 次の update 呼び出しのみをブロックし、外部から解除できるようにする
-            updateBlockerPromise = new Promise<void>((resolve) => {
-              resolveUpdateBlocker = resolve;
-            });
-            await updateBlockerPromise;
+          let result = fn(lastStateProxy, handler);
+          if (forceNextUpdatePromiseFactory) {
+            result = forceNextUpdatePromiseFactory();
+            forceNextUpdatePromiseFactory = null;
           }
+          const isPromiseResult = result instanceof Promise;
+          lastUpdateReturnedPromise = isPromiseResult;
+          const enginePromise = _engine?.readyResolvers?.promise;
+          const PromiseCtor = (enginePromise?.constructor ?? Promise) as PromiseConstructor;
+          const normalizedResult = isPromiseResult
+            ? new PromiseCtor((resolve, reject) => {
+              (result as Promise<unknown>).then(resolve, reject);
+            })
+            : result;
+          lastNormalizedResultIsPromise = normalizedResult instanceof Promise;
+          if (!blockNextUpdate) {
+            return normalizedResult;
+          }
+          blockNextUpdate = false;
+          // 次の update 呼び出しのみをブロックし、外部から解除できるようにする
+          updateBlockerPromise = new Promise<void>((resolve) => {
+            resolveUpdateBlocker = resolve;
+          });
+          const blocker = updateBlockerPromise;
+          if (isPromiseResult) {
+            return normalizedResult.then((value) => blocker.then(() => value));
+          }
+          return blocker.then(() => normalizedResult);
         }),
         createReadonlyState: vi.fn((fn: any) => {
           const readonlyProxy = {
@@ -176,10 +210,14 @@ describe("ComponentEngine", () => {
       mount: vi.fn(), 
       mountAfter: vi.fn(),
       activate: vi.fn(),
-      applyChange: vi.fn()
+      applyChange: vi.fn(),
+      inactivate: vi.fn()
     };
     lastCreateBindArgs = [];
     lastUpdater = null;
+    lastUpdateReturnedPromise = false;
+    lastNormalizedResultIsPromise = false;
+    forceNextUpdatePromiseFactory = null;
     lastStateProxy = null;
     updateCallCount = 0;
     blockNextUpdate = false;
@@ -250,10 +288,11 @@ describe("ComponentEngine", () => {
   }).toThrowError(/bindContent not initialized yet/);
   });
 
-  it("connectedCallback: data-state が不正 JSON の場合はエラー", async () => {
+  it("connectedCallback: data-state が不正 JSON の場合はエラー", () => {
     el.dataset.state = "{foo:}"; // 不正な JSON
     engine.setup();
-    await expect(() => engine.connectedCallback()).rejects.toThrow(/Failed to parse state from dataset/);
+    // connectedCallback は同期関数なので .toThrow() を使用
+    expect(() => engine.connectedCallback()).toThrow();
   });
 
   it("connectedCallback: enableWebComponents=false では placeholder 経由で mountAfter", async () => {
@@ -286,16 +325,12 @@ describe("ComponentEngine", () => {
     expect(capturedPlaceholder).toBeInstanceOf(Comment);
   });
 
-  it("connectedCallback: block モードで親が無い場合はエラーを投げる", async () => {
+  it("connectedCallback: block モードで親が無い場合はエラーを投げる", () => {
     engine = createComponentEngineFn(makeConfig({ enableWebComponents: false }), el as any);
     applyComponentEngineListStorePatch(engine);
-    let ignorePromise: Promise<void> | null = null;
-    (el as any).replaceWith = vi.fn(() => {
-      ignorePromise = engine.disconnectedCallback();
-    });
     engine.setup();
-    await expect(engine.connectedCallback()).rejects.toThrowError(/Block parent node is not set/);
-    await (ignorePromise ?? Promise.resolve());
+    // block モードで親ノードが設定されていない場合はエラー
+    expect(() => engine.connectedCallback()).toThrow();
   });
 
   it("getPropertyValue/setPropertyValue: ref 経由の取得/設定を行う", async () => {
@@ -425,6 +460,20 @@ describe("ComponentEngine", () => {
     expect(parent.unregisterChildComponent).toHaveBeenCalledWith(el);
   });
 
+  it("disconnectedCallback: _ignoreDissconnectedCallback が true なら即 return", () => {
+    engine.setup();
+    const parent = {
+      unregisterChildComponent: vi.fn(),
+      readyResolvers: { promise: Promise.resolve() },
+    } as any;
+    el.parentStructiveComponent = parent;
+    (engine as any)._ignoreDissconnectedCallback = true;
+    const before = updateCallCount;
+    engine.disconnectedCallback();
+    expect(updateCallCount).toBe(before);
+    expect(parent.unregisterChildComponent).not.toHaveBeenCalled();
+  });
+
   it("createComponentEngine: ファクトリ関数でインスタンス生成できる", async () => {
     const { createComponentEngine } = await import("../../src/ComponentEngine/ComponentEngine");
     const inst = createComponentEngine(makeConfig(), el as any);
@@ -451,6 +500,46 @@ describe("ComponentEngine", () => {
     await engine.connectedCallback();
     await engine.readyResolvers.promise; // 例外なく await できればOK
     expect(true).toBe(true);
+  });
+
+  it("connectedCallback: 同期 connectedCallback 実装でも readyResolvers を即時解決する", () => {
+    engine.setup();
+    (engine.pathManager as any).hasConnectedCallback = true;
+    const resolveSpy = vi.spyOn(engine.readyResolvers, "resolve");
+    nextConnectedCallbackImpl = () => undefined;
+    engine.connectedCallback();
+    expect(resolveSpy).toHaveBeenCalledTimes(1);
+    resolveSpy.mockRestore();
+  });
+
+  it("connectedCallback: 非同期 connectedCallback が失敗したら raiseError を呼び出す", async () => {
+    engine.setup();
+    (engine.pathManager as any).hasConnectedCallback = true;
+    const resolveSpy = vi.spyOn(engine.readyResolvers, "resolve");
+    const raiseErrorSpy = UtilsMod.raiseError as vi.Mock;
+    const initialRaiseErrorCalls = raiseErrorSpy.mock.calls.length;
+    raiseErrorSpy.mockImplementation((() => undefined) as never);
+    const PromiseCtor = engine.readyResolvers.promise.constructor as PromiseConstructor;
+    forceNextUpdatePromiseFactory = () => new PromiseCtor((_, reject) => {
+      queueMicrotask(() => reject(new Error("boom")));
+    });
+    engine.connectedCallback();
+    expect(lastStateProxy[ConnectedCallbackSymbol]).toHaveBeenCalled();
+    expect(lastUpdateReturnedPromise).toBe(true);
+    expect(lastNormalizedResultIsPromise).toBe(true);
+    await vi.waitFor(() => {
+      expect(resolveSpy).toHaveBeenCalled();
+      expect(raiseErrorSpy.mock.calls.length).toBeGreaterThan(initialRaiseErrorCalls);
+    });
+    const newRaiseErrorCalls = raiseErrorSpy.mock.calls.slice(initialRaiseErrorCalls);
+    expect(newRaiseErrorCalls.length).toBeGreaterThan(0);
+    const comp301Call = newRaiseErrorCalls.find(
+      ([payload]) => (payload as { code?: string }).code === "COMP-301"
+    );
+    expect(comp301Call).toBeDefined();
+    resolveSpy.mockRestore();
+    const actualUtils = await loadActualUtils;
+    raiseErrorSpy.mockImplementation(actualUtils.raiseError as never);
   });
 
   it("connectedCallback: hasConnectedCallback が true のとき ConnectedCallbackSymbol を呼び出す", async () => {

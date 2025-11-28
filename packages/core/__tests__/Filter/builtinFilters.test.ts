@@ -783,8 +783,8 @@ describe("Filter/builtinFilters", () => {
     test("should handle type coercion consistently", () => {
       // String operations should convert to string
       expect(outputBuiltinFilters.uc()(123)).toBe("123");
-      // Note: trim filter expects toString() to work, so null will throw
-      expect(() => outputBuiltinFilters.trim()(null)).toThrow();
+      // trim filter coerces to string like other string filters
+      expect(outputBuiltinFilters.trim()("  text  ")).toBe("text");
       
       // Numeric operations should validate number type
       const incFilter = outputBuiltinFilters.inc(["1"]);

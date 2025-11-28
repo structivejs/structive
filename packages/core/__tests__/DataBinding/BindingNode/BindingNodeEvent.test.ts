@@ -71,9 +71,22 @@ describe("BindingNodeEvent", () => {
     const button = document.createElement("button");
     const binding = createBindingStub(engine, button);
     binding.bindingState.getValue = vi.fn(() => 123);
-    vi.spyOn(UtilsMod, "raiseError").mockImplementation(() => {
-      throw new Error("BIND-201");
+    
+    let error201Thrown = false;
+    let error202Thrown = false;
+    
+    vi.spyOn(UtilsMod, "raiseError").mockImplementation((payload: any) => {
+      if (payload.code === 'BIND-201') {
+        error201Thrown = true;
+      }
+      if (payload.code === 'BIND-202') {
+        error202Thrown = true;
+      }
+      const err = new Error(payload.message || payload.code);
+      (err as any).code = payload.code;
+      throw err;
     });
+    
     vi.spyOn(UpdaterMod, "createUpdater").mockImplementation(async (_engine: any, cb: any) => {
       const updater = {
         update: vi.fn(async (_loop: any, fn: any) => {
@@ -83,9 +96,16 @@ describe("BindingNodeEvent", () => {
       await cb(updater);
     });
 
-  const node = createBindingNodeEvent("onClick", [], [])(binding, button, engine.inputFilters);
-  const ev = new Event("click", { bubbles: true, cancelable: true });
-  await expect((node as any).handler(ev)).rejects.toThrow("BIND-201");
+    const node = createBindingNodeEvent("onClick", [], [])(binding, button, engine.inputFilters);
+    const ev = new Event("click", { bubbles: true, cancelable: true });
+    
+    // handler は void を返すが、内部で非同期処理が走る
+    (node as any).handler(ev);
+    
+    // 少し待ってエラーが投げられたか確認
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    expect(error201Thrown).toBe(true);
   });
 
   it("update/applyChange は no-op", () => {
