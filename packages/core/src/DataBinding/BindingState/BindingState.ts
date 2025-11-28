@@ -113,7 +113,6 @@ class BindingState implements IBindingState {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     let value = getByRef(this._binding.engine.state, this.ref, state, handler);
     for(let i = 0; i < this.filters.length; i++) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       value = this.filters[i](value);
     }
     return value;

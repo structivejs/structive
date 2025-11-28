@@ -139,14 +139,13 @@ class BindingStateIndex implements IBindingState {
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getFilteredValue(_tate: IStateProxy, _handler: IStateHandler): any {
-    let value = this.listIndex?.index ?? raiseError({
+    let value: unknown = this.listIndex?.index ?? raiseError({
       code: 'LIST-201',
       message: 'listIndex is null',
       context: { where: 'BindingStateIndex.getFilteredValue' },
       docsUrl: '/docs/error-codes.md#list',
     });
     for(let i = 0; i < this.filters.length; i++) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       value = this.filters[i](value);
     }
     return value;

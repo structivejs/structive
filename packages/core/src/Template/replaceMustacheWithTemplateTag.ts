@@ -19,10 +19,7 @@ import { COMMENT_EMBED_MARK } from "../constants.js";
 import { raiseError } from "../utils.js";
 
 /** Regular expression to match Mustache syntax: {{ ... }} */
-const MUSTACHE_REGEXP = /\{\{([^\}]+)\}\}/g;
-
-/** Set of recognized Mustache control structure types */
-const MUSTACHE_TYPES:Set<string> = new Set(['if', 'for', 'endif', 'endfor', 'elseif', 'else']);
+const MUSTACHE_REGEXP = /\{\{([^}]+)\}\}/g;
 
 /** Union type for all supported Mustache control structures */
 type MustacheType = 'if' | 'for' | 'endif' | 'endfor' | 'elseif' | 'else';
@@ -55,14 +52,14 @@ export function replaceMustacheWithTemplateTag(html: string): string {
   // Stack to track nested control structures (if/for/elseif)
   const stack:MustacheInfo[] = [];
   
-  return html.replaceAll(MUSTACHE_REGEXP, (match, expr) => {
-    expr = expr.trim();
+  return html.replaceAll(MUSTACHE_REGEXP, (_match, expression: string) => {
+    const expr = expression.trim();
     
     // Extract the type (first part before ':')
     const [ type ] = expr.split(':');
-    
+
     // If not a control structure, treat as embedded expression
-    if (!MUSTACHE_TYPES.has(type)) {
+    if (type !== 'if' && type !== 'for' && type !== 'endif' && type !== 'endfor' && type !== 'elseif' && type !== 'else') {
       // Convert to comment node for later processing
       return `<!--${COMMENT_EMBED_MARK}${expr}-->`;
     }
@@ -78,14 +75,16 @@ export function replaceMustacheWithTemplateTag(html: string): string {
     } else if (type === 'endif') {
       // Handle endif: pop stack until matching 'if' is found, closing all elseif branches
       const endTags = [];
-      do {
-        const info = stack.pop() ?? raiseError({
+      if (stack.length === 0) {
+        raiseError({
           code: 'TMP-102',
           message: 'Endif without if',
           context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
           docsUrl: './docs/error-codes.md#tmp',
         });
-        
+      }
+      while (stack.length > 0) {
+        const info = stack.pop()!;
         // Found the matching 'if', close it and stop
         if (info.type === 'if') {
           endTags.push('</template>');
@@ -93,6 +92,14 @@ export function replaceMustacheWithTemplateTag(html: string): string {
         } else if (info.type === 'elseif') {
           // Close elseif branches (each elseif creates nested templates)
           endTags.push('</template>');
+          if (stack.length === 0) {
+            raiseError({
+              code: 'TMP-102',
+              message: 'Endif without if',
+              context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+              docsUrl: './docs/error-codes.md#tmp',
+            });
+          }
         } else {
           // Invalid nesting: encountered non-if/elseif tag
           raiseError({
@@ -102,7 +109,7 @@ export function replaceMustacheWithTemplateTag(html: string): string {
             docsUrl: './docs/error-codes.md#tmp',
           });
         }
-      } while(true);
+      }
       return endTags.join('');
     } else if (type === 'endfor') {
       // Handle endfor: pop stack and verify matching 'for'

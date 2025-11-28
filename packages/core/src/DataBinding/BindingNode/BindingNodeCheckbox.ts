@@ -37,7 +37,6 @@ class BindingNodeCheckbox extends BindingNode {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     let value = this.value;
     for (let i = 0; i < this.filters.length; i++) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       value = this.filters[i](value);
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return

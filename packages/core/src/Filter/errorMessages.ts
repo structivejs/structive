@@ -65,6 +65,22 @@ export function valueMustBeNumber(fnName:string): never {
 }
 
 /**
+ * Throws error when filter requires numeric value but non-number provided.
+ * 
+ * @param fnName - Name of the filter function
+ * @returns Never returns (always throws)
+ * @throws FLT-202 Filter requires a number value
+ */
+export function valueMustBeString(fnName:string): never {
+  raiseError({
+    code: "FLT-202",
+    message: `${fnName} requires a string value`,
+    context: { fnName },
+    docsUrl: "./docs/error-codes.md#flt",
+  });
+}
+
+/**
  * Throws error when filter requires boolean value but non-boolean provided.
  * 
  * @param fnName - Name of the filter function

@@ -16,10 +16,10 @@ import { IBinding, IRenderBinding } from "../types";
  * Unified for normal binding (BindingState) and index binding (BindingStateIndex).
  */
 export interface IBindingStateBase {
-  readonly pattern      : string | never;
-  readonly info         : IStructuredPathInfo | never;
+  readonly pattern      : string;
+  readonly info         : IStructuredPathInfo;
   readonly listIndex    : IListIndex | null;
-  readonly ref          : IStatePropertyRef | never;
+  readonly ref          : IStatePropertyRef;
   readonly filters      : Filters;
   readonly isLoopIndex  : boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

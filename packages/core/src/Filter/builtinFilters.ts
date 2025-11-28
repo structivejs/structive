@@ -16,10 +16,17 @@
  */
 import { getGlobalConfig } from "../WebComponents/getGlobalConfig.js";
 import { raiseError } from "../utils.js";
-import { optionMustBeNumber, optionsRequired, valueMustBeBoolean, valueMustBeDate, valueMustBeNumber } from "./errorMessages.js";
-import { FilterWithOptions } from "./types";
+import { optionMustBeNumber, optionsRequired, valueMustBeBoolean, valueMustBeDate, valueMustBeNumber, valueMustBeString } from "./errorMessages.js";
+import { FilterFn, FilterWithOptions } from "./types";
 
 const config = getGlobalConfig();
+
+function validateNumberString(value: string): boolean {
+  if (!value || isNaN(Number(value))) {
+    return false;
+  }
+  return true;
+}
 
 /**
  * Equality filter - compares value with option.
@@ -29,14 +36,13 @@ const config = getGlobalConfig();
  * @throws FLT-101 Options required
  * @throws FLT-102 Option must be number (when value is number)
  */
-const eq = (options?:string[]) => {
+const eq = (options?:string[]): FilterFn<boolean> => {
   const opt = options?.[0] ?? optionsRequired('eq');
-  return (value: any) => {
+  return (value: unknown): boolean => {
     // Align types for comparison
     if (typeof value === 'number') {
-      const optValue = Number(opt);
-      if (isNaN(optValue)) {optionMustBeNumber('eq');}
-      return value === optValue;
+      if (validateNumberString(opt)) {optionMustBeNumber('eq');}
+      return value === Number(opt);
     }
     if (typeof value === 'string') {
       return value === opt;
@@ -54,14 +60,13 @@ const eq = (options?:string[]) => {
  * @throws FLT-101 Options required
  * @throws FLT-102 Option must be number (when value is number)
  */
-const ne = (options?:string[]) => {
+const ne = (options?:string[]): FilterFn<boolean> => {
   const opt = options?.[0] ?? optionsRequired('ne');
-  return (value: any) => {
+  return (value: unknown): boolean => {
     // Align types for comparison
     if (typeof value === 'number') {
-      const optValue = Number(opt);
-      if (isNaN(optValue)) {optionMustBeNumber('ne');}
-      return value !== optValue;
+      if (validateNumberString(opt)) {optionMustBeNumber('ne');}
+      return value !== Number(opt);
     }
     if (typeof value === 'string') {
       return value !== opt;
@@ -78,8 +83,8 @@ const ne = (options?:string[]) => {
  * @returns Filter function that returns inverted boolean
  * @throws FLT-103 Value must be boolean
  */
-const not = (options?:string[]) => {
-  return (value: any) => {
+const not = (_options?:string[]): FilterFn<boolean> => {
+  return (value: unknown): boolean => {
     if (typeof value !== 'boolean') {valueMustBeBoolean('not');}
     return !value;
   }
@@ -94,13 +99,12 @@ const not = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const lt = (options?:string[]) => {
+const lt = (options?:string[]): FilterFn<boolean> => {
   const opt = options?.[0] ?? optionsRequired('lt');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('lt');}
-  return (value: any) => {
+  if (validateNumberString(opt)) {optionMustBeNumber('lt');}
+  return (value: unknown): boolean => {
     if (typeof value !== 'number') {valueMustBeNumber('lt');}
-    return value < optValue;
+    return value < Number(opt);
   }
 }
 
@@ -113,13 +117,12 @@ const lt = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const le = (options?:string[]) => {
+const le = (options?:string[]): FilterFn<boolean> => {
   const opt = options?.[0] ?? optionsRequired('le');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('le');}
-  return (value: any) => {
+  if (validateNumberString(opt)) {optionMustBeNumber('le');}
+  return (value: unknown): boolean => {
     if (typeof value !== 'number') {valueMustBeNumber('le');}
-    return value <= optValue;
+    return value <= Number(opt);
   }
 }
 
@@ -132,13 +135,12 @@ const le = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const gt = (options?:string[]) => {
+const gt = (options?:string[]): FilterFn<boolean> => {
   const opt = options?.[0] ?? optionsRequired('gt');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('gt');}
-  return (value: any) => {
+  if (validateNumberString(opt)) {optionMustBeNumber('gt');}
+  return (value: unknown): boolean => {
     if (typeof value !== 'number') {valueMustBeNumber('gt');}
-    return value > optValue;
+    return value > Number(opt);
   }
 }
 
@@ -151,13 +153,12 @@ const gt = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const ge = (options?:string[]) => {
+const ge = (options?:string[]): FilterFn<boolean> => {
   const opt = options?.[0] ?? optionsRequired('ge');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('ge');}
-  return (value: any) => {
+  if (validateNumberString(opt)) {optionMustBeNumber('ge');}
+  return (value: unknown): boolean => {
     if (typeof value !== 'number') {valueMustBeNumber('ge');}
-    return value >= optValue;
+    return value >= Number(opt);
   }
 }
 
@@ -170,13 +171,12 @@ const ge = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const inc = (options?:string[]) => {
+const inc = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? optionsRequired('inc');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('inc');}
-  return (value: any) => {
+  if (validateNumberString(opt)) {optionMustBeNumber('inc');}
+  return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('inc');}
-    return value + optValue;
+    return value + Number(opt);
   }
 }
 
@@ -189,13 +189,12 @@ const inc = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const dec = (options?:string[]) => {
+const dec = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? optionsRequired('dec');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('dec');}
-  return (value: any) => {
+  if (validateNumberString(opt)) {optionMustBeNumber('dec');}
+  return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('dec');}
-    return value - optValue;
+    return value - Number(opt);
   }
 }
 
@@ -208,13 +207,12 @@ const dec = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const mul = (options?:string[]) => {
+const mul = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? optionsRequired('mul');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('mul');}
-  return (value: any) => {
+  if (validateNumberString(opt)) {optionMustBeNumber('mul');}
+  return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('mul');}
-    return value * optValue;
+    return value * Number(opt);
   }
 }
 
@@ -227,13 +225,12 @@ const mul = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const div = (options?:string[]) => {
+const div = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? optionsRequired('div');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('div');}
-  return (value: any) => {
+  if (validateNumberString(opt)) {optionMustBeNumber('div');}
+  return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('div');}
-    return value / optValue;
+    return value / Number(opt);
   }
 }
 
@@ -246,13 +243,12 @@ const div = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const mod = (options?:string[]) => {
+const mod = (options?:string[]): FilterFn<number> => {
   const opt = options?.[0] ?? optionsRequired('mod');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('mod');}
-  return (value: any) => {
+  if (validateNumberString(opt)) {optionMustBeNumber('mod');}
+  return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('mod');}
-    return value % optValue;
+    return value % Number(opt);
   }
 }
 
@@ -264,13 +260,12 @@ const mod = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const fix = (options?:string[]) => {
-  const opt = options?.[0] ?? 0;
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('fix');}
-  return (value: any) => {
+const fix = (options?:string[]): FilterFn<string> => {
+  const opt = options?.[0] ?? "0";
+  if (validateNumberString(opt)) {optionMustBeNumber('fix');}
+  return (value: unknown): string => {
     if (typeof value !== 'number') {valueMustBeNumber('fix');}
-    return value.toFixed(optValue);
+    return value.toFixed(Number(opt));
   }
 }
 
@@ -281,9 +276,9 @@ const fix = (options?:string[]) => {
  * @returns Filter function that returns localized number string
  * @throws FLT-104 Value must be number
  */
-const locale = (options?:string[]) => {
+const locale = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? config.locale;
-  return (value: any) => {
+  return (value: unknown): string => {
     if (typeof value !== 'number') {valueMustBeNumber('locale');}
     return value.toLocaleString(opt);
   }
@@ -295,9 +290,10 @@ const locale = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns uppercase string
  */
-const uc = (options?:string[]) => {
-  return (value: any) => {
-    return value.toString().toUpperCase();
+const uc = (_options?:string[]): FilterFn<string> => {
+  return (value: unknown): string => {
+    if (typeof value !== 'string') {valueMustBeString('uc');}
+    return value.toUpperCase();
   }
 }
 
@@ -307,9 +303,10 @@ const uc = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns lowercase string
  */
-const lc = (options?:string[]) => {
-  return (value: any) => {
-    return value.toString().toLowerCase();
+const lc = (_options?:string[]): FilterFn<string> => {
+  return (value: unknown): string => {
+    if (typeof value !== 'string') {valueMustBeString('lc');}
+    return value.toLowerCase();
   }
 }
 
@@ -319,9 +316,10 @@ const lc = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns capitalized string
  */
-const cap = (options?:string[]) => {
-  return (value: any) => {
-    const v = value.toString();
+const cap = (_options?:string[]): FilterFn<string> => {
+  return (value: unknown): string => {
+    if (typeof value !== 'string') {valueMustBeString('cap');}
+    const v = (value ?? "").toString();
     if (v.length === 0) {return v;}
     if (v.length === 1) {return v.toUpperCase();}
     return v.charAt(0).toUpperCase() + v.slice(1);
@@ -334,9 +332,10 @@ const cap = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns trimmed string
  */
-const trim = (options?:string[]) => {
-  return (value: any) => {
-    return value.toString().trim();
+const trim = (_options?:string[]): FilterFn<string> => {
+  return (value: unknown): string => {
+    if (typeof value !== 'string') {valueMustBeString('trim');}
+    return value.trim();
   }
 }
 
@@ -348,12 +347,12 @@ const trim = (options?:string[]) => {
  * @throws FLT-101 Options required
  * @throws FLT-102 Option must be number
  */
-const slice = (options?:string[]) => {
+const slice = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? optionsRequired('slice');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('slice');}
-  return (value: any) => {
-    return value.toString().slice(optValue);
+  if (validateNumberString(opt)) {optionMustBeNumber('slice');}
+  return (value: unknown): string => {
+    if (typeof value !== 'string') {valueMustBeString('slice');}
+    return value.slice(Number(opt));
   }
 }
 
@@ -365,15 +364,14 @@ const slice = (options?:string[]) => {
  * @throws FLT-101 Options required
  * @throws FLT-102 Option must be number
  */
-const substr = (options?:string[]) => {
+const substr = (options?:string[]): FilterFn<string> => {
   const opt1 = options?.[0] ?? optionsRequired('substr');
-  const opt1Value = Number(opt1);
-  if (isNaN(opt1Value)) {optionMustBeNumber('substr');}
+  if (validateNumberString(opt1)) {optionMustBeNumber('substr');}
   const opt2 = options?.[1] ?? optionsRequired('substr');
-  const opt2Value = Number(opt2);
-  if (isNaN(opt2Value)) {optionMustBeNumber('substr');}
-  return (value: any) => {
-    return value.toString().substr(opt1Value, opt2Value);
+  if (validateNumberString(opt2)) {optionMustBeNumber('substr');}
+  return (value: unknown): string => {
+    if (typeof value !== 'string') {valueMustBeString('substr');}
+    return value.substr(Number(opt1), Number(opt2));
   }
 }
 
@@ -385,14 +383,13 @@ const substr = (options?:string[]) => {
  * @throws FLT-101 Options required
  * @throws FLT-102 Option must be number
  */
-const pad = (options?:string[]) => {
+const pad = (options?:string[]): FilterFn<string> => {
   const opt1 = options?.[0] ?? optionsRequired('pad');
-  const opt1Value = Number(opt1);
-  if (isNaN(opt1Value)) {optionMustBeNumber('pad');}
+  if (validateNumberString(opt1)) {optionMustBeNumber('pad');}
   const opt2 = options?.[1] ?? '0';
-  const opt2Value = opt2;
-  return (value: any) => {
-    return value.toString().padStart(opt1Value, opt2Value);
+  return (value: unknown): string => {
+    if (typeof value !== 'string') {valueMustBeString('pad');}
+    return value.padStart(Number(opt1), opt2);
   }
 }
 
@@ -404,12 +401,12 @@ const pad = (options?:string[]) => {
  * @throws FLT-101 Options required
  * @throws FLT-102 Option must be number
  */
-const rep = (options?:string[]) => {
+const rep = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? optionsRequired('rep');
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('rep');}
-  return (value: any) => {
-    return value.toString().repeat(optValue);
+  if (validateNumberString(opt)) {optionMustBeNumber('rep');}
+  return (value: unknown): string => {
+    if (typeof value !== 'string') {valueMustBeString('rep');}
+    return value.repeat(Number(opt));
   }
 }
 
@@ -419,9 +416,10 @@ const rep = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns reversed string
  */
-const rev = (options?:string[]) => {
-  return (value: any) => {
-    return value.toString().split('').reverse().join('');
+const rev = (_options?:string[]): FilterFn<string> => {
+  return (value: unknown): string => {
+    if (typeof value !== 'string') {valueMustBeString('rev');}
+    return value.split('').reverse().join('');
   }
 }
 
@@ -431,8 +429,9 @@ const rev = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns integer
  */
-const int = (options?:string[]) => {
-  return (value: any) => {
+const int = (_options?:string[]): FilterFn<number> => {
+  return (value: unknown): number => {
+    if (typeof value !== 'string') {valueMustBeString('int');}
     return parseInt(value, 10);
   }
 }
@@ -443,8 +442,9 @@ const int = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns float
  */
-const float = (options?:string[]) => {
-  return (value: any) => {
+const float = (_options?:string[]): FilterFn<number> => {
+  return (value: unknown): number => {
+    if (typeof value !== 'string') {valueMustBeString('float');}
     return parseFloat(value);
   }
 }
@@ -457,12 +457,12 @@ const float = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const round = (options?:string[]) => {
-  const opt = options?.[0] ?? 0;
-  const optValue = Math.pow(10, Number(opt));
-  if (isNaN(optValue)) {optionMustBeNumber('round');}
-  return (value: any) => {
+const round = (options?:string[]): FilterFn<number> => {
+  const opt = options?.[0] ?? '0';
+  if (validateNumberString(opt)) {optionMustBeNumber('round');}
+  return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('round');}
+    const optValue = Math.pow(10, Number(opt));
     return Math.round(value * optValue) / optValue;
   }
 }
@@ -475,12 +475,12 @@ const round = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const floor = (options?:string[]) => {
-  const opt = options?.[0] ?? 0;
-  const optValue = Math.pow(10, Number(opt));
-  if (isNaN(optValue)) {optionMustBeNumber('floor');}
-  return (value: any) => {
+const floor = (options?:string[]): FilterFn<number> => {
+  const opt = options?.[0] ?? '0';
+  if (validateNumberString(opt)) {optionMustBeNumber('floor');}
+  return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('floor');}
+    const optValue = Math.pow(10, Number(opt));
     return Math.floor(value * optValue) / optValue;
   }
 }
@@ -493,12 +493,12 @@ const floor = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const ceil = (options?:string[]) => {
-  const opt = options?.[0] ?? 0;
-  const optValue = Math.pow(10, Number(opt));
-  if (isNaN(optValue)) {optionMustBeNumber('ceil');}
-  return (value: any) => {
+const ceil = (options?:string[]): FilterFn<number> => {
+  const opt = options?.[0] ?? '0';
+  if (validateNumberString(opt)) {optionMustBeNumber('ceil');}
+  return (value: unknown): number => {
     if (typeof value !== 'number') {valueMustBeNumber('ceil');}
+    const optValue = Math.pow(10, Number(opt));
     return Math.ceil(value * optValue) / optValue;
   }
 }
@@ -511,13 +511,12 @@ const ceil = (options?:string[]) => {
  * @throws FLT-102 Option must be number
  * @throws FLT-104 Value must be number
  */
-const percent = (options?:string[]) => {
-  const opt = options?.[0] ?? 0;
-  const optValue = Number(opt);
-  if (isNaN(optValue)) {optionMustBeNumber('percent');}
-  return (value: any) => {
+const percent = (options?:string[]): FilterFn<string> => {
+  const opt = options?.[0] ?? '0';
+  if (validateNumberString(opt)) {optionMustBeNumber('percent');}
+  return (value: unknown): string => {
     if (typeof value !== 'number') {valueMustBeNumber('percent');}
-    return `${(value * 100).toFixed(optValue)  }%`;
+    return `${(value * 100).toFixed(Number(opt))}%`;
   }
 }
 
@@ -528,9 +527,9 @@ const percent = (options?:string[]) => {
  * @returns Filter function that returns date string
  * @throws FLT-105 Value must be Date
  */
-const date = (options?:string[]) => {
+const date = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? config.locale;
-  return (value: any) => {
+  return (value: unknown): string => {
     if (!(value instanceof Date))  {valueMustBeDate('date');}
     return value.toLocaleDateString(opt);
   }
@@ -543,9 +542,9 @@ const date = (options?:string[]) => {
  * @returns Filter function that returns time string
  * @throws FLT-105 Value must be Date
  */
-const time = (options?:string[]) => {
+const time = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? config.locale;
-  return (value: any) => {
+  return (value: unknown): string => {
     if (!(value instanceof Date)) {valueMustBeDate('time');}
     return value.toLocaleTimeString(opt);
   }
@@ -558,9 +557,9 @@ const time = (options?:string[]) => {
  * @returns Filter function that returns datetime string
  * @throws FLT-105 Value must be Date
  */
-const datetime = (options?:string[]) => {
+const datetime = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? config.locale;
-  return (value: any) => {
+  return (value: unknown): string => {
     if (!(value instanceof Date)) {valueMustBeDate('datetime');}
     return value.toLocaleString(opt);
   }
@@ -573,9 +572,9 @@ const datetime = (options?:string[]) => {
  * @returns Filter function that returns formatted date string
  * @throws FLT-105 Value must be Date
  */
-const ymd = (options?:string[]) => {
+const ymd = (options?:string[]): FilterFn<string> => {
   const opt = options?.[0] ?? '-';
-  return (value: any) => {
+  return (value: unknown): string => {
     if (!(value instanceof Date)) {valueMustBeDate('ymd');}
     const year = value.getFullYear().toString();
     const month = (value.getMonth() + 1).toString().padStart(2, '0');
@@ -590,8 +589,8 @@ const ymd = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns true for false/null/undefined/0/''/NaN
  */
-const falsy = (options?:string[]) => {
-  return (value: any) => value === false || value === null || value === undefined || value === 0 || value === '' || Number.isNaN(value);
+const falsy = (_options?:string[]): FilterFn<boolean> => {
+  return (value: unknown): boolean => value === false || value === null || value === undefined || value === 0 || value === '' || Number.isNaN(value);
 }
 
 /**
@@ -600,8 +599,8 @@ const falsy = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns true for non-falsy values
  */
-const truthy = (options?:string[]) => {
-  return (value: any) =>value !== false && value !== null && value !== undefined && value !== 0 && value !== '' && !Number.isNaN(value);
+const truthy = (_options?:string[]): FilterFn<boolean> => {
+  return (value: unknown): boolean =>value !== false && value !== null && value !== undefined && value !== 0 && value !== '' && !Number.isNaN(value);
 }
 
 /**
@@ -611,9 +610,9 @@ const truthy = (options?:string[]) => {
  * @returns Filter function that returns value or default
  * @throws FLT-101 Options required
  */
-const defaults = (options?:string[]) => {
+const defaults = (options?:string[]): FilterFn<unknown> => {
   const opt = options?.[0] ?? optionsRequired('defaults');
-  return (value: any) => {
+  return (value: unknown): unknown => {
     if (value === false || value === null || value === undefined || value === 0 || value === '' || Number.isNaN(value)) {return opt;}
     return value;
   }
@@ -625,8 +624,8 @@ const defaults = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns boolean
  */
-const boolean = (options?:string[]) => {
-  return (value: any) => {
+const boolean = (_options?:string[]): FilterFn<boolean> => {
+  return (value: unknown): boolean => {
     return Boolean(value);
   }
 }
@@ -637,8 +636,8 @@ const boolean = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns number
  */
-const number = (options?:string[]) => {
-  return (value: any) => {
+const number = (_options?:string[]): FilterFn<number> => {
+  return (value: unknown): number => {
     return Number(value);
   }
 }
@@ -649,8 +648,8 @@ const number = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns string
  */
-const string = (options?:string[]) => {
-  return (value: any) => {
+const string = (_options?:string[]): FilterFn<string> => {
+  return (value: unknown): string => {
     return String(value);
   }
 }
@@ -661,8 +660,8 @@ const string = (options?:string[]) => {
  * @param options - Unused
  * @returns Filter function that returns null for empty string, otherwise original value
  */
-const _null = (options?:string[]) => {
-  return (value: any) => {
+const _null = (_options?:string[]): FilterFn<unknown> => {
+  return (value: unknown): unknown => {
     return (value === "") ? null : value;
   } 
 }
