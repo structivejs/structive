@@ -120,8 +120,13 @@ class PathManager {
             addPathNode(this.rootNode, path);
             const info = getStructuredPathInfo(path);
             if (info.parentPath) {
-                this.staticDependencies.get(info.parentPath)?.add(path) ??
+                const dependencies = this.staticDependencies.get(info.parentPath);
+                if (typeof dependencies !== "undefined") {
+                    dependencies.add(path);
+                }
+                else {
                     this.staticDependencies.set(info.parentPath, new Set([path]));
+                }
             }
         }
     }
@@ -164,8 +169,13 @@ class PathManager {
                 this.optimizes.add(path);
             }
             if (pathInfo.parentPath) {
-                this.staticDependencies.get(pathInfo.parentPath)?.add(path) ??
+                const dependencies = this.staticDependencies.get(pathInfo.parentPath);
+                if (typeof dependencies !== "undefined") {
+                    dependencies.add(path);
+                }
+                else {
                     this.staticDependencies.set(pathInfo.parentPath, new Set([path]));
+                }
             }
         }
     }
@@ -184,8 +194,13 @@ class PathManager {
             this.addPath(source);
         }
         this._dynamicDependencyKeys.add(key);
-        this.dynamicDependencies.get(source)?.add(target) ??
+        const dependencies = this.dynamicDependencies.get(source);
+        if (typeof dependencies !== "undefined") {
+            dependencies.add(target);
+        }
+        else {
             this.dynamicDependencies.set(source, new Set([target]));
+        }
     }
 }
 /**

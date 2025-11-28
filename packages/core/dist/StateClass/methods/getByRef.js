@@ -51,7 +51,8 @@ export function getByRef(target, ref, receiver, handler) {
     }
     // If getters with parent-child relationships exist, retrieve from external dependencies
     // ToDo: When getters exist in state (path prefix matches), retrieve via getter
-    if (handler.engine.stateOutput.startsWith(ref.info) && handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
+    if (handler.engine.stateOutput.startsWith(ref.info) &&
+        handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
         return handler.engine.stateOutput.get(ref);
     }
     // If pattern exists in target, retrieve via getter
@@ -86,11 +87,21 @@ export function getByRef(target, ref, receiver, handler) {
                     if (handler.renderer !== null) {
                         // Track last list info for diff calculation in renderer
                         if (!handler.renderer.lastListInfoByRef.has(ref)) {
-                            const listInfo = {
-                                listIndexes: lastCacheEntry?.listIndexes ?? [],
-                                value: lastCacheEntry?.value,
-                            };
-                            handler.renderer.lastListInfoByRef.set(ref, listInfo);
+                            if (lastCacheEntry) {
+                                const listIndexes = lastCacheEntry.listIndexes ?? [];
+                                const value = lastCacheEntry.value;
+                                if (!Array.isArray(value)) {
+                                    raiseError({
+                                        code: "STC-001",
+                                        message: `Property "${ref.info.pattern}" is expected to be an array for list management.`,
+                                        docsUrl: "./docs/error-codes.md#stc",
+                                    });
+                                }
+                                handler.renderer.lastListInfoByRef.set(ref, { listIndexes, value });
+                            }
+                            else {
+                                handler.renderer.lastListInfoByRef.set(ref, { listIndexes: [], value: [] });
+                            }
                         }
                     }
                     // Calculate new list indexes by comparing old and new values

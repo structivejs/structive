@@ -62,8 +62,7 @@ export interface IBindingBase {
   readonly bindingState: IBindingState;
   readonly bindContents: IBindContent[];
   readonly bindingsByListIndex: WeakMap<IListIndex, Set<IBinding>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateStateValue(writeState: IWritableStateProxy, handler: IWritableStateHandler, value: any): void;
+  updateStateValue(writeState: IWritableStateProxy, handler: IWritableStateHandler, value: unknown): void;
   notifyRedraw(refs: IStatePropertyRef[]): void;
 }
 

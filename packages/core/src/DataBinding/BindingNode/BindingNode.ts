@@ -155,8 +155,7 @@ export class BindingNode implements IBindingNode {
    * @param value - Value to assign to DOM
    * @throws BIND-301 Not implemented
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignValue(_value: any): void {
+  assignValue(_value: unknown): void {
     raiseError({
       code: 'BIND-301',
       message: 'Not implemented',
@@ -174,8 +173,7 @@ export class BindingNode implements IBindingNode {
    * @param values - Array of values
    * @throws BIND-301 Not implemented
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  updateElements(_listIndexes: IListIndex[], _values: any[]) {
+  updateElements(_listIndexes: IListIndex[], _values: unknown[]) {
     raiseError({
       code: 'BIND-301',
       message: 'Not implemented',
@@ -204,7 +202,6 @@ export class BindingNode implements IBindingNode {
    * @param renderer - Renderer instance for state access
    */
   applyChange(renderer: IRenderer): void {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
     this.assignValue(filteredValue);
   }
@@ -244,8 +241,7 @@ export class BindingNode implements IBindingNode {
    * 
    * @returns Current value or null
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get value():any {
+  get value(): unknown {
     return null;
   }
   
@@ -255,8 +251,7 @@ export class BindingNode implements IBindingNode {
    * 
    * @returns Filtered value or null
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get filteredValue():any {
+  get filteredValue(): unknown {
     return null;
   }
 

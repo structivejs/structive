@@ -198,15 +198,15 @@ export interface IResolvedPathInfo {
 export interface IAccessorFunctions {
   /** 
    * Getter function to retrieve the current value at the property path.
-   * @returns {any} The current value at the path, or undefined if not set
+   * @returns {unknown} The current value at the path, or undefined if not set
    */
-  get: () => any;
+  get: () => unknown;
   
   /** 
    * Setter function to update the value at the property path.
    * Triggers dependency tracking and re-rendering as needed.
-   * @param {any} value - The new value to set at the path
+   * @param {unknown} value - The new value to set at the path
    * @returns {void}
    */
-  set: (value: any) => void;
+  set: (value: unknown) => void;
 }

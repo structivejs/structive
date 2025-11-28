@@ -123,12 +123,16 @@ class LoopContext implements ILoopContext {
   find(name: string): ILoopContext | null {
     let loopContext = this._cache[name];
     if (typeof loopContext === "undefined") {
-      let currentLoopContext: ILoopContext | null = this;
-      while(currentLoopContext !== null) {
-        if (currentLoopContext.path === name) {break;}
-        currentLoopContext = currentLoopContext.parentLoopContext;
+      if (this.path === name) {
+        loopContext = this._cache[name] = this;
+      } else {
+        let currentLoopContext: ILoopContext | null = this.parentLoopContext;
+        while(currentLoopContext !== null) {
+          if (currentLoopContext.path === name) {break;}
+          currentLoopContext = currentLoopContext.parentLoopContext;
+        }
+        loopContext = this._cache[name] = currentLoopContext;
       }
-      loopContext = this._cache[name] = currentLoopContext;
     }
     return loopContext;
   }
@@ -138,7 +142,8 @@ class LoopContext implements ILoopContext {
    * @param callback - Function to call for each loop context
    */
   walk(callback: (loopContext: ILoopContext) => void): void {
-    let currentLoopContext: ILoopContext | null = this;
+    callback(this);
+    let currentLoopContext: ILoopContext | null = this.parentLoopContext;
     while(currentLoopContext !== null) {
       callback(currentLoopContext);
       currentLoopContext = currentLoopContext.parentLoopContext;

@@ -58,7 +58,7 @@ export function get(
   prop    : PropertyKey, 
   receiver: IStateProxy,
   handler : IStateHandler
-): any {
+): unknown {
   // Check if property is an index name ($1-$9)
   const index = indexByIndexName[prop];
   if (typeof index !== "undefined") {
@@ -109,7 +109,7 @@ export function get(
           return (ref: IStatePropertyRef) => 
             getByRef(target, ref, receiver, handler);
         case SetByRefSymbol: 
-          return (ref: IStatePropertyRef, value: any) => 
+          return (ref: IStatePropertyRef, value: unknown) => 
             setByRef(target, ref, value, receiver, handler);
         case GetListIndexesByRefSymbol:
           return (ref: IStatePropertyRef) =>

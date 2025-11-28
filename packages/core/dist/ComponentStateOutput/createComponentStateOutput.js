@@ -29,12 +29,13 @@ class ComponentStateOutput {
      * @throws CSO-101 No child path found for path
      * @throws CSO-102 No binding found for child path
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get(ref) {
         const childPath = this._binding.startsWithByChildPath(ref.info);
         if (childPath === null) {
             raiseError({
                 code: 'CSO-101',
-                message: `No child path found for path "${ref.info.toString()}".`,
+                message: `No child path found for path "${ref.info.pattern}".`,
                 context: { where: 'ComponentStateOutput.get', path: ref.info.pattern },
                 docsUrl: './docs/error-codes.md#cso',
             });
@@ -68,12 +69,13 @@ class ComponentStateOutput {
      * @throws CSO-101 No child path found for path
      * @throws CSO-102 No binding found for child path
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     set(ref, value) {
         const childPath = this._binding.startsWithByChildPath(ref.info);
         if (childPath === null) {
             raiseError({
                 code: 'CSO-101',
-                message: `No child path found for path "${ref.info.toString()}".`,
+                message: `No child path found for path "${ref.info.pattern}".`,
                 context: { where: 'ComponentStateOutput.set', path: ref.info.pattern },
                 docsUrl: './docs/error-codes.md#cso',
             });
@@ -121,7 +123,7 @@ class ComponentStateOutput {
         if (childPath === null) {
             raiseError({
                 code: 'CSO-101',
-                message: `No child path found for path "${ref.info.toString()}".`,
+                message: `No child path found for path "${ref.info.pattern}".`,
                 context: { where: 'ComponentStateOutput.getListIndexes', path: ref.info.pattern },
                 docsUrl: './docs/error-codes.md#cso',
             });

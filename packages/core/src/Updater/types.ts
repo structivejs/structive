@@ -128,8 +128,7 @@ export interface IListSnapshot {
    * The array of values in the list at snapshot time.
    * Represents the actual data elements.
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: any[];
+  value: unknown[];
   
   /** 
    * Array of list indexes corresponding to each element.

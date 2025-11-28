@@ -43,11 +43,11 @@ export function getByRef(
   ref      : IStatePropertyRef,
   receiver : IStateProxy,
   handler  : IStateHandler
-): any {
+): unknown {
   // Check and register dependency if called from within a getter
   checkDependency(handler, ref);
 
-  let value: any;
+  let value: unknown;
   // Determine if this path needs list management or caching
   const listable = handler.engine.pathManager.lists.has(ref.info.pattern);
   const cacheable = ref.info.wildcardCount > 0 || 
@@ -79,7 +79,8 @@ export function getByRef(
 
   // If getters with parent-child relationships exist, retrieve from external dependencies
   // ToDo: When getters exist in state (path prefix matches), retrieve via getter
-  if (handler.engine.stateOutput.startsWith(ref.info) && handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
+  if (handler.engine.stateOutput.startsWith(ref.info) && 
+        handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
     return handler.engine.stateOutput.get(ref);
   }
 
@@ -114,15 +115,26 @@ export function getByRef(
           if (handler.renderer !== null) {
             // Track last list info for diff calculation in renderer
             if (!handler.renderer.lastListInfoByRef.has(ref)) {
-              const listInfo = {
-                listIndexes: lastCacheEntry?.listIndexes ?? [],
-                value: lastCacheEntry?.value,
-              };
-              handler.renderer.lastListInfoByRef.set(ref, listInfo);
+              if (lastCacheEntry) {
+                const listIndexes = lastCacheEntry.listIndexes ?? [];
+                const value = lastCacheEntry.value;
+                if (!Array.isArray(value)) {
+                  raiseError({
+                    code: "STC-001",
+                    message: `Property "${ref.info.pattern}" is expected to be an array for list management.`,
+                    docsUrl: "./docs/error-codes.md#stc",
+                  });
+                }
+                handler.renderer.lastListInfoByRef.set(ref, { listIndexes, value });
+              } else {
+                handler.renderer.lastListInfoByRef.set(ref, { listIndexes: [], value: [] });
+              }
             }
           }
           // Calculate new list indexes by comparing old and new values
-          newListIndexes = createListIndexes(ref.listIndex, lastCacheEntry?.value, value, lastCacheEntry?.listIndexes ?? []);
+          newListIndexes = createListIndexes(
+            ref.listIndex, lastCacheEntry?.value, value, lastCacheEntry?.listIndexes ?? []
+          );
         }
         // Create or update cache entry with new value and metadata
         const cacheEntry: ICacheEntry = lastCacheEntry ?? {

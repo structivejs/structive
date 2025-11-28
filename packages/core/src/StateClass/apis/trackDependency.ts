@@ -17,6 +17,8 @@
 import { raiseError } from "../../utils";
 import { IStateHandler, IStateProxy } from "../types";
 
+type TrackDependencyFunction = (path: string) => void;
+
 /**
  * Returns a function to register dynamic dependency from currently resolving getter to specified path.
  *
@@ -31,11 +33,11 @@ import { IStateHandler, IStateProxy } from "../types";
  * @returns        Anonymous function that registers dependency to pattern specified by path argument
  */
 export function trackDependency(
-  target: object, 
-  prop: PropertyKey, 
-  receiver: IStateProxy,
+  _target: object, 
+  _prop: PropertyKey, 
+  _receiver: IStateProxy,
   handler: IStateHandler
-): Function {
+): TrackDependencyFunction {
   return (path: string): void => {
     // Get the currently resolving getter's info from the stack
     const lastInfo = handler.lastRefStack?.info ?? raiseError({

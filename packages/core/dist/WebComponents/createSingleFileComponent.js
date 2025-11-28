@@ -9,7 +9,7 @@
  * escapeEmbed('{{name}}') // Returns '<!--{{name}}-->'
  */
 function escapeEmbed(html) {
-    return html.replaceAll(/\{\{([^\}]+)\}\}/g, (match, expr) => {
+    return html.replaceAll(/\{\{([^}]+)\}\}/g, (match, expr) => {
         return `<!--{{${expr}}}-->`;
     });
 }
@@ -24,7 +24,7 @@ function escapeEmbed(html) {
  * unescapeEmbed('<!--{{name}}-->') // Returns '{{name}}'
  */
 function unescapeEmbed(html) {
-    return html.replaceAll(/<!--\{\{([^\}]+)}}-->/g, (match, expr) => {
+    return html.replaceAll(/<!--\{\{([^}]+)}}-->/g, (match, expr) => {
         return `{{${expr}}}`;
     });
 }

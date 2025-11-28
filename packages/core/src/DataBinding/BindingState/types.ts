@@ -22,12 +22,9 @@ export interface IBindingStateBase {
   readonly ref          : IStatePropertyRef;
   readonly filters      : Filters;
   readonly isLoopIndex  : boolean;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignValue(writeState:IWritableStateProxy, handler:IWritableStateHandler, value:any): void;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getValue(state: IStateProxy, handler: IStateHandler): any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getFilteredValue(state: IStateProxy, handler: IStateHandler): any;
+  assignValue(writeState:IWritableStateProxy, handler:IWritableStateHandler, value:unknown): void;
+  getValue(state: IStateProxy, handler: IStateHandler): unknown;
+  getFilteredValue(state: IStateProxy, handler: IStateHandler): unknown;
 }
 
 /**

@@ -58,7 +58,7 @@ function createBindings(bindContent, id, engine, content) {
         const node = resolveNodeFromPath(content, attribute.nodePath) ??
             raiseError({
                 code: "BIND-102",
-                message: `Node not found: ${attribute.nodePath}`,
+                message: `Node not found: attribute.nodePath`,
                 context: { where: 'BindContent.createBindings', templateId: id, nodePath: attribute.nodePath },
                 docsUrl: "./docs/error-codes.md#bind",
             });
@@ -67,7 +67,7 @@ function createBindings(bindContent, id, engine, content) {
             const creator = attribute.creatorByText.get(bindText) ??
                 raiseError({
                     code: "BIND-103",
-                    message: `Creator not found: ${bindText}`,
+                    message: `Creator not found: bindText`,
                     context: { where: 'BindContent.createBindings', templateId: id, bindText },
                     docsUrl: "./docs/error-codes.md#bind",
                 });
@@ -139,7 +139,11 @@ class BindContent {
      */
     get currentLoopContext() {
         if (typeof this._currentLoopContext === "undefined") {
-            let bindContent = this;
+            if (this.loopContext !== null) {
+                this._currentLoopContext = this.loopContext;
+                return this._currentLoopContext;
+            }
+            let bindContent = this.parentBinding?.parentBindContent ?? null;
             while (bindContent !== null) {
                 if (bindContent.loopContext !== null) {
                     break;
@@ -241,7 +245,7 @@ class BindContent {
      * @throws BIND-201 LoopContext is null
      */
     assignListIndex(listIndex) {
-        if (this.loopContext == null) {
+        if (this.loopContext === null) {
             raiseError({
                 code: "BIND-201",
                 message: "LoopContext is null",

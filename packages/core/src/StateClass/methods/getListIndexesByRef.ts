@@ -19,7 +19,6 @@
 import { IListIndex } from "../../ListIndex/types";
 import { IStatePropertyRef } from "../../StatePropertyRef/types";
 import { raiseError } from "../../utils";
-import { get } from "../traps/get";
 import { IStateHandler, IStateProxy } from "../types";
 import { getByRef } from "./getByRef";
 
@@ -55,7 +54,8 @@ export function getListIndexesByRef(
     });
   }
   // Try to retrieve from stateOutput first (optimization for external dependencies)
-  if (handler.engine.stateOutput.startsWith(ref.info) && handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
+  if (handler.engine.stateOutput.startsWith(ref.info) && 
+        handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
     return handler.engine.stateOutput.getListIndexes(ref) ?? [];
   }
 
@@ -74,7 +74,7 @@ export function getListIndexesByRef(
 
   const listIndexes = cacheEntry.listIndexes;
   // Validate that list indexes exist in cache entry
-  if (listIndexes == null) {
+  if (listIndexes === null) {
     raiseError({
       code: 'LIST-203',
       message: `List indexes not found in cache entry: ${ref.info.pattern}`,

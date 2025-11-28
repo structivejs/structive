@@ -112,6 +112,7 @@ export default tseslint.config(
       'dist/**',
       'coverage/**',
       'node_modules/**',
+      '**/__tests__/**',
       '**/*.js',
       '**/*.mjs',
       '**/*.cjs',

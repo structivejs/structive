@@ -26,7 +26,8 @@ export function getListIndexesByRef(target, ref, receiver, handler) {
         });
     }
     // Try to retrieve from stateOutput first (optimization for external dependencies)
-    if (handler.engine.stateOutput.startsWith(ref.info) && handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
+    if (handler.engine.stateOutput.startsWith(ref.info) &&
+        handler.engine.pathManager.getters.intersection(ref.info.cumulativePathSet).size === 0) {
         return handler.engine.stateOutput.getListIndexes(ref) ?? [];
     }
     // Update cache by calling getByRef, which also calculates list indexes
@@ -43,7 +44,7 @@ export function getListIndexesByRef(target, ref, receiver, handler) {
     }
     const listIndexes = cacheEntry.listIndexes;
     // Validate that list indexes exist in cache entry
-    if (listIndexes == null) {
+    if (listIndexes === null) {
         raiseError({
             code: 'LIST-203',
             message: `List indexes not found in cache entry: ${ref.info.pattern}`,

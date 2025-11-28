@@ -27,10 +27,11 @@ class ComponentStateInputHandler {
      *
      * @param object - Key-value pairs of state properties to assign
      */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     assignState(object) {
         // Synchronous processing
         createUpdater(this._engine, (updater) => {
-            updater.update(null, (stateProxy, handler) => {
+            updater.update(null, (stateProxy) => {
                 for (const [key, value] of Object.entries(object)) {
                     const childPathInfo = getStructuredPathInfo(key);
                     const childRef = getStatePropertyRef(childPathInfo, null);
@@ -53,7 +54,7 @@ class ComponentStateInputHandler {
                 try {
                     childPath = this._componentStateBinding.toChildPathFromParentPath(parentPathRef.info.pattern);
                 }
-                catch (e) {
+                catch (_e) {
                     // Ignore non-target paths
                     continue;
                 }
@@ -73,7 +74,6 @@ class ComponentStateInputHandler {
                     });
                 }
                 const childRef = getStatePropertyRef(childPathInfo, childListIndex);
-                const value = this._engine.getPropertyValue(childRef);
                 // Add to state update queue based on ref information
                 updater.enqueueRef(childRef);
             }
@@ -88,7 +88,8 @@ class ComponentStateInputHandler {
      * @returns Property value or bound method
      * @throws Error if property is not supported
      */
-    get(target, prop, receiver) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    get(_target, prop, _receiver) {
         if (prop === AssignStateSymbol) {
             return this.assignState.bind(this);
         }
@@ -111,7 +112,8 @@ class ComponentStateInputHandler {
      * @returns true if set operation succeeded
      * @throws Error if property is not supported
      */
-    set(target, prop, value, receiver) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    set(_target, prop, value, _receiver) {
         if (typeof prop === "string") {
             const ref = getStatePropertyRef(getStructuredPathInfo(prop), null);
             this._engine.setPropertyValue(ref, value);

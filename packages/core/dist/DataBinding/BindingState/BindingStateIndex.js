@@ -102,7 +102,7 @@ class BindingStateIndex {
      * @returns Index number
      * @throws LIST-201 listIndex is null
      */
-    getValue(state, handler) {
+    getValue(_state, _handler) {
         return this.listIndex?.index ?? raiseError({
             code: 'LIST-201',
             message: 'listIndex is null',
@@ -118,7 +118,7 @@ class BindingStateIndex {
      * @returns Filtered index value
      * @throws LIST-201 listIndex is null
      */
-    getFilteredValue(state, handler) {
+    getFilteredValue(_tate, _handler) {
         let value = this.listIndex?.index ?? raiseError({
             code: 'LIST-201',
             message: 'listIndex is null',
@@ -138,7 +138,7 @@ class BindingStateIndex {
      * @param value - Value to assign (unused)
      * @throws BIND-301 Not implemented
      */
-    assignValue(writeState, handler, value) {
+    assignValue(_writeState, _handler, _value) {
         raiseError({
             code: 'BIND-301',
             message: 'Not implemented',
@@ -168,7 +168,7 @@ class BindingStateIndex {
                 docsUrl: '/docs/error-codes.md#bind',
             });
         const bindingForList = this._loopContext.bindContent.parentBinding;
-        if (bindingForList == null) {
+        if (bindingForList === null) {
             raiseError({
                 code: 'BIND-201',
                 message: 'Binding for list is null',

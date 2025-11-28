@@ -31,7 +31,7 @@ import { getByRef } from "../methods/getByRef.js";
  * @throws STATE-202 If indexes length insufficient or setting on readonly proxy
  * @throws LIST-201 If list index not found at any wildcard level
  */
-export function resolve(target, prop, receiver, handler) {
+export function resolve(target, _prop, receiver, handler) {
     return (path, indexes, value) => {
         const info = getStructuredPathInfo(path);
         const lastInfo = handler.lastRefStack?.info ?? null;
@@ -58,10 +58,10 @@ export function resolve(target, prop, receiver, handler) {
             // Get reference for current wildcard level
             const wildcardRef = getStatePropertyRef(wildcardParentPattern, listIndex);
             // Access the value to ensure list exists
-            const tmpValue = getByRef(target, wildcardRef, receiver, handler);
+            getByRef(target, wildcardRef, receiver, handler);
             // Get all list indexes at this level
             const listIndexes = receiver[GetListIndexesByRefSymbol](wildcardRef);
-            if (listIndexes == null) {
+            if (listIndexes === null) {
                 raiseError({
                     code: 'LIST-201',
                     message: `ListIndexes not found: ${wildcardParentPattern.pattern}`,

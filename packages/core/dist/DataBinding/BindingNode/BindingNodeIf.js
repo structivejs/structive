@@ -51,7 +51,7 @@ class BindingNodeIf extends BindingNodeBlock {
      * @param value - Value (unused)
      * @throws BIND-201 Not implemented
      */
-    assignValue(value) {
+    assignValue(_value) {
         raiseError({
             code: 'BIND-201',
             message: 'Not implemented',
@@ -81,7 +81,7 @@ class BindingNodeIf extends BindingNodeBlock {
             });
         }
         const parentNode = this.node.parentNode;
-        if (parentNode == null) {
+        if (parentNode === null) {
             raiseError({
                 code: 'BIND-201',
                 message: 'ParentNode is null',

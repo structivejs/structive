@@ -132,7 +132,7 @@ export class BindingNode {
      * @param value - Value to assign to DOM
      * @throws BIND-301 Not implemented
      */
-    assignValue(value) {
+    assignValue(_value) {
         raiseError({
             code: 'BIND-301',
             message: 'Not implemented',
@@ -149,7 +149,7 @@ export class BindingNode {
      * @param values - Array of values
      * @throws BIND-301 Not implemented
      */
-    updateElements(listIndexes, values) {
+    updateElements(_listIndexes, _values) {
         raiseError({
             code: 'BIND-301',
             message: 'Not implemented',
@@ -164,7 +164,7 @@ export class BindingNode {
      *
      * @param refs - Array of state references for redraw
      */
-    notifyRedraw(refs) {
+    notifyRedraw(_refs) {
         // Subclasses can implement notification considering parent-child relationships
     }
     /**

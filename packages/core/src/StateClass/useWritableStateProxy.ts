@@ -38,7 +38,7 @@ class StateHandler implements IWritableStateHandler {
   readonly engine: IComponentEngine;
   readonly updater: IUpdater;
   readonly renderer: IRenderer | null = null;
-  readonly refStack: (IStatePropertyRef | null)[] = Array(STACK_DEPTH).fill(null);
+  readonly refStack: (IStatePropertyRef | null)[] = Array(STACK_DEPTH).fill(null) as (IStatePropertyRef | null)[];
   refIndex: number = -1;
   lastRefStack: IStatePropertyRef | null = null;
   loopContext: ILoopContext | null = null;
@@ -75,7 +75,7 @@ class StateHandler implements IWritableStateHandler {
     target  : object, 
     prop    : PropertyKey, 
     receiver: IWritableStateProxy
-  ): any {
+  ): unknown {
     return trapGet(target, prop, receiver, this);
   }
 
@@ -94,7 +94,7 @@ class StateHandler implements IWritableStateHandler {
   set(
     target  : object, 
     prop    : PropertyKey, 
-    value   : any, 
+    value   : unknown, 
     receiver: IWritableStateProxy
   ): boolean {
     return trapSet(target, prop, value, receiver, this);
@@ -133,10 +133,10 @@ class StateHandler implements IWritableStateHandler {
  * @param callback - Function to execute with the writable state proxy
  * @returns Result of the callback execution
  */
-export function useWritableStateProxy<R extends Promise<any> | any>(
+export function useWritableStateProxy<R>(
   engine: IComponentEngine, 
   updater: IUpdater,
-  state: object,
+  state: IState,
   loopContext: ILoopContext | null,
   callback: (stateProxy: IWritableStateProxy, handler: IWritableStateHandler) => R
 ): R {

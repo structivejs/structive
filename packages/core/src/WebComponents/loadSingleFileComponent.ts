@@ -36,10 +36,11 @@ import { IUserComponentData } from "./types";
 export async function loadSingleFileComponent(path: string): Promise<IUserComponentData> {
   // Resolve path using import.meta.resolve if available
   // Fallback to raw path for SSR environments (Node/Vitest) where import.meta.resolve may not exist
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   const resolved = (import.meta as any).resolve ? (import.meta as any).resolve(path) : path;
   
   // Fetch the SFC file from the resolved path
-  const response = await fetch(resolved);
+  const response = await fetch(resolved as string);
   
   // Read the response body as text
   const text = await response.text();

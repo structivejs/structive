@@ -96,8 +96,7 @@ class BindingState implements IBindingState {
    * @param handler - State handler
    * @returns Raw value from state
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getValue(state:IStateProxy, handler:IStateHandler): any {
+  getValue(state:IStateProxy, handler:IStateHandler): unknown {
     return getByRef(this._binding.engine.state, this.ref, state, handler);
   }
 
@@ -108,9 +107,7 @@ class BindingState implements IBindingState {
    * @param handler - State handler
    * @returns Filtered value
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getFilteredValue(state:IStateProxy, handler:IStateHandler): any {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  getFilteredValue(state:IStateProxy, handler:IStateHandler): unknown {
     let value = getByRef(this._binding.engine.state, this.ref, state, handler);
     for(let i = 0; i < this.filters.length; i++) {
       value = this.filters[i](value);
@@ -125,8 +122,7 @@ class BindingState implements IBindingState {
    * @param handler - Writable state handler
    * @param value - Value to assign
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignValue(writeState: IWritableStateProxy, handler: IWritableStateHandler, value: any) {
+  assignValue(writeState: IWritableStateProxy, handler: IWritableStateHandler, value: unknown) {
     setByRef(this._binding.engine.state, this.ref, value, writeState, handler);
   }
 

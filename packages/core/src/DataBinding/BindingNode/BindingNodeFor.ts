@@ -13,7 +13,7 @@ import { IBindContent, IBinding } from "../types";
 import { BindingNodeBlock } from "./BindingNodeBlock.js";
 import { CreateBindingNodeFn } from "./types";
 
-const EMPTY_SET = new Set<any>();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
 const USE_ALL_APPEND = (globalThis as any).__STRUCTIVE_USE_ALL_APPEND__ === true;
 
 /**
@@ -26,7 +26,7 @@ class BindingNodeFor extends BindingNodeBlock {
   private _bindContentPool: IBindContent[] = [];
   private _bindContentLastIndex: number = 0;
   private _loopInfo: IStructuredPathInfo | undefined = undefined;
-  private _oldList: any = undefined;
+  private _oldList: unknown = undefined;
   private _oldListIndexes: IListIndex[] = [];
   private _oldListIndexSet: Set<IListIndex> = new Set();
 
@@ -140,7 +140,7 @@ class BindingNodeFor extends BindingNodeBlock {
    * @param value - Value (unused)
    * @throws BIND-301 Not implemented
    */
-  assignValue(value:any) {
+  assignValue(_value: unknown) {
     raiseError({
       code: 'BIND-301',
       message: 'Not implemented. Use update or applyChange',
@@ -161,12 +161,32 @@ class BindingNodeFor extends BindingNodeBlock {
 
     // Detect changes: adds, removes, changeIndexes, overwrites
     const newList = renderer.readonlyState[GetByRefSymbol](this.binding.bindingState.ref);
+    if (!Array.isArray(newList)) {
+      raiseError({
+        code: 'BIND-201',
+        message: 'Value is not array',
+        context: { where: 'BindingNodeFor.applyChange', ref: this.binding.bindingState.ref },
+        docsUrl: './docs/error-codes.md#bind',
+      });
+    }
     const newListIndexes = renderer.readonlyState[GetListIndexesByRefSymbol](this.binding.bindingState.ref) ?? [];
     const newListIndexesSet = new Set<IListIndex>(newListIndexes);
-    const oldSet = new Set<any>(this._oldList ?? EMPTY_SET);
-    const oldListLength = this._oldList?.length ?? 0;
-    const removesSet = newListIndexesSet.size === 0 ? this._oldListIndexSet : this._oldListIndexSet.difference(newListIndexesSet);
-    const addsSet = this._oldListIndexSet.size === 0 ? newListIndexesSet : newListIndexesSet.difference(this._oldListIndexSet);
+    const oldList = this._oldList ?? [];
+    if (!Array.isArray(oldList)) {
+      raiseError({
+        code: 'BIND-201',
+        message: 'Old value is not array',
+        context: { where: 'BindingNodeFor.applyChange', ref: this.binding.bindingState.ref },
+        docsUrl: './docs/error-codes.md#bind',
+      });
+    }
+    const oldListLength = oldList.length ?? 0;
+    const removesSet = newListIndexesSet.size === 0 
+      ? this._oldListIndexSet 
+      : this._oldListIndexSet.difference(newListIndexesSet);
+    const addsSet = this._oldListIndexSet.size === 0 
+      ? newListIndexesSet 
+      : newListIndexesSet.difference(this._oldListIndexSet);
     const newListLength = newList?.length ?? 0;
     const changeIndexesSet = new Set<IListIndex>();
     const overwritesSet = new Set<IListIndex>();
@@ -347,7 +367,7 @@ class BindingNodeFor extends BindingNodeBlock {
     // Update state for next diff detection
     this.poolLength = this.bindContentLastIndex + 1;
     this._bindContents = newBindContents;
-    this._oldList = [...newList];
+    this._oldList = [...newList as unknown[]];
     this._oldListIndexes = [...newListIndexes];
     this._oldListIndexSet = newListIndexesSet;
   }

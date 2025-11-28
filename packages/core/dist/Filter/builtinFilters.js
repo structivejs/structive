@@ -16,8 +16,14 @@
  */
 import { getGlobalConfig } from "../WebComponents/getGlobalConfig.js";
 import { raiseError } from "../utils.js";
-import { optionMustBeNumber, optionsRequired, valueMustBeBoolean, valueMustBeDate, valueMustBeNumber } from "./errorMessages.js";
+import { optionMustBeNumber, optionsRequired, valueMustBeBoolean, valueMustBeDate, valueMustBeNumber, valueMustBeString } from "./errorMessages.js";
 const config = getGlobalConfig();
+function validateNumberString(value) {
+    if (!value || isNaN(Number(value))) {
+        return false;
+    }
+    return true;
+}
 /**
  * Equality filter - compares value with option.
  *
@@ -31,11 +37,10 @@ const eq = (options) => {
     return (value) => {
         // Align types for comparison
         if (typeof value === 'number') {
-            const optValue = Number(opt);
-            if (isNaN(optValue)) {
+            if (validateNumberString(opt)) {
                 optionMustBeNumber('eq');
             }
-            return value === optValue;
+            return value === Number(opt);
         }
         if (typeof value === 'string') {
             return value === opt;
@@ -57,11 +62,10 @@ const ne = (options) => {
     return (value) => {
         // Align types for comparison
         if (typeof value === 'number') {
-            const optValue = Number(opt);
-            if (isNaN(optValue)) {
+            if (validateNumberString(opt)) {
                 optionMustBeNumber('ne');
             }
-            return value !== optValue;
+            return value !== Number(opt);
         }
         if (typeof value === 'string') {
             return value !== opt;
@@ -77,7 +81,7 @@ const ne = (options) => {
  * @returns Filter function that returns inverted boolean
  * @throws FLT-103 Value must be boolean
  */
-const not = (options) => {
+const not = (_options) => {
     return (value) => {
         if (typeof value !== 'boolean') {
             valueMustBeBoolean('not');
@@ -96,15 +100,14 @@ const not = (options) => {
  */
 const lt = (options) => {
     const opt = options?.[0] ?? optionsRequired('lt');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('lt');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('lt');
         }
-        return value < optValue;
+        return value < Number(opt);
     };
 };
 /**
@@ -118,15 +121,14 @@ const lt = (options) => {
  */
 const le = (options) => {
     const opt = options?.[0] ?? optionsRequired('le');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('le');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('le');
         }
-        return value <= optValue;
+        return value <= Number(opt);
     };
 };
 /**
@@ -140,15 +142,14 @@ const le = (options) => {
  */
 const gt = (options) => {
     const opt = options?.[0] ?? optionsRequired('gt');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('gt');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('gt');
         }
-        return value > optValue;
+        return value > Number(opt);
     };
 };
 /**
@@ -162,15 +163,14 @@ const gt = (options) => {
  */
 const ge = (options) => {
     const opt = options?.[0] ?? optionsRequired('ge');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('ge');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('ge');
         }
-        return value >= optValue;
+        return value >= Number(opt);
     };
 };
 /**
@@ -184,15 +184,14 @@ const ge = (options) => {
  */
 const inc = (options) => {
     const opt = options?.[0] ?? optionsRequired('inc');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('inc');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('inc');
         }
-        return value + optValue;
+        return value + Number(opt);
     };
 };
 /**
@@ -206,15 +205,14 @@ const inc = (options) => {
  */
 const dec = (options) => {
     const opt = options?.[0] ?? optionsRequired('dec');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('dec');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('dec');
         }
-        return value - optValue;
+        return value - Number(opt);
     };
 };
 /**
@@ -228,15 +226,14 @@ const dec = (options) => {
  */
 const mul = (options) => {
     const opt = options?.[0] ?? optionsRequired('mul');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('mul');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('mul');
         }
-        return value * optValue;
+        return value * Number(opt);
     };
 };
 /**
@@ -250,15 +247,14 @@ const mul = (options) => {
  */
 const div = (options) => {
     const opt = options?.[0] ?? optionsRequired('div');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('div');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('div');
         }
-        return value / optValue;
+        return value / Number(opt);
     };
 };
 /**
@@ -272,15 +268,14 @@ const div = (options) => {
  */
 const mod = (options) => {
     const opt = options?.[0] ?? optionsRequired('mod');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('mod');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('mod');
         }
-        return value % optValue;
+        return value % Number(opt);
     };
 };
 /**
@@ -292,16 +287,15 @@ const mod = (options) => {
  * @throws FLT-104 Value must be number
  */
 const fix = (options) => {
-    const opt = options?.[0] ?? 0;
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    const opt = options?.[0] ?? "0";
+    if (validateNumberString(opt)) {
         optionMustBeNumber('fix');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('fix');
         }
-        return value.toFixed(optValue);
+        return value.toFixed(Number(opt));
     };
 };
 /**
@@ -326,9 +320,12 @@ const locale = (options) => {
  * @param options - Unused
  * @returns Filter function that returns uppercase string
  */
-const uc = (options) => {
+const uc = (_options) => {
     return (value) => {
-        return value.toString().toUpperCase();
+        if (typeof value !== 'string') {
+            valueMustBeString('uc');
+        }
+        return value.toUpperCase();
     };
 };
 /**
@@ -337,9 +334,12 @@ const uc = (options) => {
  * @param options - Unused
  * @returns Filter function that returns lowercase string
  */
-const lc = (options) => {
+const lc = (_options) => {
     return (value) => {
-        return value.toString().toLowerCase();
+        if (typeof value !== 'string') {
+            valueMustBeString('lc');
+        }
+        return value.toLowerCase();
     };
 };
 /**
@@ -348,9 +348,12 @@ const lc = (options) => {
  * @param options - Unused
  * @returns Filter function that returns capitalized string
  */
-const cap = (options) => {
+const cap = (_options) => {
     return (value) => {
-        const v = value.toString();
+        if (typeof value !== 'string') {
+            valueMustBeString('cap');
+        }
+        const v = (value ?? "").toString();
         if (v.length === 0) {
             return v;
         }
@@ -366,9 +369,12 @@ const cap = (options) => {
  * @param options - Unused
  * @returns Filter function that returns trimmed string
  */
-const trim = (options) => {
+const trim = (_options) => {
     return (value) => {
-        return value.toString().trim();
+        if (typeof value !== 'string') {
+            valueMustBeString('trim');
+        }
+        return value.trim();
     };
 };
 /**
@@ -381,12 +387,14 @@ const trim = (options) => {
  */
 const slice = (options) => {
     const opt = options?.[0] ?? optionsRequired('slice');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('slice');
     }
     return (value) => {
-        return value.toString().slice(optValue);
+        if (typeof value !== 'string') {
+            valueMustBeString('slice');
+        }
+        return value.slice(Number(opt));
     };
 };
 /**
@@ -399,17 +407,18 @@ const slice = (options) => {
  */
 const substr = (options) => {
     const opt1 = options?.[0] ?? optionsRequired('substr');
-    const opt1Value = Number(opt1);
-    if (isNaN(opt1Value)) {
+    if (validateNumberString(opt1)) {
         optionMustBeNumber('substr');
     }
     const opt2 = options?.[1] ?? optionsRequired('substr');
-    const opt2Value = Number(opt2);
-    if (isNaN(opt2Value)) {
+    if (validateNumberString(opt2)) {
         optionMustBeNumber('substr');
     }
     return (value) => {
-        return value.toString().substr(opt1Value, opt2Value);
+        if (typeof value !== 'string') {
+            valueMustBeString('substr');
+        }
+        return value.substr(Number(opt1), Number(opt2));
     };
 };
 /**
@@ -422,14 +431,15 @@ const substr = (options) => {
  */
 const pad = (options) => {
     const opt1 = options?.[0] ?? optionsRequired('pad');
-    const opt1Value = Number(opt1);
-    if (isNaN(opt1Value)) {
+    if (validateNumberString(opt1)) {
         optionMustBeNumber('pad');
     }
     const opt2 = options?.[1] ?? '0';
-    const opt2Value = opt2;
     return (value) => {
-        return value.toString().padStart(opt1Value, opt2Value);
+        if (typeof value !== 'string') {
+            valueMustBeString('pad');
+        }
+        return value.padStart(Number(opt1), opt2);
     };
 };
 /**
@@ -442,12 +452,14 @@ const pad = (options) => {
  */
 const rep = (options) => {
     const opt = options?.[0] ?? optionsRequired('rep');
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    if (validateNumberString(opt)) {
         optionMustBeNumber('rep');
     }
     return (value) => {
-        return value.toString().repeat(optValue);
+        if (typeof value !== 'string') {
+            valueMustBeString('rep');
+        }
+        return value.repeat(Number(opt));
     };
 };
 /**
@@ -456,9 +468,12 @@ const rep = (options) => {
  * @param options - Unused
  * @returns Filter function that returns reversed string
  */
-const rev = (options) => {
+const rev = (_options) => {
     return (value) => {
-        return value.toString().split('').reverse().join('');
+        if (typeof value !== 'string') {
+            valueMustBeString('rev');
+        }
+        return value.split('').reverse().join('');
     };
 };
 /**
@@ -467,8 +482,11 @@ const rev = (options) => {
  * @param options - Unused
  * @returns Filter function that returns integer
  */
-const int = (options) => {
+const int = (_options) => {
     return (value) => {
+        if (typeof value !== 'string') {
+            valueMustBeString('int');
+        }
         return parseInt(value, 10);
     };
 };
@@ -478,8 +496,11 @@ const int = (options) => {
  * @param options - Unused
  * @returns Filter function that returns float
  */
-const float = (options) => {
+const float = (_options) => {
     return (value) => {
+        if (typeof value !== 'string') {
+            valueMustBeString('float');
+        }
         return parseFloat(value);
     };
 };
@@ -492,15 +513,15 @@ const float = (options) => {
  * @throws FLT-104 Value must be number
  */
 const round = (options) => {
-    const opt = options?.[0] ?? 0;
-    const optValue = Math.pow(10, Number(opt));
-    if (isNaN(optValue)) {
+    const opt = options?.[0] ?? '0';
+    if (validateNumberString(opt)) {
         optionMustBeNumber('round');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('round');
         }
+        const optValue = Math.pow(10, Number(opt));
         return Math.round(value * optValue) / optValue;
     };
 };
@@ -513,15 +534,15 @@ const round = (options) => {
  * @throws FLT-104 Value must be number
  */
 const floor = (options) => {
-    const opt = options?.[0] ?? 0;
-    const optValue = Math.pow(10, Number(opt));
-    if (isNaN(optValue)) {
+    const opt = options?.[0] ?? '0';
+    if (validateNumberString(opt)) {
         optionMustBeNumber('floor');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('floor');
         }
+        const optValue = Math.pow(10, Number(opt));
         return Math.floor(value * optValue) / optValue;
     };
 };
@@ -534,15 +555,15 @@ const floor = (options) => {
  * @throws FLT-104 Value must be number
  */
 const ceil = (options) => {
-    const opt = options?.[0] ?? 0;
-    const optValue = Math.pow(10, Number(opt));
-    if (isNaN(optValue)) {
+    const opt = options?.[0] ?? '0';
+    if (validateNumberString(opt)) {
         optionMustBeNumber('ceil');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('ceil');
         }
+        const optValue = Math.pow(10, Number(opt));
         return Math.ceil(value * optValue) / optValue;
     };
 };
@@ -555,16 +576,15 @@ const ceil = (options) => {
  * @throws FLT-104 Value must be number
  */
 const percent = (options) => {
-    const opt = options?.[0] ?? 0;
-    const optValue = Number(opt);
-    if (isNaN(optValue)) {
+    const opt = options?.[0] ?? '0';
+    if (validateNumberString(opt)) {
         optionMustBeNumber('percent');
     }
     return (value) => {
         if (typeof value !== 'number') {
             valueMustBeNumber('percent');
         }
-        return `${(value * 100).toFixed(optValue)}%`;
+        return `${(value * 100).toFixed(Number(opt))}%`;
     };
 };
 /**
@@ -640,7 +660,7 @@ const ymd = (options) => {
  * @param options - Unused
  * @returns Filter function that returns true for false/null/undefined/0/''/NaN
  */
-const falsy = (options) => {
+const falsy = (_options) => {
     return (value) => value === false || value === null || value === undefined || value === 0 || value === '' || Number.isNaN(value);
 };
 /**
@@ -649,7 +669,7 @@ const falsy = (options) => {
  * @param options - Unused
  * @returns Filter function that returns true for non-falsy values
  */
-const truthy = (options) => {
+const truthy = (_options) => {
     return (value) => value !== false && value !== null && value !== undefined && value !== 0 && value !== '' && !Number.isNaN(value);
 };
 /**
@@ -674,7 +694,7 @@ const defaults = (options) => {
  * @param options - Unused
  * @returns Filter function that returns boolean
  */
-const boolean = (options) => {
+const boolean = (_options) => {
     return (value) => {
         return Boolean(value);
     };
@@ -685,7 +705,7 @@ const boolean = (options) => {
  * @param options - Unused
  * @returns Filter function that returns number
  */
-const number = (options) => {
+const number = (_options) => {
     return (value) => {
         return Number(value);
     };
@@ -696,7 +716,7 @@ const number = (options) => {
  * @param options - Unused
  * @returns Filter function that returns string
  */
-const string = (options) => {
+const string = (_options) => {
     return (value) => {
         return String(value);
     };
@@ -707,7 +727,7 @@ const string = (options) => {
  * @param options - Unused
  * @returns Filter function that returns null for empty string, otherwise original value
  */
-const _null = (options) => {
+const _null = (_options) => {
     return (value) => {
         return (value === "") ? null : value;
     };

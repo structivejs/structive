@@ -16,14 +16,14 @@ class BindingNodeStyle extends BindingNode {
    * 
    * @param value - Value to assign to CSS property
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignValue(value:any) {
+  assignValue(value: unknown) {
     const element = this.node as HTMLElement;
     const stringValue = 
       value === null || 
       value === undefined || 
       (typeof value === "number" && Number.isNaN(value))
         ? ""
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         : String(value);
 
     element.style.setProperty(this.subName, stringValue.toString());

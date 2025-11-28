@@ -19,8 +19,7 @@ class BindingNodeClassName extends BindingNode {
    * @param value - Boolean value (true: add class, false: remove class)
    * @throws BIND-201 Value is not boolean
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignValue(value:any) {
+  assignValue(value: unknown) {
     if (typeof value !== "boolean") {
       raiseError({
         code: 'BIND-201',

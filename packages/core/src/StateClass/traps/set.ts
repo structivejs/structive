@@ -40,7 +40,7 @@ import { IStateProxy, IStateHandler } from "../types";
 export function set(
   target  : object, 
   prop    : PropertyKey, 
-  value   : any, 
+  value   : unknown, 
   receiver: IStateProxy,
   handler : IStateHandler
 ): boolean {
@@ -50,13 +50,14 @@ export function set(
     const listIndex = getListIndex(resolvedInfo, receiver, handler);
     const ref = getStatePropertyRef(resolvedInfo.info, listIndex);
     // Set value via setByRef to handle dependencies and updates
-    return setByRef(
+    setByRef(
       target, 
       ref,
       value, 
       receiver,
       handler
     );
+    return true;
   } else {
     // For non-string properties (symbols, etc.), use default behavior
     return Reflect.set(

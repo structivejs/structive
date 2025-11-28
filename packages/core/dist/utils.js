@@ -52,19 +52,25 @@ export function raiseError(messageOrPayload) {
     // Create base Error with the message
     const err = new Error(message);
     // Attach additional metadata as properties (keeping message for existing compatibility)
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     err.code = code;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     if (context) {
         err.context = context;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     if (hint) {
         err.hint = hint;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     if (docsUrl) {
         err.docsUrl = docsUrl;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     if (severity) {
         err.severity = severity;
     }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
     if (cause) {
         err.cause = cause;
     }

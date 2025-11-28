@@ -26,11 +26,11 @@ import { IStateHandler, IStateProxy } from "../types";
  */
 export function connectedCallback(
   target: object, 
-  prop: PropertyKey, 
+  _prop: PropertyKey, 
   receiver: IStateProxy,
-  handler: IStateHandler
-): Promise<void> | void {
-  const callback = Reflect.get(target, CONNECTED_CALLBACK_FUNC_NAME);
+  _handler: IStateHandler
+): unknown {
+  const callback: unknown = Reflect.get(target, CONNECTED_CALLBACK_FUNC_NAME);
   if (typeof callback === "function") {
     return callback.call(receiver);
   }

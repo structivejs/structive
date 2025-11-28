@@ -20,8 +20,7 @@ class BindingNodeClassList extends BindingNode {
    * @param value - Array of class names
    * @throws BIND-201 Value is not array
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignValue(value:any) {
+  assignValue(value: unknown) {
     if (!Array.isArray(value)) {
       raiseError({
         code: 'BIND-201',

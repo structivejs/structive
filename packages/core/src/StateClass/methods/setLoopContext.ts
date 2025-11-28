@@ -44,8 +44,10 @@ export function setLoopContext<R>(
     raiseError({
       code: 'STATE-301',
       message: 'already in loop context',
-      context: { where: 'setLoopContext' },
+      context: { where: 'setLoopContext', handlerHasContext: true },
       docsUrl: '/docs/error-codes.md#state',
+      hint: 'Ensure handler.loopContext is cleared before invoking setLoopContext again.',
+      severity: 'error',
     });
   }
   // Set the new loop context
@@ -58,6 +60,14 @@ export function setLoopContext<R>(
         raiseError({
           code: 'STC-002',
           message: 'handler.refStack is empty in getByRef',
+          context: {
+            where: 'setLoopContext',
+            refIndex: handler.refIndex,
+            refStackLength: handler.refStack.length,
+          },
+          docsUrl: '/docs/error-codes.md#state',
+          hint: 'Invoke setLoopContext only after initializing refStack via asyncSetStatePropertyRef.',
+          severity: 'error',
         });
       }
       // Push loop context ref onto stack for scope tracking
@@ -82,9 +92,19 @@ export function setLoopContext<R>(
   } finally {
     // For Promise, return a new Promise chain with finally applied
     if (resultPromise instanceof Promise) {
-      return resultPromise.finally(() => {
+      resultPromise.finally(() => {
         handler.loopContext = null;
-      }) as R;
+      }).catch((error) => {
+        raiseError({
+          code: 'STC-002',
+          message: 'Error in setLoopContext finally block',
+          context: { where: 'setLoopContext.cleanup' },
+          docsUrl: '/docs/error-codes.md#state',
+          hint: 'Inspect the promise returned by the callback for cleanup failures.',
+          severity: 'error',
+          cause: error,
+        });
+      });
     }
     // For synchronous case, reset immediately
     handler.loopContext = null;

@@ -12,11 +12,14 @@ class BindingNodeAttribute extends BindingNode {
      * @param value - Value to assign to attribute
      */
     assignValue(value) {
-        if (value === null || value === undefined || Number.isNaN(value)) {
-            value = "";
-        }
         const element = this.node;
-        element.setAttribute(this.subName, value.toString());
+        const stringValue = value === null ||
+            value === undefined ||
+            (typeof value === "number" && Number.isNaN(value))
+            ? ""
+            // eslint-disable-next-line @typescript-eslint/no-base-to-string
+            : String(value);
+        element.setAttribute(this.subName, stringValue);
     }
 }
 /**

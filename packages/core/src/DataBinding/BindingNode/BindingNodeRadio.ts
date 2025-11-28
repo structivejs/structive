@@ -74,8 +74,7 @@ class BindingNodeRadio extends BindingNode {
    * 
    * @returns Value attribute string
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get value(): any {
+  get value(): unknown {
     const element = this.node as HTMLInputElement;
     return element.value;
   }
@@ -85,14 +84,11 @@ class BindingNodeRadio extends BindingNode {
    * 
    * @returns Filtered value
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get filteredValue(): any {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  get filteredValue(): unknown {
     let value = this.value;
     for (let i = 0; i < this.filters.length; i++) {
       value = this.filters[i](value);
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return value;
   }
   
@@ -102,18 +98,16 @@ class BindingNodeRadio extends BindingNode {
    * 
    * @param value - Value from state binding
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignValue(value:any) {
-    let anyValue;
-    if (value === null || value === undefined) {
-      anyValue = "";
+  assignValue(rawValue: unknown) {
+    let value;
+    if (rawValue === null || rawValue === undefined) {
+      value = "";
     } else {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      anyValue = value;
+      value = rawValue;
     }
     
     const element = this.node as HTMLInputElement;
-    element.checked = anyValue === this.filteredValue;
+    element.checked = value === this.filteredValue;
   }
 }
 

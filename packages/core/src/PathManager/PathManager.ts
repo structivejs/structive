@@ -30,7 +30,7 @@ class PathManager implements IPathManager {
   readonly hasUpdatedCallback: boolean = false;
 
   private _id: number;
-  private _stateClass: Constructor<any>;
+  private _stateClass: Constructor<object>;
   private _dynamicDependencyKeys = new Set<string>();
 
   /**
@@ -60,7 +60,7 @@ class PathManager implements IPathManager {
       const elementPath = `${listPath  }.*`;
       this.elements.add(elementPath);
     }
-    let currentProto = this._stateClass.prototype;
+    let currentProto: unknown = this._stateClass.prototype;
     while (currentProto && currentProto !== Object.prototype) {
       const getters = Object.getOwnPropertyDescriptors(currentProto);
       if (getters) {
@@ -81,8 +81,8 @@ class PathManager implements IPathManager {
             }
             continue;
           }
-          const hasGetter = (desc as PropertyDescriptor).get !== undefined;
-          const hasSetter = (desc as PropertyDescriptor).set !== undefined;
+          const hasGetter = desc.get !== undefined;
+          const hasSetter = desc.set !== undefined;
           const info = getStructuredPathInfo(key);
           this.alls = this.alls.union(info.cumulativePathSet);
           if (hasGetter) {
@@ -127,8 +127,12 @@ class PathManager implements IPathManager {
       addPathNode(this.rootNode, path);
       const info = getStructuredPathInfo(path);
       if (info.parentPath) {
-        this.staticDependencies.get(info.parentPath)?.add(path) ?? 
+        const dependencies = this.staticDependencies.get(info.parentPath);
+        if (typeof dependencies !== "undefined") {
+          dependencies.add(path);
+        } else {
           this.staticDependencies.set(info.parentPath, new Set([path]));
+        }
       }
     }
   }
@@ -170,8 +174,12 @@ class PathManager implements IPathManager {
       }
 
       if (pathInfo.parentPath) {
-        this.staticDependencies.get(pathInfo.parentPath)?.add(path) ?? 
+        const dependencies = this.staticDependencies.get(pathInfo.parentPath);
+        if (typeof dependencies !== "undefined") {
+          dependencies.add(path);
+        } else {
           this.staticDependencies.set(pathInfo.parentPath, new Set([path]));
+        }
       }
     }
   }
@@ -182,7 +190,7 @@ class PathManager implements IPathManager {
    * @param source - Source path that target depends on
    */
   addDynamicDependency(target: string, source: string) {
-    const key = `${source  }=>${  target}`;
+    const key = `${source}=>${target}`;
     if (this._dynamicDependencyKeys.has(key)) {
       return;
     }
@@ -190,8 +198,13 @@ class PathManager implements IPathManager {
       this.addPath(source)
     }
     this._dynamicDependencyKeys.add(key);
-    this.dynamicDependencies.get(source)?.add(target) ?? 
+
+    const dependencies = this.dynamicDependencies.get(source);
+    if (typeof dependencies !== "undefined") {
+      dependencies.add(target);
+    } else {
       this.dynamicDependencies.set(source, new Set([target]));
+    }
   }
 }
 

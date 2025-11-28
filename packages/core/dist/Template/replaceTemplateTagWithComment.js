@@ -34,7 +34,8 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  * template.innerHTML = '<div>{{name}}</div>';
  * const templateId = replaceTemplateTagWithComment(1, template);
  */
-export function replaceTemplateTagWithComment(id, template, rootId = id) {
+export function replaceTemplateTagWithComment(id, rawTemplate, rootId = id) {
+    let template = rawTemplate;
     // Replace the template element with a comment node in the DOM
     // This preserves the template's position while removing it from the visible DOM
     // Extract data-bind attribute for optional debug information

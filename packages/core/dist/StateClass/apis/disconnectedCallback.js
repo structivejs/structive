@@ -21,9 +21,9 @@ import { DISCONNECTED_CALLBACK_FUNC_NAME } from "../../constants";
  * @param receiver - State proxy to pass as this context
  * @param handler - State handler (unused but part of signature)
  */
-export function disconnectedCallback(target, prop, receiver, handler) {
+export function disconnectedCallback(target, _prop, receiver, _handler) {
     const callback = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
-        callback.call(receiver);
+        return callback.call(receiver);
     }
 }

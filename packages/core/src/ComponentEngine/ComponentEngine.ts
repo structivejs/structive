@@ -207,7 +207,7 @@ class ComponentEngine implements IComponentEngine {
    * @throws BIND-201 Block parent node is not set
    * @throws STATE-202 Failed to parse state from dataset
    */
-  async connectedCallback(): Promise<void> {
+  connectedCallback(): void {
     if (this.config.enableWebComponents) {
       attachShadow(this.owner, this.config, this.styleSheet);
     } else {
@@ -272,10 +272,22 @@ class ComponentEngine implements IComponentEngine {
         });
       });
       if (resultPromise instanceof Promise) {
-        await resultPromise;
+        resultPromise.finally(() => {
+          this.readyResolvers.resolve();
+        }).catch(() => {
+          raiseError({
+            code: 'COMP-301',
+            message: 'Error in connectedCallback',
+            context: { where: 'ComponentEngine.connectedCallback' },
+            docsUrl: './docs/error-codes.md#comp',
+          });
+        });
+      } else {
+        this.readyResolvers.resolve();
       }
+    } else {
+      this.readyResolvers.resolve();
     }
-    this.readyResolvers.resolve();
   }
 
   /**
@@ -350,9 +362,7 @@ class ComponentEngine implements IComponentEngine {
     let value: any;
     // Synchronous operation
     createUpdater(this, (updater) => {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       value = updater.createReadonlyState((stateProxy, ) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
         return stateProxy[GetByRefSymbol](ref);
       });
     });

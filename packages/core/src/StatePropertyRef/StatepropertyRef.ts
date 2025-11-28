@@ -72,7 +72,7 @@ class StatePropertyRef implements IStatePropertyRef {
     // Store listIndex as WeakRef to allow GC when no longer needed elsewhere
     this._listIndexRef = listIndex !== null ? new WeakRef(listIndex) : null;
     // Compose key from info.sid and optionally listIndex.sid
-    this.key = (listIndex == null) ? info.sid : (`${info.sid  }#${  listIndex.sid}`);
+    this.key = (listIndex === null) ? info.sid : (`${info.sid  }#${  listIndex.sid}`);
   }
 
   /**
@@ -87,7 +87,10 @@ class StatePropertyRef implements IStatePropertyRef {
     
     // If current path has more wildcards than parent, use parent's list index (drop last level)
     // Otherwise, use the same list index
-    const parentListIndex = (this.info.wildcardCount > parentInfo.wildcardCount ? this.listIndex?.at(-2) : this.listIndex) ?? null;
+    const parentListIndex = (this.info.wildcardCount > parentInfo.wildcardCount 
+      ? this.listIndex?.at(-2) 
+      : this.listIndex) 
+        ?? null;
     return getStatePropertyRef(parentInfo, parentListIndex);
   }
 }

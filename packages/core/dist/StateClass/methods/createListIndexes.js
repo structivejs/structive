@@ -25,10 +25,10 @@ function isSameList(oldList, newList) {
  * @param oldIndexes - Array of existing list indexes to potentially reuse
  * @returns Array of list indexes for the new list
  */
-export function createListIndexes(parentListIndex, oldList, newList, oldIndexes) {
+export function createListIndexes(parentListIndex, rawOldList, rawNewList, oldIndexes) {
     // Normalize inputs to arrays (handles null/undefined)
-    oldList = Array.isArray(oldList) ? oldList : [];
-    newList = Array.isArray(newList) ? newList : [];
+    const oldList = Array.isArray(rawOldList) ? rawOldList : [];
+    const newList = Array.isArray(rawNewList) ? rawNewList : [];
     const newIndexes = [];
     // Early return for empty list
     if (newList.length === 0) {

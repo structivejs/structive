@@ -28,7 +28,7 @@ import { raiseError } from "../../utils";
  * @param handler  - StateClass handler
  * @returns        Anonymous function that registers dependency to pattern specified by path argument
  */
-export function trackDependency(target, prop, receiver, handler) {
+export function trackDependency(_target, _prop, _receiver, handler) {
     return (path) => {
         // Get the currently resolving getter's info from the stack
         const lastInfo = handler.lastRefStack?.info ?? raiseError({

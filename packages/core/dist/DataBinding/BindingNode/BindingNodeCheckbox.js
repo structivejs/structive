@@ -69,12 +69,11 @@ class BindingNodeCheckbox extends BindingNode {
             return;
         }
         const engine = this.binding.engine;
-        this.node.addEventListener(eventName, async (e) => {
+        this.node.addEventListener(eventName, (_e) => {
             const loopContext = this.binding.parentBindContent.currentLoopContext;
-            const value = this.filteredValue;
             createUpdater(engine, (updater) => {
                 updater.update(loopContext, (state, handler) => {
-                    binding.updateStateValue(state, handler, value);
+                    binding.updateStateValue(state, handler, this.filteredValue);
                 });
             });
         });
@@ -95,9 +94,8 @@ class BindingNodeCheckbox extends BindingNode {
                 severity: 'error',
             });
         }
-        const filteredValue = this.filteredValue;
         const element = this.node;
-        element.checked = value.includes(filteredValue);
+        element.checked = value.includes(this.filteredValue);
     }
 }
 /**

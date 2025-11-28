@@ -51,6 +51,7 @@ export class Router extends HTMLElement implements IRouter {
    * Sets up routing and triggers initial render.
    */
   connectedCallback() {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     globalRouter = this;
     this.innerHTML = '<slot name="content"></slot>';
     window.addEventListener('popstate', this._popstateHandler);
@@ -149,10 +150,13 @@ export class Router extends HTMLElement implements IRouter {
  * @param routePath - URL path pattern (supports parameters like :id)
  */
 export function entryRoute(tagName: string, routePath: string): void {
+  let routePathNormalized;
   if (routePath.startsWith(ROUTE_PATH_PREFIX)) {
-    routePath = routePath.substring(ROUTE_PATH_PREFIX.length); // Remove 'routes:' prefix
+    routePathNormalized = routePath.substring(ROUTE_PATH_PREFIX.length); // Remove 'routes:' prefix
+  } else {
+    routePathNormalized = routePath;
   }
-  routeEntries.push([routePath, tagName]);
+  routeEntries.push([routePathNormalized, tagName]);
 }
 
 /**

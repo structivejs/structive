@@ -57,7 +57,7 @@ class StateHandler {
      * @returns Never returns (always throws)
      * @throws {Error} STATE-202 - Always thrown to prevent writes to readonly state
      */
-    set(target, prop, value, receiver) {
+    set(_target, prop, _value, _receiver) {
         raiseError({
             code: 'STATE-202',
             message: `Cannot set property ${String(prop)} of readonly state`,
@@ -92,7 +92,7 @@ export function createReadonlyStateHandler(engine, updater, renderer) {
 /**
  * Creates a read-only proxy for a State object.
  *
- * The returned proxy allows property reading but throws an error on any write attempt.
+ * The returned proxy allows property reading but throws an error on unknown write attempt.
  * Supports special properties ($resolve, $getAll, etc.) and internal API symbols.
  *
  * @param state - State object to wrap in a read-only proxy

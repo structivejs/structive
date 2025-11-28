@@ -38,9 +38,10 @@ const SVG_NS = "http://www.w3.org/2000/svg";
  */
 export function replaceTemplateTagWithComment(
   id      : number, 
-  template: HTMLTemplateElement,
+  rawTemplate: HTMLTemplateElement,
   rootId  : number = id
-):number {
+): number {
+  let template = rawTemplate;
   // Replace the template element with a comment node in the DOM
   // This preserves the template's position while removing it from the visible DOM
 

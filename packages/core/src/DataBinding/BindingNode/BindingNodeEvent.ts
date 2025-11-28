@@ -69,11 +69,9 @@ class BindingNodeEvent extends BindingNode {
     
     const resultPromise = createUpdater<Promise<void> | void>(engine, (updater) => {
       return updater.update<Promise<void> | void>(loopContext, (state, handler) => {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         const func = this.binding.bindingState.getValue(state, handler);
         if (typeof func === "function") {
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-          return Reflect.apply(func, state, [e, ...indexes]);
+          return Reflect.apply(func, state, [e, ...indexes]) as void | Promise<void>;
         } else {
           raiseError({
             code: 'BIND-201',

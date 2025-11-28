@@ -23,7 +23,7 @@ import { UPDATED_CALLBACK_FUNC_NAME } from "../../constants";
  * @param handler - State handler (unused but part of signature)
  * @returns Promise or void depending on callback implementation
  */
-export function updatedCallback(target, refs, receiver, handler) {
+export function updatedCallback(target, refs, receiver, _handler) {
     const callback = Reflect.get(target, UPDATED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
         const paths = new Set();

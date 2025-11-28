@@ -69,7 +69,7 @@ export interface IComponentEngine {
   saveBinding(ref: IStatePropertyRef, binding: IBinding): void;
   removeBinding(ref: IStatePropertyRef, binding: IBinding): void;
   setup(): void;
-  connectedCallback(): Promise<void>;
+  connectedCallback(): void;
   disconnectedCallback(): void;
   getListIndexes(ref: IStatePropertyRef): IListIndex[] | null;
   /** Gets the property value by reference */
@@ -152,8 +152,7 @@ export interface IPropertyRefMetadata {
  * - Fields CANNOT be readonly due to mutation requirements
  */
 export interface ICacheEntry {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  value: any;
+  value: unknown;
   listIndexes: IListIndex[] | null;
   version: number;
   revision: number;

@@ -30,9 +30,9 @@ export function updatedCallback(
   target: object, 
   refs: IStatePropertyRef[], 
   receiver: IStateProxy,
-  handler: IStateHandler,
-):Promise<void> | void {
-  const callback = Reflect.get(target, UPDATED_CALLBACK_FUNC_NAME);
+  _handler: IStateHandler,
+): unknown {
+  const callback: unknown = Reflect.get(target, UPDATED_CALLBACK_FUNC_NAME);
   if (typeof callback === "function") {
     const paths: Set<string> = new Set();
     const indexesByPath: Record<string, number[]> = {};

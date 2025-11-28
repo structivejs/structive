@@ -15,6 +15,8 @@ import { resolve } from "./resolve.js";
 import { getByRef } from "../methods/getByRef.js";
 import { GetListIndexesByRefSymbol } from "../symbols.js";
 
+type GetAllFunction = (path: string, indexes?: number[]) => unknown[];
+
 /**
  * Creates a function to retrieve all elements from a wildcard path.
  * @param target - Target object to retrieve from
@@ -30,9 +32,10 @@ export function getAll(
   prop: PropertyKey, 
   receiver: IStateProxy,
   handler: IStateHandler
-):Function {
+): GetAllFunction {
     const resolveFn = resolve(target, prop, receiver, handler);
-    return (path: string, indexes?: number[]): any[] => {
+    return (path: string, _indexes?: number[]): unknown[] => {
+      let indexes = _indexes;
       const info = getStructuredPathInfo(path);
       const lastInfo = handler.lastRefStack?.info ?? null;
       if (lastInfo !== null && lastInfo.pattern !== info.pattern) {
@@ -89,7 +92,7 @@ export function getAll(
         }
         // Get the list at current wildcard level
         const wildcardRef = getStatePropertyRef(wildcardParentPattern, listIndex);
-        const tmpValue = getByRef(target, wildcardRef, receiver, handler);
+        getByRef(target, wildcardRef, receiver, handler);
         const listIndexes = receiver[GetListIndexesByRefSymbol](wildcardRef);
         if (listIndexes === null) {
           raiseError({
@@ -152,7 +155,7 @@ export function getAll(
         resultIndexes
       );
       // Resolve values for each collected index combination
-      const resultValues: any[] = [];
+      const resultValues: unknown[] = [];
       for(let i = 0; i < resultIndexes.length; i++) {
         resultValues.push(resolveFn(
           info.pattern,

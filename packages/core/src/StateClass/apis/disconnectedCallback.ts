@@ -25,12 +25,12 @@ import { IStateHandler, IStateProxy } from "../types";
  */
 export function disconnectedCallback(
   target: object, 
-  prop: PropertyKey, 
+  _prop: PropertyKey, 
   receiver: IStateProxy,
-  handler: IStateHandler
-): void {
-  const callback = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
+  _handler: IStateHandler
+): unknown {
+  const callback: unknown = Reflect.get(target, DISCONNECTED_CALLBACK_FUNC_NAME);
   if (typeof callback === "function") {
-    callback.call(receiver);
+    return callback.call(receiver);
   }
 }

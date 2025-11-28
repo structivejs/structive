@@ -21,8 +21,7 @@ class BindingNodeCheckbox extends BindingNode {
    * 
    * @returns Value attribute string
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get value(): any {
+  get value(): unknown {
     const element = this.node as HTMLInputElement;
     return element.value;
   }
@@ -32,14 +31,11 @@ class BindingNodeCheckbox extends BindingNode {
    * 
    * @returns Filtered value
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get filteredValue(): any {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  get filteredValue(): unknown {
     let value = this.value;
     for (let i = 0; i < this.filters.length; i++) {
       value = this.filters[i](value);
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return value;
   }
   
@@ -102,8 +98,7 @@ class BindingNodeCheckbox extends BindingNode {
    * @param value - Array of checked values
    * @throws BIND-201 Value is not array
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignValue(value: any) {
+  assignValue(value: unknown) {
     if (!Array.isArray(value)) {
       raiseError({
         code: 'BIND-201',

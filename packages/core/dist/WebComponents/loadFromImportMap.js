@@ -11,6 +11,7 @@
  * @module loadFromImportMap
  */
 import { entryRoute } from "../Router/Router";
+import { raiseError } from "../utils";
 import { createComponentClass } from "./createComponentClass";
 import { loadImportmap } from "./loadImportmap";
 import { loadSingleFileComponent } from "./loadSingleFileComponent";
@@ -55,7 +56,7 @@ export async function loadFromImportMap() {
         // Collect non-lazy components to load immediately
         const loadAliasByTagName = new Map();
         // Phase 1: Scan all aliases and classify them
-        for (const [alias, value] of Object.entries(importmap.imports)) {
+        for (const [alias, _value] of Object.entries(importmap.imports)) {
             let tagName, isLazyLoad;
             // Process route aliases (@routes/*)
             if (alias.startsWith(ROUTES_KEY)) {
@@ -124,7 +125,7 @@ export function hasLazyLoadComponents() {
  * }
  */
 export function isLazyLoadComponent(tagName) {
-    return lazyLoadComponentAliasByTagName.hasOwnProperty(tagName);
+    return tagName in lazyLoadComponentAliasByTagName;
 }
 /**
  * Triggers lazy loading of a component by tag name.
@@ -159,12 +160,21 @@ export function loadLazyLoadComponent(tagName) {
     // Remove from registry to prevent duplicate loading
     delete lazyLoadComponentAliasByTagName[tagName];
     // Load component asynchronously in microtask queue
-    queueMicrotask(async () => {
+    queueMicrotask(() => {
         // Load the SFC file
-        const componentData = await loadSingleFileComponent(alias);
-        // Create the component class
-        const componentClass = createComponentClass(componentData);
-        // Register as custom element
-        registerComponentClass(tagName, componentClass);
+        loadSingleFileComponent(alias).then((componentData) => {
+            // Create the component class
+            const componentClass = createComponentClass(componentData);
+            // Register as custom element
+            registerComponentClass(tagName, componentClass);
+        }).catch((error) => {
+            raiseError({
+                code: "IMP-202",
+                message: `Failed to load lazy component for tagName: ${tagName}`,
+                context: { where: 'loadFromImportMap.loadLazyLoadComponent', tagName, error },
+                docsUrl: "./docs/error-codes.md#imp",
+                severity: "error",
+            });
+        });
     });
 }

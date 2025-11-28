@@ -5,7 +5,7 @@ import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef.js"
 import { raiseError } from "../../utils.js";
 import { createBindContent } from "../BindContent.js";
 import { BindingNodeBlock } from "./BindingNodeBlock.js";
-const EMPTY_SET = new Set();
+// eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
 const USE_ALL_APPEND = globalThis.__STRUCTIVE_USE_ALL_APPEND__ === true;
 /**
  * BindingNode for loop rendering (for binding).
@@ -118,7 +118,7 @@ class BindingNodeFor extends BindingNodeBlock {
      * @param value - Value (unused)
      * @throws BIND-301 Not implemented
      */
-    assignValue(value) {
+    assignValue(_value) {
         raiseError({
             code: 'BIND-301',
             message: 'Not implemented. Use update or applyChange',
@@ -137,12 +137,32 @@ class BindingNodeFor extends BindingNodeBlock {
         let newBindContents = [];
         // Detect changes: adds, removes, changeIndexes, overwrites
         const newList = renderer.readonlyState[GetByRefSymbol](this.binding.bindingState.ref);
+        if (!Array.isArray(newList)) {
+            raiseError({
+                code: 'BIND-201',
+                message: 'Value is not array',
+                context: { where: 'BindingNodeFor.applyChange', ref: this.binding.bindingState.ref },
+                docsUrl: './docs/error-codes.md#bind',
+            });
+        }
         const newListIndexes = renderer.readonlyState[GetListIndexesByRefSymbol](this.binding.bindingState.ref) ?? [];
         const newListIndexesSet = new Set(newListIndexes);
-        const oldSet = new Set(this._oldList ?? EMPTY_SET);
-        const oldListLength = this._oldList?.length ?? 0;
-        const removesSet = newListIndexesSet.size === 0 ? this._oldListIndexSet : this._oldListIndexSet.difference(newListIndexesSet);
-        const addsSet = this._oldListIndexSet.size === 0 ? newListIndexesSet : newListIndexesSet.difference(this._oldListIndexSet);
+        const oldList = this._oldList ?? [];
+        if (!Array.isArray(oldList)) {
+            raiseError({
+                code: 'BIND-201',
+                message: 'Old value is not array',
+                context: { where: 'BindingNodeFor.applyChange', ref: this.binding.bindingState.ref },
+                docsUrl: './docs/error-codes.md#bind',
+            });
+        }
+        const oldListLength = oldList.length ?? 0;
+        const removesSet = newListIndexesSet.size === 0
+            ? this._oldListIndexSet
+            : this._oldListIndexSet.difference(newListIndexesSet);
+        const addsSet = this._oldListIndexSet.size === 0
+            ? newListIndexesSet
+            : newListIndexesSet.difference(this._oldListIndexSet);
         const newListLength = newList?.length ?? 0;
         const changeIndexesSet = new Set();
         const overwritesSet = new Set();

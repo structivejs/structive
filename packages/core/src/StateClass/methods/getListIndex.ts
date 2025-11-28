@@ -20,7 +20,7 @@ import { IResolvedPathInfo } from "../../StateProperty/types";
 import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef";
 import { raiseError } from "../../utils.js";
 import { GetListIndexesByRefSymbol } from "../symbols";
-import { IStateHandler, IReadonlyStateProxy, IStateProxy } from "../types";
+import { IStateHandler, IStateProxy } from "../types";
 import { getContextListIndex } from "./getContextListIndex";
 
 /**
@@ -48,7 +48,8 @@ export function getListIndex(
     case "none":
       // No wildcards in path, no list index needed
       return null;
-    case "context":
+
+    case "context":{
       // Get the last wildcard path from resolved path info
       const lastWildcardPath = resolvedPath.info.lastWildcardPath ?? 
         raiseError({
@@ -65,7 +66,9 @@ export function getListIndex(
           context: { where: 'getListIndex', pattern: resolvedPath.info.pattern },
           docsUrl: '/docs/error-codes.md#list',
         });
-    case "all":
+    }
+
+    case "all": {
       // Traverse all wildcard levels to build complete list index hierarchy
       let parentListIndex: IListIndex | null = null;
       for(let i = 0; i < resolvedPath.info.wildcardCount; i++) {
@@ -106,6 +109,8 @@ export function getListIndex(
       }
       // Return the final list index after traversing all levels
       return parentListIndex;
+    }
+
     case "partial":
       // Partial wildcard support is not yet implemented
       raiseError({

@@ -42,7 +42,8 @@ export function set(target, prop, value, receiver, handler) {
         const listIndex = getListIndex(resolvedInfo, receiver, handler);
         const ref = getStatePropertyRef(resolvedInfo.info, listIndex);
         // Set value via setByRef to handle dependencies and updates
-        return setByRef(target, ref, value, receiver, handler);
+        setByRef(target, ref, value, receiver, handler);
+        return true;
     }
     else {
         // For non-string properties (symbols, etc.), use default behavior

@@ -22,7 +22,7 @@ import { CONNECTED_CALLBACK_FUNC_NAME } from "../../constants";
  * @param handler - State handler (unused but part of signature)
  * @returns Promise or void depending on callback implementation
  */
-export function connectedCallback(target, prop, receiver, handler) {
+export function connectedCallback(target, _prop, receiver, _handler) {
     const callback = Reflect.get(target, CONNECTED_CALLBACK_FUNC_NAME);
     if (typeof callback === "function") {
         return callback.call(receiver);

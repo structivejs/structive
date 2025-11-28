@@ -137,8 +137,7 @@ class BindingStateIndex implements IBindingState {
    * @returns Filtered index value
    * @throws LIST-201 listIndex is null
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getFilteredValue(_tate: IStateProxy, _handler: IStateHandler): any {
+  getFilteredValue(_tate: IStateProxy, _handler: IStateHandler): unknown {
     let value: unknown = this.listIndex?.index ?? raiseError({
       code: 'LIST-201',
       message: 'listIndex is null',
@@ -160,8 +159,7 @@ class BindingStateIndex implements IBindingState {
    * @param value - Value to assign (unused)
    * @throws BIND-301 Not implemented
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignValue(_writeState:IWritableStateProxy, _handler:IWritableStateHandler, _value:any): void {
+  assignValue(_writeState:IWritableStateProxy, _handler:IWritableStateHandler, _value:unknown): void {
     raiseError({
       code: 'BIND-301',
       message: 'Not implemented',

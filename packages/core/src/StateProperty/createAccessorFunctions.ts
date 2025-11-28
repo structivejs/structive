@@ -95,8 +95,10 @@ export function createAccessorFunctions(info: IStructuredPathInfo, getters: Set<
     const setterFuncText = `this["${matchPath}"]${path} = value;`;
     //console.log('path/getter/setter:', info.pattern, getterFuncText, setterFuncText);
     return {
-      get : new Function('', getterFuncText) as ()=> any,
-      set : new Function('value', setterFuncText) as (value: any) => void,
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      get : new Function('', getterFuncText) as ()=> unknown,
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      set : new Function('value', setterFuncText) as (value: unknown) => void,
     }
   } else {
     // Case 2: No matching getter path - build accessor from root
@@ -127,8 +129,10 @@ export function createAccessorFunctions(info: IStructuredPathInfo, getters: Set<
     const setterFuncText = `this.${path} = value;`;
     //console.log('path/getter/setter:', info.pattern, getterFuncText, setterFuncText);
     return {
-      get : new Function('', getterFuncText) as ()=> any,
-      set : new Function('value', setterFuncText) as (value: any) => void,
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      get : new Function('', getterFuncText) as ()=> unknown,
+      // eslint-disable-next-line @typescript-eslint/no-implied-eval
+      set : new Function('value', setterFuncText) as (value: unknown) => void,
     }
   }
 

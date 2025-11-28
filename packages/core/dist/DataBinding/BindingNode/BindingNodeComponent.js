@@ -55,6 +55,14 @@ class BindingNodeComponent extends BindingNode {
         const tagName = getCustomTagName(component);
         customElements.whenDefined(tagName).then(() => {
             component.state[NotifyRedrawSymbol](refs);
+        }).catch((e) => {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            raiseError({
+                code: 'COMP-402',
+                message: `Failed to define custom element "${tagName}": ${errorMessage}`,
+                context: { where: 'BindingNodeComponent._notifyRedraw', tagName },
+                docsUrl: '/docs/error-codes.md#comp',
+            });
         });
     }
     /**
@@ -95,7 +103,7 @@ class BindingNodeComponent extends BindingNode {
      *
      * @param renderer - Renderer instance
      */
-    applyChange(renderer) {
+    applyChange(_renderer) {
         this._notifyRedraw([this.binding.bindingState.ref]);
     }
     /**
@@ -109,6 +117,14 @@ class BindingNodeComponent extends BindingNode {
         customElements.whenDefined(tagName).then(() => {
             parentComponent.registerChildComponent(component);
             component.stateBinding.addBinding(this.binding);
+        }).catch((e) => {
+            const errorMessage = e instanceof Error ? e.message : String(e);
+            raiseError({
+                code: 'COMP-402',
+                message: `Failed to define custom element "${tagName}": ${errorMessage}`,
+                context: { where: 'BindingNodeComponent.activate', tagName },
+                docsUrl: '/docs/error-codes.md#comp',
+            });
         });
         registerStructiveComponent(parentComponent, component);
         let bindings = engine.bindingsByComponent.get(component);

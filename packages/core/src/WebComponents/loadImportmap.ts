@@ -13,6 +13,11 @@
  */
 import { IImportMap } from "./types";
 
+type TypeImportMap = { 
+  "imports": Record<string, string>, 
+  "scopes"?: Record<string, Record<string, string>> 
+};
+
 /**
  * Loads and merges all importmaps from the document.
  * 
@@ -41,7 +46,7 @@ export function loadImportmap():IImportMap {
   // Find all importmap script tags in the document
   document.querySelectorAll("script[type='importmap']").forEach(script => {
     // Parse the JSON content of each script tag
-    const scriptImportmap = JSON.parse(script.innerHTML);
+    const scriptImportmap = JSON.parse(script.innerHTML) as TypeImportMap;
     
     // Merge imports if they exist in this script
     if (scriptImportmap.imports) {

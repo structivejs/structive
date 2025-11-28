@@ -52,10 +52,10 @@ class Binding {
      *
      * @param writeState - Writable state proxy
      * @param handler - State update handler
-     * @param value - Value to assign to state
+     * @param void - Value to assign to state
      */
     updateStateValue(writeState, handler, value) {
-        return this.bindingState.assignValue(writeState, handler, value);
+        this.bindingState.assignValue(writeState, handler, value);
     }
     /**
      * Notify BindingNode to redraw if its ref matches any in the provided refs array.

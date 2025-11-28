@@ -51,8 +51,17 @@ export function setByRef(target, ref, value, receiver, handler) {
         // Get or create swap info for tracking list element changes
         swapInfo = handler.updater.swapInfoByRef.get(parentRef) || null;
         if (swapInfo === null) {
+            const parentValue = receiver[GetByRefSymbol](parentRef) ?? [];
+            if (!Array.isArray(parentValue)) {
+                raiseError({
+                    code: 'STATE-202',
+                    message: 'Expected array value for list elements',
+                    context: { where: 'setByRef (element)', refPath: parentRef.info.pattern },
+                    docsUrl: '/docs/error-codes.md#state',
+                });
+            }
             swapInfo = {
-                value: [...(receiver[GetByRefSymbol](parentRef) ?? [])],
+                value: [...parentValue],
                 listIndexes: [...(receiver[GetListIndexesByRefSymbol](parentRef) ?? [])]
             };
             handler.updater.swapInfoByRef.set(parentRef, swapInfo);
@@ -61,7 +70,8 @@ export function setByRef(target, ref, value, receiver, handler) {
     try {
         // If getters with parent-child relationships exist, set value through external dependencies
         // TODO: When getter exists in state (path prefix matches), retrieve via getter
-        if (handler.engine.stateOutput.startsWith(ref.info) && handler.engine.pathManager.setters.intersection(ref.info.cumulativePathSet).size === 0) {
+        if (handler.engine.stateOutput.startsWith(ref.info) &&
+            handler.engine.pathManager.setters.intersection(ref.info.cumulativePathSet).size === 0) {
             return handler.engine.stateOutput.set(ref, value);
         }
         // If property exists directly in target, set via setter
@@ -92,10 +102,20 @@ export function setByRef(target, ref, value, receiver, handler) {
                 docsUrl: '/docs/error-codes.md#state',
             });
             // Calculate parent list index based on wildcard hierarchy
-            const parentListIndex = parentInfo.wildcardCount < ref.info.wildcardCount ? (ref.listIndex?.parentListIndex ?? null) : ref.listIndex;
+            const parentListIndex = parentInfo.wildcardCount < ref.info.wildcardCount
+                ? (ref.listIndex?.parentListIndex ?? null)
+                : ref.listIndex;
             const parentRef = getStatePropertyRef(parentInfo, parentListIndex);
             // Get the parent value to set property on
             const parentValue = getByRef(target, parentRef, receiver, handler);
+            if (parentValue === null || typeof parentValue !== "object") {
+                raiseError({
+                    code: 'STATE-202',
+                    message: 'Parent value is not an object',
+                    context: { where: 'setByRef', refPath: parentRef.info.pattern },
+                    docsUrl: '/docs/error-codes.md#state',
+                });
+            }
             const lastSegment = ref.info.lastSegment;
             // Handle wildcard (array element) vs named property
             if (lastSegment === "*") {
@@ -125,7 +145,16 @@ export function setByRef(target, ref, value, receiver, handler) {
             currentListIndexes[curIndex] = listIndex;
             // Check for duplicates to determine if swap is complete
             // If no duplicates, consider swap complete and update indexes
-            const listValueSet = new Set(receiver[GetByRefSymbol](parentRef) ?? []);
+            const parentValue = receiver[GetByRefSymbol](parentRef) ?? [];
+            if (parentValue === null || !Array.isArray(parentValue)) {
+                raiseError({
+                    code: 'STATE-202',
+                    message: 'Parent value is not an array during swap check',
+                    context: { where: 'setByRef (element swap)', refPath: parentRef.info.pattern },
+                    docsUrl: '/docs/error-codes.md#state',
+                });
+            }
+            const listValueSet = new Set(parentValue);
             if (listValueSet.size === swapInfo.value.length) {
                 // Swap complete, renormalize indexes to match current positions
                 for (let i = 0; i < currentListIndexes.length; i++) {

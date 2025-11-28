@@ -23,7 +23,7 @@ export function getListIndex(resolvedPath, receiver, handler) {
         case "none":
             // No wildcards in path, no list index needed
             return null;
-        case "context":
+        case "context": {
             // Get the last wildcard path from resolved path info
             const lastWildcardPath = resolvedPath.info.lastWildcardPath ??
                 raiseError({
@@ -40,7 +40,8 @@ export function getListIndex(resolvedPath, receiver, handler) {
                     context: { where: 'getListIndex', pattern: resolvedPath.info.pattern },
                     docsUrl: '/docs/error-codes.md#list',
                 });
-        case "all":
+        }
+        case "all": {
             // Traverse all wildcard levels to build complete list index hierarchy
             let parentListIndex = null;
             for (let i = 0; i < resolvedPath.info.wildcardCount; i++) {
@@ -81,6 +82,7 @@ export function getListIndex(resolvedPath, receiver, handler) {
             }
             // Return the final list index after traversing all levels
             return parentListIndex;
+        }
         case "partial":
             // Partial wildcard support is not yet implemented
             raiseError({

@@ -34,6 +34,7 @@ import { createSingleFileComponent } from "./createSingleFileComponent.js";
 export async function loadSingleFileComponent(path) {
     // Resolve path using import.meta.resolve if available
     // Fallback to raw path for SSR environments (Node/Vitest) where import.meta.resolve may not exist
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
     const resolved = import.meta.resolve ? import.meta.resolve(path) : path;
     // Fetch the SFC file from the resolved path
     const response = await fetch(resolved);

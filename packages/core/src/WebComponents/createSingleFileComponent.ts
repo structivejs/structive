@@ -17,6 +17,8 @@
 import { IStructiveState } from "../StateClass/types";
 import { IUserComponentData } from "./types";
 
+type ScriptModule = { default?: unknown };
+
 /**
  * Escapes Mustache template expressions by converting them to HTML comments.
  * This prevents the browser's HTML parser from interpreting {{}} as invalid syntax.
@@ -28,7 +30,7 @@ import { IUserComponentData } from "./types";
  * escapeEmbed('{{name}}') // Returns '<!--{{name}}-->'
  */
 function escapeEmbed(html: string): string {
-  return html.replaceAll(/\{\{([^\}]+)\}\}/g, (match, expr) => {
+  return html.replaceAll(/\{\{([^}]+)\}\}/g, (match, expr) => {
     return `<!--{{${expr}}}-->`;
   });
 }
@@ -44,7 +46,7 @@ function escapeEmbed(html: string): string {
  * unescapeEmbed('<!--{{name}}-->') // Returns '{{name}}'
  */
 function unescapeEmbed(html:string):string {
-  return html.replaceAll(/<!--\{\{([^\}]+)}}-->/g, (match, expr) => {
+  return html.replaceAll(/<!--\{\{([^}]+)}}-->/g, (match, expr) => {
     return `{{${expr}}}`;
   });
 }
@@ -85,7 +87,7 @@ export async function createSingleFileComponent(path: string, text: string): Pro
 
   // Extract and remove the <script type="module"> section
   const script = template.content.querySelector<HTMLScriptElement>("script[type=module]");
-  let scriptModule: any = {};
+  let scriptModule: ScriptModule = {};
   if (script) {
     // Add unique comment for debugging and source mapping
     const uniq_comment = `\n// uniq id: ${id++}\n//# sourceURL=${path}\n`;
@@ -97,7 +99,7 @@ export async function createSingleFileComponent(path: string, text: string): Pro
       const blob = new Blob([script.text + uniq_comment], { type: "application/javascript" });
       const url = URL.createObjectURL(blob);
       try {
-        scriptModule = await import(url);
+        scriptModule = await import(url) as ScriptModule;
       } finally {
         // Clean up blob URL to prevent memory leak
         URL.revokeObjectURL(url);
@@ -106,7 +108,7 @@ export async function createSingleFileComponent(path: string, text: string): Pro
       // Fallback: Base64 encoding method (for test environment)
       // Convert script to Base64 and import via data: URL
       const b64 = btoa(String.fromCodePoint(...new TextEncoder().encode(script.text + uniq_comment)));
-      scriptModule = await import(`data:application/javascript;base64,${b64}`);
+      scriptModule = await import(`data:application/javascript;base64,${b64}`) as ScriptModule;
     }
   }
   script?.remove();

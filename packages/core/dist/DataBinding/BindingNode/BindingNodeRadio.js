@@ -10,27 +10,6 @@ import { BindingNode } from "./BindingNode.js";
  */
 class BindingNodeRadio extends BindingNode {
     /**
-     * Returns raw value attribute of radio input element.
-     *
-     * @returns Value attribute string
-     */
-    get value() {
-        const element = this.node;
-        return element.value;
-    }
-    /**
-     * Returns value with all filters applied.
-     *
-     * @returns Filtered value
-     */
-    get filteredValue() {
-        let value = this.value;
-        for (let i = 0; i < this.filters.length; i++) {
-            value = this.filters[i](value);
-        }
-        return value;
-    }
-    /**
      * Constructor sets up radio button bidirectional binding.
      * - Validates decorates count (max 1)
      * - Registers event listener for state updates (skipped if readonly/ro)
@@ -68,15 +47,35 @@ class BindingNodeRadio extends BindingNode {
             return;
         }
         const engine = this.binding.engine;
-        this.node.addEventListener(eventName, async (e) => {
+        this.node.addEventListener(eventName, (_e) => {
             const loopContext = this.binding.parentBindContent.currentLoopContext;
-            const value = this.filteredValue;
             createUpdater(engine, (updater) => {
                 updater.update(loopContext, (state, handler) => {
-                    binding.updateStateValue(state, handler, value);
+                    binding.updateStateValue(state, handler, this.filteredValue);
                 });
             });
         });
+    }
+    /**
+     * Returns raw value attribute of radio input element.
+     *
+     * @returns Value attribute string
+     */
+    get value() {
+        const element = this.node;
+        return element.value;
+    }
+    /**
+     * Returns value with all filters applied.
+     *
+     * @returns Filtered value
+     */
+    get filteredValue() {
+        let value = this.value;
+        for (let i = 0; i < this.filters.length; i++) {
+            value = this.filters[i](value);
+        }
+        return value;
     }
     /**
      * Sets checked state by comparing binding value with filteredValue.
@@ -84,9 +83,13 @@ class BindingNodeRadio extends BindingNode {
      *
      * @param value - Value from state binding
      */
-    assignValue(value) {
-        if (value === null || value === undefined) {
+    assignValue(rawValue) {
+        let value;
+        if (rawValue === null || rawValue === undefined) {
             value = "";
+        }
+        else {
+            value = rawValue;
         }
         const element = this.node;
         element.checked = value === this.filteredValue;

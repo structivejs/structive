@@ -12,15 +12,11 @@
 export function getContextListIndex(handler, structuredPath) {
     // Get the most recently accessed property reference from the stack
     const ref = handler.lastRefStack;
-    if (ref == null) {
-        return null;
-    }
-    // Ensure the reference has structured path information
-    if (ref.info == null) {
+    if (ref === null) {
         return null;
     }
     // Ensure the reference has list index information
-    if (ref.listIndex == null) {
+    if (ref.listIndex === null) {
         return null;
     }
     // Look up the wildcard level index for the specified path

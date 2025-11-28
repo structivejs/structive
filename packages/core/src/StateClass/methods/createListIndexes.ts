@@ -7,7 +7,7 @@ import { IListIndex } from "../../ListIndex/types";
  * @param newList - New list to compare
  * @returns True if lists are identical, false otherwise
  */
-function isSameList(oldList: any[], newList: any[]): boolean {
+function isSameList(oldList: unknown[], newList: unknown[]): boolean {
   if (oldList.length !== newList.length) {
     return false;
   }
@@ -32,13 +32,13 @@ function isSameList(oldList: any[], newList: any[]): boolean {
  */
 export function createListIndexes(
   parentListIndex: IListIndex | null,
-  oldList: any,
-  newList: any,
+  rawOldList: unknown,
+  rawNewList: unknown,
   oldIndexes: IListIndex[]
 ): IListIndex[] {
   // Normalize inputs to arrays (handles null/undefined)
-  oldList = Array.isArray(oldList) ? oldList : [];
-  newList = Array.isArray(newList) ? newList : [];
+  const oldList: unknown[] = Array.isArray(rawOldList) ? rawOldList : [];
+  const newList: unknown[] = Array.isArray(rawNewList) ? rawNewList : [];
   const newIndexes: IListIndex[] = [];
   // Early return for empty list
   if (newList.length === 0) {
@@ -57,7 +57,7 @@ export function createListIndexes(
     return oldIndexes;
   }
   // Use index-based map for efficiency
-  const indexByValue = new Map<any, number>();
+  const indexByValue = new Map<unknown, number>();
   for(let i = 0; i < oldList.length; i++) {
     // For duplicate values, the last index takes precedence (maintains existing behavior)
     indexByValue.set(oldList[i], i);

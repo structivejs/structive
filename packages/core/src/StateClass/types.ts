@@ -31,7 +31,7 @@ import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, Ge
  * and lifecycle hooks.
  */
 export interface IState {
-  [propName: string]: any;
+  [propName: string]: unknown;
   /** Lifecycle hook called when the component is connected to the DOM */
   $connectedCallback?(): Promise<void> | void;
   /** Lifecycle hook called when the component is disconnected from the DOM */
@@ -39,13 +39,13 @@ export interface IState {
   /** Lifecycle hook called when state properties are updated */
   $updatedCallback?(paths: string[], indexesByPath: Record<string, number[]>): Promise<void> | void;
   /** Reference to the component instance that owns this state */
-  $component?: any;
+  $component?: HTMLElement;
   /** Navigation function for routing */
   $navigate?(to:string): void;
   /** Resolves a value by pattern and optional indexes */
-  $resolve?(pattern:string, indexes?: number[]): any;
+  $resolve?(pattern:string, indexes?: number[]): unknown;
   /** Retrieves all values matching a pattern with optional indexes */
-  $getAll?(pattern:string, indexes?: number[]): any[];
+  $getAll?(pattern:string, indexes?: number[]): unknown[];
   /** Registers a dependency for tracking */
   $trackDependency?(pattern:string): void;
 }
@@ -58,7 +58,7 @@ export interface IState {
  */
 export interface IReadonlyStateProxy extends IState {
   /** Retrieves a value by property reference */
-  [GetByRefSymbol](ref: IStatePropertyRef): any;
+  [GetByRefSymbol](ref: IStatePropertyRef): unknown;
   /** Retrieves list indexes for a property reference */
   [GetListIndexesByRefSymbol](ref: IStatePropertyRef): IListIndex[] | null;
 }
@@ -71,9 +71,9 @@ export interface IReadonlyStateProxy extends IState {
  */
 export interface IWritableStateProxy extends IState {
   /** Retrieves a value by property reference */
-  [GetByRefSymbol](ref: IStatePropertyRef): any;
+  [GetByRefSymbol](ref: IStatePropertyRef): unknown;
   /** Sets a value by property reference */
-  [SetByRefSymbol](ref: IStatePropertyRef, value: any): void;
+  [SetByRefSymbol](ref: IStatePropertyRef, value: unknown): void;
   /** Retrieves list indexes for a property reference */
   [GetListIndexesByRefSymbol](ref: IStatePropertyRef): IListIndex[] | null;
   /** Invokes the connected lifecycle callback */
@@ -134,9 +134,9 @@ export interface IReadonlyStateHandler {
   /** Set of string keys for special $ properties */
   readonly apis: Set<PropertyKey>;
   /** Proxy get trap handler */
-  get(target: object, prop: PropertyKey, receiver: IReadonlyStateProxy): any;
+  get(target: object, prop: PropertyKey, receiver: IReadonlyStateProxy): unknown;
   /** Proxy set trap handler (throws error for read-only) */
-  set(target: object, prop: PropertyKey, value: any, receiver: IReadonlyStateProxy): boolean;
+  set(target: object, prop: PropertyKey, value: unknown, receiver: IReadonlyStateProxy): boolean;
 }
 
 /**
@@ -166,9 +166,9 @@ export interface IWritableStateHandler {
   /** Set of string keys for special $ properties */
   readonly apis: Set<PropertyKey>;
   /** Proxy get trap handler */
-  get(target: object, prop: PropertyKey, receiver: IWritableStateProxy): any;
+  get(target: object, prop: PropertyKey, receiver: IWritableStateProxy): unknown;
   /** Proxy set trap handler */
-  set(target: object, prop: PropertyKey, value: any, receiver: IWritableStateProxy): boolean;
+  set(target: object, prop: PropertyKey, value: unknown, receiver: IWritableStateProxy): boolean;
 }
 
 /**

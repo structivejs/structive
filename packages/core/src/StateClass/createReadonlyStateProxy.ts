@@ -34,7 +34,7 @@ class StateHandler implements IReadonlyStateHandler {
   readonly engine: IComponentEngine;
   readonly updater: IUpdater;
   readonly renderer: IRenderer | null;
-  readonly refStack: (IStatePropertyRef | null)[] = Array(STACK_DEPTH).fill(null);
+  readonly refStack: (IStatePropertyRef | null)[] = Array(STACK_DEPTH).fill(null) as (IStatePropertyRef | null)[];
   refIndex: number = -1;
   lastRefStack: IStatePropertyRef | null = null;
   loopContext: ILoopContext | null = null;
@@ -69,7 +69,7 @@ class StateHandler implements IReadonlyStateHandler {
     target  : object, 
     prop    : PropertyKey, 
     receiver: IReadonlyStateProxy
-  ): any {
+  ): unknown {
     return trapGet(target, prop, receiver, this);
   }
 
@@ -86,10 +86,10 @@ class StateHandler implements IReadonlyStateHandler {
    * @throws {Error} STATE-202 - Always thrown to prevent writes to readonly state
    */
   set(
-    target  : object, 
+    _target  : object, 
     prop    : PropertyKey, 
-    value   : any, 
-    receiver: IReadonlyStateProxy
+    _value   : unknown, 
+    _receiver: IReadonlyStateProxy
   ): boolean {
     raiseError({
       code: 'STATE-202',
@@ -124,14 +124,18 @@ class StateHandler implements IReadonlyStateHandler {
  * @param renderer - Optional renderer for UI updates, null if not rendering
  * @returns New readonly state handler instance
  */
-export function createReadonlyStateHandler(engine: IComponentEngine, updater: IUpdater, renderer: IRenderer | null): IReadonlyStateHandler {
+export function createReadonlyStateHandler(
+  engine: IComponentEngine, 
+  updater: IUpdater, 
+  renderer: IRenderer | null
+): IReadonlyStateHandler {
   return new StateHandler(engine, updater, renderer);
 }
 
 /**
  * Creates a read-only proxy for a State object.
  * 
- * The returned proxy allows property reading but throws an error on any write attempt.
+ * The returned proxy allows property reading but throws an error on unknown write attempt.
  * Supports special properties ($resolve, $getAll, etc.) and internal API symbols.
  * 
  * @param state - State object to wrap in a read-only proxy
@@ -139,7 +143,7 @@ export function createReadonlyStateHandler(engine: IComponentEngine, updater: IU
  * @returns Read-only proxy wrapping the state object
  */
 export function createReadonlyStateProxy(
-  state: object,
+  state: IState,
   handler: IReadonlyStateHandler,
 ): IReadonlyStateProxy {
   return new Proxy<IState>(state, handler) as IReadonlyStateProxy;

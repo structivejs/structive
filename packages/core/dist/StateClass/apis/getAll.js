@@ -23,7 +23,8 @@ import { GetListIndexesByRefSymbol } from "../symbols.js";
  */
 export function getAll(target, prop, receiver, handler) {
     const resolveFn = resolve(target, prop, receiver, handler);
-    return (path, indexes) => {
+    return (path, _indexes) => {
+        let indexes = _indexes;
         const info = getStructuredPathInfo(path);
         const lastInfo = handler.lastRefStack?.info ?? null;
         if (lastInfo !== null && lastInfo.pattern !== info.pattern) {
@@ -71,7 +72,7 @@ export function getAll(target, prop, receiver, handler) {
             }
             // Get the list at current wildcard level
             const wildcardRef = getStatePropertyRef(wildcardParentPattern, listIndex);
-            const tmpValue = getByRef(target, wildcardRef, receiver, handler);
+            getByRef(target, wildcardRef, receiver, handler);
             const listIndexes = receiver[GetListIndexesByRefSymbol](wildcardRef);
             if (listIndexes === null) {
                 raiseError({

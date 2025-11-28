@@ -93,7 +93,9 @@ export function createAccessorFunctions(info, getters) {
         const setterFuncText = `this["${matchPath}"]${path} = value;`;
         //console.log('path/getter/setter:', info.pattern, getterFuncText, setterFuncText);
         return {
+            // eslint-disable-next-line @typescript-eslint/no-implied-eval
             get: new Function('', getterFuncText),
+            // eslint-disable-next-line @typescript-eslint/no-implied-eval
             set: new Function('value', setterFuncText),
         };
     }
@@ -127,7 +129,9 @@ export function createAccessorFunctions(info, getters) {
         const setterFuncText = `this.${path} = value;`;
         //console.log('path/getter/setter:', info.pattern, getterFuncText, setterFuncText);
         return {
+            // eslint-disable-next-line @typescript-eslint/no-implied-eval
             get: new Function('', getterFuncText),
+            // eslint-disable-next-line @typescript-eslint/no-implied-eval
             set: new Function('value', setterFuncText),
         };
     }

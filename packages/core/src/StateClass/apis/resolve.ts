@@ -24,6 +24,8 @@ import { GetListIndexesByRefSymbol, SetByRefSymbol } from "../symbols.js";
 import { setByRef } from "../methods/setByRef.js";
 import { getByRef } from "../methods/getByRef.js";
 
+type ResolveFunction = (path: string, indexes: number[], value?: unknown) => unknown;
+
 /**
  * Creates a resolve function to get/set State values by path and indexes.
  * @param target - Target object to access
@@ -36,11 +38,11 @@ import { getByRef } from "../methods/getByRef.js";
  */
 export function resolve(
   target: object, 
-  prop: PropertyKey, 
+  _prop: PropertyKey, 
   receiver: IStateProxy,
   handler: IStateHandler
-): Function {
-  return (path: string, indexes: number[], value?: any): any => {
+): ResolveFunction {
+  return (path: string, indexes: number[], value?: unknown): unknown => {
     const info = getStructuredPathInfo(path);
     const lastInfo = handler.lastRefStack?.info ?? null;
     if (lastInfo !== null && lastInfo.pattern !== info.pattern) {
@@ -67,10 +69,10 @@ export function resolve(
       // Get reference for current wildcard level
       const wildcardRef = getStatePropertyRef(wildcardParentPattern, listIndex);
       // Access the value to ensure list exists
-      const tmpValue = getByRef(target, wildcardRef, receiver, handler);
+      getByRef(target, wildcardRef, receiver, handler);
       // Get all list indexes at this level
       const listIndexes = receiver[GetListIndexesByRefSymbol](wildcardRef);
-      if (listIndexes == null) {
+      if (listIndexes === null) {
         raiseError({
           code: 'LIST-201',
           message: `ListIndexes not found: ${wildcardParentPattern.pattern}`,

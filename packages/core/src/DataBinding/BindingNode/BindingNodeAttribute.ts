@@ -16,14 +16,14 @@ class BindingNodeAttribute extends BindingNode {
    * 
    * @param value - Value to assign to attribute
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignValue(value: any): void {
+  assignValue(value: unknown): void {
     const element = this.node as Element;
     const stringValue = 
       value === null || 
       value === undefined || 
       (typeof value === "number" && Number.isNaN(value))
         ? ""
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         : String(value);
     
     element.setAttribute(this.subName, stringValue);

@@ -16,7 +16,6 @@ import { createComponentClass } from "./createComponentClass";
 import { loadImportmap } from "./loadImportmap";
 import { loadSingleFileComponent } from "./loadSingleFileComponent";
 import { registerComponentClass } from "./registerComponentClass";
-import { IUserComponentData } from "./types";
 
 /** Prefix for route aliases in importmap */
 const ROUTES_KEY = "@routes/";
@@ -61,7 +60,7 @@ export async function loadFromImportMap(): Promise<void> {
     const loadAliasByTagName: Map<string, string> = new Map();
     
     // Phase 1: Scan all aliases and classify them
-    for (const [alias, value] of Object.entries(importmap.imports)) {
+    for (const [alias, _value] of Object.entries(importmap.imports)) {
       let tagName, isLazyLoad;
       
       // Process route aliases (@routes/*)
@@ -137,7 +136,7 @@ export function hasLazyLoadComponents(): boolean {
  * }
  */
 export function isLazyLoadComponent(tagName: string): boolean {
-  return lazyLoadComponentAliasByTagName.hasOwnProperty(tagName);
+  return tagName in lazyLoadComponentAliasByTagName;
 }
 
 /**
@@ -176,12 +175,21 @@ export function loadLazyLoadComponent(tagName: string): void {
   delete lazyLoadComponentAliasByTagName[tagName];
   
   // Load component asynchronously in microtask queue
-  queueMicrotask(async () => {
+  queueMicrotask(() => {
     // Load the SFC file
-    const componentData = await loadSingleFileComponent(alias);
-    // Create the component class
-    const componentClass = createComponentClass(componentData);
-    // Register as custom element
-    registerComponentClass(tagName, componentClass);
+    loadSingleFileComponent(alias).then((componentData) => {
+      // Create the component class
+      const componentClass = createComponentClass(componentData);
+      // Register as custom element
+      registerComponentClass(tagName, componentClass);
+    }).catch((error) => {
+      raiseError({
+        code: "IMP-202",
+        message: `Failed to load lazy component for tagName: ${tagName}`,
+        context: { where: 'loadFromImportMap.loadLazyLoadComponent', tagName, error },
+        docsUrl: "./docs/error-codes.md#imp",
+        severity: "error",
+      });
+    });
   });
 }

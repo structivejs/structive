@@ -95,14 +95,19 @@ class LoopContext {
     find(name) {
         let loopContext = this._cache[name];
         if (typeof loopContext === "undefined") {
-            let currentLoopContext = this;
-            while (currentLoopContext !== null) {
-                if (currentLoopContext.path === name) {
-                    break;
-                }
-                currentLoopContext = currentLoopContext.parentLoopContext;
+            if (this.path === name) {
+                loopContext = this._cache[name] = this;
             }
-            loopContext = this._cache[name] = currentLoopContext;
+            else {
+                let currentLoopContext = this.parentLoopContext;
+                while (currentLoopContext !== null) {
+                    if (currentLoopContext.path === name) {
+                        break;
+                    }
+                    currentLoopContext = currentLoopContext.parentLoopContext;
+                }
+                loopContext = this._cache[name] = currentLoopContext;
+            }
         }
         return loopContext;
     }
@@ -111,7 +116,8 @@ class LoopContext {
      * @param callback - Function to call for each loop context
      */
     walk(callback) {
-        let currentLoopContext = this;
+        callback(this);
+        let currentLoopContext = this.parentLoopContext;
         while (currentLoopContext !== null) {
             callback(currentLoopContext);
             currentLoopContext = currentLoopContext.parentLoopContext;

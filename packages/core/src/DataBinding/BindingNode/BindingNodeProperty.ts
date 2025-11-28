@@ -129,8 +129,7 @@ class BindingNodeProperty extends BindingNode {
    * 
    * @returns Property value
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get value(): any {
+  get value(): unknown {
     // @ts-expect-error TS doesn't recognize dynamic property names
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return this.node[this.name];
@@ -141,14 +140,11 @@ class BindingNodeProperty extends BindingNode {
    * 
    * @returns Filtered property value
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get filteredValue(): any {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  get filteredValue(): unknown {
     let value = this.value;
     for (let i = 0; i < this.filters.length; i++) {
       value = this.filters[i](value);
     }
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return value;
   }
   
