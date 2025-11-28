@@ -1,6 +1,6 @@
 import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { IFilterText } from "../../BindingBuilder/types";
-import { Filters, FilterWithOptions } from "../../Filter/types";
+import { FilterWithOptions } from "../../Filter/types";
 import { IBinding } from "../types";
 import { BindingNode } from "./BindingNode.js";
 import { CreateBindingNodeFn } from "./types";
@@ -16,13 +16,17 @@ class BindingNodeStyle extends BindingNode {
    * 
    * @param value - Value to assign to CSS property
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   assignValue(value:any) {
-    if (value === null || value === undefined || Number.isNaN(value)) {
-      value = "";
-    }
-    
     const element = this.node as HTMLElement;
-    element.style.setProperty(this.subName, value.toString());
+    const stringValue = 
+      value === null || 
+      value === undefined || 
+      (typeof value === "number" && Number.isNaN(value))
+        ? ""
+        : String(value);
+
+    element.style.setProperty(this.subName, stringValue.toString());
   }
 }
 

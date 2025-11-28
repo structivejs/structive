@@ -19,7 +19,6 @@ class BindingNodeAttribute extends BindingNode {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   assignValue(value: any): void {
     const element = this.node as Element;
-    
     const stringValue = 
       value === null || 
       value === undefined || 

@@ -15,29 +15,6 @@ import { CreateBindingNodeFn } from "./types";
  */
 class BindingNodeRadio extends BindingNode {
   /**
-   * Returns raw value attribute of radio input element.
-   * 
-   * @returns Value attribute string
-   */
-  get value(): any {
-    const element = this.node as HTMLInputElement;
-    return element.value;
-  }
-  
-  /**
-   * Returns value with all filters applied.
-   * 
-   * @returns Filtered value
-   */
-  get filteredValue(): any {
-    let value = this.value;
-    for (let i = 0; i < this.filters.length; i++) {
-      value = this.filters[i](value);
-    }
-    return value;
-  }
-  
-  /**
    * Constructor sets up radio button bidirectional binding.
    * - Validates decorates count (max 1)
    * - Registers event listener for state updates (skipped if readonly/ro)
@@ -81,16 +58,43 @@ class BindingNodeRadio extends BindingNode {
     if (eventName === "readonly" || eventName === "ro") {return;}
     
     const engine = this.binding.engine;
-    this.node.addEventListener(eventName, async (e) => {
+    this.node.addEventListener(eventName, (_e) => {
       const loopContext = this.binding.parentBindContent.currentLoopContext;
-      const value = this.filteredValue;
       createUpdater<void>(engine, (updater) => {
         updater.update(loopContext, (state, handler) => {
-          binding.updateStateValue(state, handler, value);
+          binding.updateStateValue(state, handler, this.filteredValue);
         });
       });
     });
 
+  }
+  
+  /**
+   * Returns raw value attribute of radio input element.
+   * 
+   * @returns Value attribute string
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get value(): any {
+    const element = this.node as HTMLInputElement;
+    return element.value;
+  }
+  
+  /**
+   * Returns value with all filters applied.
+   * 
+   * @returns Filtered value
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get filteredValue(): any {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    let value = this.value;
+    for (let i = 0; i < this.filters.length; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      value = this.filters[i](value);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return value;
   }
   
   /**
@@ -99,13 +103,18 @@ class BindingNodeRadio extends BindingNode {
    * 
    * @param value - Value from state binding
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   assignValue(value:any) {
+    let anyValue;
     if (value === null || value === undefined) {
-      value = "";
+      anyValue = "";
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      anyValue = value;
     }
     
     const element = this.node as HTMLInputElement;
-    element.checked = value === this.filteredValue;
+    element.checked = anyValue === this.filteredValue;
   }
 }
 

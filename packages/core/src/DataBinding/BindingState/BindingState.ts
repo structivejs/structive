@@ -96,6 +96,7 @@ class BindingState implements IBindingState {
    * @param handler - State handler
    * @returns Raw value from state
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getValue(state:IStateProxy, handler:IStateHandler): any {
     return getByRef(this._binding.engine.state, this.ref, state, handler);
   }
@@ -107,9 +108,12 @@ class BindingState implements IBindingState {
    * @param handler - State handler
    * @returns Filtered value
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getFilteredValue(state:IStateProxy, handler:IStateHandler): any {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     let value = getByRef(this._binding.engine.state, this.ref, state, handler);
     for(let i = 0; i < this.filters.length; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       value = this.filters[i](value);
     }
     return value;
@@ -122,10 +126,10 @@ class BindingState implements IBindingState {
    * @param handler - Writable state handler
    * @param value - Value to assign
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   assignValue(writeState: IWritableStateProxy, handler: IWritableStateHandler, value: any) {
     setByRef(this._binding.engine.state, this.ref, value, writeState, handler);
   }
-
 
   /**
    * Activates binding. Resolves loop context for wildcard bindings.

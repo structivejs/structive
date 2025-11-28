@@ -3,7 +3,6 @@ import { IFilterText } from "../../BindingBuilder/types";
 import { Filters, FilterWithOptions } from "../../Filter/types";
 import { ILoopContext } from "../../LoopContext/types.js";
 import { IStateHandler, IStateProxy, IWritableStateHandler, IWritableStateProxy } from "../../StateClass/types";
-import { IRenderer } from "../../Updater/types.js";
 import { raiseError } from "../../utils.js";
 import { IBinding } from "../types";
 import { CreateBindingStateFn, IBindingState } from "./types";
@@ -121,7 +120,7 @@ class BindingStateIndex implements IBindingState {
    * @returns Index number
    * @throws LIST-201 listIndex is null
    */
-  getValue(state: IStateProxy, handler: IStateHandler) {
+  getValue(_state: IStateProxy, _handler: IStateHandler): number {
     return this.listIndex?.index ?? raiseError({
       code: 'LIST-201',
       message: 'listIndex is null',
@@ -138,7 +137,8 @@ class BindingStateIndex implements IBindingState {
    * @returns Filtered index value
    * @throws LIST-201 listIndex is null
    */
-  getFilteredValue(state: IStateProxy, handler: IStateHandler) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  getFilteredValue(_tate: IStateProxy, _handler: IStateHandler): any {
     let value = this.listIndex?.index ?? raiseError({
       code: 'LIST-201',
       message: 'listIndex is null',
@@ -146,6 +146,7 @@ class BindingStateIndex implements IBindingState {
       docsUrl: '/docs/error-codes.md#list',
     });
     for(let i = 0; i < this.filters.length; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       value = this.filters[i](value);
     }
     return value;
@@ -160,7 +161,8 @@ class BindingStateIndex implements IBindingState {
    * @param value - Value to assign (unused)
    * @throws BIND-301 Not implemented
    */
-  assignValue(writeState:IWritableStateProxy, handler:IWritableStateHandler, value:any): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  assignValue(_writeState:IWritableStateProxy, _handler:IWritableStateHandler, _value:any): void {
     raiseError({
       code: 'BIND-301',
       message: 'Not implemented',
@@ -192,7 +194,7 @@ class BindingStateIndex implements IBindingState {
         docsUrl: '/docs/error-codes.md#bind',
       });
     const bindingForList = this._loopContext.bindContent.parentBinding;
-    if (bindingForList == null) {
+    if (bindingForList === null) {
       raiseError({
         code: 'BIND-201',
         message: 'Binding for list is null',

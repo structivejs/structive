@@ -74,7 +74,8 @@ class BindingNodeIf extends BindingNodeBlock {
    * @param value - Value (unused)
    * @throws BIND-201 Not implemented
    */
-  assignValue(value: any): void {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  assignValue(_value: any): void {
     raiseError({
       code: 'BIND-201',
       message: 'Not implemented',
@@ -94,8 +95,8 @@ class BindingNodeIf extends BindingNodeBlock {
    * @throws BIND-201 ParentNode is null
    */
   applyChange(renderer: IRenderer): void {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
-    
     if (typeof filteredValue !== "boolean") {
       raiseError({
         code: 'BIND-201',
@@ -107,7 +108,7 @@ class BindingNodeIf extends BindingNodeBlock {
     }
     
     const parentNode = this.node.parentNode;
-    if (parentNode == null) {
+    if (parentNode === null) {
       raiseError({
         code: 'BIND-201',
         message: 'ParentNode is null',

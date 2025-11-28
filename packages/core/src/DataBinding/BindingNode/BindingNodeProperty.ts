@@ -67,29 +67,6 @@ const getTwoWayPropertiesHTMLElement = (node: Node): Set<string> =>
  */
 class BindingNodeProperty extends BindingNode {
   /**
-   * Returns raw property value from DOM node.
-   * 
-   * @returns Property value
-   */
-  get value(): any {
-    // @ts-ignore
-    return this.node[this.name];
-  }
-  
-  /**
-   * Returns property value with filters applied.
-   * 
-   * @returns Filtered property value
-   */
-  get filteredValue(): any {
-    let value = this.value;
-    for (let i = 0; i < this.filters.length; i++) {
-      value = this.filters[i](value);
-    }
-    return value;
-  }
-  
-  /**
    * Registers event listener for bidirectional binding if:
    * - Element supports two-way binding (input/textarea/select)
    * - Property name is bindable (value, checked, etc.)
@@ -137,28 +114,72 @@ class BindingNodeProperty extends BindingNode {
     if (eventName === "readonly" || eventName === "ro") {return;}
 
     const engine = this.binding.engine;
-    this.node.addEventListener(eventName, async () => {
+    this.node.addEventListener(eventName, (_e) => {
       const loopContext = this.binding.parentBindContent.currentLoopContext;
-      const value = this.filteredValue;
       createUpdater<void>(engine, (updater) => {
         updater.update(loopContext, (state, handler) => {
-          binding.updateStateValue(state, handler, value);
+          binding.updateStateValue(state, handler, this.filteredValue);
         });
       });
     });
   }
 
   /**
+   * Returns raw property value from DOM node.
+   * 
+   * @returns Property value
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get value(): any {
+    // @ts-expect-error TS doesn't recognize dynamic property names
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return this.node[this.name];
+  }
+  
+  /**
+   * Returns property value with filters applied.
+   * 
+   * @returns Filtered property value
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  get filteredValue(): any {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    let value = this.value;
+    for (let i = 0; i < this.filters.length; i++) {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      value = this.filters[i](value);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return value;
+  }
+  
+  /**
    * Assigns value to property, converting null/undefined/NaN to empty string.
    * 
    * @param value - Value to assign to property
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   assignValue(value: any) {
+    let anyValue;
     if (value === null || value === undefined || Number.isNaN(value)) {
-      value = "";
+      anyValue = "";
+    } else {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      anyValue = value;
     }
-    // @ts-ignore
-    this.node[this.name] = value;
+    if (this.name in this.node) {
+      // @ts-expect-error TS doesn't recognize dynamic property names
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      this.node[this.name] = anyValue;
+    } else {
+      raiseError({
+        code: 'BIND-201',
+        message: `Property "${this.name}" does not exist on node`,
+        context: { where: 'BindingNodeProperty.assignValue', name: this.name },
+        docsUrl: '/docs/error-codes.md#bind',
+        severity: 'error',
+      });
+    }
   }
 }
 

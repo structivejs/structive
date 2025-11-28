@@ -55,21 +55,25 @@ export interface IBindingNodeBase {
   /**
    * Current value before filter application.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly value: any;
   
   /**
    * Value after filter application.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   readonly filteredValue: any;
   
   /**
    * Assigns value to binding node and updates DOM.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   assignValue(value: any): void;
   
   /**
    * Batch updates for list elements.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   updateElements(listIndexes: IListIndex[], values: any[]): void;
   
   /**
