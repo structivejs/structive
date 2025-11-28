@@ -90,14 +90,20 @@ export function raiseError(messageOrPayload: string | StructiveErrorPayload): ne
   const { message, code, context, hint, docsUrl, severity, cause } = messageOrPayload;
   
   // Create base Error with the message
-  const err = new Error(message);
+  const err: unknown = new Error(message);
   
   // Attach additional metadata as properties (keeping message for existing compatibility)
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
   (err as any).code = code;
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
   if (context) {(err as any).context = context;}
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
   if (hint) {(err as any).hint = hint;}
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
   if (docsUrl) {(err as any).docsUrl = docsUrl;}
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
   if (severity) {(err as any).severity = severity;}
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any
   if (cause) {(err as any).cause = cause;}
   
   throw err;
