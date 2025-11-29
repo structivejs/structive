@@ -50,7 +50,7 @@ export function setLoopContext(handler, loopContext, callback) {
             handler.refStack[handler.refIndex] = null;
             handler.refIndex--;
             handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-            handler.loopContext = null;
+            handler.loopContext = undefined;
             throw error;
         }
         // Cleanup after async completion
@@ -59,14 +59,14 @@ export function setLoopContext(handler, loopContext, callback) {
                 handler.refStack[handler.refIndex] = null;
                 handler.refIndex--;
                 handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-                handler.loopContext = null;
+                handler.loopContext = undefined;
             });
         }
         // Synchronous cleanup
         handler.refStack[handler.refIndex] = null;
         handler.refIndex--;
         handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-        handler.loopContext = null;
+        handler.loopContext = undefined;
     }
     else {
         handler.loopContext = loopContext;
@@ -76,17 +76,17 @@ export function setLoopContext(handler, loopContext, callback) {
         }
         catch (error) {
             // Cleanup on synchronous error
-            handler.loopContext = null;
+            handler.loopContext = undefined;
             throw error;
         }
         // Cleanup after async completion
         if (resultPromise instanceof Promise) {
             return resultPromise.finally(() => {
-                handler.loopContext = null;
+                handler.loopContext = undefined;
             });
         }
         // Synchronous cleanup
-        handler.loopContext = null;
+        handler.loopContext = undefined;
     }
     return resultPromise;
 }

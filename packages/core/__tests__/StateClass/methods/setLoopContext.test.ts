@@ -35,7 +35,7 @@ describe("StateClass/methods setLoopContext", () => {
     await result;
 
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(handler.refIndex).toBe(-1);
   });
 
@@ -46,7 +46,7 @@ describe("StateClass/methods setLoopContext", () => {
     const result = setLoopContext(handler, null, callback);
 
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(handler.refIndex).toBe(-1);
     expect(result).toBeUndefined();
   });
@@ -65,7 +65,7 @@ describe("StateClass/methods setLoopContext", () => {
     await result;
 
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(handler.refIndex).toBe(-1);
     expect(handler.refStack[0]).toBeNull();
     expect(handler.lastRefStack).toBeNull();
@@ -83,7 +83,7 @@ describe("StateClass/methods setLoopContext", () => {
     const result = setLoopContext(handler, loopContext, callback);
 
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(handler.refIndex).toBe(-1);
     expect(handler.refStack[0]).toBeNull();
     expect(handler.lastRefStack).toBeNull();
@@ -113,7 +113,7 @@ describe("StateClass/methods setLoopContext", () => {
     await expect(resultPromise).rejects.toThrow(error);
     // Promiseのfinallyが実行されるまで待つ
     await new Promise(resolve => setTimeout(resolve, 0));
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(handler.lastRefStack).toBeNull();
     expect(handler.refIndex).toBe(-1);
   });
@@ -128,7 +128,7 @@ describe("StateClass/methods setLoopContext", () => {
     });
 
     expect(() => setLoopContext(handler, loopContext, callback)).toThrow(error);
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(handler.lastRefStack).toBeNull();
     expect(handler.refIndex).toBe(-1);
   });
@@ -149,6 +149,7 @@ describe("StateClass/methods setLoopContext", () => {
     expect(handler.refStack[1]).toBeNull();
     expect(handler.refIndex).toBe(0);
     expect(handler.lastRefStack).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
   });
 
   it("loopContext が指定され refIndex が末尾の場合は push して実行（同期）", () => {
@@ -165,6 +166,7 @@ describe("StateClass/methods setLoopContext", () => {
     expect(handler.refStack[1]).toBeNull();
     expect(handler.refIndex).toBe(0);
     expect(handler.lastRefStack).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(result).toBeUndefined();
   });
 
@@ -176,7 +178,7 @@ describe("StateClass/methods setLoopContext", () => {
     });
 
     expect(() => setLoopContext(handler, null, callback)).toThrow(error);
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
   });
 
   it("ネストされたループコンテキストでエラーが発生した場合のクリーンアップ", () => {
@@ -190,7 +192,7 @@ describe("StateClass/methods setLoopContext", () => {
     });
 
     expect(() => setLoopContext(handler, loopContext, callback)).toThrow(error);
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(handler.refIndex).toBe(0);
     expect(handler.lastRefStack).toBe(handler.refStack[0]);
   });

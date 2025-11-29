@@ -42,7 +42,7 @@ describe("StateClass/methods setLoopContext", () => {
     await setLoopContext(handler, null, callback);
 
     expect(callback).toHaveBeenCalledTimes(1);
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(handler.refIndex).toBe(-1);
   });
 
@@ -59,7 +59,7 @@ describe("StateClass/methods setLoopContext", () => {
 
     await setLoopContext(handler, loopContext, callback);
 
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(handler.refIndex).toBe(initialRefIndex);
     expect(handler.lastRefStack).toBe(existingRef);
     expect(handler.refStack[0]).toBe(existingRef);
@@ -88,7 +88,7 @@ describe("StateClass/methods setLoopContext", () => {
     await expect(resultPromise).rejects.toThrow(error);
     // Promiseのfinallyが実行されるまで待つ
     await new Promise(resolve => setTimeout(resolve, 0));
-    expect(handler.loopContext).toBeNull();
+    expect(handler.loopContext).toBeUndefined();
     expect(handler.refIndex).toBe(-1);
   });
 });

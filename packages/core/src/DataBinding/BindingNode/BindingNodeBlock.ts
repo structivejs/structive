@@ -15,7 +15,7 @@ const COMMENT_TEMPLATE_MARK_LEN = COMMENT_TEMPLATE_MARK.length;
  * @throws BIND-201 Invalid node: When ID cannot be extracted from comment node
  */
 export class BindingNodeBlock extends BindingNode {
-  #id: number;
+  private _id: number;
   
   /**
    * Returns template ID extracted from comment node.
@@ -23,7 +23,7 @@ export class BindingNodeBlock extends BindingNode {
    * @returns Template ID (non-negative integer)
    */
   get id(): number {
-    return this.#id;
+    return this._id;
   }
 
   /**
@@ -69,7 +69,7 @@ export class BindingNodeBlock extends BindingNode {
       });
     }
     
-    this.#id = numId;
+    this._id = numId;
   }
     
 }

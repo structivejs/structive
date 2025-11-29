@@ -24,7 +24,7 @@ shapes.
 ### Base Class (1 file)
 
 **BindingNode.ts** - Foundation for all implementations
-- **Private fields**: `#binding`, `#node`, `#name`, `#filters`, `#decorates`, `#bindContents`
+- **Private fields**: `_binding`, `_node`, `_name`, `_filters`, `_decorates`, `_bindContents`
 - **Abstract methods**: `assignValue`, `updateElements` (must be implemented by subclasses)
 - **Common functionality**: `applyChange`, `activate`, `inactivate`, `notifyRedraw`
 - **Error codes**: BIND-301 (unimplemented method invocation)
@@ -95,7 +95,7 @@ shapes.
 
 **BindingNodeIf** - Conditional branching
 - Controls mount/unmount based on boolean value
-- Maintains `#trueBindContents` / `#falseBindContents`
+- Maintains `_trueBindContents` / `_falseBindContents`
 - Throws BIND-201 for non-boolean values
 - Parent node validation during updates
 

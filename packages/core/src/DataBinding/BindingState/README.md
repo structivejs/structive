@@ -47,15 +47,15 @@ Methods:
 - Filter application
 
 **Private Fields**:
-- `#nullRef`: Reference for non-wildcard paths (optimization)
-- `#ref`: Reference for wildcard paths (lazy resolution)
-- `#loopContext`: Loop context
+- `_nullRef`: Reference for non-wildcard paths (optimization)
+- `_ref`: Reference for wildcard paths (lazy resolution)
+- `_loopContext`: Loop context
 
 **Key Features**:
 
 1. **ref Property (getter)**:
-   - Non-wildcard (#nullRef): Resolved immediately in constructor
-   - Wildcard (#ref): Resolved during activate from loop context
+   - Non-wildcard (_nullRef): Resolved immediately in constructor
+   - Wildcard (_ref): Resolved during activate from loop context
 
 2. **getValue / getFilteredValue**:
    - Uses `getByRef()` to retrieve value from state

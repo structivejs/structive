@@ -74,7 +74,7 @@ export function setLoopContext<R>(
       handler.refStack[handler.refIndex] = null;
       handler.refIndex--;
       handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-      handler.loopContext = null;
+      handler.loopContext = undefined;
       throw error;
     }
     // Cleanup after async completion
@@ -83,14 +83,14 @@ export function setLoopContext<R>(
         handler.refStack[handler.refIndex] = null;
         handler.refIndex--;
         handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-        handler.loopContext = null;
+        handler.loopContext = undefined;
       }) as R;
     }
     // Synchronous cleanup
     handler.refStack[handler.refIndex] = null;
     handler.refIndex--;
     handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-    handler.loopContext = null;
+    handler.loopContext = undefined;
   } else {
     handler.loopContext = loopContext;
     // No loop context, execute callback directly
@@ -98,17 +98,17 @@ export function setLoopContext<R>(
       resultPromise = callback();
     } catch (error) {
       // Cleanup on synchronous error
-      handler.loopContext = null;
+      handler.loopContext = undefined;
       throw error;
     }
     // Cleanup after async completion
     if (resultPromise instanceof Promise) {
       return resultPromise.finally(() => {
-        handler.loopContext = null;
+        handler.loopContext = undefined;
       }) as R;
     }
     // Synchronous cleanup
-    handler.loopContext = null;
+    handler.loopContext = undefined;
   }
   return resultPromise;
 }

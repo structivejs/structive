@@ -3507,7 +3507,7 @@ function setLoopContext(handler, loopContext, callback) {
             handler.refStack[handler.refIndex] = null;
             handler.refIndex--;
             handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-            handler.loopContext = null;
+            handler.loopContext = undefined;
             throw error;
         }
         // Cleanup after async completion
@@ -3516,14 +3516,14 @@ function setLoopContext(handler, loopContext, callback) {
                 handler.refStack[handler.refIndex] = null;
                 handler.refIndex--;
                 handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-                handler.loopContext = null;
+                handler.loopContext = undefined;
             });
         }
         // Synchronous cleanup
         handler.refStack[handler.refIndex] = null;
         handler.refIndex--;
         handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-        handler.loopContext = null;
+        handler.loopContext = undefined;
     }
     else {
         handler.loopContext = loopContext;
@@ -3533,17 +3533,17 @@ function setLoopContext(handler, loopContext, callback) {
         }
         catch (error) {
             // Cleanup on synchronous error
-            handler.loopContext = null;
+            handler.loopContext = undefined;
             throw error;
         }
         // Cleanup after async completion
         if (resultPromise instanceof Promise) {
             return resultPromise.finally(() => {
-                handler.loopContext = null;
+                handler.loopContext = undefined;
             });
         }
         // Synchronous cleanup
-        handler.loopContext = null;
+        handler.loopContext = undefined;
     }
     return resultPromise;
 }
@@ -4567,14 +4567,14 @@ const COMMENT_TEMPLATE_MARK_LEN$1 = COMMENT_TEMPLATE_MARK.length;
  * @throws BIND-201 Invalid node: When ID cannot be extracted from comment node
  */
 class BindingNodeBlock extends BindingNode {
-    #id;
+    _id;
     /**
      * Returns template ID extracted from comment node.
      *
      * @returns Template ID (non-negative integer)
      */
     get id() {
-        return this.#id;
+        return this._id;
     }
     /**
      * Extracts and validates template ID from comment node.
@@ -4608,7 +4608,7 @@ class BindingNodeBlock extends BindingNode {
                 severity: 'error',
             });
         }
-        this.#id = numId;
+        this._id = numId;
     }
 }
 
