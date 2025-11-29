@@ -23,7 +23,7 @@ function makeHandler(options: HandlerOptions = {}) {
   const refIndex = options.refIndex ?? -1;
   const lastRefStack = options.lastRefStack ?? (refIndex >= 0 ? refStack[refIndex] : null);
   return {
-    loopContext: null,
+    loopContext: undefined,
     refStack,
     refIndex,
     lastRefStack,

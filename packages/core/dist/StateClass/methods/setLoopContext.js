@@ -15,7 +15,12 @@ import { raiseError } from "../../utils";
  */
 export function setLoopContext(handler, loopContext, callback) {
     // Ensure no existing loop context (prevent nested contexts)
-    if (handler.loopContext) {
+    // handler.loopContext can be:
+    // - undefined: slot is empty (not occupied)
+    // - null: slot is occupied but no loop context
+    // - ILoopContext: slot is occupied with a loop context
+    // Occupied check: only "undefined" means the slot is not occupied
+    if (handler.loopContext !== undefined) {
         raiseError({
             code: 'STATE-301',
             message: 'already in loop context',
@@ -26,65 +31,61 @@ export function setLoopContext(handler, loopContext, callback) {
         });
     }
     // Set the new loop context
-    handler.loopContext = loopContext;
     let resultPromise;
-    try {
-        if (loopContext) {
-            // Validate ref stack before pushing loop context ref
-            if (handler.refStack.length === 0) {
-                raiseError({
-                    code: 'STC-002',
-                    message: 'handler.refStack is empty in getByRef',
-                    context: {
-                        where: 'setLoopContext',
-                        refIndex: handler.refIndex,
-                        refStackLength: handler.refStack.length,
-                    },
-                    docsUrl: '/docs/error-codes.md#state',
-                    hint: 'Invoke setLoopContext only after initializing refStack via asyncSetStatePropertyRef.',
-                    severity: 'error',
-                });
-            }
-            // Push loop context ref onto stack for scope tracking
-            handler.refIndex++;
-            if (handler.refIndex >= handler.refStack.length) {
-                handler.refStack.push(null);
-            }
-            handler.refStack[handler.refIndex] = handler.lastRefStack = loopContext.ref;
-            try {
-                // Execute callback within loop context scope
-                resultPromise = callback();
-            }
-            finally {
-                // Always restore ref stack state
+    if (loopContext) {
+        handler.loopContext = loopContext;
+        // ref stack always has 32 elements or more
+        // Push loop context ref onto stack for scope tracking
+        handler.refIndex++;
+        if (handler.refIndex >= handler.refStack.length) {
+            handler.refStack.push(null);
+        }
+        handler.refStack[handler.refIndex] = handler.lastRefStack = loopContext.ref;
+        try {
+            // Execute callback within loop context scope
+            resultPromise = callback();
+        }
+        catch (error) {
+            // Cleanup on synchronous error
+            handler.refStack[handler.refIndex] = null;
+            handler.refIndex--;
+            handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
+            handler.loopContext = null;
+            throw error;
+        }
+        // Cleanup after async completion
+        if (resultPromise instanceof Promise) {
+            return resultPromise.finally(() => {
                 handler.refStack[handler.refIndex] = null;
                 handler.refIndex--;
                 handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
-            }
-        }
-        else {
-            // No loop context, execute callback directly
-            resultPromise = callback();
-        }
-    }
-    finally {
-        // For Promise, return a new Promise chain with finally applied
-        if (resultPromise instanceof Promise) {
-            resultPromise.finally(() => {
                 handler.loopContext = null;
-            }).catch((error) => {
-                raiseError({
-                    code: 'STC-002',
-                    message: 'Error in setLoopContext finally block',
-                    context: { where: 'setLoopContext.cleanup' },
-                    docsUrl: '/docs/error-codes.md#state',
-                    hint: 'Inspect the promise returned by the callback for cleanup failures.',
-                    severity: 'error',
-                    cause: error,
-                });
             });
         }
-        // For synchronous case, reset immediately
+        // Synchronous cleanup
+        handler.refStack[handler.refIndex] = null;
+        handler.refIndex--;
+        handler.lastRefStack = handler.refIndex >= 0 ? handler.refStack[handler.refIndex] : null;
+        handler.loopContext = null;
+    }
+    else {
+        handler.loopContext = loopContext;
+        // No loop context, execute callback directly
+        try {
+            resultPromise = callback();
+        }
+        catch (error) {
+            // Cleanup on synchronous error
+            handler.loopContext = null;
+            throw error;
+        }
+        // Cleanup after async completion
+        if (resultPromise instanceof Promise) {
+            return resultPromise.finally(() => {
+                handler.loopContext = null;
+            });
+        }
+        // Synchronous cleanup
         handler.loopContext = null;
     }
     return resultPromise;

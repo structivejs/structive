@@ -16,7 +16,7 @@ class StateHandler {
     refStack = Array(STACK_DEPTH).fill(null);
     refIndex = -1;
     lastRefStack = null;
-    loopContext = null;
+    loopContext = undefined;
     symbols = new Set([GetByRefSymbol, GetListIndexesByRefSymbol]);
     apis = new Set(["$resolve", "$getAll", "$trackDependency", "$navigate", "$component"]);
     /**

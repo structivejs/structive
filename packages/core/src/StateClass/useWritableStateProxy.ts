@@ -41,7 +41,7 @@ class StateHandler implements IWritableStateHandler {
   readonly refStack: (IStatePropertyRef | null)[] = Array(STACK_DEPTH).fill(null) as (IStatePropertyRef | null)[];
   refIndex: number = -1;
   lastRefStack: IStatePropertyRef | null = null;
-  loopContext: ILoopContext | null = null;
+  loopContext: ILoopContext | null | undefined = undefined;
   readonly symbols: Set<PropertyKey> = new Set<PropertyKey>([ 
     GetByRefSymbol, SetByRefSymbol, GetListIndexesByRefSymbol, 
     ConnectedCallbackSymbol, DisconnectedCallbackSymbol,

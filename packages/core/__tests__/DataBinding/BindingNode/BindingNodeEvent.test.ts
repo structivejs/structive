@@ -87,23 +87,21 @@ describe("BindingNodeEvent", () => {
       throw err;
     });
     
-    vi.spyOn(UpdaterMod, "createUpdater").mockImplementation(async (_engine: any, cb: any) => {
+    // createUpdater をモックして同期的に実行
+    vi.spyOn(UpdaterMod, "createUpdater").mockImplementation((_engine: any, cb: any) => {
       const updater = {
-        update: vi.fn(async (_loop: any, fn: any) => {
-          await fn({} as any, {} as any);
+        update: vi.fn((_loop: any, fn: any) => {
+          return fn({} as any, {} as any);
         }),
       };
-      await cb(updater);
+      return cb(updater);
     });
 
     const node = createBindingNodeEvent("onClick", [], [])(binding, button, engine.inputFilters);
     const ev = new Event("click", { bubbles: true, cancelable: true });
     
-    // handler は void を返すが、内部で非同期処理が走る
-    (node as any).handler(ev);
-    
-    // 少し待ってエラーが投げられたか確認
-    await new Promise(resolve => setTimeout(resolve, 10));
+    // 同期的にエラーが発生する
+    expect(() => (node as any).handler(ev)).toThrow();
     
     expect(error201Thrown).toBe(true);
   });

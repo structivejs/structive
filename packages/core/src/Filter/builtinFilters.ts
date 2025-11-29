@@ -16,7 +16,7 @@
  */
 import { getGlobalConfig } from "../WebComponents/getGlobalConfig.js";
 import { raiseError } from "../utils.js";
-import { optionMustBeNumber, optionsRequired, valueMustBeBoolean, valueMustBeDate, valueMustBeNumber, valueMustBeString } from "./errorMessages.js";
+import { optionMustBeNumber, optionsRequired, valueMustBeBoolean, valueMustBeDate, valueMustBeNumber } from "./errorMessages.js";
 import { FilterFn, FilterWithOptions } from "./types";
 
 const config = getGlobalConfig();

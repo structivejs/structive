@@ -88,6 +88,7 @@ function createBindings(
       const creator = attribute.creatorByText.get(bindText) ??
         raiseError({
           code: "BIND-103",
+          // eslint-disable-next-line @typescript-eslint/no-base-to-string
           message: `Creator not found: ${String(bindText)}`,
           context: { where: 'BindContent.createBindings', templateId: id, bindText },
           docsUrl: "./docs/error-codes.md#bind",

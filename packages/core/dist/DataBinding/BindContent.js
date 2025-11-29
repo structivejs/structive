@@ -58,7 +58,7 @@ function createBindings(bindContent, id, engine, content) {
         const node = resolveNodeFromPath(content, attribute.nodePath) ??
             raiseError({
                 code: "BIND-102",
-                message: `Node not found: attribute.nodePath`,
+                message: `Node not found: ${String(attribute.nodePath)}`,
                 context: { where: 'BindContent.createBindings', templateId: id, nodePath: attribute.nodePath },
                 docsUrl: "./docs/error-codes.md#bind",
             });
@@ -67,7 +67,8 @@ function createBindings(bindContent, id, engine, content) {
             const creator = attribute.creatorByText.get(bindText) ??
                 raiseError({
                     code: "BIND-103",
-                    message: `Creator not found: bindText`,
+                    // eslint-disable-next-line @typescript-eslint/no-base-to-string
+                    message: `Creator not found: ${String(bindText)}`,
                     context: { where: 'BindContent.createBindings', templateId: id, bindText },
                     docsUrl: "./docs/error-codes.md#bind",
                 });

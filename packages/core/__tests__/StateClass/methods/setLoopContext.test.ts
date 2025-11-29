@@ -14,7 +14,7 @@ vi.mock("../../../src/utils", () => ({
 
 function makeHandler() {
   return {
-    loopContext: null,
+    loopContext: undefined,
     refStack: [null],
     refIndex: -1,
     lastRefStack: null,
@@ -166,15 +166,5 @@ describe("StateClass/methods setLoopContext", () => {
     expect(handler.refIndex).toBe(0);
     expect(handler.lastRefStack).toBeNull();
     expect(result).toBeUndefined();
-  });
-
-  it("loopContext が指定されても refStack が空なら STC-002 を投げる", () => {
-    const handler = makeHandler();
-    handler.refStack = [];
-    const loopContext = { ref: { info: { pattern: "items" } } } as any;
-
-    expect(() => setLoopContext(handler, loopContext, () => {})).toThrow(/refStack is empty/);
-    expect(raiseErrorMock).toHaveBeenCalledWith(expect.objectContaining({ code: "STC-002" }));
-    expect(handler.loopContext).toBeNull();
   });
 });

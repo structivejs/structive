@@ -128,7 +128,7 @@ export interface IReadonlyStateHandler {
   /** Most recently accessed property reference */
   lastRefStack: IStatePropertyRef | null;
   /** Current loop context for nested loop bindings */
-  loopContext: ILoopContext | null;
+  loopContext: ILoopContext | null | undefined;
   /** Set of symbol keys for internal APIs */
   readonly symbols: Set<PropertyKey>;
   /** Set of string keys for special $ properties */
@@ -160,7 +160,7 @@ export interface IWritableStateHandler {
   /** Most recently accessed property reference */
   lastRefStack: IStatePropertyRef | null;
   /** Current loop context for nested loop bindings */
-  loopContext: ILoopContext | null;
+  loopContext: ILoopContext | null | undefined;
   /** Set of symbol keys for internal APIs */
   readonly symbols: Set<PropertyKey>;
   /** Set of string keys for special $ properties */
