@@ -1,20 +1,20 @@
 # Version Management
 
 ## Current Version
-**1.3.6**
+**1.4.0**
 
 ## Quick Version Update (Recommended)
 
 Use npm's built-in version command:
 
 ```bash
-# Patch release (1.3.6 → 1.3.7) - Bug fixes
+# Patch release (1.4.0 → 1.4.1) - Bug fixes
 npm version patch
 
-# Minor release (1.3.6 → 1.4.0) - New features (backward compatible)
+# Minor release (1.4.0 → 1.5.0) - New features (backward compatible)
 npm version minor
 
-# Major release (1.3.6 → 2.0.0) - Breaking changes
+# Major release (1.4.0 → 2.0.0) - Breaking changes
 npm version major
 ```
 
@@ -23,7 +23,7 @@ This will automatically:
 2. Update version in `package.json`
 3. Clean and rebuild (`version` hook)
 4. Create a git commit with the new version
-5. Create a git tag (e.g., `v1.3.7`)
+5. Create a git tag (e.g., `v1.4.0`)
 6. Push changes and tags to remote (`postversion` hook)
 
 ## Manual Update (Alternative)
@@ -32,7 +32,7 @@ If you need to update manually, modify the following file:
 
 1. **`package.json`** - Update the `version` field
    ```json
-   "version": "1.3.6"  // Update this
+   "version": "1.4.0"  // Update this
    ```
 
 ## Release Checklist
