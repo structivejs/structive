@@ -5,7 +5,8 @@ import { describe, test, expect } from "vitest";
 import { 
   optionsRequired, 
   optionMustBeNumber, 
-  valueMustBeNumber, 
+  valueMustBeNumber,
+  valueMustBeString,
   valueMustBeBoolean, 
   valueMustBeDate 
 } from "../../src/Filter/errorMessages";
@@ -97,6 +98,34 @@ describe("Filter/errorMessages", () => {
 
     test("should handle empty function name", () => {
       expect(() => valueMustBeNumber("")).toThrow(" requires a number value");
+    });
+  });
+
+  describe("valueMustBeString", () => {
+    test("should throw error with function name in message", () => {
+      expect(() => valueMustBeString("testFilter")).toThrow("testFilter requires a string value");
+    });
+
+    test("should throw error for different function names", () => {
+      expect(() => valueMustBeString("uppercase")).toThrow("uppercase requires a string value");
+      expect(() => valueMustBeString("trim")).toThrow("trim requires a string value");
+    });
+
+    test("should return never type", () => {
+      const testFunction = (value: any, fnName: string): string => {
+        if (typeof value !== "string") {
+          valueMustBeString(fnName); // This should never return
+        }
+        return value.toUpperCase();
+      };
+
+      expect(() => testFunction(123, "uppercase")).toThrow();
+      expect(() => testFunction(true, "uppercase")).toThrow();
+      expect(testFunction("hello", "uppercase")).toBe("HELLO");
+    });
+
+    test("should handle empty function name", () => {
+      expect(() => valueMustBeString("")).toThrow(" requires a string value");
     });
   });
 

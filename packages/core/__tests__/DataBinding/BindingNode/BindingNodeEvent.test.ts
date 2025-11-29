@@ -115,4 +115,100 @@ describe("BindingNodeEvent", () => {
     expect(() => (node as any).update()).not.toThrow();
     expect(() => (node as any).applyChange(createRendererStub())).not.toThrow();
   });
+
+  it("非同期ハンドラでエラーが発生した場合、BIND-202 エラーを投げる", async () => {
+    const engine = createEngineStub();
+    const button = document.createElement("button");
+    const binding = createBindingStub(engine, button);
+    const testError = new Error("Handler error");
+    const handler = vi.fn(async () => {
+      throw testError;
+    });
+    binding.bindingState.getValue = vi.fn(() => handler);
+    
+    // Suppress unhandled rejection in this test
+    const unhandledRejectionHandler = vi.fn();
+    process.on('unhandledRejection', unhandledRejectionHandler);
+    
+    let raiseErrorCalled = false;
+    vi.spyOn(UtilsMod, "raiseError").mockImplementation((payload: any) => {
+      if (payload.code === 'BIND-202') {
+        raiseErrorCalled = true;
+      }
+      const err = new Error(payload.message || payload.code);
+      (err as any).code = payload.code;
+      throw err;
+    });
+    
+    vi.spyOn(UpdaterMod, "createUpdater").mockImplementation(async (_engine: any, cb: any) => {
+      const updater = {
+        update: vi.fn(async (_loop: any, fn: any) => {
+          return await fn({} as any, {} as any);
+        }),
+      };
+      return await cb(updater);
+    });
+
+    const node = createBindingNodeEvent("onClick", [], [])(binding, button, engine.inputFilters);
+    const ev = new Event("click", { bubbles: true, cancelable: true });
+    
+    // handler を呼び出す（void を返す）
+    (node as any).handler(ev);
+    
+    // エラーが catch されるまで待つ
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    expect(raiseErrorCalled).toBe(true);
+    
+    // Clean up
+    process.off('unhandledRejection', unhandledRejectionHandler);
+  });
+
+  it("非同期ハンドラで非Errorオブジェクトがスローされた場合も処理する", async () => {
+    const engine = createEngineStub();
+    const button = document.createElement("button");
+    const binding = createBindingStub(engine, button);
+    const testError = "String error";
+    const handler = vi.fn(async () => {
+      throw testError;
+    });
+    binding.bindingState.getValue = vi.fn(() => handler);
+    
+    // Suppress unhandled rejection in this test
+    const unhandledRejectionHandler = vi.fn();
+    process.on('unhandledRejection', unhandledRejectionHandler);
+    
+    let errorMessage = '';
+    vi.spyOn(UtilsMod, "raiseError").mockImplementation((payload: any) => {
+      if (payload.code === 'BIND-202') {
+        errorMessage = payload.message;
+      }
+      const err = new Error(payload.message || payload.code);
+      (err as any).code = payload.code;
+      throw err;
+    });
+    
+    vi.spyOn(UpdaterMod, "createUpdater").mockImplementation(async (_engine: any, cb: any) => {
+      const updater = {
+        update: vi.fn(async (_loop: any, fn: any) => {
+          return await fn({} as any, {} as any);
+        }),
+      };
+      return await cb(updater);
+    });
+
+    const node = createBindingNodeEvent("onClick", [], [])(binding, button, engine.inputFilters);
+    const ev = new Event("click", { bubbles: true, cancelable: true });
+    
+    // handler を呼び出す
+    (node as any).handler(ev);
+    
+    // エラーが catch されるまで待つ
+    await new Promise(resolve => setTimeout(resolve, 50));
+    
+    expect(errorMessage).toContain('String error');
+    
+    // Clean up
+    process.off('unhandledRejection', unhandledRejectionHandler);
+  });
 });

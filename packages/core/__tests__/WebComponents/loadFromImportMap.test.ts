@@ -97,4 +97,33 @@ describe("WebComponents/loadFromImportMap", () => {
     expect(loadSingleFileComponentMock).not.toHaveBeenCalled();
     warnSpy.mockRestore();
   });
+
+  it("loadLazyLoadComponent: loadSingleFileComponent で失敗した場合 error を raiseError", async () => {
+    loadImportmapMock.mockReturnValue({ imports: { "@components/x-error#lazy": "/error.js" } });
+    await loadFromImportMap();
+
+    const loadError = new Error("Failed to load");
+    loadSingleFileComponentMock.mockRejectedValueOnce(loadError);
+
+    // queueMicrotask の中で Promise が rejected されるため、unhandledRejection をキャッチする
+    const unhandledRejectionPromise = new Promise((resolve) => {
+      const handler = (reason: any) => {
+        process.off('unhandledRejection', handler);
+        resolve(reason);
+      };
+      process.on('unhandledRejection', handler);
+    });
+
+    loadLazyLoadComponent("x-error");
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const reason = await unhandledRejectionPromise;
+    expect(reason).toBeInstanceOf(Error);
+    expect((reason as Error).message).toContain("Failed to load lazy component for tagName: x-error");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((reason as any).code).toBe("IMP-202");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((reason as any).severity).toBe("error");
+  });
 });

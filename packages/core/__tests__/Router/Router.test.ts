@@ -154,4 +154,46 @@ describe("Router", () => {
     expect(slotContent?.textContent).toBe("404 Not Found");
     document.body.removeChild(el);
   });
+
+  it("base タグがない場合は DEFAULT_ROUTE_PATH を使用する", () => {
+    // base タグが存在しない状態で Router を作成
+    const el = createRouterElement();
+    document.body.appendChild(el);
+    // basePath は内部実装なので直接テストできないが、render の挙動で確認
+    const tag = "x-default-base";
+    define(tag);
+    entryRoute(tag, "/");
+    history.pushState({}, "", "/");
+    el.render();
+    const child = el.querySelector(tag);
+    expect(child).toBeTruthy();
+    document.body.removeChild(el);
+  });
+
+  it("navigate で / で始まるパスの場合は basePath を考慮する", () => {
+    const base = document.createElement("base");
+    base.href = `${window.location.origin}/app/`;
+    document.head.appendChild(base);
+    
+    const el = createRouterElement();
+    document.body.appendChild(el);
+    const pushSpy = vi.spyOn(history, "pushState");
+    el.navigate("/users");
+    expect(pushSpy).toHaveBeenCalledWith({}, "", "/app/users");
+    document.body.removeChild(el);
+    document.head.removeChild(base);
+  });
+
+  it("replacedPath が / で始まる場合はそのまま使用する", () => {
+    const el = createRouterElement();
+    document.body.appendChild(el);
+    const tag = "x-slash-path";
+    define(tag);
+    entryRoute(tag, "/test");
+    history.pushState({}, "", "/test");
+    el.render();
+    const child = el.querySelector(tag);
+    expect(child).toBeTruthy();
+    document.body.removeChild(el);
+  });
 });

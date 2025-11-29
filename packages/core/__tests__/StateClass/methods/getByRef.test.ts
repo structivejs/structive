@@ -237,6 +237,33 @@ describe("StateClass/methods: getByRef", () => {
     expect(() => getByRef(target, ref, {} as any, handler)).toThrow(/expected to be an array for list management/);
   });
 
+  it("lastCacheEntry が存在しない場合は空配列で初期化される", () => {
+    const stackMarker = Symbol("stack");
+    const handler = makeHandler({ refStack: [stackMarker], refIndex: 0, lastRefStack: stackMarker });
+    const info = makeInfo("newItems");
+    const listIndex = { index: 0, parentListIndex: null };
+    const ref = makeRef(info, listIndex);
+    handler.__listsSet.add(info.pattern);
+    // No previous cache entry
+    handler.engine.versionRevisionByPath.set(info.pattern, { version: 1, revision: 0 });
+    handler.updater.version = 1;
+    handler.updater.revision = 1;
+    handler.renderer = {
+      lastListInfoByRef: new Map<any, any>(),
+    };
+    createListIndexesMock.mockImplementation(() => [{ index: 0 }]);
+    const target = { [info.pattern]: ["item1"] } as any;
+
+    const result = getByRef(target, ref, {} as any, handler);
+
+    expect(result).toEqual(["item1"]);
+    const lastInfo = handler.renderer.lastListInfoByRef.get(ref);
+    expect(lastInfo).toEqual({ value: [], listIndexes: [] });
+    // lastCacheEntry is undefined, so value is undefined and listIndexes defaults to []
+    expect(createListIndexesMock).toHaveBeenCalledWith(listIndex, undefined, result, []);
+    expect(checkDependencyMock).toHaveBeenCalledWith(handler, ref);
+  });
+
   it("stateOutput.startsWith が true なら stateOutput.get の結果を返す", () => {
     const handler = makeHandler();
     const info = makeInfo("state");

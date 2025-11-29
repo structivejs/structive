@@ -140,13 +140,7 @@ class Updater {
         // Handle both Promise and non-Promise results
         if (resultPromise instanceof Promise) {
             // For async updates, run handler after promise completes
-            resultPromise.catch(() => {
-                raiseError({
-                    code: 'UPD-005',
-                    message: 'An error occurred during asynchronous state update.',
-                    docsUrl: "./docs/error-codes.md#upd",
-                });
-            }).finally(() => {
+            return resultPromise.finally(() => {
                 updatedCallbackHandler();
             });
         }

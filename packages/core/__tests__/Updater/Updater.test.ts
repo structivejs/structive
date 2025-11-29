@@ -500,3 +500,52 @@ describe("Updater initialRender tests", () => {
     expect(typeof renderer.render).toBe('function');
   });
 });
+
+describe("Updater error handling", () => {
+  it("should handle async errors in updatedCallback within queueMicrotask", async () => {
+    const { useWritableStateProxy: originalMock } = await import("../../src/StateClass/useWritableStateProxy");
+    const { UpdatedCallbackSymbol } = await import("../../src/StateClass/symbols");
+    
+    const rejectedPromise = Promise.reject(new Error("Async error in updatedCallback"));
+    const updatedCallbackMock = vi.fn().mockReturnValue(rejectedPromise);
+    
+    // 1回目の呼び出し（通常のupdate）
+    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void>) => {
+      capturedUpdater = updater;
+      const dummyHandler = {} as any;
+      const mockState = {
+        [UpdatedCallbackSymbol]: updatedCallbackMock
+      };
+      await cb(mockState, dummyHandler);
+    });
+
+    // 2回目の呼び出し（queueMicrotask内）- これがPromiseを返してrejectする
+    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void> | void) => {
+      const dummyHandler = {} as any;
+      const mockState = {
+        [UpdatedCallbackSymbol]: updatedCallbackMock
+      };
+      return cb(mockState, dummyHandler);
+    });
+
+    const engine = createEngineStub();
+    engine.pathManager.hasUpdatedCallback = true;
+    const ref = createRef("foo");
+
+    // unhandledRejectionをキャッチ
+    const errorHandler = vi.fn();
+    process.on('unhandledRejection', errorHandler);
+
+    await withUpdater(engine, null, async (updater) => {
+      updater.enqueueRef(ref);
+    });
+
+    // queueMicrotaskの実行とPromiseのrejectを待つ
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    process.off('unhandledRejection', errorHandler);
+    
+    // エラーハンドラーが呼ばれることを確認（catchでraiseErrorが呼ばれる）
+    expect(errorHandler).toHaveBeenCalled();
+  });
+});

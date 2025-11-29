@@ -351,4 +351,20 @@ describe("BindingNodeProperty", () => {
 
     expect(input.valueAsNumber).toBe(12.5);
   });
+
+  it("存在しないプロパティへの assignValue は BIND-201 エラーを投げる", () => {
+    const engine = createEngineStub();
+    const div = document.createElement("div");
+    const binding = createBindingStub(engine, div);
+
+    const node = createBindingNodeProperty("nonExistentProperty", [], [])(binding, div, engine.inputFilters);
+
+    try {
+      node.assignValue("some value");
+      expect.fail("エラーが投げられるべき");
+    } catch (err: any) {
+      expect(err.message).toContain('Property "nonExistentProperty" does not exist on node');
+      expect(err.code).toBe("BIND-201");
+    }
+  });
 });

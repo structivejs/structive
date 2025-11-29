@@ -299,4 +299,58 @@ describe("StateClass/methods: setByRef", () => {
       setByRef({}, ref, 1, receiver, handler as any);
     }).toThrowError(/propRef.stateProp.parentInfo is undefined/);
   });
+
+  it("エラー: elements で親の値が配列でない場合は STATE-202 エラー", () => {
+    const parentInfo = makeInfo("items");
+    const info = makeInfo("items.*", { parentInfo });
+    const parentRef = makeRef(parentInfo);
+    const ref = { ...makeRef(info, { index: 0, parentListIndex: null }), parentRef };
+    const handler = makeHandler();
+    handler.engine.pathManager.elements = createPathManagerSet([info.pattern]);
+    const receiver: any = {
+      [GetByRefSymbol]: vi.fn(() => "not an array"),
+      [GetListIndexesByRefSymbol]: vi.fn(() => []),
+    };
+
+    expect(() => {
+      setByRef({}, ref, "value", receiver, handler as any);
+    }).toThrowError(/Expected array value for list elements/);
+  });
+
+  it("エラー: wildcard 要素で listIndex.index が undefined の場合は STATE-202 エラー", () => {
+    const parentInfo = makeInfo("data");
+    const info = makeInfo("data.*", { parentInfo, lastSegment: "*" });
+    const ref = makeRef(info, { index: undefined, parentListIndex: null });
+    const handler = makeHandler();
+    handler.engine.pathManager.setters = createPathManagerSet([info.pattern]);
+    const target = { [parentInfo.pattern]: [1, 2, 3] };
+
+    expect(() => {
+      setByRef(target, ref, 99, target as any, handler as any);
+    }).toThrowError(/propRef.listIndex\?.index is undefined/);
+  });
+
+  it("エラー: swap チェック中に親の値が配列でない場合は STATE-202 エラー", () => {
+    const parentInfo = makeInfo("list");
+    const info = makeInfo("list.*", { parentInfo });
+    const parentRef = makeRef(parentInfo);
+    const ref = { ...makeRef(info, { index: 0, parentListIndex: null }), parentRef };
+    const handler = makeHandler();
+    handler.engine.pathManager.elements = createPathManagerSet([info.pattern]);
+    
+    const swapInfo = {
+      value: ["a", "b"],
+      listIndexes: [{ index: 0 }, { index: 1 }],
+    };
+    handler.updater.swapInfoByRef.set(parentRef, swapInfo);
+    
+    const receiver: any = {
+      [GetByRefSymbol]: vi.fn(() => "not an array"),
+      [GetListIndexesByRefSymbol]: vi.fn(() => [{ index: 0 }, { index: 1 }]),
+    };
+
+    expect(() => {
+      setByRef({}, ref, "c", receiver, handler as any);
+    }).toThrowError(/Parent value is not an array during swap check/);
+  });
 });

@@ -67,7 +67,7 @@ describe("Template/replaceMustacheWithTemplateTag", () => {
     test("should handle if with elseif and else", () => {
       const html = "{{if:a}}<div>A</div>{{elseif:b}}<div>B</div>{{else}}<div>default</div>{{endif}}";
       
-      // elseif後のelseは、実装上エラーが発生する
+      // elseif後�Eelseは、実裁E��エラーが発生すめE
       expect(() => {
         replaceMustacheWithTemplateTag(html);
       }).toThrow("Else without if");
@@ -206,7 +206,7 @@ describe("Template/replaceMustacheWithTemplateTag", () => {
     test("should handle expressions with extra whitespace", () => {
       const html = "{{  if : condition  }}<div>content</div>{{  endif  }}";
       
-      // 余分なスペースがあると、typeの解析でエラーが発生する
+      // 余�Eなスペ�Eスがあると、typeの解析でエラーが発生すめE
       expect(() => {
         replaceMustacheWithTemplateTag(html);
       }).toThrow("Endif without if");
@@ -326,5 +326,12 @@ describe("Template/replaceMustacheWithTemplateTag", () => {
       expect(result).toContain('placeholder="<!--@@:placeholders.name-->"');
       expect(result).toContain('<template data-bind="if:form.isValid">');
     });
+
+    test("should treat unknown Mustache type as embed expression", () => {
+      const html = "<div>{{unknown:something}}</div>";
+      const result = replaceMustacheWithTemplateTag(html);
+      expect(result).toBe("<div><!--@@:unknown:something--></div>");
+    });
   });
 });
+

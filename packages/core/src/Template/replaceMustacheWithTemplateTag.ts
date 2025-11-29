@@ -52,7 +52,7 @@ export function replaceMustacheWithTemplateTag(html: string): string {
   // Stack to track nested control structures (if/for/elseif)
   const stack:MustacheInfo[] = [];
   
-  return html.replaceAll(MUSTACHE_REGEXP, (_match, expression: string) => {
+  return html.replaceAll(MUSTACHE_REGEXP, (_match, expression: string): string => {
     const expr = expression.trim();
     
     // Extract the type (first part before ':')
@@ -92,14 +92,6 @@ export function replaceMustacheWithTemplateTag(html: string): string {
         } else if (info.type === 'elseif') {
           // Close elseif branches (each elseif creates nested templates)
           endTags.push('</template>');
-          if (stack.length === 0) {
-            raiseError({
-              code: 'TMP-102',
-              message: 'Endif without if',
-              context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
-              docsUrl: './docs/error-codes.md#tmp',
-            });
-          }
         } else {
           // Invalid nesting: encountered non-if/elseif tag
           raiseError({
@@ -122,15 +114,14 @@ export function replaceMustacheWithTemplateTag(html: string): string {
       
       if (info.type === 'for') {
         return '</template>';
-      } else {
-        // Invalid nesting: endfor without corresponding for
-        raiseError({
-          code: 'TMP-102',
-          message: 'Endfor without for',
-          context: { where: 'replaceMustacheWithTemplateTag', got: info.type, expr },
-          docsUrl: './docs/error-codes.md#tmp',
-        });
       }
+      // Invalid nesting: endfor without corresponding for
+      raiseError({
+        code: 'TMP-102',
+        message: 'Endfor without for',
+        context: { where: 'replaceMustacheWithTemplateTag', got: info.type, expr },
+        docsUrl: './docs/error-codes.md#tmp',
+      });
     } else if (type === 'elseif') {
       const lastInfo = stack.at(-1) ?? raiseError({
         code: 'TMP-102',
@@ -141,14 +132,13 @@ export function replaceMustacheWithTemplateTag(html: string): string {
       if (lastInfo.type === 'if' || lastInfo.type === 'elseif') {
         stack.push(currentInfo);
         return `</template><template data-bind="if:${lastInfo.remain}|not"><template data-bind="if:${remain}">`;
-      } else {
-        raiseError({
-          code: 'TMP-102',
-          message: 'Elseif without if',
-          context: { where: 'replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
-          docsUrl: './docs/error-codes.md#tmp',
-        });
       }
+      raiseError({
+        code: 'TMP-102',
+        message: 'Elseif without if',
+        context: { where: 'replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
+        docsUrl: './docs/error-codes.md#tmp',
+      });
     } else if (type === 'else') {
       // Handle else: verify it follows if, then create negated condition template
       const lastInfo = stack.at(-1) ?? raiseError({
@@ -162,24 +152,27 @@ export function replaceMustacheWithTemplateTag(html: string): string {
         // Close previous if branch and open negated condition for else
         // Structure: </template><template data-bind="if:condition|not">
         return `</template><template data-bind="if:${lastInfo.remain}|not">`;
-      } else {
-        // Invalid: else must follow if
-        raiseError({
-          code: 'TMP-102',
-          message: 'Else without if',
-          context: { where: 'replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
-          docsUrl: './docs/error-codes.md#tmp',
-        });
       }
-    } else {
-      // Unrecognized Mustache type (should not reach here due to MUSTACHE_TYPES check)
-      raiseError({
+      // Invalid: else must follow if
+      return raiseError({
         code: 'TMP-102',
-        message: 'Unknown type',
-        context: { where: 'replaceMustacheWithTemplateTag', type, expr },
+        message: 'Else without if',
+        context: { where: 'replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
         docsUrl: './docs/error-codes.md#tmp',
       });
     }
+    /* c8 ignore start */
+    // Unreachable code: All possible Mustache types are handled above
+    // This code path is theoretically impossible because:
+    // 1. Non-control-structure types are converted to embed comments (line 66)
+    // 2. All control structure types (if/for/endif/endfor/elseif/else) have explicit handlers above
+    return raiseError({
+      code: 'TMP-102',
+      message: 'Unreachable: All Mustache types should be handled by preceding branches',
+      context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+      docsUrl: './docs/error-codes.md#tmp',
+    });
+    /* c8 ignore stop */
   });
 }
 

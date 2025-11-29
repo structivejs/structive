@@ -167,4 +167,31 @@ describe("StateClass/methods setLoopContext", () => {
     expect(handler.lastRefStack).toBeNull();
     expect(result).toBeUndefined();
   });
+
+  it("loopContext が null で callback が同期エラーを投げた場合も loopContext をリセット", () => {
+    const handler = makeHandler();
+    const error = new Error("sync error");
+    const callback = vi.fn(() => {
+      throw error;
+    });
+
+    expect(() => setLoopContext(handler, null, callback)).toThrow(error);
+    expect(handler.loopContext).toBeNull();
+  });
+
+  it("ネストされたループコンテキストでエラーが発生した場合のクリーンアップ", () => {
+    const handler = makeHandler();
+    handler.refStack = [{ info: { pattern: "outer" } }, null];
+    handler.refIndex = 0;
+    const loopContext = { ref: { info: { pattern: "inner" } } } as any;
+    const error = new Error("nested error");
+    const callback = vi.fn(() => {
+      throw error;
+    });
+
+    expect(() => setLoopContext(handler, loopContext, callback)).toThrow(error);
+    expect(handler.loopContext).toBeNull();
+    expect(handler.refIndex).toBe(0);
+    expect(handler.lastRefStack).toBe(handler.refStack[0]);
+  });
 });

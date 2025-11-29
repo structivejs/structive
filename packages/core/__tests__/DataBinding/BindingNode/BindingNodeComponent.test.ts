@@ -517,5 +517,179 @@ describe("BindingNodeComponent", () => {
         );
       }).toThrow('Cannot determine custom element tag name');
     });
+
+    it("_notifyRedraw: whenDefined が reject した場合、COMP-402 エラーを投げる", async () => {
+      vi.clearAllMocks();
+      
+      const refs = [binding.bindingState.ref];
+      const testError = new Error("Custom element definition failed");
+      
+      // Suppress unhandled rejection in this test
+      const unhandledRejectionHandler = vi.fn();
+      process.on('unhandledRejection', unhandledRejectionHandler);
+      
+      // whenDefined が reject するPromiseを返すようにモック
+      const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockRejectedValue(testError);
+      
+      // raiseError をモックしてエラーを投げる
+      const raiseErrorModule = await import("../../../src/utils");
+      const raiseErrorSpy = vi.spyOn(raiseErrorModule, "raiseError").mockImplementation((detail: any) => {
+        const message = typeof detail === "string" ? detail : detail?.message ?? "error";
+        const err = new Error(message);
+        (err as any).code = detail.code;
+        throw err;
+      });
+      
+      // _notifyRedraw を呼び出す
+      (binding.bindingNode as any)._notifyRedraw(refs);
+      
+      // Promise が reject されるまで待つ
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // raiseError が COMP-402 で呼ばれたことを確認
+      expect(raiseErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: 'COMP-402',
+          message: expect.stringContaining('Failed to define custom element'),
+          context: expect.objectContaining({
+            where: 'BindingNodeComponent._notifyRedraw',
+            tagName: 'mock-component'
+          })
+        })
+      );
+      
+      // Clean up
+      process.off('unhandledRejection', unhandledRejectionHandler);
+    });
+
+    it("_notifyRedraw: whenDefined が非Errorオブジェクトで reject した場合も処理する", async () => {
+      vi.clearAllMocks();
+      
+      const refs = [binding.bindingState.ref];
+      const testError = "String error message";
+      
+      // Suppress unhandled rejection in this test
+      const unhandledRejectionHandler = vi.fn();
+      process.on('unhandledRejection', unhandledRejectionHandler);
+      
+      // whenDefined が非Errorで reject するPromiseを返すようにモック
+      const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockRejectedValue(testError);
+      
+      // raiseError をモックしてエラーを投げる
+      const raiseErrorModule = await import("../../../src/utils");
+      const raiseErrorSpy = vi.spyOn(raiseErrorModule, "raiseError").mockImplementation((detail: any) => {
+        const message = typeof detail === "string" ? detail : detail?.message ?? "error";
+        const err = new Error(message);
+        (err as any).code = detail.code;
+        throw err;
+      });
+      
+      // _notifyRedraw を呼び出す
+      (binding.bindingNode as any)._notifyRedraw(refs);
+      
+      // Promise が reject されるまで待つ
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // raiseError が COMP-402 で呼ばれ、String(e) が使われたことを確認
+      expect(raiseErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: 'COMP-402',
+          message: expect.stringContaining('String error message'),
+          context: expect.objectContaining({
+            where: 'BindingNodeComponent._notifyRedraw',
+            tagName: 'mock-component'
+          })
+        })
+      );
+      
+      // Clean up
+      process.off('unhandledRejection', unhandledRejectionHandler);
+    });
+
+    it("activate: whenDefined が reject した場合、COMP-402 エラーを投げる", async () => {
+      vi.clearAllMocks();
+      
+      const testError = new Error("Failed to register component");
+      
+      // Suppress unhandled rejection in this test
+      const unhandledRejectionHandler = vi.fn();
+      process.on('unhandledRejection', unhandledRejectionHandler);
+      
+      // whenDefined が reject するPromiseを返すようにモック
+      const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockRejectedValue(testError);
+      
+      // raiseError をモックしてエラーを投げる
+      const raiseErrorModule = await import("../../../src/utils");
+      const raiseErrorSpy = vi.spyOn(raiseErrorModule, "raiseError").mockImplementation((detail: any) => {
+        const message = typeof detail === "string" ? detail : detail?.message ?? "error";
+        const err = new Error(message);
+        (err as any).code = detail.code;
+        throw err;
+      });
+      
+      // activate を呼び出す
+      binding.activate();
+      
+      // Promise が reject されるまで待つ
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // raiseError が COMP-402 で呼ばれたことを確認
+      expect(raiseErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: 'COMP-402',
+          message: expect.stringContaining('Failed to define custom element'),
+          context: expect.objectContaining({
+            where: 'BindingNodeComponent.activate',
+            tagName: 'mock-component'
+          })
+        })
+      );
+      
+      // Clean up
+      process.off('unhandledRejection', unhandledRejectionHandler);
+    });
+
+    it("activate: whenDefined が非Errorオブジェクトで reject した場合も処理する", async () => {
+      vi.clearAllMocks();
+      
+      const testError = { someField: "not an error object" };
+      
+      // Suppress unhandled rejection in this test
+      const unhandledRejectionHandler = vi.fn();
+      process.on('unhandledRejection', unhandledRejectionHandler);
+      
+      // whenDefined が非Errorで reject するPromiseを返すようにモック
+      const whenDefinedSpy = vi.spyOn(customElements, "whenDefined").mockRejectedValue(testError);
+      
+      // raiseError をモックしてエラーを投げる
+      const raiseErrorModule = await import("../../../src/utils");
+      const raiseErrorSpy = vi.spyOn(raiseErrorModule, "raiseError").mockImplementation((detail: any) => {
+        const message = typeof detail === "string" ? detail : detail?.message ?? "error";
+        const err = new Error(message);
+        (err as any).code = detail.code;
+        throw err;
+      });
+      
+      // activate を呼び出す
+      binding.activate();
+      
+      // Promise が reject されるまで待つ
+      await new Promise(resolve => setTimeout(resolve, 50));
+      
+      // raiseError が COMP-402 で呼ばれ、String(e) が使われたことを確認
+      expect(raiseErrorSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          code: 'COMP-402',
+          message: expect.stringContaining('[object Object]'),
+          context: expect.objectContaining({
+            where: 'BindingNodeComponent.activate',
+            tagName: 'mock-component'
+          })
+        })
+      );
+      
+      // Clean up
+      process.off('unhandledRejection', unhandledRejectionHandler);
+    });
   });
 });

@@ -1287,4 +1287,110 @@ describe("BindingNodeFor coverage", () => {
 
     document.body.removeChild(container);
   });
+
+  it("applyChange で oldList が配列でない場合、BIND-201 エラーを投げる", () => {
+    setupTemplate();
+    const engine = createEngineStub();
+    const comment = document.createComment("@@|400");
+    const binding = createBindingStub(engine, comment);
+    const container = document.createElement("div");
+    container.appendChild(comment);
+    document.body.appendChild(container);
+
+    const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
+    
+    // 意図的に配列でない値を _oldList に設定
+    node._oldList = "not an array";
+    node._oldListIndexSet = new Set();
+
+    const idx = [{ index: 0 } as any];
+    const renderer = createRendererStub({
+      updatedBindings: new Set([binding]),
+      calcListDiff: vi.fn(),
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => [{}]), // newList は配列
+        [GetListIndexesByRefSymbol]: vi.fn(() => idx),
+      },
+    });
+
+    try {
+      node.applyChange(renderer);
+      expect.fail("エラーが投げられるべき");
+    } catch (err: any) {
+      expect(err.message).toBe("Old value is not array");
+      expect(err.code).toBe("BIND-201");
+    }
+    
+    document.body.removeChild(container);
+  });
+
+  it("GetListIndexesByRefSymbol が null を返す場合のフォールバック", () => {
+    setupTemplate();
+    const engine = createEngineStub();
+    const comment = document.createComment("@@|401");
+    const binding = createBindingStub(engine, comment);
+    const container = document.createElement("div");
+    container.appendChild(comment);
+    document.body.appendChild(container);
+
+    const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
+
+    const renderer = createRendererStub({
+      updatedBindings: new Set([binding]),
+      calcListDiff: vi.fn(),
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => []),
+        [GetListIndexesByRefSymbol]: vi.fn(() => null), // null を返す
+      },
+    });
+
+    // エラーなく処理される
+    expect(() => node.applyChange(renderer)).not.toThrow();
+    
+    document.body.removeChild(container);
+  });
+
+  it("配列の length が null/undefined の場合のフォールバック", () => {
+    setupTemplate();
+    const engine = createEngineStub();
+    const comment = document.createComment("@@|402");
+    const binding = createBindingStub(engine, comment);
+    const container = document.createElement("div");
+    container.appendChild(comment);
+    document.body.appendChild(container);
+
+    const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
+
+    // length が null を返す配列を Proxy で作成
+    const oldArrayProxy = new Proxy([1, 2, 3], {
+      get(target, prop) {
+        if (prop === 'length') return null;
+        return target[prop as any];
+      }
+    });
+    node._oldList = oldArrayProxy;
+    node._oldListIndexSet = new Set();
+
+    // length が undefined を返す配列を Proxy で作成
+    const newArrayProxy = new Proxy([4, 5], {
+      get(target, prop) {
+        if (prop === 'length') return undefined;
+        return target[prop as any];
+      }
+    });
+
+    const renderer = createRendererStub({
+      updatedBindings: new Set([binding]),
+      calcListDiff: vi.fn(),
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => newArrayProxy),
+        [GetListIndexesByRefSymbol]: vi.fn(() => []),
+      },
+    });
+
+    // エラーなく処理される（length は 0 として扱われる）
+    expect(() => node.applyChange(renderer)).not.toThrow();
+    
+    document.body.removeChild(container);
+  });
 });
