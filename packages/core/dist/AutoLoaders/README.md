@@ -140,7 +140,7 @@ import { bootstrapStructive, config } from "structive";
   <script type="importmap">
   {
     "imports": {
-      "structive": "./node_modules/structive/dist/structive.js",
+      "structive": "./node_modules/structive/dist/structive.mjs",
       "app-root": "./components/app-root.st.html"
     }
   }

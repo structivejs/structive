@@ -21,9 +21,9 @@ import { bootstrapStructive, config } from "structive";
 
 ### EasyLoaders (Root)
 ```javascript
-import { bootstrapStructive, config } from "../structive.js";
+import { bootstrapStructive, config } from "../structive.esm.js";
 ```
-- Imports structive.js using relative path from dist/EasyLoaders/
+- Imports structive.esm.js using relative path from dist/EasyLoaders/
 
 ### EasyLoaders (esm/)
 ```javascript
@@ -33,9 +33,9 @@ import { bootstrapStructive, config } from "../../exports.js";
 
 ### EasyLoaders (min/)
 ```javascript
-import { bootstrapStructive, config } from "../../structive.min.js";
+import { bootstrapStructive, config } from "../../structive.esm.min.js";
 ```
-- Imports structive.min.js using relative path from dist/EasyLoaders/min/
+- Imports structive.esm.min.js using relative path from dist/EasyLoaders/min/
 
 ## Build and Deploy
 
@@ -70,7 +70,7 @@ EasyLoaders/
 
 ## Usage
 
-### Root-level Files (relative path: ../structive.js)
+### Root-level Files (relative path: ../structive.esm.js)
 
 ```html
 <script type="module" src="node_modules/structive/dist/EasyLoaders/default.js"></script>
@@ -82,7 +82,7 @@ EasyLoaders/
 <script type="module" src="node_modules/structive/dist/EasyLoaders/esm/default.js"></script>
 ```
 
-### min/ Folder Files (relative path: ../../structive.min.js)
+### min/ Folder Files (relative path: ../../structive.esm.min.js)
 
 ```html
 <script type="module" src="node_modules/structive/dist/EasyLoaders/min/default.js"></script>
@@ -204,6 +204,6 @@ Example:
 ### Use EasyLoaders when:
 - You want to reference build artifacts directly with relative paths
 - You are not using Import Maps
-- You want to explicitly specify build artifacts (structive.js / exports.js / structive.min.js)
+- You want to explicitly specify build artifacts (structive.esm.js / exports.js / structive.esm.min.js)
 
 **Recommendation**: Use **AutoLoaders** in most cases.

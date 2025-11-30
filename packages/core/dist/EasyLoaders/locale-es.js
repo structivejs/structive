@@ -1,4 +1,4 @@
-import { bootstrapStructive, config } from "../structive.js";
+import { bootstrapStructive, config } from "../structive.esm.js";
 
 config.autoLoadFromImportMap = true;
 config.locale = "es";

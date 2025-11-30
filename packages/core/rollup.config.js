@@ -13,6 +13,11 @@ export default [
         format: 'esm',
         sourcemap: true,
       },
+      {
+        file: 'dist/structive.esm.js',
+        format: 'esm',
+        sourcemap: true,
+      },
       /*
       {
         file: 'dist/structive.js',
@@ -40,12 +45,20 @@ export default [
   // Minified JS build
   {
     input: 'src/exports.ts',
-    output: {
-      file: 'dist/structive.min.mjs',
-      format: 'esm',
-      name: 'Structive',
-      sourcemap: true,
-    },
+    output: [
+      {
+        file: 'dist/structive.min.mjs',
+        format: 'esm',
+        name: 'Structive',
+        sourcemap: true,
+      },
+      {
+        file: 'dist/structive.esm.min.js',
+        format: 'esm',
+        name: 'Structive',
+        sourcemap: true,
+      }
+    ],
     plugins: [
       typescript({ tsconfig: './tsconfig.json' }),
       terser({

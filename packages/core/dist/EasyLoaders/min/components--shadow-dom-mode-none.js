@@ -1,4 +1,4 @@
-import { bootstrapStructive, config } from "../../structive.min.js";
+import { bootstrapStructive, config } from "../../structive.esm.min.js";
 
 config.autoLoadFromImportMap = true;
 config.enableMainWrapper = false;
