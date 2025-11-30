@@ -10783,4 +10783,4 @@ async function bootstrapStructive() {
 }
 
 export { bootstrapStructive, config, defineComponents };
-//# sourceMappingURL=structive.js.map
+//# sourceMappingURL=structive.mjs.map

@@ -9,7 +9,7 @@ export default [
     input: 'src/exports.ts',
     output: [
       {
-        file: 'dist/structive.js',
+        file: 'dist/structive.mjs',
         format: 'esm',
         sourcemap: true,
       },
@@ -41,12 +41,13 @@ export default [
   {
     input: 'src/exports.ts',
     output: {
-      file: 'dist/structive.min.js',
+      file: 'dist/structive.min.mjs',
       format: 'esm',
       name: 'Structive',
       sourcemap: true,
     },
     plugins: [
+      typescript({ tsconfig: './tsconfig.json' }),
       terser({
         mangle: {
           properties: {
@@ -56,8 +57,7 @@ export default [
           keep_classnames: false,
           keep_fnames: false,
         }
-      }),
-      typescript({ tsconfig: './tsconfig.json' })
+      })
     ]
   }
 ];
