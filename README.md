@@ -6,6 +6,10 @@ Structure-driven template engine where structure defines meaning.
 
 Structive is a declarative template engine where structure itself carries meaning. It enables intuitive data binding and componentization while leveraging HTML structure.
 
+### Getting Started
+
+- [Quick start](docs/GettingStarted.md)
+
 ## Features
 
 - **Structure-driven**: Declarative syntax based on HTML structure
