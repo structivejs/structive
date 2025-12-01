@@ -1,6 +1,6 @@
 {
   "name": "structive",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "description": "Structure-driven template engine where structure defines meaning.",
   "main": "dist/structive.mjs",
   "module": "dist/structive.mjs",
@@ -17,7 +17,8 @@
     "clean": "node -e \"require('fs').rmSync('dist', {recursive: true, force: true})\"",
     "lint": "eslint . --max-warnings 0",
     "lint:fix": "eslint . --fix",
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "test:coverage:watch": "vitest --coverage",
     "preversion": "npm test",
