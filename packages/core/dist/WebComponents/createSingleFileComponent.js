@@ -1,3 +1,4 @@
+import { config } from "./getGlobalConfig.js";
 /**
  * Escapes Mustache template expressions by converting them to HTML comments.
  * This prevents the browser's HTML parser from interpreting {{}} as invalid syntax.
@@ -27,6 +28,13 @@ function unescapeEmbed(html) {
     return html.replaceAll(/<!--\{\{([^}]+)}}-->/g, (match, expr) => {
         return `{{${expr}}}`;
     });
+}
+function warnMissingSection(section, filePath, detail) {
+    if (!config.debug) {
+        return;
+    }
+    const suffix = detail ? ` (${detail})` : "";
+    console.warn(`[Structive][SFC] Missing <${section}> section in ${filePath}${suffix}`);
 }
 /** Counter for generating unique IDs for dynamically imported scripts */
 let id = 0;
@@ -58,6 +66,9 @@ export async function createSingleFileComponent(path, text) {
     template.innerHTML = escapeEmbed(text);
     // Extract and remove the <template> section
     const html = template.content.querySelector("template");
+    if (!html) {
+        warnMissingSection("template", path);
+    }
     html?.remove();
     // Extract and remove the <script type="module"> section
     const script = template.content.querySelector("script[type=module]");
@@ -86,9 +97,15 @@ export async function createSingleFileComponent(path, text) {
             scriptModule = await import(`data:application/javascript;base64,${b64}`);
         }
     }
+    else {
+        warnMissingSection("script", path, 'expects <script type="module">');
+    }
     script?.remove();
     // Extract and remove the <style> section
     const style = template.content.querySelector("style");
+    if (!style) {
+        warnMissingSection("style", path);
+    }
     style?.remove();
     // Use default export as state class, or empty class if not provided
     const stateClass = (scriptModule.default ?? class {

@@ -3,8 +3,20 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { createSingleFileComponent } from "../../src/WebComponents/createSingleFileComponent";
+import { config } from "../../src/WebComponents/getGlobalConfig";
 
 describe("WebComponents/createSingleFileComponent", () => {
+  const originalDebug = config.debug;
+
+  beforeEach(() => {
+    config.debug = false;
+  });
+
+  afterEach(() => {
+    config.debug = originalDebug;
+    vi.restoreAllMocks();
+  });
+
   it("<template> の HTML を抽出し、{{ }} を保持する（script/style なし）", async () => {
     const sfc = `
       <template>
@@ -106,5 +118,44 @@ describe("WebComponents/createSingleFileComponent", () => {
       URL.createObjectURL = originalCreateObjectURL;
       URL.revokeObjectURL = originalRevokeObjectURL;
     }
+  });
+
+  it("config.debug=true のとき、missing <template> を警告する", async () => {
+    config.debug = true;
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const sfc = `
+      <style>.only-style{}</style>
+      <script type="module">export default class {}</script>
+    `;
+    await createSingleFileComponent("warn-template.sfc", sfc);
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[Structive][SFC] Missing <template> section in warn-template.sfc"
+    );
+  });
+
+  it("config.debug=true のとき、type=module なしの <script> 欠如を警告する", async () => {
+    config.debug = true;
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const sfc = `
+      <template><div>no script</div></template>
+      <style>.no-script{}</style>
+    `;
+    await createSingleFileComponent("warn-script.sfc", sfc);
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[Structive][SFC] Missing <script> section in warn-script.sfc (expects <script type=\"module\">)"
+    );
+  });
+
+  it("config.debug=true のとき、missing <style> を警告する", async () => {
+    config.debug = true;
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const sfc = `
+      <template><p>no style</p></template>
+      <script type="module">export default class {}</script>
+    `;
+    await createSingleFileComponent("warn-style.sfc", sfc);
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[Structive][SFC] Missing <style> section in warn-style.sfc"
+    );
   });
 });

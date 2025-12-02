@@ -16,6 +16,7 @@
  */
 import { IStructiveState } from "../StateClass/types";
 import { IUserComponentData } from "./types";
+import { config } from "./getGlobalConfig.js";
 
 type ScriptModule = { default?: unknown };
 
@@ -51,6 +52,14 @@ function unescapeEmbed(html:string):string {
   });
 }
 
+function warnMissingSection(section: string, filePath: string, detail?: string): void {
+  if (!config.debug) {
+    return;
+  }
+  const suffix = detail ? ` (${detail})` : "";
+  console.warn(`[Structive][SFC] Missing <${section}> section in ${filePath}${suffix}`);
+}
+
 /** Counter for generating unique IDs for dynamically imported scripts */
 let id = 0;
 
@@ -83,6 +92,9 @@ export async function createSingleFileComponent(path: string, text: string): Pro
 
   // Extract and remove the <template> section
   const html = template.content.querySelector<HTMLTemplateElement>("template");
+  if (!html) {
+    warnMissingSection("template", path);
+  }
   html?.remove();
 
   // Extract and remove the <script type="module"> section
@@ -110,11 +122,16 @@ export async function createSingleFileComponent(path: string, text: string): Pro
       const b64 = btoa(String.fromCodePoint(...new TextEncoder().encode(script.text + uniq_comment)));
       scriptModule = await import(`data:application/javascript;base64,${b64}`) as ScriptModule;
     }
+  } else {
+    warnMissingSection("script", path, 'expects <script type="module">');
   }
   script?.remove();
 
   // Extract and remove the <style> section
   const style = template.content.querySelector<HTMLStyleElement>("style");
+  if (!style) {
+    warnMissingSection("style", path);
+  }
   style?.remove();
 
   // Use default export as state class, or empty class if not provided

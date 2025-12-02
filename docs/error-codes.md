@@ -23,39 +23,27 @@ Structive error codes follow a `PREFIX-NNN` format to make it easy to grasp "wha
 - TMP: Template
   - e.g., TMP-001 Template not found / TMP-102 SVG template conversion failed
 - BIND: DataBinding / BindContent / BindingNode
-  - e.g., BIND-101 Data-bind not registered / BIND-102 Node not found by nodePath / BIND-103 Creator not found for bindText
-- ENG: ComponentEngine (lifecycle & mounting)
-  - e.g., ENG-201 Lifecycle order violation / ENG-202 Mount target missing
+  - e.g., BIND-101 Data-bind not registered / BIND-201 BindContent not initialized yet
 - COMP: Component / WebComponents registration & definition
-  - e.g., COMP-001 Component already defined / COMP-010 ShadowRoot not allowed
-- SFC: Single File Component loading / generation
-  - e.g., SFC-201 Invalid SFC metadata / SFC-202 Parse error
+  - e.g., COMP-301 Connected callback failed / COMP-401 Custom element tag name not found
 - IMP: ImportMap (loadFromImportMap, lazy-load alias)
-  - e.g., IMP-101 Invalid route alias / IMP-201 Lazy component alias not found
-- ROUTE: Router (aliases / paths / navigation)
-  - e.g., ROUTE-101 Route path invalid / ROUTE-102 Duplicate route entry
+  - e.g., IMP-201 Lazy component alias not found / IMP-202 Lazy component load failed
 - PATH: PathManager / PathTree
-  - e.g., PATH-101 Path node not found / PATH-201 Path normalization failed
+  - e.g., PATH-101 Path node not found
 - LIST: ListIndex / ListDiff
-  - e.g., LIST-101 Diff computation failed / LIST-201 Invalid list index
+  - e.g., LIST-201 ListIndex not found / LIST-203 List indexes missing from cache entry
 - STATE: StateClass / StateProperty / Ref
-  - e.g., STATE-301 Readonly property mutation / STATE-302 Unresolved state path / STATE-303 Dependency tracking inconsistency
+  - e.g., STATE-202 Failed to parse state / STATE-301 Readonly property mutation
 - STC: StateClass internals (cache, getters, loop context scopes)
   - e.g., STC-001 Missing state property / STC-002 Ref stack empty during getter
+- CSO: ComponentStateOutput (child ↔ parent state bridge)
+  - e.g., CSO-101 Child path not found / CSO-102 Child binding not registered
 - FLT: Filter (built-in / custom)
-  - e.g., FLT-201 Unknown filter / FLT-202 Filter argument invalid
+  - e.g., FLT-201 Filter not found / FLT-202 Filter argument invalid
 - CSS: StyleSheet registration
-  - e.g., CSS-101 StyleSheet registration failed
+  - e.g., CSS-001 Stylesheet not found
 - UPD: Updater / Renderer
-  - e.g., UPD-401 Render cycle interrupted / UPD-402 Binding update failed
-- CFG: Config / Bootstrap / Exports (startup guards)
-  - e.g., CFG-001 Invalid config value / CFG-002 Bootstrap called multiple times
-- ID: GlobalId (ID generation)
-  - e.g., ID-101 ID collision detected
-- DOM: DOM environment / constraints (jsdom or browser discrepancies)
-  - e.g., DOM-201 Operation not supported in current environment
-- UTL: Shared utilities (catch-all)
-  - e.g., UTL-999 Unexpected internal error
+  - e.g., UPD-001 Engine not initialized / UPD-006 ListDiff is null during renderItem
 
 ## Message Guidelines
 
@@ -89,17 +77,20 @@ Structive error codes follow a `PREFIX-NNN` format to make it easy to grasp "wha
 ## Representative Codes (Initial Set)
 
 - TMP-001 Template not found
-- TMP-102 SVG template conversion failed
+- TMP-102 Template conversion failed
 - BIND-101 Data-bind not registered
-- BIND-102 Node not found by nodePath
-- BIND-103 Creator not found for bindText
-- ENG-201 Lifecycle order violation
-- COMP-001 Component already defined
-- COMP-010 ShadowRoot not allowed
+- BIND-201 BindContent not initialized yet
+- COMP-301 Connected callback failed
+- COMP-401 Custom element tag name not found
 - IMP-201 Lazy component alias not found
-- ROUTE-101 Invalid route alias
+- PATH-101 PathNode not found
+- LIST-201 ListIndex not found
 - STATE-301 Readonly property mutation
-- UPD-402 Binding update failed
+- STC-001 State property missing / not an array
+- CSO-101 Child path not found
+- FLT-201 Filter not found
+- CSS-001 Stylesheet not found
+- UPD-003 Dependency path missing during collection
 
 ## Implementation Guidelines
 
@@ -243,37 +234,7 @@ Template issues such as missing registrations or conversion failures.
 - Context example: `{ where: 'Filter.valueMustBeNumber', fnName }`
 - Hint: Pass the expected options/value types to each filter or author custom guards before invoking filter helpers.
 
-## ENG — ComponentEngine
-
-### ENG-201 Lifecycle order violation
-- Where: `ComponentEngine.connectedCallback`, `disconnectedCallback`, `setup`, `teardown`
-- Condition: Lifecycle invoked out of order (e.g., rerunning `setup` before `teardown`)
-- Message: `Lifecycle order violation`
-- Context example: `{ where: 'ComponentEngine.connectedCallback|setup|teardown', mode }`
-- Hint: Follow `setup → connected → (updates) → disconnected → teardown` and add guards.
-
-### ENG-202 Mount target missing
-- Where: `ComponentEngine.setup` / mount routines
-- Condition: Parent node for block/inline mode cannot be resolved
-- Message: `Mount target missing`
-- Context example: `{ where: 'ComponentEngine.setup', mode, componentId }`
-- Hint: Re-check parent selectors and ensure block/inline settings match actual DOM.
-
 ## COMP — Component / WebComponents
-
-### COMP-001 Component already defined
-- Where: `WebComponents.registerComponentClass`, `customElements.define`
-- Condition: Attempt to redefine an existing tag
-- Message: `Component already defined: ${tagName}`
-- Context example: `{ where: 'registerComponentClass', tagName }`
-- Hint: Avoid duplicates by checking for existing definitions and verifying build bundling.
-
-### COMP-010 ShadowRoot not allowed
-- Where: `WebComponents.createComponentClass` (when enabling Shadow DOM)
-- Condition: Environment or policy forbids ShadowRoot creation
-- Message: `ShadowRoot not allowed`
-- Context example: `{ where: 'createComponentClass', tagName, shadow: true }`
-- Hint: Disable Shadow DOM or only enable it when supported; reassess style scoping.
 
 ### COMP-301 Connected callback failed
 - Where: `ComponentEngine.connectedCallback`

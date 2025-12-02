@@ -55,17 +55,20 @@ The `copy-loaders.js` script copies files directly to dist/ as-is.
 ```
 EasyLoaders/
 ├── default.js                    # Root-level files
+├── debug.js
 ├── components.js
 ├── shadow-dom-mode-none.js
-├── (13 other files)
+├── (28 other files)
 ├── esm/                          # ESM build
 │   ├── default.js
+│   ├── debug.js
 │   ├── components.js
-│   └── (14 other files)
+│   └── (28 other files)
 └── min/                          # Minified build
-    ├── default.js
-    ├── components.js
-    └── (14 other files)
+  ├── default.js
+  ├── debug.js
+  ├── components.js
+  └── (28 other files)
 ```
 
 ## Usage
@@ -92,32 +95,48 @@ EasyLoaders/
 
 Each directory contains files with the same configuration settings.
 
-### Root Level (16 files total)
+### Root Level (32 files total)
 
-| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale |
-|----------|----------|-------------------|--------------|---------------|--------|
-| `default.js` | ✓ | ✓ | ✓ | "open" | - |
-| `components.js` | ✓ | ✗ | ✗ | "open" | - |
-| `shadow-dom-mode-none.js` | ✓ | ✓ | ✓ | "none" | - |
-| `locale-ja.js` | ✓ | ✓ | ✓ | "open" | "ja" |
-| `locale-de.js` | ✓ | ✓ | ✓ | "open" | "de" |
-| `locale-es.js` | ✓ | ✓ | ✓ | "open" | "es" |
-| `components--locale-ja.js` | ✓ | ✗ | ✗ | "open" | "ja" |
-| `components--locale-de.js` | ✓ | ✗ | ✗ | "open" | "de" |
-| `components--locale-es.js` | ✓ | ✗ | ✗ | "open" | "es" |
-| `shadow-dom-mode-none--locale-ja.js` | ✓ | ✓ | ✓ | "none" | "ja" |
-| `shadow-dom-mode-none--locale-de.js` | ✓ | ✓ | ✓ | "none" | "de" |
-| `shadow-dom-mode-none--locale-es.js` | ✓ | ✓ | ✓ | "none" | "es" |
-| `components--shadow-dom-mode-none.js` | ✓ | ✗ | ✗ | "none" | - |
-| `components--shadow-dom-mode-none--locale-ja.js` | ✓ | ✗ | ✗ | "none" | "ja" |
-| `components--shadow-dom-mode-none--locale-de.js` | ✓ | ✗ | ✗ | "none" | "de" |
-| `components--shadow-dom-mode-none--locale-es.js` | ✓ | ✗ | ✗ | "none" | "es" |
+| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale | debug |
+|----------|----------|-------------------|--------------|---------------|--------|-------|
+| `default.js` | ✓ | ✓ | ✓ | "open" | - | ✗ |
+| `debug.js` | ✓ | ✓ | ✓ | "open" | - | ✓ |
+| `components.js` | ✓ | ✗ | ✗ | "open" | - | ✗ |
+| `components--debug.js` | ✓ | ✗ | ✗ | "open" | - | ✓ |
+| `shadow-dom-mode-none.js` | ✓ | ✓ | ✓ | "none" | - | ✗ |
+| `shadow-dom-mode-none--debug.js` | ✓ | ✓ | ✓ | "none" | - | ✓ |
+| `locale-ja.js` | ✓ | ✓ | ✓ | "open" | "ja" | ✗ |
+| `locale-ja--debug.js` | ✓ | ✓ | ✓ | "open" | "ja" | ✓ |
+| `locale-de.js` | ✓ | ✓ | ✓ | "open" | "de" | ✗ |
+| `locale-de--debug.js` | ✓ | ✓ | ✓ | "open" | "de" | ✓ |
+| `locale-es.js` | ✓ | ✓ | ✓ | "open" | "es" | ✗ |
+| `locale-es--debug.js` | ✓ | ✓ | ✓ | "open" | "es" | ✓ |
+| `components--locale-ja.js` | ✓ | ✗ | ✗ | "open" | "ja" | ✗ |
+| `components--locale-ja--debug.js` | ✓ | ✗ | ✗ | "open" | "ja" | ✓ |
+| `components--locale-de.js` | ✓ | ✗ | ✗ | "open" | "de" | ✗ |
+| `components--locale-de--debug.js` | ✓ | ✗ | ✗ | "open" | "de" | ✓ |
+| `components--locale-es.js` | ✓ | ✗ | ✗ | "open" | "es" | ✗ |
+| `components--locale-es--debug.js` | ✓ | ✗ | ✗ | "open" | "es" | ✓ |
+| `shadow-dom-mode-none--locale-ja.js` | ✓ | ✓ | ✓ | "none" | "ja" | ✗ |
+| `shadow-dom-mode-none--locale-ja--debug.js` | ✓ | ✓ | ✓ | "none" | "ja" | ✓ |
+| `shadow-dom-mode-none--locale-de.js` | ✓ | ✓ | ✓ | "none" | "de" | ✗ |
+| `shadow-dom-mode-none--locale-de--debug.js` | ✓ | ✓ | ✓ | "none" | "de" | ✓ |
+| `shadow-dom-mode-none--locale-es.js` | ✓ | ✓ | ✓ | "none" | "es" | ✗ |
+| `shadow-dom-mode-none--locale-es--debug.js` | ✓ | ✓ | ✓ | "none" | "es" | ✓ |
+| `components--shadow-dom-mode-none.js` | ✓ | ✗ | ✗ | "none" | - | ✗ |
+| `components--shadow-dom-mode-none--debug.js` | ✓ | ✗ | ✗ | "none" | - | ✓ |
+| `components--shadow-dom-mode-none--locale-ja.js` | ✓ | ✗ | ✗ | "none" | "ja" | ✗ |
+| `components--shadow-dom-mode-none--locale-ja--debug.js` | ✓ | ✗ | ✗ | "none" | "ja" | ✓ |
+| `components--shadow-dom-mode-none--locale-de.js` | ✓ | ✗ | ✗ | "none" | "de" | ✗ |
+| `components--shadow-dom-mode-none--locale-de--debug.js` | ✓ | ✗ | ✗ | "none" | "de" | ✓ |
+| `components--shadow-dom-mode-none--locale-es.js` | ✓ | ✗ | ✗ | "none" | "es" | ✗ |
+| `components--shadow-dom-mode-none--locale-es--debug.js` | ✓ | ✗ | ✗ | "none" | "es" | ✓ |
 
-### esm/ Directory (16 files total)
+### esm/ Directory (32 files total)
 
 Contains the same configuration files. Filenames are identical to the root level.
 
-### min/ Directory (16 files total)
+### min/ Directory (32 files total)
 
 Contains the same configuration files. Filenames are identical to the root level.
 
@@ -128,6 +147,7 @@ Filenames are formed by concatenating configuration settings with `--`:
 - `components`: MainWrapper/Router disabled
 - `shadow-dom-mode-none`: Shadow DOM disabled
 - `locale-XX`: Locale setting (ja, de, es)
+- `debug`: Sets `config.debug = true`
 
 Example:
 - `components--shadow-dom-mode-none--locale-ja.js`
@@ -159,6 +179,12 @@ Example:
 - `locale-XX` variants: `"ja"`, `"de"`, `"es"`
 - Locale for date/number formatting
 
+### debug
+- Default: `false`
+- `debug.js` variants: `true`
+- Enables verbose logging/debug features during bootstrap
+- Append `--debug` to any filename to turn on debug mode for that configuration
+
 ## Examples
 
 ### Basic Usage (Root)
@@ -172,6 +198,16 @@ Example:
   <app-root></app-root>
 </body>
 </html>
+```
+
+### Enable Debug Mode
+```html
+<script type="module" src="node_modules/structive/dist/EasyLoaders/debug.js"></script>
+```
+
+### Components Only + Debug (Minified)
+```html
+<script type="module" src="node_modules/structive/dist/EasyLoaders/min/components--debug.js"></script>
 ```
 
 ### Using ESM Build

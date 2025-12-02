@@ -37,50 +37,69 @@ After deployment to the dist folder, import as follows:
 
 <!-- Japanese locale -->
 <script type="module" src="node_modules/structive/dist/AutoLoaders/locale-ja.js"></script>
+
+<!-- Enable debug logging -->
+<script type="module" src="node_modules/structive/dist/AutoLoaders/debug.js"></script>
 ```
 
 ## File List and Configuration Flags
 
 ### Basic Patterns
 
-| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale |
-|----------|----------|-------------------|--------------|---------------|--------|
-| `default.js` | ✓ | ✓ | ✓ | "open" | - |
-| `components.js` | ✓ | ✗ | ✗ | "open" | - |
-| `shadow-dom-mode-none.js` | ✓ | ✓ | ✓ | "none" | - |
+| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale | debug |
+|----------|----------|-------------------|--------------|---------------|--------|-------|
+| `default.js` | ✓ | ✓ | ✓ | "open" | - | ✗ |
+| `debug.js` | ✓ | ✓ | ✓ | "open" | - | ✓ |
+| `components.js` | ✓ | ✗ | ✗ | "open" | - | ✗ |
+| `components--debug.js` | ✓ | ✗ | ✗ | "open" | - | ✓ |
+| `shadow-dom-mode-none.js` | ✓ | ✓ | ✓ | "none" | - | ✗ |
+| `shadow-dom-mode-none--debug.js` | ✓ | ✓ | ✓ | "none" | - | ✓ |
 
 ### Locale Settings
 
-| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale |
-|----------|----------|-------------------|--------------|---------------|--------|
-| `locale-ja.js` | ✓ | ✓ | ✓ | "open" | "ja" |
-| `locale-de.js` | ✓ | ✓ | ✓ | "open" | "de" |
-| `locale-es.js` | ✓ | ✓ | ✓ | "open" | "es" |
+| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale | debug |
+|----------|----------|-------------------|--------------|---------------|--------|-------|
+| `locale-ja.js` | ✓ | ✓ | ✓ | "open" | "ja" | ✗ |
+| `locale-ja--debug.js` | ✓ | ✓ | ✓ | "open" | "ja" | ✓ |
+| `locale-de.js` | ✓ | ✓ | ✓ | "open" | "de" | ✗ |
+| `locale-de--debug.js` | ✓ | ✓ | ✓ | "open" | "de" | ✓ |
+| `locale-es.js` | ✓ | ✓ | ✓ | "open" | "es" | ✗ |
+| `locale-es--debug.js` | ✓ | ✓ | ✓ | "open" | "es" | ✓ |
 
 ### Compound Settings (Components)
 
-| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale |
-|----------|----------|-------------------|--------------|---------------|--------|
-| `components--locale-ja.js` | ✓ | ✗ | ✗ | "open" | "ja" |
-| `components--locale-de.js` | ✓ | ✗ | ✗ | "open" | "de" |
-| `components--locale-es.js` | ✓ | ✗ | ✗ | "open" | "es" |
+| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale | debug |
+|----------|----------|-------------------|--------------|---------------|--------|-------|
+| `components--locale-ja.js` | ✓ | ✗ | ✗ | "open" | "ja" | ✗ |
+| `components--locale-ja--debug.js` | ✓ | ✗ | ✗ | "open" | "ja" | ✓ |
+| `components--locale-de.js` | ✓ | ✗ | ✗ | "open" | "de" | ✗ |
+| `components--locale-de--debug.js` | ✓ | ✗ | ✗ | "open" | "de" | ✓ |
+| `components--locale-es.js` | ✓ | ✗ | ✗ | "open" | "es" | ✗ |
+| `components--locale-es--debug.js` | ✓ | ✗ | ✗ | "open" | "es" | ✓ |
 
 ### Compound Settings (Shadow DOM Disabled)
 
-| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale |
-|----------|----------|-------------------|--------------|---------------|--------|
-| `shadow-dom-mode-none--locale-ja.js` | ✓ | ✓ | ✓ | "none" | "ja" |
-| `shadow-dom-mode-none--locale-de.js` | ✓ | ✓ | ✓ | "none" | "de" |
-| `shadow-dom-mode-none--locale-es.js` | ✓ | ✓ | ✓ | "none" | "es" |
+| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale | debug |
+|----------|----------|-------------------|--------------|---------------|--------|-------|
+| `shadow-dom-mode-none--locale-ja.js` | ✓ | ✓ | ✓ | "none" | "ja" | ✗ |
+| `shadow-dom-mode-none--locale-ja--debug.js` | ✓ | ✓ | ✓ | "none" | "ja" | ✓ |
+| `shadow-dom-mode-none--locale-de.js` | ✓ | ✓ | ✓ | "none" | "de" | ✗ |
+| `shadow-dom-mode-none--locale-de--debug.js` | ✓ | ✓ | ✓ | "none" | "de" | ✓ |
+| `shadow-dom-mode-none--locale-es.js` | ✓ | ✓ | ✓ | "none" | "es" | ✗ |
+| `shadow-dom-mode-none--locale-es--debug.js` | ✓ | ✓ | ✓ | "none" | "es" | ✓ |
 
 ### Compound Settings (Components + Shadow DOM Disabled)
 
-| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale |
-|----------|----------|-------------------|--------------|---------------|--------|
-| `components--shadow-dom-mode-none.js` | ✓ | ✗ | ✗ | "none" | - |
-| `components--shadow-dom-mode-none--locale-ja.js` | ✓ | ✗ | ✗ | "none" | "ja" |
-| `components--shadow-dom-mode-none--locale-de.js` | ✓ | ✗ | ✗ | "none" | "de" |
-| `components--shadow-dom-mode-none--locale-es.js` | ✓ | ✗ | ✗ | "none" | "es" |
+| Filename | autoLoad | enableMainWrapper | enableRouter | shadowDomMode | locale | debug |
+|----------|----------|-------------------|--------------|---------------|--------|-------|
+| `components--shadow-dom-mode-none.js` | ✓ | ✗ | ✗ | "none" | - | ✗ |
+| `components--shadow-dom-mode-none--debug.js` | ✓ | ✗ | ✗ | "none" | - | ✓ |
+| `components--shadow-dom-mode-none--locale-ja.js` | ✓ | ✗ | ✗ | "none" | "ja" | ✗ |
+| `components--shadow-dom-mode-none--locale-ja--debug.js` | ✓ | ✗ | ✗ | "none" | "ja" | ✓ |
+| `components--shadow-dom-mode-none--locale-de.js` | ✓ | ✗ | ✗ | "none" | "de" | ✗ |
+| `components--shadow-dom-mode-none--locale-de--debug.js` | ✓ | ✗ | ✗ | "none" | "de" | ✓ |
+| `components--shadow-dom-mode-none--locale-es.js` | ✓ | ✗ | ✗ | "none" | "es" | ✗ |
+| `components--shadow-dom-mode-none--locale-es--debug.js` | ✓ | ✗ | ✗ | "none" | "es" | ✓ |
 
 ## File Naming Convention
 
@@ -89,6 +108,7 @@ Filenames are formed by concatenating configuration settings with `--`:
 - `components`: MainWrapper/Router disabled
 - `shadow-dom-mode-none`: Shadow DOM disabled
 - `locale-XX`: Locale setting (ja, de, es)
+- `--debug`: Appended to any filename to set `config.debug = true`
 
 Example:
 - `components--shadow-dom-mode-none--locale-ja.js`
@@ -130,6 +150,11 @@ import { bootstrapStructive, config } from "structive";
 - `locale-XX` variants: `"ja"`, `"de"`, `"es"`
 - Locale for date/number formatting
 
+### debug
+- Default: `false`
+- `--debug` variants: `true`
+- Enables verbose logging/debug-only behaviors (e.g., template warnings)
+
 ## Examples
 
 ### Basic Usage
@@ -163,4 +188,10 @@ import { bootstrapStructive, config } from "structive";
 ```html
 <!-- Use with Japanese locale settings -->
 <script type="module" src="node_modules/structive/dist/AutoLoaders/locale-ja.js"></script>
+```
+
+### Enable Debug Mode
+```html
+<!-- Turn on verbose Structive debug logging -->
+<script type="module" src="node_modules/structive/dist/AutoLoaders/debug.js"></script>
 ```
