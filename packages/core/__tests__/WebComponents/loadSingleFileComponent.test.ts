@@ -7,7 +7,13 @@ const createSingleFileComponentMock = vi.fn(async (path: string, text: string) =
 vi.mock("../../src/WebComponents/createSingleFileComponent", () => ({ createSingleFileComponent: (p: string, t: string) => createSingleFileComponentMock(p, t) }));
 
 // fetch をモック
-const fetchMock = vi.fn(async (url:string) => ({ text: async () => `// sfc from ${url}` }));
+const fetchMock = vi.fn(async (url:string) => ({
+  ok: true,
+  status: 200,
+  statusText: "OK",
+  url,
+  text: async () => `// sfc from ${url}`
+}));
 globalThis.fetch = fetchMock as any;
 
 let loadSingleFileComponent: typeof import("../../src/WebComponents/loadSingleFileComponent")['loadSingleFileComponent'];
@@ -17,7 +23,13 @@ describe("WebComponents/loadSingleFileComponent", () => {
   beforeEach(async () => {
     vi.resetModules();
     fetchMock.mockClear();
-    fetchMock.mockImplementation(async (url:string) => ({ text: async () => `// sfc from ${url}` }));
+    fetchMock.mockImplementation(async (url:string) => ({
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      url,
+      text: async () => `// sfc from ${url}`
+    }));
     createSingleFileComponentMock.mockClear();
     nativeResolve = (import.meta as any).resolve?.bind(import.meta);
     (globalThis as any).__vite_ssr_import_meta__ = nativeResolve ? { resolve: nativeResolve } : {};
@@ -31,5 +43,35 @@ describe("WebComponents/loadSingleFileComponent", () => {
     expect(fetch).toHaveBeenCalledWith(expectedResolved);
     expect(createSingleFileComponentMock).toHaveBeenCalledWith(path, expect.stringContaining(`// sfc from ${expectedResolved}`));
     expect(data.html).toBe("<p>");
+  });
+
+  it("fetch が非 2xx を返したら IMP-202 を投げる", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
+      statusText: "Not Found",
+      url: "https://example.test/missing.sfc",
+      text: async () => ""
+    });
+
+    const path = "@components/missing";
+    await expect(loadSingleFileComponent(path)).rejects.toMatchObject({
+      message: `Failed to load component from ${path}`,
+      code: "IMP-202",
+      docsUrl: "./docs/error-codes.md#imp-202-component-load-failed",
+      context: expect.objectContaining({ path })
+    });
+  });
+
+  it("fetch が reject したら原因をラップして投げる", async () => {
+    const failure = new Error("network down");
+    fetchMock.mockRejectedValueOnce(failure);
+    const path = "./broken.sfc";
+
+    await expect(loadSingleFileComponent(path)).rejects.toMatchObject({
+      message: `Failed to load component from ${path}`,
+      cause: failure,
+      code: "IMP-202"
+    });
   });
 });

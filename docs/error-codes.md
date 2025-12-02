@@ -451,12 +451,14 @@ Invalid aliases, missing lazy-load bindings, etc.
 - Context example: `{ where: 'WebComponents.loadFromImportMap.loadLazyLoadComponent', tagName }`
 - Hint: Ensure the tag is declared in the importmap with the `#lazy` suffix and only invoke `loadLazyLoadComponent` once per tag.
 
-### IMP-202 Lazy component load failed
-- Where: `WebComponents.loadFromImportMap.loadLazyLoadComponent`
-- Condition: `loadSingleFileComponent` rejects (network error, invalid SFC) while resolving a lazy component
-- Message: `Failed to load lazy component for tagName: ${tagName}`
-- Context example: `{ where: 'WebComponents.loadFromImportMap.loadLazyLoadComponent', tagName, alias }`
-- Hint: Inspect the underlying `cause`/error message, confirm the alias path is reachable, and verify the SFC compiles.
+### IMP-202 Component load failed
+- Where: `WebComponents.loadFromImportMap.loadLazyLoadComponent`, `WebComponents.loadSingleFileComponent`
+- Condition: Fetching or parsing an SFC (lazy or direct) fails because of network errors, non-2xx HTTP responses, or invalid component contents
+- Message examples:
+  - `Failed to load component from ${path}`
+  - `Failed to load lazy component for tagName: ${tagName}`
+- Context example: `{ where: 'WebComponents.loadSingleFileComponent', path, resolved, status }`
+- Hint: Inspect the underlying `cause`/response metadata, confirm the import map alias or direct path resolves to a reachable SFC, and verify the server returns a valid file.
 
 ## FLT — Filter
 

@@ -12,6 +12,7 @@
  * - Uses import.meta.resolve for flexible path resolution
  * - Supports dynamic component loading via asynchronous processing
  */
+import { raiseError } from "../utils.js";
 import { createSingleFileComponent } from "./createSingleFileComponent.js";
 import { IUserComponentData } from "./types";
 
@@ -38,12 +39,48 @@ export async function loadSingleFileComponent(path: string): Promise<IUserCompon
   // Fallback to raw path for SSR environments (Node/Vitest) where import.meta.resolve may not exist
   // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
   const resolved = (import.meta as any).resolve ? (import.meta as any).resolve(path) : path;
-  
-  // Fetch the SFC file from the resolved path
-  const response = await fetch(resolved as string);
-  
-  // Read the response body as text
-  const text = await response.text();
+  const docsUrl = "./docs/error-codes.md#imp-202-component-load-failed";
+  let text = "";
+
+  try {
+    // Fetch the SFC file from the resolved path
+    const response = await fetch(resolved as string);
+
+    if (!response.ok) {
+      raiseError({
+        code: "IMP-202",
+        message: `Failed to load component from ${path}`,
+        context: {
+          where: "WebComponents.loadSingleFileComponent",
+          path,
+          resolved,
+          status: response.status,
+          statusText: response.statusText,
+          url: response.url
+        },
+        hint: "Make sure the import map entry points to a reachable SFC and the server returns a 2xx status.",
+        docsUrl
+      });
+    }
+
+    // Read the response body as text
+    text = await response.text();
+  } catch(e) {
+    // failed single file component load
+    raiseError({
+      code: "IMP-202",
+      message: `Failed to load component from ${path}`,
+      context: {
+        where: "WebComponents.loadSingleFileComponent",
+        path,
+        resolved
+      },
+      hint: "Confirm the SFC path is correct and accessible before bootstrapping.",
+      docsUrl,
+      cause: e
+    });
+
+  }
   
   // Parse the SFC text into component data (template, script, style)
   return createSingleFileComponent(path, text);
