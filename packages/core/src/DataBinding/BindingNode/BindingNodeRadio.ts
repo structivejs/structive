@@ -45,10 +45,13 @@ class BindingNodeRadio extends BindingNode {
     if (decorates.length > 1) {
       raiseError({
         code: "BIND-201",
-        message: "Has multiple decorators",
-        context: { where: "BindingNodeRadio.constructor", name: this.name, decoratesCount: decorates.length },
-        docsUrl: "/docs/error-codes.md#bind",
-        severity: "error",
+        message: "Radio binding has multiple decorators",
+        context: {
+          where: "BindingNodeRadio.constructor",
+          bindName: this.name,
+          decoratesCount: decorates.length,
+        },
+        docsUrl: "./docs/error-codes.md#bind",
       });
     }
     

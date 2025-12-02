@@ -264,7 +264,7 @@ describe("StateClass/apis getAll (readonly)", () => {
 
     const receiver = makeReceiver({});
     const fn = getAll({}, "$getAll", receiver, handler);
-    expect(() => fn("items.*.value")).toThrowError(/wildcardPattern is null/);
+    expect(() => fn("items.*.value")).toThrowError(/Wildcard info is missing/);
   });
 
   it("getListIndexes が null を返した場合は例外", () => {

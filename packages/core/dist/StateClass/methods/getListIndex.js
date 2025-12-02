@@ -29,16 +29,16 @@ export function getListIndex(resolvedPath, receiver, handler) {
                 raiseError({
                     code: 'STATE-202',
                     message: 'lastWildcardPath is null',
-                    context: { where: 'getListIndex', pattern: resolvedPath.info.pattern },
-                    docsUrl: '/docs/error-codes.md#state',
+                    context: { where: 'StateClass.getListIndex', pattern: resolvedPath.info.pattern },
+                    docsUrl: './docs/error-codes.md#state',
                 });
             // Retrieve list index from current loop context
             return getContextListIndex(handler, lastWildcardPath) ??
                 raiseError({
                     code: 'LIST-201',
                     message: `ListIndex not found: ${resolvedPath.info.pattern}`,
-                    context: { where: 'getListIndex', pattern: resolvedPath.info.pattern },
-                    docsUrl: '/docs/error-codes.md#list',
+                    context: { where: 'StateClass.getListIndex', pattern: resolvedPath.info.pattern },
+                    docsUrl: './docs/error-codes.md#list',
                 });
         }
         case "all": {
@@ -50,8 +50,8 @@ export function getListIndex(resolvedPath, receiver, handler) {
                     raiseError({
                         code: 'STATE-202',
                         message: 'wildcardParentPattern is null',
-                        context: { where: 'getListIndex', pattern: resolvedPath.info.pattern, index: i },
-                        docsUrl: '/docs/error-codes.md#state',
+                        context: { where: 'StateClass.getListIndex', pattern: resolvedPath.info.pattern, index: i },
+                        docsUrl: './docs/error-codes.md#state',
                     });
                 // Create a reference for the current wildcard level
                 const wildcardRef = getStatePropertyRef(wildcardParentPattern, parentListIndex);
@@ -60,24 +60,24 @@ export function getListIndex(resolvedPath, receiver, handler) {
                     raiseError({
                         code: 'LIST-201',
                         message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
-                        context: { where: 'getListIndex', wildcardParent: wildcardParentPattern.pattern },
-                        docsUrl: '/docs/error-codes.md#list',
+                        context: { where: 'StateClass.getListIndex', wildcardParent: wildcardParentPattern.pattern },
+                        docsUrl: './docs/error-codes.md#list',
                     });
                 // Get the specific index for this wildcard level
                 const wildcardIndex = resolvedPath.wildcardIndexes[i] ??
                     raiseError({
                         code: 'STATE-202',
                         message: 'wildcardIndex is null',
-                        context: { where: 'getListIndex', pattern: resolvedPath.info.pattern, index: i },
-                        docsUrl: '/docs/error-codes.md#state',
+                        context: { where: 'StateClass.getListIndex', pattern: resolvedPath.info.pattern, index: i },
+                        docsUrl: './docs/error-codes.md#state',
                     });
                 // Select the list index at the specified position for this level
                 parentListIndex = listIndexes[wildcardIndex] ??
                     raiseError({
                         code: 'LIST-201',
                         message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
-                        context: { where: 'getListIndex', wildcardParent: wildcardParentPattern.pattern, wildcardIndex },
-                        docsUrl: '/docs/error-codes.md#list',
+                        context: { where: 'StateClass.getListIndex', wildcardParent: wildcardParentPattern.pattern, wildcardIndex },
+                        docsUrl: './docs/error-codes.md#list',
                     });
             }
             // Return the final list index after traversing all levels
@@ -88,8 +88,8 @@ export function getListIndex(resolvedPath, receiver, handler) {
             raiseError({
                 code: 'STATE-202',
                 message: `Partial wildcard type is not supported yet: ${resolvedPath.info.pattern}`,
-                context: { where: 'getListIndex', pattern: resolvedPath.info.pattern },
-                docsUrl: '/docs/error-codes.md#state',
+                context: { where: 'StateClass.getListIndex', pattern: resolvedPath.info.pattern },
+                docsUrl: './docs/error-codes.md#state',
             });
     }
 }

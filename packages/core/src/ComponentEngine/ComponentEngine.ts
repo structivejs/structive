@@ -38,7 +38,7 @@ import { IStatePropertyRef } from "../StatePropertyRef/types.js";
  * - Binding addition, existence checking, and list management
  *
  * Error Codes:
- * - BIND-201: bindContent not initialized yet / Block parent node is not set
+ * - BIND-201: BindContent not initialized yet / Block parent node not set
  * - STATE-202: Failed to parse state from dataset
  *
  * Design Notes:
@@ -136,13 +136,13 @@ class ComponentEngine implements IComponentEngine {
    * Throws BIND-201 if accessed before setup() is called.
    * 
    * @returns IBindContent instance
-   * @throws BIND-201 bindContent not initialized yet
+  * @throws BIND-201 BindContent not initialized yet
    */
   get bindContent(): IBindContent {
     if (this._bindContent === null) {
       raiseError({
         code: 'BIND-201',
-        message: 'bindContent not initialized yet',
+        message: 'BindContent not initialized yet',
         context: { where: 'ComponentEngine.bindContent.get', componentId: (this.owner.constructor as IComponentStatic).id },
         docsUrl: './docs/error-codes.md#bind',
       });
@@ -204,8 +204,9 @@ class ComponentEngine implements IComponentEngine {
    * - connectedCallback() is called when connected to DOM
    * - State initialization and rendering must be redone if reconnected after disconnect
    * 
-   * @throws BIND-201 Block parent node is not set
+  * @throws BIND-201 Block parent node not set
    * @throws STATE-202 Failed to parse state from dataset
+   * @throws COMP-301 Error in connectedCallback
    */
   connectedCallback(): void {
     if (this.config.enableWebComponents) {
@@ -214,9 +215,9 @@ class ComponentEngine implements IComponentEngine {
       // Block mode: Replace component with placeholder
       this._blockParentNode = this.owner.parentNode;
       this._blockPlaceholder = document.createComment("Structive block placeholder");
+      // Set flag to ignore disconnectedCallback triggered by replaceWith
+      this._ignoreDissconnectedCallback = true;
       try {
-        // Set flag to ignore disconnectedCallback triggered by replaceWith
-        this._ignoreDissconnectedCallback = true;
         this.owner.replaceWith(this._blockPlaceholder);
       } finally {
         this._ignoreDissconnectedCallback = false;
@@ -230,7 +231,7 @@ class ComponentEngine implements IComponentEngine {
       // Mount bind content after block placeholder
       const parentNode = this._blockParentNode ?? raiseError({
         code: 'BIND-201',
-        message: 'Block parent node is not set',
+        message: 'Block parent node not set',
         context: { where: 'ComponentEngine.connectedCallback', mode: 'block' },
         docsUrl: './docs/error-codes.md#bind',
       });
@@ -248,8 +249,7 @@ class ComponentEngine implements IComponentEngine {
           message: 'Failed to parse state from dataset',
           context: { where: 'ComponentEngine.connectedCallback', datasetState: this.owner.dataset.state },
           docsUrl: './docs/error-codes.md#state',
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          cause: e as any,
+          cause: e,
         });
       }
     }
@@ -277,7 +277,7 @@ class ComponentEngine implements IComponentEngine {
         }).catch(() => {
           raiseError({
             code: 'COMP-301',
-            message: 'Error in connectedCallback',
+            message: 'Connected callback failed',
             context: { where: 'ComponentEngine.connectedCallback' },
             docsUrl: './docs/error-codes.md#comp',
           });
@@ -296,6 +296,7 @@ class ComponentEngine implements IComponentEngine {
    * - Unregisters from parent component
    * - Removes block placeholder if in block mode
    * - Inactivates and unmounts bindContent
+   * @throws COMP-302 Error in disconnectedCallback
    */
   disconnectedCallback(): void {
     // Ignore if flag is set (during replaceWith in connectedCallback)
@@ -310,6 +311,15 @@ class ComponentEngine implements IComponentEngine {
           });
         });
       }
+    } catch(e) {
+      raiseError({
+        code: 'COMP-302',
+        message: 'Disconnected callback failed',
+        context: { where: 'ComponentEngine.disconnectedCallback' },
+        docsUrl: './docs/error-codes.md#comp',
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        cause: e as any,
+      });
     } finally {
       // Unregister from parent component
       this.owner.parentStructiveComponent?.unregisterChildComponent(this.owner);
@@ -356,10 +366,8 @@ class ComponentEngine implements IComponentEngine {
    * @param ref - State property reference
    * @returns Property value
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getPropertyValue(ref: IStatePropertyRef): any {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let value: any;
+  getPropertyValue(ref: IStatePropertyRef): unknown {
+    let value: unknown;
     // Synchronous operation
     createUpdater(this, (updater) => {
       value = updater.createReadonlyState((stateProxy, ) => {
@@ -376,8 +384,7 @@ class ComponentEngine implements IComponentEngine {
    * @param ref - State property reference
    * @param value - New value to set
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setPropertyValue(ref: IStatePropertyRef, value: any): void {
+  setPropertyValue(ref: IStatePropertyRef, value: unknown): void {
     // Synchronous operation
     createUpdater<void>(this, (updater) => {
       updater.update(null, (stateProxy, ) => {

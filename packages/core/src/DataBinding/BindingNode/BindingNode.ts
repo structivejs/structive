@@ -158,9 +158,9 @@ export class BindingNode implements IBindingNode {
   assignValue(_value: unknown): void {
     raiseError({
       code: 'BIND-301',
-      message: 'Not implemented',
+      message: 'Binding assignValue not implemented',
       context: { where: 'BindingNode.assignValue', name: this.name },
-      docsUrl: '/docs/error-codes.md#bind',
+      docsUrl: './docs/error-codes.md#bind',
     });
   }
   
@@ -176,9 +176,9 @@ export class BindingNode implements IBindingNode {
   updateElements(_listIndexes: IListIndex[], _values: unknown[]) {
     raiseError({
       code: 'BIND-301',
-      message: 'Not implemented',
+      message: 'Binding updateElements not implemented',
       context: { where: 'BindingNode.updateElements', name: this.name },
-      docsUrl: '/docs/error-codes.md#bind',
+      docsUrl: './docs/error-codes.md#bind',
     });
   }
   

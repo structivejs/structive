@@ -54,7 +54,7 @@ export function getStyleSheetById(id: number): CSSStyleSheet {
   return styleSheetById[id] ?? raiseError({
     code: "CSS-001",
     message: `Stylesheet not found: ${id}`,
-    context: { where: 'registerStyleSheet.getStyleSheetById', styleSheetId: id },
+    context: { where: 'StyleSheet.getStyleSheetById', styleSheetId: id },
     docsUrl: "./docs/error-codes.md#css",
   });
 }

@@ -1,13 +1,29 @@
 import { describe, it, expect, vi } from "vitest";
 import { BindingNode } from "../../../src/DataBinding/BindingNode/BindingNode";
 
+type StructiveError = Error & { code?: string; context?: Record<string, unknown> };
+
+function captureError(fn: () => unknown): StructiveError {
+  try {
+    fn();
+  } catch (err) {
+    return err as StructiveError;
+  }
+  throw new Error("Expected error to be thrown");
+}
+
 describe("BindingNode", () => {
   it("assignValue/updateElements は未実装エラー、notifyRedraw は何もしない", () => {
     const binding = {} as any;
     const div = document.createElement("div");
     const node = new BindingNode(binding as any, div, "value", "value", [], []);
-    expect(() => node.assignValue(1)).toThrowError(/not implemented/i);
-    expect(() => node.updateElements([], [])).toThrowError(/not implemented/i);
+    const assignErr = captureError(() => node.assignValue(1));
+    expect(assignErr.code).toBe("BIND-301");
+    expect(assignErr.message).toMatch(/Binding assignValue not implemented/);
+
+    const updateErr = captureError(() => node.updateElements([], []));
+    expect(updateErr.code).toBe("BIND-301");
+    expect(updateErr.message).toMatch(/Binding updateElements not implemented/);
     node.notifyRedraw([] as any);
   });
 

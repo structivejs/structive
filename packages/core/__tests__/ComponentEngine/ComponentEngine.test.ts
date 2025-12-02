@@ -75,6 +75,7 @@ let blockNextUpdate = false;
 let resolveUpdateBlocker: (() => void) | null = null;
 let updateBlockerPromise: Promise<void> | null = null;
 let nextConnectedCallbackImpl: (() => Promise<void> | void) | null = null;
+let nextDisconnectedCallbackImpl: (() => Promise<void> | void) | null = null;
 
 vi.mock("../../src/DataBinding/BindContent", () => {
   return {
@@ -110,9 +111,11 @@ vi.mock("../../src/Updater/Updater", () => {
           lastUpdater = updater;
           const connectedImpl = nextConnectedCallbackImpl ?? (() => undefined);
           nextConnectedCallbackImpl = null;
+          const disconnectedImpl = nextDisconnectedCallbackImpl ?? (async () => undefined);
+          nextDisconnectedCallbackImpl = null;
           lastStateProxy = {
             [ConnectedCallbackSymbol]: vi.fn(() => connectedImpl()),
-            [DisconnectedCallbackSymbol]: vi.fn(async () => {}),
+            [DisconnectedCallbackSymbol]: vi.fn(() => disconnectedImpl()),
             [SetByRefSymbol]: vi.fn(),
             [GetByRefSymbol]: vi.fn(),
           };
@@ -223,6 +226,8 @@ describe("ComponentEngine", () => {
     blockNextUpdate = false;
     resolveUpdateBlocker = null;
     updateBlockerPromise = null;
+    nextConnectedCallbackImpl = null;
+    nextDisconnectedCallbackImpl = null;
 
     // fresh element & engine
     el = document.createElement("x-dummy-engine") as DummyComponent;
@@ -285,7 +290,7 @@ describe("ComponentEngine", () => {
       // アクセス時に raiseError が投げられる
       // eslint-disable-next-line @typescript-eslint/no-unused-expressions
       engine.bindContent;
-  }).toThrowError(/bindContent not initialized yet/);
+  }).toThrowError(/BindContent not initialized yet/);
   });
 
   it("connectedCallback: data-state が不正 JSON の場合はエラー", () => {
@@ -458,6 +463,31 @@ describe("ComponentEngine", () => {
     // placeholder の remove が呼ばれている
     expect(removeSpy).toHaveBeenCalled();
     expect(parent.unregisterChildComponent).toHaveBeenCalledWith(el);
+  });
+
+  it("disconnectedCallback: DisconnectedCallbackSymbol が throw しても COMP-302 を raise して後処理を継続", async () => {
+    engine.setup();
+    engine.pathManager.hasDisconnectedCallback = true;
+    const parent = {
+      unregisterChildComponent: vi.fn(),
+      readyResolvers: { promise: Promise.resolve() },
+    } as any;
+    el.parentStructiveComponent = parent;
+    await engine.connectedCallback();
+    const raiseErrorSpy = UtilsMod.raiseError as vi.Mock;
+    const beforeRaiseCalls = raiseErrorSpy.mock.calls.length;
+    const disconnectedError = new Error("disconnect failed");
+    nextDisconnectedCallbackImpl = () => { throw disconnectedError; };
+
+    expect(() => engine.disconnectedCallback()).toThrowError(/Disconnected callback failed/);
+
+    const newRaiseCalls = raiseErrorSpy.mock.calls.slice(beforeRaiseCalls);
+    expect(newRaiseCalls.length).toBe(1);
+    const payload = newRaiseCalls[0][0] as { code?: string; cause?: unknown };
+    expect(payload.code).toBe("COMP-302");
+    expect(payload.cause).toBe(disconnectedError);
+    expect(parent.unregisterChildComponent).toHaveBeenCalledWith(el);
+    expect(currentBindContent.inactivate).toHaveBeenCalled();
   });
 
   it("disconnectedCallback: _ignoreDissconnectedCallback が true なら即 return", () => {

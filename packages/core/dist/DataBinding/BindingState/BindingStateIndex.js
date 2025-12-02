@@ -8,6 +8,7 @@ import { raiseError } from "../../utils.js";
 class BindingStateIndex {
     filters;
     _binding;
+    _pattern;
     _indexNumber;
     _loopContext = null;
     /**
@@ -20,17 +21,26 @@ class BindingStateIndex {
      */
     constructor(binding, pattern, filters) {
         this._binding = binding;
+        this._pattern = pattern;
         const indexNumber = Number(pattern.slice(1));
         if (isNaN(indexNumber)) {
             raiseError({
                 code: 'BIND-202',
                 message: 'Pattern is not a number',
                 context: { where: 'BindingStateIndex.constructor', pattern },
-                docsUrl: '/docs/error-codes.md#bind',
+                docsUrl: './docs/error-codes.md#bind',
             });
         }
         this._indexNumber = indexNumber;
         this.filters = filters;
+    }
+    createContext(where, extra = {}) {
+        return {
+            where,
+            pattern: this._pattern,
+            indexNumber: this._indexNumber,
+            ...extra,
+        };
     }
     /**
      * Not implemented for index binding.
@@ -40,9 +50,9 @@ class BindingStateIndex {
     get pattern() {
         return raiseError({
             code: 'BIND-301',
-            message: 'Not implemented',
-            context: { where: 'BindingStateIndex.pattern' },
-            docsUrl: '/docs/error-codes.md#bind',
+            message: 'Binding pattern not implemented',
+            context: this.createContext('BindingStateIndex.pattern'),
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**
@@ -53,9 +63,9 @@ class BindingStateIndex {
     get info() {
         return raiseError({
             code: 'BIND-301',
-            message: 'Not implemented',
-            context: { where: 'BindingStateIndex.info' },
-            docsUrl: '/docs/error-codes.md#bind',
+            message: 'Binding info not implemented',
+            context: this.createContext('BindingStateIndex.info'),
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**
@@ -68,8 +78,8 @@ class BindingStateIndex {
         return this._loopContext?.listIndex ?? raiseError({
             code: 'LIST-201',
             message: 'listIndex is null',
-            context: { where: 'BindingStateIndex.listIndex' },
-            docsUrl: '/docs/error-codes.md#list',
+            context: this.createContext('BindingStateIndex.listIndex'),
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     /**
@@ -82,8 +92,8 @@ class BindingStateIndex {
         return this._loopContext?.ref ?? raiseError({
             code: 'STATE-202',
             message: 'ref is null',
-            context: { where: 'BindingStateIndex.ref' },
-            docsUrl: '/docs/error-codes.md#state',
+            context: this.createContext('BindingStateIndex.ref'),
+            docsUrl: './docs/error-codes.md#state',
         });
     }
     /**
@@ -106,8 +116,8 @@ class BindingStateIndex {
         return this.listIndex?.index ?? raiseError({
             code: 'LIST-201',
             message: 'listIndex is null',
-            context: { where: 'BindingStateIndex.getValue' },
-            docsUrl: '/docs/error-codes.md#list',
+            context: this.createContext('BindingStateIndex.getValue'),
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     /**
@@ -122,8 +132,8 @@ class BindingStateIndex {
         let value = this.listIndex?.index ?? raiseError({
             code: 'LIST-201',
             message: 'listIndex is null',
-            context: { where: 'BindingStateIndex.getFilteredValue' },
-            docsUrl: '/docs/error-codes.md#list',
+            context: this.createContext('BindingStateIndex.getFilteredValue'),
+            docsUrl: './docs/error-codes.md#list',
         });
         for (let i = 0; i < this.filters.length; i++) {
             value = this.filters[i](value);
@@ -141,9 +151,9 @@ class BindingStateIndex {
     assignValue(_writeState, _handler, _value) {
         raiseError({
             code: 'BIND-301',
-            message: 'Not implemented',
-            context: { where: 'BindingStateIndex.assignValue' },
-            docsUrl: '/docs/error-codes.md#bind',
+            message: 'Binding assignValue not implemented',
+            context: this.createContext('BindingStateIndex.assignValue'),
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**
@@ -152,28 +162,32 @@ class BindingStateIndex {
      * @throws BIND-201 LoopContext is null or binding for list is null
      */
     activate() {
+        const baseContext = this.createContext('BindingStateIndex.activate');
         const loopContext = this._binding.parentBindContent.currentLoopContext ??
             raiseError({
                 code: 'BIND-201',
                 message: 'LoopContext is null',
-                context: { where: 'BindingStateIndex.init' },
-                docsUrl: '/docs/error-codes.md#bind',
+                context: baseContext,
+                docsUrl: './docs/error-codes.md#bind',
             });
         const loopContexts = loopContext.serialize();
         this._loopContext = loopContexts[this._indexNumber - 1] ??
             raiseError({
                 code: 'BIND-201',
                 message: 'Current loopContext is null',
-                context: { where: 'BindingStateIndex.init', indexNumber: this._indexNumber },
-                docsUrl: '/docs/error-codes.md#bind',
+                context: this.createContext('BindingStateIndex.activate', {
+                    serializedIndex: this._indexNumber - 1,
+                    serializedLength: loopContexts.length,
+                }),
+                docsUrl: './docs/error-codes.md#bind',
             });
-        const bindingForList = this._loopContext.bindContent.parentBinding;
+        const bindingForList = this._loopContext.bindContent?.parentBinding ?? null;
         if (bindingForList === null) {
             raiseError({
                 code: 'BIND-201',
                 message: 'Binding for list is null',
-                context: { where: 'BindingStateIndex.init' },
-                docsUrl: '/docs/error-codes.md#bind',
+                context: baseContext,
+                docsUrl: './docs/error-codes.md#bind',
             });
         }
         const bindings = bindingForList.bindingsByListIndex.get(this.listIndex);

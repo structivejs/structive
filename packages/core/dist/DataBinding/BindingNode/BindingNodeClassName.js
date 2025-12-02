@@ -18,9 +18,9 @@ class BindingNodeClassName extends BindingNode {
         if (typeof value !== "boolean") {
             raiseError({
                 code: 'BIND-201',
-                message: 'Value is not boolean',
+                message: 'ClassName value is not boolean',
                 context: { where: 'BindingNodeClassName.update', receivedType: typeof value },
-                docsUrl: '/docs/error-codes.md#bind',
+                docsUrl: './docs/error-codes.md#bind',
                 severity: 'error',
             });
         }

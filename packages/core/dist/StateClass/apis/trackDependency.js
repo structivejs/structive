@@ -34,8 +34,8 @@ export function trackDependency(_target, _prop, _receiver, handler) {
         const lastInfo = handler.lastRefStack?.info ?? raiseError({
             code: 'STATE-202',
             message: 'Internal error: lastRefStack is null',
-            context: { where: 'trackDependency', path },
-            docsUrl: '/docs/error-codes.md#state',
+            context: { where: 'StateClass.trackDependency', path },
+            docsUrl: './docs/error-codes.md#state',
         });
         // Only register dependency if source is a getter and target is different
         // This prevents self-references and only tracks getter -> property dependencies

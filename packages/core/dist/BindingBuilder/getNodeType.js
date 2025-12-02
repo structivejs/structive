@@ -49,15 +49,15 @@ const getNodeTypeByNode = (node) => (node instanceof Comment && node.textContent
         (node instanceof Comment && node.textContent?.[2] === "|") ? "Template" :
             (node instanceof SVGElement) ? "SVGElement" :
                 raiseError({
-                    code: 'BND-001',
-                    message: `Unknown NodeType: ${node.nodeType}`,
+                    code: 'BIND-105',
+                    message: `Node type not supported: ${node.nodeType}`,
                     context: {
-                        where: 'getNodeType.getNodeTypeByNode',
+                        where: 'BindingBuilder.getNodeType',
                         nodeType: node.nodeType,
                         nodeName: node.nodeName,
                         nodeConstructor: node.constructor.name
                     },
-                    docsUrl: './docs/error-codes.md#bnd'
+                    docsUrl: './docs/error-codes.md#bind'
                 });
 /**
  * Utility function that determines node type ("Text" | "HTMLElement" | "Template" | "SVGElement")

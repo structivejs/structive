@@ -20,7 +20,7 @@ import { CreateBindingNodeFn } from "./types";
  * - Propagates state changes via NotifyRedrawSymbol
  * - Manages parent-child component relationships and lifecycle
  *
- * @throws COMP-401 Cannot determine custom element tag name: When tag name cannot be determined
+ * @throws COMP-401 Custom element tag name not found: When tag name cannot be determined
  */
 class BindingNodeComponent extends BindingNode {
   tagName: string;
@@ -34,7 +34,7 @@ class BindingNodeComponent extends BindingNode {
    * @param subName - Sub-property name (component state property)
    * @param filters - Filter functions to apply
    * @param decorates - Array of decorators
-   * @throws COMP-401 Cannot determine custom element tag name
+  * @throws COMP-401 Custom element tag name not found
    */
   constructor(
     binding: IBinding, 
@@ -56,9 +56,9 @@ class BindingNodeComponent extends BindingNode {
     else {
       raiseError({
         code: 'COMP-401',
-        message: 'Cannot determine custom element tag name',
+        message: 'Custom element tag name not found',
         context: { where: 'BindingNodeComponent.constructor' },
-        docsUrl: '/docs/error-codes.md#comp',
+        docsUrl: './docs/error-codes.md#comp',
       });
     }
   }
@@ -74,12 +74,13 @@ class BindingNodeComponent extends BindingNode {
     customElements.whenDefined(tagName).then(() => {
       component.state[NotifyRedrawSymbol](refs);
     }).catch((e: unknown) => {
-      const errorMessage = e instanceof Error ? e.message : String(e);
+      const cause = e instanceof Error ? e : new Error(String(e));
       raiseError({
         code: 'COMP-402',
-        message: `Failed to define custom element "${tagName}": ${errorMessage}`,
+        message: `Custom element definition failed: ${tagName}`,
         context: { where: 'BindingNodeComponent._notifyRedraw', tagName },
-        docsUrl: '/docs/error-codes.md#comp',
+        docsUrl: './docs/error-codes.md#comp',
+        cause,
       });
     });
   }
@@ -142,12 +143,13 @@ class BindingNodeComponent extends BindingNode {
       parentComponent.registerChildComponent(component);
       component.stateBinding.addBinding(this.binding);
     }).catch((e: unknown) => {
-      const errorMessage = e instanceof Error ? e.message : String(e);
+      const cause = e instanceof Error ? e : new Error(String(e));
       raiseError({
         code: 'COMP-402',
-        message: `Failed to define custom element "${tagName}": ${errorMessage}`,
+        message: `Custom element definition failed: ${tagName}`,
         context: { where: 'BindingNodeComponent.activate', tagName },
-        docsUrl: '/docs/error-codes.md#comp',
+        docsUrl: './docs/error-codes.md#comp',
+        cause,
       });
     });
 

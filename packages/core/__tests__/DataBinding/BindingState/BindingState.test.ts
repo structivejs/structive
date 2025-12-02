@@ -134,13 +134,24 @@ describe("BindingState", () => {
     expect(bindingState.isLoopIndex).toBe(false);
   });
 
-  it("エラー: ワイルドカードで lastWildcardPath が null", () => {
+  it("エラー: ワイルドカードで currentLoopContext が見つからない", () => {
     const binding = { parentBindContent: { currentLoopContext: { find: vi.fn() } }, engine } as any;
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);
-    // info.lastWildcardPath を null にするため、currentLoopContext.find が null を返すケースを利用
     (binding.parentBindContent.currentLoopContext.find as any).mockReturnValue(null);
-    expect(() => bindingState.activate()).toThrow(/LoopContext is null/i);
+
+    expect.assertions(3);
+    try {
+      bindingState.activate();
+    } catch (error) {
+      const typedError = error as Error & { context?: Record<string, unknown>; docsUrl?: string };
+      expect(typedError.message).toMatch(/LoopContext is null/i);
+      expect(typedError.context).toEqual(expect.objectContaining({
+        where: "BindingState.activate",
+        lastWildcardPath: bindingState.info.lastWildcardPath,
+      }));
+      expect(typedError.docsUrl).toBe("./docs/error-codes.md#bind");
+    }
   });
 
   it("エラー: ワイルドカード・未activate で ref が null", () => {
@@ -149,7 +160,18 @@ describe("BindingState", () => {
     const binding = { parentBindContent: { currentLoopContext: null }, engine } as any;
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);
-    expect(() => bindingState.getValue({} as any, {} as any)).toThrow(/LoopContext is null/i);
+    expect.assertions(3);
+    try {
+      bindingState.getValue({} as any, {} as any);
+    } catch (error) {
+      const typedError = error as Error & { context?: Record<string, unknown>; docsUrl?: string };
+      expect(typedError.message).toMatch(/LoopContext is null/i);
+      expect(typedError.context).toEqual(expect.objectContaining({
+        where: "BindingState.ref",
+        pattern: "items.*.name",
+      }));
+      expect(typedError.docsUrl).toBe("./docs/error-codes.md#bind");
+    }
   });
 
   it("エラー: lastWildcardPath が null の場合", () => {
@@ -165,7 +187,17 @@ describe("BindingState", () => {
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);
 
-    expect(() => bindingState.activate()).toThrow(/Wildcard last parentPath is null/);
+    expect.assertions(2);
+    try {
+      bindingState.activate();
+    } catch (error) {
+      const typedError = error as Error & { context?: Record<string, unknown> };
+      expect(typedError.message).toMatch(/Wildcard last parentPath is null/);
+      expect(typedError.context).toEqual(expect.objectContaining({
+        where: "BindingState.activate",
+        pattern: "items.*.name",
+      }));
+    }
 
     spy.mockRestore();
   });
@@ -206,7 +238,18 @@ describe("BindingState", () => {
     const bindingState = factory(binding, engine.outputFilters);
     
     // この状態でrefにアクセスすると、"ref is null"エラーが発生する
-    expect(() => bindingState.ref).toThrow(/ref is null/i);
+    expect.assertions(2);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      bindingState.ref;
+    } catch (error) {
+      const typedError = error as Error & { context?: Record<string, unknown> };
+      expect(typedError.message).toMatch(/ref is null/i);
+      expect(typedError.context).toEqual(expect.objectContaining({
+        where: "BindingState.ref",
+        pattern: "user.name",
+      }));
+    }
     
     getStatePropertyRefSpy.mockRestore();
   });

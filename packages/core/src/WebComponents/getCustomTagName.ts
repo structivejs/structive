@@ -8,7 +8,7 @@ import { raiseError } from "../utils";
  * 
  * @param {HTMLElement} component - The HTML element to extract the tag name from
  * @returns {string} The custom element tag name in lowercase
- * @throws {Error} CE-001 - When neither the tag name nor 'is' attribute contains a hyphen
+ * @throws {Error} COMP-401 - When neither the tag name nor 'is' attribute contains a hyphen
  * 
  * @example
  * // Autonomous custom element
@@ -24,19 +24,23 @@ export function getCustomTagName(component: HTMLElement): string {
   // Check if it's an autonomous custom element (tag name contains hyphen)
   if (component.tagName.includes('-')) {
     return component.tagName.toLowerCase();
-  } 
-  // Check if it's a customized built-in element (has 'is' attribute with hyphen)
-  else if (component.getAttribute('is')?.includes('-')) {
-    return component.getAttribute('is')!.toLowerCase();
-  } 
-  // Neither format found - not a valid custom element
-  else {
-    raiseError({
-      code: 'CE-001',
-      message: 'Custom tag name not found',
-      context: { where: 'ComponentEngine.customTagName.get' },
-      docsUrl: './docs/error-codes.md#ce',
-    });
   }
+
+  const isAttribute = component.getAttribute('is');
+  // Check if it's a customized built-in element (has 'is' attribute with hyphen)
+  if (isAttribute?.includes('-')) {
+    return isAttribute.toLowerCase();
+  }
+  // Neither format found - not a valid custom element
+  raiseError({
+    code: 'COMP-401',
+    message: 'Custom element tag name not found',
+    context: {
+      where: 'WebComponents.getCustomTagName',
+      tagName: component.tagName,
+      isAttribute: isAttribute ?? null,
+    },
+    docsUrl: './docs/error-codes.md#comp',
+  });
 
 }

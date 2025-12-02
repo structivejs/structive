@@ -61,7 +61,11 @@ describe("StateClass/methods: getListIndexesByRef", () => {
 
     expect(() => getListIndexesByRef({}, ref, {} as any, handler)).toThrowError("path is not a list: items");
     expect(raiseErrorMock).toHaveBeenCalledWith(
-      expect.objectContaining({ code: "LIST-201", context: { where: "getListIndexesByRef", pattern: "items" } })
+      expect.objectContaining({
+        code: "LIST-201",
+        context: { where: "StateClass.getListIndexesByRef", pattern: "items" },
+        docsUrl: "./docs/error-codes.md#list",
+      })
     );
     expect(getByRefMock).not.toHaveBeenCalled();
   });
@@ -77,7 +81,11 @@ describe("StateClass/methods: getListIndexesByRef", () => {
     );
     expect(getByRefMock).toHaveBeenCalledWith(target, ref, receiver, handler);
     expect(raiseErrorMock).toHaveBeenCalledWith(
-      expect.objectContaining({ code: "LIST-202", context: { where: "getListIndexesByRef", pattern: "items" } })
+      expect.objectContaining({
+        code: "LIST-202",
+        context: { where: "StateClass.getListIndexesByRef", pattern: "items" },
+        docsUrl: "./docs/error-codes.md#list",
+      })
     );
   });
 

@@ -51,8 +51,9 @@ vi.mock("../../src/DataBinding/BindingNode/BindingNodeComponent", () => ({
 }));
 
 vi.mock("../../src/utils", () => ({
-  raiseError: vi.fn((message: string) => {
-    throw new Error(message);
+  raiseError: vi.fn((payload: string | { message: string }) => {
+    const errorMessage = typeof payload === "string" ? payload : payload.message;
+    throw new Error(errorMessage);
   })
 }));
 
@@ -219,9 +220,18 @@ describe("BindingBuilder/getBindingNodeCreator", () => {
 
       expect(() => {
         getBindingNodeCreator(comment, "unsupported", filterTexts, decorates);
-      }).toThrow("getBindingNodeCreator: unknown node property unsupported");
+      }).toThrow("Comment binding property not supported: unsupported");
 
-      expect(raiseError).toHaveBeenCalledWith("getBindingNodeCreator: unknown node property unsupported");
+      expect(raiseError).toHaveBeenCalledWith({
+        code: "BIND-106",
+        message: "Comment binding property not supported: unsupported",
+        context: {
+          where: "BindingBuilder.getBindingNodeCreator",
+          propertyName: "unsupported",
+          nodeType: "Comment",
+        },
+        docsUrl: "./docs/error-codes.md#bind",
+      });
     });
   });
 

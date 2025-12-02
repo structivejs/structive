@@ -30,7 +30,7 @@ class LoopContext {
             code: 'STATE-202',
             message: 'ref is null',
             context: { where: 'LoopContext.ref', path: this.info.pattern },
-            docsUrl: '/docs/error-codes.md#state',
+            docsUrl: './docs/error-codes.md#state',
         });
     }
     /**
@@ -50,7 +50,7 @@ class LoopContext {
             code: 'LIST-201',
             message: 'listIndex is required',
             context: { where: 'LoopContext.listIndex', path: this.info.pattern },
-            docsUrl: '/docs/error-codes.md#list',
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     /**

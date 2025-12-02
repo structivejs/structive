@@ -5,6 +5,8 @@ import { IListIndex } from "../../src/ListIndex/types";
 import { getStructuredPathInfo } from "../../src/StateProperty/getStructuredPathInfo";
 import { getStatePropertyRef } from "../../src/StatePropertyRef/StatepropertyRef";
 
+type StructiveError = Error & { code?: string; context?: Record<string, unknown> };
+
 function createListIndex(overrides: Partial<IListIndex> = {}): IListIndex {
   return {
     parentListIndex: overrides.parentListIndex ?? null,
@@ -20,6 +22,15 @@ function createListIndex(overrides: Partial<IListIndex> = {}): IListIndex {
     varName: overrides.varName ?? "item",
     at: overrides.at ?? (() => null),
   };
+}
+
+function captureError(fn: () => unknown): StructiveError {
+  try {
+    fn();
+  } catch (err) {
+    return err as StructiveError;
+  }
+  throw new Error("Expected error to be thrown");
 }
 
 describe("createComponentStateInput", () => {
@@ -173,7 +184,16 @@ describe("createComponentStateInput", () => {
     const parentInfo = getStructuredPathInfo("parent.values.*.foo");
     const parentRef = getStatePropertyRef(parentInfo, null);
 
-    expect(() => input[NotifyRedrawSymbol]([parentRef])).toThrow(/ListIndex not found/);
+    const err = captureError(() => input[NotifyRedrawSymbol]([parentRef]));
+    expect(err.message).toMatch(/ListIndex not found/);
+    expect(err.code).toBe("LIST-201");
+    expect(err.context).toEqual(
+      expect.objectContaining({
+        where: "ComponentStateInput.notifyRedraw",
+        parentPattern: parentInfo.pattern,
+        childPattern: parentInfo.pattern.replace(/^parent\./, "child."),
+      })
+    );
 
     spy.mockRestore();
   });
@@ -188,7 +208,18 @@ describe("createComponentStateInput", () => {
 
     // 数値キーは文字列化されるため例外にならない。未対応判定を通すには未知のシンボルを使う
     const unknown = Symbol("unknown-key");
-    expect(() => (input as any)[unknown]).toThrow(/not supported/);
-    expect(() => ((input as any)[unknown] = 1)).toThrow(/not supported/);
+    const getErr = captureError(() => (input as any)[unknown]);
+    expect(getErr.message).toMatch(/not supported/);
+    expect(getErr.code).toBe("STATE-204");
+    expect(getErr.context).toEqual(
+      expect.objectContaining({ where: "ComponentStateInput.get", prop: String(unknown) })
+    );
+
+    const setErr = captureError(() => ((input as any)[unknown] = 1));
+    expect(setErr.message).toMatch(/not supported/);
+    expect(setErr.code).toBe("STATE-204");
+    expect(setErr.context).toEqual(
+      expect.objectContaining({ where: "ComponentStateInput.set", prop: String(unknown) })
+    );
   });
 });

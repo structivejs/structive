@@ -3,12 +3,23 @@ import { createComponentStateBinding } from "../../src/ComponentStateBinding/cre
 import type { IBinding } from "../../src/DataBinding/types";
 import { getStructuredPathInfo } from "../../src/StateProperty/getStructuredPathInfo";
 
+type StructiveError = Error & { code?: string; context?: Record<string, unknown> };
+
 function makeBinding(parentPattern: string, childSubName: string): IBinding & any {
   return {
     bindingState: { pattern: parentPattern },
     bindingNode: { subName: childSubName },
     engine: { id: Symbol("engine") },
   } as any;
+}
+
+function captureError(fn: () => unknown): StructiveError {
+  try {
+    fn();
+  } catch (err) {
+    return err as StructiveError;
+  }
+  throw new Error("Expected error to be thrown");
 }
 
 describe("createComponentStateBinding", () => {
@@ -26,9 +37,28 @@ describe("createComponentStateBinding", () => {
     expect(csb.getParentPath("child.users.*")).toBe("parent.users.*");
 
     // 同じ parent を再登録 → 例外
-    expect(() => csb.addBinding(makeBinding("parent.users.*", "X" as any))).toThrow(/already has a child path/);
+    const parentConflict = captureError(() => csb.addBinding(makeBinding("parent.users.*", "X" as any)));
+    expect(parentConflict.message).toMatch(/already has a child path/);
+    expect(parentConflict.code).toBe("STATE-303");
+    expect(parentConflict.context).toEqual(
+      expect.objectContaining({
+        where: "ComponentStateBinding.addBinding",
+        parentPath: "parent.users.*",
+        existingChildPath: "child.users.*",
+      })
+    );
+
     // 同じ child を再登録 → 例外
-    expect(() => csb.addBinding(makeBinding("X", "child.users.*"))).toThrow(/already has a parent path/);
+    const childConflict = captureError(() => csb.addBinding(makeBinding("X", "child.users.*")));
+    expect(childConflict.message).toMatch(/already has a parent path/);
+    expect(childConflict.code).toBe("STATE-303");
+    expect(childConflict.context).toEqual(
+      expect.objectContaining({
+        where: "ComponentStateBinding.addBinding",
+        childPath: "child.users.*",
+        existingParentPath: "parent.users.*",
+      })
+    );
   });
 
   it("addBinding: 同一インスタンスは一度だけ追加される", () => {
@@ -52,11 +82,28 @@ describe("createComponentStateBinding", () => {
     expect(toParent("child.profile.icon")).toBe("parent.profile.icon");
 
     // 存在しない → 例外
-    expect(() => toParent("child.unknown" as any)).toThrow(/No parent path found/);
+    const noParentErr = captureError(() => toParent("child.unknown" as any));
+    expect(noParentErr.message).toMatch(/No parent path found/);
+    expect(noParentErr.code).toBe("STATE-302");
+    expect(noParentErr.context).toEqual(
+      expect.objectContaining({
+        where: "ComponentStateBinding.toParentPathFromChildPath",
+        childPath: "child.unknown",
+      })
+    );
 
     // マッピングが欠損している場合も例外
     csb._parentPathByChildPath.delete("child.users.*");
-    expect(() => toParent("child.users.*.age")).toThrow(/No parent path found/);
+    const danglingParentErr = captureError(() => toParent("child.users.*.age"));
+    expect(danglingParentErr.message).toMatch(/No parent path found/);
+    expect(danglingParentErr.code).toBe("STATE-302");
+    expect(danglingParentErr.context).toEqual(
+      expect.objectContaining({
+        where: "ComponentStateBinding.toParentPathFromChildPath",
+        childPath: "child.users.*.age",
+        longestMatchPath: "child.users.*",
+      })
+    );
   });
 
   it("toChildPathFromParentPath: 親パスから子パスへ、最長一致 + 残差の連結", () => {
@@ -67,11 +114,28 @@ describe("createComponentStateBinding", () => {
     expect(toChild("parent.users.*.name")).toBe("child.users.*.name");
 
     // 存在しない → 例外
-    expect(() => toChild("parent.unknown" as any)).toThrow(/No child path found/);
+    const noChildErr = captureError(() => toChild("parent.unknown" as any));
+    expect(noChildErr.message).toMatch(/No child path found/);
+    expect(noChildErr.code).toBe("STATE-302");
+    expect(noChildErr.context).toEqual(
+      expect.objectContaining({
+        where: "ComponentStateBinding.toChildPathFromParentPath",
+        parentPath: "parent.unknown",
+      })
+    );
 
     // マッピングが欠損している場合も例外
     csb._childPathByParentPath.delete("parent.users.*");
-    expect(() => toChild("parent.users.*.name")).toThrow(/No child path found/);
+    const danglingChildErr = captureError(() => toChild("parent.users.*.name"));
+    expect(danglingChildErr.message).toMatch(/No child path found/);
+    expect(danglingChildErr.code).toBe("STATE-302");
+    expect(danglingChildErr.context).toEqual(
+      expect.objectContaining({
+        where: "ComponentStateBinding.toChildPathFromParentPath",
+        parentPath: "parent.users.*.name",
+        longestMatchPath: "parent.users.*",
+      })
+    );
   });
 
   it("startsWithByChildPath: 子側の最長一致 prefix を返す / 無ければ null", () => {

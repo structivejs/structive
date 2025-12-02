@@ -147,7 +147,7 @@ export function getStructuredPathInfo(structuredPath) {
         raiseError({
             code: 'STATE-202',
             message: `Pattern is reserved word: ${structuredPath}`,
-            context: { where: 'getStructuredPathInfo', structuredPath },
+            context: { where: 'StateProperty.getStructuredPathInfo', structuredPath },
             docsUrl: './docs/error-codes.md#state',
         });
     }

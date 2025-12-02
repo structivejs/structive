@@ -76,11 +76,10 @@ class BindingNodeIf extends BindingNodeBlock {
    */
   assignValue(_value: unknown): void {
     raiseError({
-      code: 'BIND-201',
-      message: 'Not implemented',
-      context: { where: 'BindingNodeIf.assignValue', name: this.name },
-      docsUrl: '/docs/error-codes.md#bind',
-      severity: 'error',
+      code: 'BIND-301',
+      message: 'Binding assignValue not implemented',
+      context: { where: 'BindingNodeIf.assignValue', bindName: this.name },
+      docsUrl: './docs/error-codes.md#bind',
     });
   }
   
@@ -94,14 +93,17 @@ class BindingNodeIf extends BindingNodeBlock {
    * @throws BIND-201 ParentNode is null
    */
   applyChange(renderer: IRenderer): void {
+    const baseContext = {
+      where: 'BindingNodeIf.applyChange',
+      bindName: this.name,
+    };
     const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
     if (typeof filteredValue !== "boolean") {
       raiseError({
         code: 'BIND-201',
-        message: 'Value is not boolean',
-        context: { where: 'BindingNodeIf.applyChange', valueType: typeof filteredValue },
-        docsUrl: '/docs/error-codes.md#bind',
-        severity: 'error',
+        message: 'If binding value is not boolean',
+        context: { ...baseContext, receivedType: typeof filteredValue },
+        docsUrl: './docs/error-codes.md#bind',
       });
     }
     
@@ -109,10 +111,9 @@ class BindingNodeIf extends BindingNodeBlock {
     if (parentNode === null) {
       raiseError({
         code: 'BIND-201',
-        message: 'ParentNode is null',
-        context: { where: 'BindingNodeIf.applyChange', nodeType: this.node.nodeType },
-        docsUrl: '/docs/error-codes.md#bind',
-        severity: 'error',
+        message: 'Parent node not found',
+        context: { ...baseContext, nodeType: this.node.nodeType },
+        docsUrl: './docs/error-codes.md#bind',
       });
     }
     

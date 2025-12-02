@@ -352,19 +352,19 @@ describe("BindContent", () => {
   it("createBindings: data-bind 未登録でエラー, resolveNodeFromPath 失敗, creator 未登録", () => {
     // data-bind 未登録
     vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(undefined as any);
-  expect(() => createBindContent(null, templateId, engine, { listIndex: null } as any)).toThrow("Data-bind is not set");
+  expect(() => createBindContent(null, templateId, engine, { listIndex: null } as any)).toThrow("Data-bind not registered");
 
     // resolveNodeFromPath 失敗
     const attrs1 = [{ nodeType: "HTMLElement", nodePath: [0, 1], bindTexts: ["t1"], creatorByText: new Map([["t1", {}]]) }];
     vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(attrs1 as any);
     vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValueOnce(null as any);
-  expect(() => createBindContent(null, templateId, engine, { listIndex: null } as any)).toThrow("Node not found: 0,1");
+  expect(() => createBindContent(null, templateId, engine, { listIndex: null } as any)).toThrow("Node not found by nodePath: 0,1");
 
     // creator 未登録
     const attrs2 = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["no-creator"], creatorByText: new Map() }];
     vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(attrs2 as any);
     vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValueOnce(template.content.firstElementChild!);
-  expect(() => createBindContent(null, templateId, engine, { listIndex: null } as any)).toThrow("Creator not found: no-creator");
+  expect(() => createBindContent(null, templateId, engine, { listIndex: null } as any)).toThrow("Creator not found for bindText: no-creator");
   });
 
   it("getLastNode: 子 BindContent の最後のノードを再帰的に返す（子が null なら親の lastChildNode）", () => {

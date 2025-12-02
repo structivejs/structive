@@ -171,7 +171,12 @@ export function loadLazyLoadComponent(tagName) {
             raiseError({
                 code: "IMP-202",
                 message: `Failed to load lazy component for tagName: ${tagName}`,
-                context: { where: 'loadFromImportMap.loadLazyLoadComponent', tagName, error },
+                context: {
+                    where: "WebComponents.loadFromImportMap.loadLazyLoadComponent",
+                    tagName,
+                    alias,
+                    errorMessage: error instanceof Error ? error.message : String(error),
+                },
                 docsUrl: "./docs/error-codes.md#imp",
                 severity: "error",
             });

@@ -7,6 +7,17 @@ import * as BindContentMod from "../../../src/DataBinding/BindContent";
 import * as GetStructuredPathInfoMod from "../../../src/StateProperty/getStructuredPathInfo";
 import { GetByRefSymbol, GetListIndexesByRefSymbol } from "../../../src/StateClass/symbols";
 
+type StructiveError = Error & { code?: string; context?: Record<string, unknown> };
+
+function captureError(fn: () => unknown): StructiveError {
+  try {
+    fn();
+  } catch (err) {
+    return err as StructiveError;
+  }
+  throw new Error("Expected error to be thrown");
+}
+
 describe("BindingNodeFor coverage", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
@@ -50,7 +61,9 @@ describe("BindingNodeFor coverage", () => {
     const comment = document.createComment("@@|310");
     const binding = createBindingStub(engine, comment);
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
-    expect(() => node.assignValue([1,2,3])).toThrow(/Not implemented/i);
+    const err = captureError(() => node.assignValue([1,2,3]));
+    expect(err.code).toBe("BIND-301");
+    expect(err.message).toMatch(/Binding assignValue not implemented/);
   });
 
   it("newIndexes に応じた BindContent のマウント（最小限）", () => {
@@ -226,7 +239,7 @@ describe("BindingNodeFor coverage", () => {
       removes: new Set(),
     } as any;
     const renderer = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff) });
-  expect(() => node.applyChange(renderer)).toThrowError(/parentNode is null/i);
+  expect(() => node.applyChange(renderer)).toThrowError(/Parent node not found/i);
   });
 
   it("removes が undefined でも例外なし（空更新）", () => {
@@ -281,7 +294,28 @@ describe("BindingNodeFor coverage", () => {
     });
 
     // 現在の実装では undefined の場合は配列チェックでエラーになる
-    expect(() => node.applyChange(renderer)).toThrow(/Value is not array/);
+    expect(() => node.applyChange(renderer)).toThrow(/Loop value is not array/);
+  });
+
+  it("Loop value が null の場合、receivedType に null を設定する", () => {
+    setupTemplate();
+    const engine = createEngineStub();
+    const comment = document.createComment("@@|406");
+    const binding = createBindingStub(engine, comment);
+    const container = document.createElement("div");
+    container.appendChild(comment);
+    const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
+
+    const renderer = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => null),
+        [GetListIndexesByRefSymbol]: vi.fn(() => []),
+      },
+    });
+
+    const err = captureError(() => node.applyChange(renderer));
+    expect(err.message).toBe("Loop value is not array");
+    expect(err.context?.receivedType).toBe("null");
   });
 
   it("removes: 未登録インデックスで BindContent not found", () => {
@@ -928,7 +962,7 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(renderer)).toThrow(/ListDiff is null/);
   });
 
-  it("全削除時の Last content is null エラー", () => {
+  it("全削除時の Last BindContent not found エラー", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|317");
@@ -966,7 +1000,7 @@ describe("BindingNodeFor coverage", () => {
     } as any;
     const rendererRemove = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diffRemove) });
     try {
-      expect(() => node.applyChange(rendererRemove)).toThrow(/Last content is null/);
+      expect(() => node.applyChange(rendererRemove)).toThrow(/Last BindContent not found/);
     } finally {
       (Array.prototype as any).at = originalAt;
     }
@@ -1317,12 +1351,39 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer);
       expect.fail("エラーが投げられるべき");
     } catch (err: any) {
-      expect(err.message).toBe("Old value is not array");
+      expect(err.message).toBe("Previous loop value is not array");
       expect(err.code).toBe("BIND-201");
     }
     
     document.body.removeChild(container);
   });
+
+      it("oldList が null の場合も receivedType は null", () => {
+        setupTemplate();
+        const engine = createEngineStub();
+        const comment = document.createComment("@@|407");
+        const binding = createBindingStub(engine, comment);
+        const container = document.createElement("div");
+        container.appendChild(comment);
+        document.body.appendChild(container);
+
+        const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
+        node._oldList = null;
+        node._oldListIndexSet = new Set();
+
+        const renderer = createRendererStub({
+          readonlyState: {
+            [GetByRefSymbol]: vi.fn(() => []),
+            [GetListIndexesByRefSymbol]: vi.fn(() => []),
+          },
+        });
+
+        const err = captureError(() => node.applyChange(renderer));
+        expect(err.message).toBe("Previous loop value is not array");
+        expect(err.context?.receivedType).toBe("null");
+
+        document.body.removeChild(container);
+      });
 
   it("GetListIndexesByRefSymbol が null を返す場合のフォールバック", () => {
     setupTemplate();

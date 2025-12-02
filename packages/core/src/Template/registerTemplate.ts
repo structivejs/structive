@@ -67,7 +67,7 @@ export function getTemplateById(id: number): HTMLTemplateElement {
   return templateById[id] ?? raiseError({
     code: "TMP-001",
     message: `Template not found: ${id}`,
-    context: { where: 'registerTemplate.getTemplateById', templateId: id },
+    context: { where: 'Template.getTemplateById', templateId: id },
     docsUrl: "./docs/error-codes.md#tmp",
   });
 }

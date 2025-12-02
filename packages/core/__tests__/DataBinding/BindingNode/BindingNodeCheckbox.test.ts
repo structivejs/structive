@@ -3,6 +3,17 @@ import { createBindingNodeCheckbox } from "../../../src/DataBinding/BindingNode/
 import { createBindingStub, createEngineStub, createRendererStub } from "../helpers/bindingNodeHarness";
 import { inputBuiltinFilters } from "../../../src/Filter/builtinFilters";
 
+type StructiveError = Error & { code?: string; context?: Record<string, unknown> };
+
+function captureError(fn: () => unknown): StructiveError {
+  try {
+    fn();
+  } catch (err) {
+    return err as StructiveError;
+  }
+  throw new Error("Expected error to be thrown");
+}
+
 describe("BindingNodeCheckbox", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
@@ -40,7 +51,12 @@ describe("BindingNodeCheckbox", () => {
     input.type = "checkbox";
     const binding = createBindingStub(engine, input);
     const node = createBindingNodeCheckbox("checked", [], [])(binding, input, engine.inputFilters);
-    expect(() => node.assignValue(123 as any)).toThrow(/Value is not array/);
+    const err = captureError(() => node.assignValue(123 as any));
+    expect(err.code).toBe("BIND-201");
+    expect(err.message).toMatch(/Checkbox value is not array/);
+    expect(err.context).toEqual(
+      expect.objectContaining({ where: "BindingNodeCheckbox.update", receivedType: "number" })
+    );
   });
 
   it("非inputElementの場合は何もしない", () => {
@@ -71,9 +87,14 @@ describe("BindingNodeCheckbox", () => {
     const binding = createBindingStub(engine, input);
 
     // 複数のデコレータが指定された場合
-    expect(() => {
+    const err = captureError(() => {
       createBindingNodeCheckbox("checked", [], ["onclick", "onchange"])(binding, input, engine.inputFilters);
-    }).toThrow(/Has multiple decorators/);
+    });
+    expect(err.code).toBe("BIND-201");
+    expect(err.message).toMatch(/Checkbox binding has multiple decorators/);
+    expect(err.context).toEqual(
+      expect.objectContaining({ where: "BindingNodeCheckbox.constructor", decoratesCount: 2 })
+    );
   });
 
   it("readonly/ro デコレータの場合はイベントリスナー追加しない", () => {

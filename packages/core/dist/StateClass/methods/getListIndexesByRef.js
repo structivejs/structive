@@ -21,8 +21,8 @@ export function getListIndexesByRef(target, ref, receiver, handler) {
         raiseError({
             code: 'LIST-201',
             message: `path is not a list: ${ref.info.pattern}`,
-            context: { where: 'getListIndexesByRef', pattern: ref.info.pattern },
-            docsUrl: '/docs/error-codes.md#state',
+            context: { where: 'StateClass.getListIndexesByRef', pattern: ref.info.pattern },
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     // Try to retrieve from stateOutput first (optimization for external dependencies)
@@ -38,8 +38,8 @@ export function getListIndexesByRef(target, ref, receiver, handler) {
         raiseError({
             code: 'LIST-202',
             message: `List cache entry not found: ${ref.info.pattern}`,
-            context: { where: 'getListIndexesByRef', pattern: ref.info.pattern },
-            docsUrl: '/docs/error-codes.md#state',
+            context: { where: 'StateClass.getListIndexesByRef', pattern: ref.info.pattern },
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     const listIndexes = cacheEntry.listIndexes;
@@ -48,8 +48,8 @@ export function getListIndexesByRef(target, ref, receiver, handler) {
         raiseError({
             code: 'LIST-203',
             message: `List indexes not found in cache entry: ${ref.info.pattern}`,
-            context: { where: 'getListIndexesByRef', pattern: ref.info.pattern },
-            docsUrl: '/docs/error-codes.md#state',
+            context: { where: 'StateClass.getListIndexesByRef', pattern: ref.info.pattern },
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     return listIndexes;

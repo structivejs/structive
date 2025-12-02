@@ -7,7 +7,7 @@ import { BindingNode } from "./BindingNode.js";
  * Extracts event name from binding name ("onClick" → "click") and registers as event listener.
  * Supports preventDefault/stopPropagation decorators and passes loop indexes to handlers.
  *
- * @throws BIND-201 is not a function: When binding value is not a function
+ * @throws BIND-201 Binding value is not a function: When handler is missing
  */
 class BindingNodeEvent extends BindingNode {
     /**
@@ -55,26 +55,30 @@ class BindingNodeEvent extends BindingNode {
                 if (typeof func === "function") {
                     return Reflect.apply(func, state, [e, ...indexes]);
                 }
-                else {
-                    raiseError({
-                        code: 'BIND-201',
-                        message: `${this.name} is not a function`,
-                        context: { where: 'BindingNodeEvent.handler', name: this.name, receivedType: typeof func },
-                        docsUrl: '/docs/error-codes.md#bind',
-                        severity: 'error',
-                    });
-                }
+                raiseError({
+                    code: 'BIND-201',
+                    message: 'Binding value is not a function',
+                    context: {
+                        where: 'BindingNodeEvent.handler',
+                        bindName: this.name,
+                        eventName: this.subName,
+                        receivedType: typeof func,
+                    },
+                    docsUrl: './docs/error-codes.md#bind',
+                    severity: 'error',
+                });
             });
         });
         if (resultPromise instanceof Promise) {
             resultPromise.catch((error) => {
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                const cause = error instanceof Error ? error : new Error(String(error));
                 raiseError({
                     code: 'BIND-202',
-                    message: `Error in event handler for ${this.name}: ${errorMessage}`,
-                    context: { where: 'BindingNodeEvent.handler', name: this.name },
-                    docsUrl: '/docs/error-codes.md#bind',
+                    message: 'Event handler rejected',
+                    context: { where: 'BindingNodeEvent.handler', bindName: this.name, eventName: this.subName },
+                    docsUrl: './docs/error-codes.md#bind',
                     severity: 'error',
+                    cause,
                 });
             });
         }

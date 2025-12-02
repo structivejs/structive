@@ -126,4 +126,29 @@ describe("WebComponents/loadFromImportMap", () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     expect((reason as any).severity).toBe("error");
   });
+
+  it("loadLazyLoadComponent: 非 Error 値の reject でも errorMessage に文字列を入れる", async () => {
+    loadImportmapMock.mockReturnValue({ imports: { "@components/x-nonerror#lazy": "/nonerror.js" } });
+    await loadFromImportMap();
+
+    loadSingleFileComponentMock.mockRejectedValueOnce("string failure");
+
+    const unhandledRejectionPromise = new Promise((resolve) => {
+      const handler = (reason: any) => {
+        process.off("unhandledRejection", handler);
+        resolve(reason);
+      };
+      process.on("unhandledRejection", handler);
+    });
+
+    loadLazyLoadComponent("x-nonerror");
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const reason = await unhandledRejectionPromise;
+    expect(reason).toBeInstanceOf(Error);
+    expect((reason as Error).message).toContain("Failed to load lazy component for tagName: x-nonerror");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    expect((reason as any).context?.errorMessage).toBe("string failure");
+  });
 });

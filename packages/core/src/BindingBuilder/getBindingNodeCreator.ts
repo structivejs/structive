@@ -120,7 +120,16 @@ function _getBindingNodeCreator(isComment: boolean, isElement: boolean, property
   // Step 3: Error for unsupported properties on comment node
   // (Only "if" and "for" are allowed on comment nodes)
   if (isComment) {
-    raiseError(`getBindingNodeCreator: unknown node property ${propertyName}`);
+    raiseError({
+      code: "BIND-106",
+      message: `Comment binding property not supported: ${propertyName}`,
+      context: {
+        where: "BindingBuilder.getBindingNodeCreator",
+        propertyName,
+        nodeType: "Comment",
+      },
+      docsUrl: "./docs/error-codes.md#bind",
+    });
   }
 
   // Step 4: Determine by property name prefix (first part before dot)

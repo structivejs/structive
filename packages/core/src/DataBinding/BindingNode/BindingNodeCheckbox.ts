@@ -13,7 +13,7 @@ import { CreateBindingNodeFn } from "./types";
  * Supports bidirectional binding and readonly mode.
  *
  * @throws BIND-201 Value is not array: When non-array value is passed
- * @throws BIND-201 Has multiple decorators: When multiple decorators are specified
+ * @throws BIND-201 Decorator conflict: When multiple decorators are specified
  */
 class BindingNodeCheckbox extends BindingNode {
   /**
@@ -49,7 +49,7 @@ class BindingNodeCheckbox extends BindingNode {
    * @param subName - Sub-property name
    * @param filters - Filter functions to apply
    * @param decorates - Array of decorators (event name or "readonly"/"ro")
-   * @throws BIND-201 Has multiple decorators
+  * @throws BIND-201 Decorator conflict
    */
   constructor(
     binding: IBinding,
@@ -69,9 +69,9 @@ class BindingNodeCheckbox extends BindingNode {
     if (decorates.length > 1) {
       raiseError({
         code: "BIND-201",
-        message: "Has multiple decorators",
+        message: "Checkbox binding has multiple decorators",
         context: { where: "BindingNodeCheckbox.constructor", name: this.name, decoratesCount: decorates.length },
-        docsUrl: "/docs/error-codes.md#bind",
+        docsUrl: "./docs/error-codes.md#bind",
         severity: "error",
       });
     }
@@ -102,9 +102,9 @@ class BindingNodeCheckbox extends BindingNode {
     if (!Array.isArray(value)) {
       raiseError({
         code: 'BIND-201',
-        message: 'Value is not array',
+        message: 'Checkbox value is not array',
         context: { where: 'BindingNodeCheckbox.update', receivedType: typeof value },
-        docsUrl: '/docs/error-codes.md#bind',
+        docsUrl: './docs/error-codes.md#bind',
         severity: 'error',
       });
     }

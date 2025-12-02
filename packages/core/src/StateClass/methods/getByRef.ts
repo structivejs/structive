@@ -37,6 +37,8 @@ import { createListIndexes } from "./createListIndexes";
  * @param receiver  - Proxy
  * @param handler   - State handler
  * @returns         Value of the target property
+ * @throws STC-001 If property does not exist in state when accessed directly
+ * @throws STC-002 If handler.refStack is empty when accessing a getter
  */
 export function getByRef(
   target   : object, 
@@ -91,6 +93,11 @@ export function getByRef(
       raiseError({
         code: 'STC-002',
         message: 'handler.refStack is empty in getByRef',
+        context: {
+          where: 'StateClass.getByRef',
+          pattern: ref.info.pattern,
+        },
+        docsUrl: './docs/error-codes.md#stc',
       });
     }
     // Push current ref onto stack for dependency tracking during getter execution
@@ -122,6 +129,10 @@ export function getByRef(
                   raiseError({
                     code: "STC-001",
                     message: `Property "${ref.info.pattern}" is expected to be an array for list management.`,
+                    context: {
+                      where: 'StateClass.getByRef',
+                      pattern: ref.info.pattern,
+                    },
                     docsUrl: "./docs/error-codes.md#stc",
                   });
                 }
@@ -155,6 +166,10 @@ export function getByRef(
     raiseError({
       code: "STC-001",
       message: `Property "${ref.info.pattern}" does not exist in state.`,
+      context: {
+        where: 'StateClass.getByRef',
+        pattern: ref.info.pattern,
+      },
       docsUrl: "./docs/error-codes.md#stc",
     })
   }

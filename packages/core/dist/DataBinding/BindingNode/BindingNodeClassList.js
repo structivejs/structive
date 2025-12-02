@@ -19,9 +19,9 @@ class BindingNodeClassList extends BindingNode {
         if (!Array.isArray(value)) {
             raiseError({
                 code: 'BIND-201',
-                message: 'Value is not array',
+                message: 'ClassList value is not array',
                 context: { where: 'BindingNodeClassList.update', receivedType: typeof value },
-                docsUrl: '/docs/error-codes.md#bind',
+                docsUrl: './docs/error-codes.md#bind',
                 severity: 'error',
             });
         }

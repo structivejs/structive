@@ -55,8 +55,8 @@ export function setByRef(
     parentRef = ref.parentRef ?? raiseError({
       code: 'STATE-202',
       message: 'propRef.stateProp.parentInfo is undefined',
-      context: { where: 'setByRef (element)', refPath: ref.info.pattern },
-      docsUrl: '/docs/error-codes.md#state',
+      context: { where: 'StateClass.setByRef', scope: 'element', refPath: ref.info.pattern },
+      docsUrl: './docs/error-codes.md#state',
     });
     // Get or create swap info for tracking list element changes
     swapInfo = handler.updater.swapInfoByRef.get(parentRef) || null;
@@ -66,8 +66,8 @@ export function setByRef(
         raiseError({
           code: 'STATE-202',
           message: 'Expected array value for list elements',
-          context: { where: 'setByRef (element)', refPath: parentRef.info.pattern },
-          docsUrl: '/docs/error-codes.md#state',
+          context: { where: 'StateClass.setByRef', scope: 'element', refPath: parentRef.info.pattern },
+          docsUrl: './docs/error-codes.md#state',
         });
       }
       swapInfo = {
@@ -106,8 +106,8 @@ export function setByRef(
       const parentInfo = ref.info.parentInfo ?? raiseError({
         code: 'STATE-202',
         message: 'propRef.stateProp.parentInfo is undefined',
-        context: { where: 'setByRef', refPath: ref.info.pattern },
-        docsUrl: '/docs/error-codes.md#state',
+        context: { where: 'StateClass.setByRef', refPath: ref.info.pattern },
+        docsUrl: './docs/error-codes.md#state',
       });
       // Calculate parent list index based on wildcard hierarchy
       const parentListIndex = parentInfo.wildcardCount < ref.info.wildcardCount 
@@ -120,8 +120,8 @@ export function setByRef(
         raiseError({
           code: 'STATE-202',
           message: 'Parent value is not an object',
-          context: { where: 'setByRef', refPath: parentRef.info.pattern },
-          docsUrl: '/docs/error-codes.md#state',
+          context: { where: 'StateClass.setByRef', refPath: parentRef.info.pattern },
+          docsUrl: './docs/error-codes.md#state',
         });
       }
       const lastSegment = ref.info.lastSegment;
@@ -130,8 +130,8 @@ export function setByRef(
         const index = ref.listIndex?.index ?? raiseError({
           code: 'STATE-202',
           message: 'propRef.listIndex?.index is undefined',
-          context: { where: 'setByRef', refPath: ref.info.pattern },
-          docsUrl: '/docs/error-codes.md#state',
+          context: { where: 'StateClass.setByRef', refPath: ref.info.pattern },
+          docsUrl: './docs/error-codes.md#state',
         });
         return Reflect.set(parentValue, index, value);
       } else {
@@ -156,8 +156,8 @@ export function setByRef(
         raiseError({
           code: 'STATE-202',
           message: 'Parent value is not an array during swap check',
-          context: { where: 'setByRef (element swap)', refPath: parentRef!.info.pattern },
-          docsUrl: '/docs/error-codes.md#state',
+          context: { where: 'StateClass.setByRef', scope: 'element swap', refPath: parentRef!.info.pattern },
+          docsUrl: './docs/error-codes.md#state',
         });
       }
       const listValueSet = new Set(parentValue);

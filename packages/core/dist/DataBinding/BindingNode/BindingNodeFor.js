@@ -62,8 +62,8 @@ class BindingNodeFor extends BindingNodeBlock {
         if (length < 0) {
             raiseError({
                 code: 'BIND-202',
-                message: 'Length is negative',
-                context: { where: 'BindingNodeFor.setPoolLength', length },
+                message: 'BindContent pool length is negative',
+                context: { where: 'BindingNodeFor.setPoolLength', bindName: this.name, requestedLength: length },
                 docsUrl: './docs/error-codes.md#bind',
             });
         }
@@ -121,8 +121,9 @@ class BindingNodeFor extends BindingNodeBlock {
     assignValue(_value) {
         raiseError({
             code: 'BIND-301',
-            message: 'Not implemented. Use update or applyChange',
+            message: 'Binding assignValue not implemented',
             context: { where: 'BindingNodeFor.assignValue' },
+            hint: 'Call applyChange to update loop bindings',
             docsUrl: './docs/error-codes.md#bind',
         });
     }
@@ -135,24 +136,29 @@ class BindingNodeFor extends BindingNodeBlock {
      */
     applyChange(renderer) {
         let newBindContents = [];
+        const baseContext = {
+            where: 'BindingNodeFor.applyChange',
+            bindName: this.name,
+            statePath: this.binding.bindingState.pattern,
+        };
         // Detect changes: adds, removes, changeIndexes, overwrites
         const newList = renderer.readonlyState[GetByRefSymbol](this.binding.bindingState.ref);
         if (!Array.isArray(newList)) {
             raiseError({
                 code: 'BIND-201',
-                message: 'Value is not array',
-                context: { where: 'BindingNodeFor.applyChange', ref: this.binding.bindingState.ref },
+                message: 'Loop value is not array',
+                context: { ...baseContext, receivedType: newList === null ? 'null' : typeof newList },
                 docsUrl: './docs/error-codes.md#bind',
             });
         }
         const newListIndexes = renderer.readonlyState[GetListIndexesByRefSymbol](this.binding.bindingState.ref) ?? [];
         const newListIndexesSet = new Set(newListIndexes);
-        const oldList = this._oldList ?? [];
+        const oldList = typeof this._oldList === "undefined" ? [] : this._oldList;
         if (!Array.isArray(oldList)) {
             raiseError({
                 code: 'BIND-201',
-                message: 'Old value is not array',
-                context: { where: 'BindingNodeFor.applyChange', ref: this.binding.bindingState.ref },
+                message: 'Previous loop value is not array',
+                context: { ...baseContext, receivedType: oldList === null ? 'null' : typeof oldList },
                 docsUrl: './docs/error-codes.md#bind',
             });
         }
@@ -181,7 +187,7 @@ class BindingNodeFor extends BindingNodeBlock {
                 raiseError({
                     code: 'BIND-201',
                     message: 'ListIndex is null',
-                    context: { where: 'BindingNodeFor.applyChange', ref: updatingRef },
+                    context: { ...baseContext, refPattern: updatingRef.info.pattern },
                     docsUrl: './docs/error-codes.md#bind',
                 });
             }
@@ -195,8 +201,8 @@ class BindingNodeFor extends BindingNodeBlock {
         }
         const parentNode = this.node.parentNode ?? raiseError({
             code: 'BIND-201',
-            message: 'ParentNode is null',
-            context: { where: 'BindingNodeFor.applyChange' },
+            message: 'Parent node not found',
+            context: { ...baseContext, nodeType: this.node.nodeType },
             docsUrl: './docs/error-codes.md#bind',
         });
         const removeBindContentsSet = new Set();
@@ -207,9 +213,9 @@ class BindingNodeFor extends BindingNodeBlock {
             const parentChildNodes = Array.from(parentNode.childNodes);
             const lastContent = this._bindContents.at(-1) ?? raiseError({
                 code: 'BIND-201',
-                message: 'Last content is null',
-                context: { where: 'BindingNodeFor.applyChange' },
-                docsUrl: '/docs/error-codes.md#bind',
+                message: 'Last BindContent not found',
+                context: { ...baseContext, bindContentCount: this._bindContents.length },
+                docsUrl: './docs/error-codes.md#bind',
             });
             let firstNode = parentChildNodes[0];
             while (firstNode && firstNode.nodeType === Node.TEXT_NODE && firstNode.textContent?.trim() === "") {
@@ -239,7 +245,7 @@ class BindingNodeFor extends BindingNodeBlock {
                         raiseError({
                             code: 'BIND-201',
                             message: 'BindContent not found',
-                            context: { where: 'BindingNodeFor.applyChange', when: 'removes' },
+                            context: { ...baseContext, phase: 'removes', listIndex: listIndex.index },
                             docsUrl: './docs/error-codes.md#bind',
                         });
                     }
@@ -280,7 +286,7 @@ class BindingNodeFor extends BindingNodeBlock {
                         raiseError({
                             code: 'BIND-201',
                             message: 'BindContent not found',
-                            context: { where: 'BindingNodeFor.applyChange', when: 'reuse' },
+                            context: { ...baseContext, phase: 'reuse', listIndex: listIndex.index },
                             docsUrl: './docs/error-codes.md#bind',
                         });
                     }
@@ -321,8 +327,8 @@ class BindingNodeFor extends BindingNodeBlock {
                         raiseError({
                             code: 'BIND-201',
                             message: 'BindContent not found',
-                            context: { where: 'BindingNodeFor.applyChange', when: 'reorder' },
-                            docsUrl: '/docs/error-codes.md#bind',
+                            context: { ...baseContext, phase: 'reorder', listIndex: listIndex.index },
+                            docsUrl: './docs/error-codes.md#bind',
                         });
                     }
                     bindContents[listIndex.index] = bindContent;
@@ -338,7 +344,7 @@ class BindingNodeFor extends BindingNodeBlock {
                         raiseError({
                             code: 'BIND-201',
                             message: 'BindContent not found',
-                            context: { where: 'BindingNodeFor.applyChange', when: 'overwrites' },
+                            context: { ...baseContext, phase: 'overwrites', listIndex: listIndex.index },
                             docsUrl: './docs/error-codes.md#bind',
                         });
                     }

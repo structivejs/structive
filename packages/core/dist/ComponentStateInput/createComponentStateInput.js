@@ -27,7 +27,6 @@ class ComponentStateInputHandler {
      *
      * @param object - Key-value pairs of state properties to assign
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     assignState(object) {
         // Synchronous processing
         createUpdater(this._engine, (updater) => {
@@ -70,7 +69,7 @@ class ComponentStateInputHandler {
                             parentPattern: parentPathRef.info.pattern,
                             childPattern: childPathInfo.pattern,
                         },
-                        docsUrl: '/docs/error-codes.md#list',
+                        docsUrl: './docs/error-codes.md#list',
                     });
                 }
                 const childRef = getStatePropertyRef(childPathInfo, childListIndex);
@@ -100,7 +99,12 @@ class ComponentStateInputHandler {
             const ref = getStatePropertyRef(getStructuredPathInfo(prop), null);
             return this._engine.getPropertyValue(ref);
         }
-        raiseError(`Property "${String(prop)}" is not supported in ComponentStateInput.`);
+        raiseError({
+            code: 'STATE-204',
+            message: `ComponentStateInput property not supported: ${String(prop)}`,
+            context: { where: 'ComponentStateInput.get', prop: String(prop) },
+            docsUrl: './docs/error-codes.md#state',
+        });
     }
     /**
      * Proxy set trap for updating state properties.
@@ -119,7 +123,12 @@ class ComponentStateInputHandler {
             this._engine.setPropertyValue(ref, value);
             return true;
         }
-        raiseError(`Property "${String(prop)}" is not supported in ComponentStateInput.`);
+        raiseError({
+            code: 'STATE-204',
+            message: `ComponentStateInput property not supported: ${String(prop)}`,
+            context: { where: 'ComponentStateInput.set', prop: String(prop) },
+            docsUrl: './docs/error-codes.md#state',
+        });
     }
 }
 /**

@@ -146,6 +146,7 @@ const config$2 = getGlobalConfig();
  * - valueMustBeBoolean: Error when value is not boolean
  * - valueMustBeDate: Error when value is not a Date
  */
+const createContext = (where, fnName) => ({ where, fnName });
 /**
  * Throws error when filter requires at least one option but none provided.
  *
@@ -157,7 +158,7 @@ function optionsRequired(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires at least one option`,
-        context: { fnName },
+        context: createContext("Filter.optionsRequired", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
@@ -172,7 +173,7 @@ function optionMustBeNumber(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires a number as option`,
-        context: { fnName },
+        context: createContext("Filter.optionMustBeNumber", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
@@ -187,7 +188,7 @@ function valueMustBeNumber(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires a number value`,
-        context: { fnName },
+        context: createContext("Filter.valueMustBeNumber", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
@@ -202,7 +203,7 @@ function valueMustBeBoolean(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires a boolean value`,
-        context: { fnName },
+        context: createContext("Filter.valueMustBeBoolean", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
@@ -217,7 +218,7 @@ function valueMustBeDate(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires a date value`,
-        context: { fnName },
+        context: createContext("Filter.valueMustBeDate", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
@@ -1012,7 +1013,7 @@ function getStateClassById(id) {
     return stateClassById[id] ?? raiseError({
         code: "STATE-101",
         message: `StateClass not found: ${id}`,
-        context: { where: 'registerStateClass.getStateClassById', stateClassId: id },
+        context: { where: 'StateClass.getStateClassById', stateClassId: id },
         docsUrl: "./docs/error-codes.md#state",
     });
 }
@@ -1069,7 +1070,7 @@ function getStyleSheetById(id) {
     return styleSheetById[id] ?? raiseError({
         code: "CSS-001",
         message: `Stylesheet not found: ${id}`,
-        context: { where: 'registerStyleSheet.getStyleSheetById', styleSheetId: id },
+        context: { where: 'StyleSheet.getStyleSheetById', styleSheetId: id },
         docsUrl: "./docs/error-codes.md#css",
     });
 }
@@ -1454,9 +1455,9 @@ class BindingNode {
     assignValue(_value) {
         raiseError({
             code: 'BIND-301',
-            message: 'Not implemented',
+            message: 'Binding assignValue not implemented',
             context: { where: 'BindingNode.assignValue', name: this.name },
-            docsUrl: '/docs/error-codes.md#bind',
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**
@@ -1471,9 +1472,9 @@ class BindingNode {
     updateElements(_listIndexes, _values) {
         raiseError({
             code: 'BIND-301',
-            message: 'Not implemented',
+            message: 'Binding updateElements not implemented',
             context: { where: 'BindingNode.updateElements', name: this.name },
-            docsUrl: '/docs/error-codes.md#bind',
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**
@@ -1743,7 +1744,7 @@ function getStructuredPathInfo(structuredPath) {
         raiseError({
             code: 'STATE-202',
             message: `Pattern is reserved word: ${structuredPath}`,
-            context: { where: 'getStructuredPathInfo', structuredPath },
+            context: { where: 'StateProperty.getStructuredPathInfo', structuredPath },
             docsUrl: './docs/error-codes.md#state',
         });
     }
@@ -2011,7 +2012,11 @@ class StatePropertyRef {
         return this._listIndexRef.deref() ?? raiseError({
             code: "LIST-201",
             message: "listIndex is null",
-            context: { sid: this.info.sid, key: this.key },
+            context: {
+                where: 'StatePropertyRef.get listIndex',
+                sid: this.info.sid,
+                key: this.key,
+            },
             docsUrl: "./docs/error-codes.md#list",
         });
     }
@@ -2166,16 +2171,16 @@ function getListIndex(resolvedPath, receiver, handler) {
                 raiseError({
                     code: 'STATE-202',
                     message: 'lastWildcardPath is null',
-                    context: { where: 'getListIndex', pattern: resolvedPath.info.pattern },
-                    docsUrl: '/docs/error-codes.md#state',
+                    context: { where: 'StateClass.getListIndex', pattern: resolvedPath.info.pattern },
+                    docsUrl: './docs/error-codes.md#state',
                 });
             // Retrieve list index from current loop context
             return getContextListIndex(handler, lastWildcardPath) ??
                 raiseError({
                     code: 'LIST-201',
                     message: `ListIndex not found: ${resolvedPath.info.pattern}`,
-                    context: { where: 'getListIndex', pattern: resolvedPath.info.pattern },
-                    docsUrl: '/docs/error-codes.md#list',
+                    context: { where: 'StateClass.getListIndex', pattern: resolvedPath.info.pattern },
+                    docsUrl: './docs/error-codes.md#list',
                 });
         }
         case "all": {
@@ -2187,8 +2192,8 @@ function getListIndex(resolvedPath, receiver, handler) {
                     raiseError({
                         code: 'STATE-202',
                         message: 'wildcardParentPattern is null',
-                        context: { where: 'getListIndex', pattern: resolvedPath.info.pattern, index: i },
-                        docsUrl: '/docs/error-codes.md#state',
+                        context: { where: 'StateClass.getListIndex', pattern: resolvedPath.info.pattern, index: i },
+                        docsUrl: './docs/error-codes.md#state',
                     });
                 // Create a reference for the current wildcard level
                 const wildcardRef = getStatePropertyRef(wildcardParentPattern, parentListIndex);
@@ -2197,24 +2202,24 @@ function getListIndex(resolvedPath, receiver, handler) {
                     raiseError({
                         code: 'LIST-201',
                         message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
-                        context: { where: 'getListIndex', wildcardParent: wildcardParentPattern.pattern },
-                        docsUrl: '/docs/error-codes.md#list',
+                        context: { where: 'StateClass.getListIndex', wildcardParent: wildcardParentPattern.pattern },
+                        docsUrl: './docs/error-codes.md#list',
                     });
                 // Get the specific index for this wildcard level
                 const wildcardIndex = resolvedPath.wildcardIndexes[i] ??
                     raiseError({
                         code: 'STATE-202',
                         message: 'wildcardIndex is null',
-                        context: { where: 'getListIndex', pattern: resolvedPath.info.pattern, index: i },
-                        docsUrl: '/docs/error-codes.md#state',
+                        context: { where: 'StateClass.getListIndex', pattern: resolvedPath.info.pattern, index: i },
+                        docsUrl: './docs/error-codes.md#state',
                     });
                 // Select the list index at the specified position for this level
                 parentListIndex = listIndexes[wildcardIndex] ??
                     raiseError({
                         code: 'LIST-201',
                         message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
-                        context: { where: 'getListIndex', wildcardParent: wildcardParentPattern.pattern, wildcardIndex },
-                        docsUrl: '/docs/error-codes.md#list',
+                        context: { where: 'StateClass.getListIndex', wildcardParent: wildcardParentPattern.pattern, wildcardIndex },
+                        docsUrl: './docs/error-codes.md#list',
                     });
             }
             // Return the final list index after traversing all levels
@@ -2225,8 +2230,8 @@ function getListIndex(resolvedPath, receiver, handler) {
             raiseError({
                 code: 'STATE-202',
                 message: `Partial wildcard type is not supported yet: ${resolvedPath.info.pattern}`,
-                context: { where: 'getListIndex', pattern: resolvedPath.info.pattern },
-                docsUrl: '/docs/error-codes.md#state',
+                context: { where: 'StateClass.getListIndex', pattern: resolvedPath.info.pattern },
+                docsUrl: './docs/error-codes.md#state',
             });
     }
 }
@@ -2266,8 +2271,8 @@ function trackDependency(_target, _prop, _receiver, handler) {
         const lastInfo = handler.lastRefStack?.info ?? raiseError({
             code: 'STATE-202',
             message: 'Internal error: lastRefStack is null',
-            context: { where: 'trackDependency', path },
-            docsUrl: '/docs/error-codes.md#state',
+            context: { where: 'StateClass.trackDependency', path },
+            docsUrl: './docs/error-codes.md#state',
         });
         // Only register dependency if source is a getter and target is different
         // This prevents self-references and only tracks getter -> property dependencies
@@ -2541,6 +2546,8 @@ function createListIndexes(parentListIndex, rawOldList, rawNewList, oldIndexes) 
  * @param receiver  - Proxy
  * @param handler   - State handler
  * @returns         Value of the target property
+ * @throws STC-001 If property does not exist in state when accessed directly
+ * @throws STC-002 If handler.refStack is empty when accessing a getter
  */
 function getByRef(target, ref, receiver, handler) {
     // Check and register dependency if called from within a getter
@@ -2587,6 +2594,11 @@ function getByRef(target, ref, receiver, handler) {
             raiseError({
                 code: 'STC-002',
                 message: 'handler.refStack is empty in getByRef',
+                context: {
+                    where: 'StateClass.getByRef',
+                    pattern: ref.info.pattern,
+                },
+                docsUrl: './docs/error-codes.md#stc',
             });
         }
         // Push current ref onto stack for dependency tracking during getter execution
@@ -2619,6 +2631,10 @@ function getByRef(target, ref, receiver, handler) {
                                     raiseError({
                                         code: "STC-001",
                                         message: `Property "${ref.info.pattern}" is expected to be an array for list management.`,
+                                        context: {
+                                            where: 'StateClass.getByRef',
+                                            pattern: ref.info.pattern,
+                                        },
                                         docsUrl: "./docs/error-codes.md#stc",
                                     });
                                 }
@@ -2652,6 +2668,10 @@ function getByRef(target, ref, receiver, handler) {
         raiseError({
             code: "STC-001",
             message: `Property "${ref.info.pattern}" does not exist in state.`,
+            context: {
+                where: 'StateClass.getByRef',
+                pattern: ref.info.pattern,
+            },
             docsUrl: "./docs/error-codes.md#stc",
         });
     }
@@ -2699,8 +2719,8 @@ function setByRef(target, ref, value, receiver, handler) {
         parentRef = ref.parentRef ?? raiseError({
             code: 'STATE-202',
             message: 'propRef.stateProp.parentInfo is undefined',
-            context: { where: 'setByRef (element)', refPath: ref.info.pattern },
-            docsUrl: '/docs/error-codes.md#state',
+            context: { where: 'StateClass.setByRef', scope: 'element', refPath: ref.info.pattern },
+            docsUrl: './docs/error-codes.md#state',
         });
         // Get or create swap info for tracking list element changes
         swapInfo = handler.updater.swapInfoByRef.get(parentRef) || null;
@@ -2710,8 +2730,8 @@ function setByRef(target, ref, value, receiver, handler) {
                 raiseError({
                     code: 'STATE-202',
                     message: 'Expected array value for list elements',
-                    context: { where: 'setByRef (element)', refPath: parentRef.info.pattern },
-                    docsUrl: '/docs/error-codes.md#state',
+                    context: { where: 'StateClass.setByRef', scope: 'element', refPath: parentRef.info.pattern },
+                    docsUrl: './docs/error-codes.md#state',
                 });
             }
             swapInfo = {
@@ -2752,8 +2772,8 @@ function setByRef(target, ref, value, receiver, handler) {
             const parentInfo = ref.info.parentInfo ?? raiseError({
                 code: 'STATE-202',
                 message: 'propRef.stateProp.parentInfo is undefined',
-                context: { where: 'setByRef', refPath: ref.info.pattern },
-                docsUrl: '/docs/error-codes.md#state',
+                context: { where: 'StateClass.setByRef', refPath: ref.info.pattern },
+                docsUrl: './docs/error-codes.md#state',
             });
             // Calculate parent list index based on wildcard hierarchy
             const parentListIndex = parentInfo.wildcardCount < ref.info.wildcardCount
@@ -2766,8 +2786,8 @@ function setByRef(target, ref, value, receiver, handler) {
                 raiseError({
                     code: 'STATE-202',
                     message: 'Parent value is not an object',
-                    context: { where: 'setByRef', refPath: parentRef.info.pattern },
-                    docsUrl: '/docs/error-codes.md#state',
+                    context: { where: 'StateClass.setByRef', refPath: parentRef.info.pattern },
+                    docsUrl: './docs/error-codes.md#state',
                 });
             }
             const lastSegment = ref.info.lastSegment;
@@ -2776,8 +2796,8 @@ function setByRef(target, ref, value, receiver, handler) {
                 const index = ref.listIndex?.index ?? raiseError({
                     code: 'STATE-202',
                     message: 'propRef.listIndex?.index is undefined',
-                    context: { where: 'setByRef', refPath: ref.info.pattern },
-                    docsUrl: '/docs/error-codes.md#state',
+                    context: { where: 'StateClass.setByRef', refPath: ref.info.pattern },
+                    docsUrl: './docs/error-codes.md#state',
                 });
                 return Reflect.set(parentValue, index, value);
             }
@@ -2804,8 +2824,8 @@ function setByRef(target, ref, value, receiver, handler) {
                 raiseError({
                     code: 'STATE-202',
                     message: 'Parent value is not an array during swap check',
-                    context: { where: 'setByRef (element swap)', refPath: parentRef.info.pattern },
-                    docsUrl: '/docs/error-codes.md#state',
+                    context: { where: 'StateClass.setByRef', scope: 'element swap', refPath: parentRef.info.pattern },
+                    docsUrl: './docs/error-codes.md#state',
                 });
             }
             const listValueSet = new Set(parentValue);
@@ -2863,9 +2883,13 @@ function resolve(target, _prop, receiver, handler) {
             raiseError({
                 code: 'STATE-202',
                 message: `indexes length is insufficient: ${path}`,
-                context: { path, expected: info.wildcardParentInfos.length, received: indexes.length },
-                docsUrl: '/docs/error-codes.md#state',
-                severity: 'error',
+                context: {
+                    where: 'StateClass.resolve',
+                    path,
+                    expected: info.wildcardParentInfos.length,
+                    received: indexes.length,
+                },
+                docsUrl: './docs/error-codes.md#state',
             });
         }
         // Resolve ListIndex for each wildcard level by walking through the hierarchy
@@ -2882,9 +2906,11 @@ function resolve(target, _prop, receiver, handler) {
                 raiseError({
                     code: 'LIST-201',
                     message: `ListIndexes not found: ${wildcardParentPattern.pattern}`,
-                    context: { pattern: wildcardParentPattern.pattern },
-                    docsUrl: '/docs/error-codes.md#list',
-                    severity: 'error',
+                    context: {
+                        where: 'StateClass.resolve',
+                        pattern: wildcardParentPattern.pattern,
+                    },
+                    docsUrl: './docs/error-codes.md#list',
                 });
             }
             // Get the specific list index for this level using provided index
@@ -2892,9 +2918,12 @@ function resolve(target, _prop, receiver, handler) {
             listIndex = listIndexes[index] ?? raiseError({
                 code: 'LIST-201',
                 message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
-                context: { pattern: wildcardParentPattern.pattern, index },
-                docsUrl: '/docs/error-codes.md#list',
-                severity: 'error',
+                context: {
+                    where: 'StateClass.resolve',
+                    pattern: wildcardParentPattern.pattern,
+                    index,
+                },
+                docsUrl: './docs/error-codes.md#list',
             });
         }
         // Create reference with resolved list index and perform get or set
@@ -2919,9 +2948,11 @@ function resolve(target, _prop, receiver, handler) {
                 raiseError({
                     code: 'STATE-202',
                     message: `Cannot set value on a readonly proxy: ${path}`,
-                    context: { path },
-                    docsUrl: '/docs/error-codes.md#state',
-                    severity: 'error',
+                    context: {
+                        where: 'StateClass.resolve',
+                        path,
+                    },
+                    docsUrl: './docs/error-codes.md#state',
                 });
             }
         }
@@ -3020,10 +3051,13 @@ function getAll(target, prop, receiver, handler) {
             for (let i = 0; i < info.wildcardInfos.length; i++) {
                 const wildcardPattern = info.wildcardInfos[i] ?? raiseError({
                     code: 'BIND-201',
-                    message: 'wildcardPattern is null',
-                    context: { index: i, infoPattern: info.pattern },
-                    docsUrl: '/docs/error-codes.md#bind',
-                    severity: 'error',
+                    message: 'Wildcard info is missing',
+                    context: {
+                        where: 'StateClass.getAll',
+                        wildcardIndex: i,
+                        pattern: info.pattern,
+                    },
+                    docsUrl: './docs/error-codes.md#bind',
                 });
                 const listIndex = getContextListIndex(handler, wildcardPattern.pattern);
                 if (listIndex) {
@@ -3060,9 +3094,11 @@ function getAll(target, prop, receiver, handler) {
                 raiseError({
                     code: 'LIST-201',
                     message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
-                    context: { pattern: wildcardParentPattern.pattern },
-                    docsUrl: '/docs/error-codes.md#list',
-                    severity: 'error',
+                    context: {
+                        where: 'StateClass.getAll',
+                        pattern: wildcardParentPattern.pattern,
+                    },
+                    docsUrl: './docs/error-codes.md#list',
                 });
             }
             const index = indexes[indexPos] ?? null;
@@ -3078,9 +3114,12 @@ function getAll(target, prop, receiver, handler) {
                 const listIndex = listIndexes[index] ?? raiseError({
                     code: 'LIST-201',
                     message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
-                    context: { pattern: wildcardParentPattern.pattern, index },
-                    docsUrl: '/docs/error-codes.md#list',
-                    severity: 'error',
+                    context: {
+                        where: 'StateClass.getAll',
+                        pattern: wildcardParentPattern.pattern,
+                        index,
+                    },
+                    docsUrl: './docs/error-codes.md#list',
                 });
                 // Continue to next wildcard level if exists
                 if ((wildardIndexPos + 1) < wildcardParentInfos.length) {
@@ -3125,8 +3164,8 @@ function getListIndexesByRef(target, ref, receiver, handler) {
         raiseError({
             code: 'LIST-201',
             message: `path is not a list: ${ref.info.pattern}`,
-            context: { where: 'getListIndexesByRef', pattern: ref.info.pattern },
-            docsUrl: '/docs/error-codes.md#state',
+            context: { where: 'StateClass.getListIndexesByRef', pattern: ref.info.pattern },
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     // Try to retrieve from stateOutput first (optimization for external dependencies)
@@ -3142,8 +3181,8 @@ function getListIndexesByRef(target, ref, receiver, handler) {
         raiseError({
             code: 'LIST-202',
             message: `List cache entry not found: ${ref.info.pattern}`,
-            context: { where: 'getListIndexesByRef', pattern: ref.info.pattern },
-            docsUrl: '/docs/error-codes.md#state',
+            context: { where: 'StateClass.getListIndexesByRef', pattern: ref.info.pattern },
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     const listIndexes = cacheEntry.listIndexes;
@@ -3152,8 +3191,8 @@ function getListIndexesByRef(target, ref, receiver, handler) {
         raiseError({
             code: 'LIST-203',
             message: `List indexes not found in cache entry: ${ref.info.pattern}`,
-            context: { where: 'getListIndexesByRef', pattern: ref.info.pattern },
-            docsUrl: '/docs/error-codes.md#state',
+            context: { where: 'StateClass.getListIndexesByRef', pattern: ref.info.pattern },
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     return listIndexes;
@@ -3704,6 +3743,7 @@ class Renderer {
             raiseError({
                 code: "UPD-002",
                 message: "ReadonlyState not initialized",
+                context: { where: "Updater.Renderer.readonlyState" },
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }
@@ -3714,6 +3754,7 @@ class Renderer {
             raiseError({
                 code: "UPD-002",
                 message: "ReadonlyHandler not initialized",
+                context: { where: "Updater.Renderer.readonlyHandler" },
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }
@@ -3770,7 +3811,11 @@ class Renderer {
                 const listRef = ref.parentRef ?? raiseError({
                     code: "UPD-004",
                     message: `ParentInfo is null for ref: ${ref.key}`,
-                    context: { refKey: ref.key, pattern: ref.info.pattern },
+                    context: {
+                        where: "Updater.Renderer.render",
+                        refKey: ref.key,
+                        pattern: ref.info.pattern,
+                    },
                     docsUrl: "./docs/error-codes.md#upd",
                 });
                 // Group element refs by their parent list
@@ -3808,7 +3853,7 @@ class Renderer {
                     raiseError({
                         code: "PATH-101",
                         message: `PathNode not found: ${ref.info.pattern}`,
-                        context: { pattern: ref.info.pattern },
+                        context: { where: "Updater.Renderer.render", pattern: ref.info.pattern },
                         docsUrl: "./docs/error-codes.md#path",
                     });
                 }
@@ -3899,7 +3944,7 @@ class Renderer {
                     raiseError({
                         code: "PATH-101",
                         message: `PathNode not found: ${depInfo.pattern}`,
-                        context: { pattern: depInfo.pattern },
+                        context: { where: "Updater.Renderer.renderItem", pattern: depInfo.pattern },
                         docsUrl: "./docs/error-codes.md#path",
                     });
                 }
@@ -4087,6 +4132,7 @@ class Updater {
                             raiseError({
                                 code: 'UPD-005',
                                 message: 'An error occurred during asynchronous state update.',
+                                context: { where: 'Updater.update.updatedCallback' },
                                 docsUrl: "./docs/error-codes.md#upd",
                             });
                         });
@@ -4178,6 +4224,7 @@ class Updater {
                 raiseError({
                     code: "UPD-004",
                     message: `Path node not found for pattern: ${depPath}`,
+                    context: { where: 'Updater.recursiveCollectMaybeUpdates', depPath },
                     docsUrl: "./docs/error-codes.md#upd",
                 });
             }
@@ -4202,6 +4249,7 @@ class Updater {
             raiseError({
                 code: "UPD-003",
                 message: `Path node not found for pattern: ${path}`,
+                context: { where: 'Updater.collectMaybeUpdates', path },
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }
@@ -4273,7 +4321,7 @@ function createUpdater(engine, callback) {
  * Supports bidirectional binding and readonly mode.
  *
  * @throws BIND-201 Value is not array: When non-array value is passed
- * @throws BIND-201 Has multiple decorators: When multiple decorators are specified
+ * @throws BIND-201 Decorator conflict: When multiple decorators are specified
  */
 class BindingNodeCheckbox extends BindingNode {
     /**
@@ -4307,7 +4355,7 @@ class BindingNodeCheckbox extends BindingNode {
      * @param subName - Sub-property name
      * @param filters - Filter functions to apply
      * @param decorates - Array of decorators (event name or "readonly"/"ro")
-     * @throws BIND-201 Has multiple decorators
+    * @throws BIND-201 Decorator conflict
      */
     constructor(binding, node, name, subName, filters, decorates) {
         super(binding, node, name, subName, filters, decorates);
@@ -4322,9 +4370,9 @@ class BindingNodeCheckbox extends BindingNode {
         if (decorates.length > 1) {
             raiseError({
                 code: "BIND-201",
-                message: "Has multiple decorators",
+                message: "Checkbox binding has multiple decorators",
                 context: { where: "BindingNodeCheckbox.constructor", name: this.name, decoratesCount: decorates.length },
-                docsUrl: "/docs/error-codes.md#bind",
+                docsUrl: "./docs/error-codes.md#bind",
                 severity: "error",
             });
         }
@@ -4353,9 +4401,9 @@ class BindingNodeCheckbox extends BindingNode {
         if (!Array.isArray(value)) {
             raiseError({
                 code: 'BIND-201',
-                message: 'Value is not array',
+                message: 'Checkbox value is not array',
                 context: { where: 'BindingNodeCheckbox.update', receivedType: typeof value },
-                docsUrl: '/docs/error-codes.md#bind',
+                docsUrl: './docs/error-codes.md#bind',
                 severity: 'error',
             });
         }
@@ -4394,9 +4442,9 @@ class BindingNodeClassList extends BindingNode {
         if (!Array.isArray(value)) {
             raiseError({
                 code: 'BIND-201',
-                message: 'Value is not array',
+                message: 'ClassList value is not array',
                 context: { where: 'BindingNodeClassList.update', receivedType: typeof value },
-                docsUrl: '/docs/error-codes.md#bind',
+                docsUrl: './docs/error-codes.md#bind',
                 severity: 'error',
             });
         }
@@ -4434,9 +4482,9 @@ class BindingNodeClassName extends BindingNode {
         if (typeof value !== "boolean") {
             raiseError({
                 code: 'BIND-201',
-                message: 'Value is not boolean',
+                message: 'ClassName value is not boolean',
                 context: { where: 'BindingNodeClassName.update', receivedType: typeof value },
-                docsUrl: '/docs/error-codes.md#bind',
+                docsUrl: './docs/error-codes.md#bind',
                 severity: 'error',
             });
         }
@@ -4463,7 +4511,7 @@ const createBindingNodeClassName = (name, filterTexts, decorates) => (binding, n
  * Extracts event name from binding name ("onClick" → "click") and registers as event listener.
  * Supports preventDefault/stopPropagation decorators and passes loop indexes to handlers.
  *
- * @throws BIND-201 is not a function: When binding value is not a function
+ * @throws BIND-201 Binding value is not a function: When handler is missing
  */
 class BindingNodeEvent extends BindingNode {
     /**
@@ -4511,26 +4559,30 @@ class BindingNodeEvent extends BindingNode {
                 if (typeof func === "function") {
                     return Reflect.apply(func, state, [e, ...indexes]);
                 }
-                else {
-                    raiseError({
-                        code: 'BIND-201',
-                        message: `${this.name} is not a function`,
-                        context: { where: 'BindingNodeEvent.handler', name: this.name, receivedType: typeof func },
-                        docsUrl: '/docs/error-codes.md#bind',
-                        severity: 'error',
-                    });
-                }
+                raiseError({
+                    code: 'BIND-201',
+                    message: 'Binding value is not a function',
+                    context: {
+                        where: 'BindingNodeEvent.handler',
+                        bindName: this.name,
+                        eventName: this.subName,
+                        receivedType: typeof func,
+                    },
+                    docsUrl: './docs/error-codes.md#bind',
+                    severity: 'error',
+                });
             });
         });
         if (resultPromise instanceof Promise) {
             resultPromise.catch((error) => {
-                const errorMessage = error instanceof Error ? error.message : String(error);
+                const cause = error instanceof Error ? error : new Error(String(error));
                 raiseError({
                     code: 'BIND-202',
-                    message: `Error in event handler for ${this.name}: ${errorMessage}`,
-                    context: { where: 'BindingNodeEvent.handler', name: this.name },
-                    docsUrl: '/docs/error-codes.md#bind',
+                    message: 'Event handler rejected',
+                    context: { where: 'BindingNodeEvent.handler', bindName: this.name, eventName: this.subName },
+                    docsUrl: './docs/error-codes.md#bind',
                     severity: 'error',
+                    cause,
                 });
             });
         }
@@ -4594,7 +4646,7 @@ class BindingNodeBlock extends BindingNode {
             code: 'BIND-201',
             message: 'Invalid node',
             context: { where: 'BindingNodeBlock.id', textContent: this.node.textContent ?? null },
-            docsUrl: '/docs/error-codes.md#bind',
+            docsUrl: './docs/error-codes.md#bind',
             severity: 'error',
         });
         const [id,] = commentText.split(' ', 2);
@@ -4604,7 +4656,7 @@ class BindingNodeBlock extends BindingNode {
                 code: 'BIND-201',
                 message: 'Invalid node',
                 context: { where: 'BindingNodeBlock.id', textContent: this.node.textContent },
-                docsUrl: '/docs/error-codes.md#bind',
+                docsUrl: './docs/error-codes.md#bind',
                 severity: 'error',
             });
         }
@@ -4661,11 +4713,10 @@ class BindingNodeIf extends BindingNodeBlock {
      */
     assignValue(_value) {
         raiseError({
-            code: 'BIND-201',
-            message: 'Not implemented',
-            context: { where: 'BindingNodeIf.assignValue', name: this.name },
-            docsUrl: '/docs/error-codes.md#bind',
-            severity: 'error',
+            code: 'BIND-301',
+            message: 'Binding assignValue not implemented',
+            context: { where: 'BindingNodeIf.assignValue', bindName: this.name },
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**
@@ -4678,24 +4729,26 @@ class BindingNodeIf extends BindingNodeBlock {
      * @throws BIND-201 ParentNode is null
      */
     applyChange(renderer) {
+        const baseContext = {
+            where: 'BindingNodeIf.applyChange',
+            bindName: this.name,
+        };
         const filteredValue = this.binding.bindingState.getFilteredValue(renderer.readonlyState, renderer.readonlyHandler);
         if (typeof filteredValue !== "boolean") {
             raiseError({
                 code: 'BIND-201',
-                message: 'Value is not boolean',
-                context: { where: 'BindingNodeIf.applyChange', valueType: typeof filteredValue },
-                docsUrl: '/docs/error-codes.md#bind',
-                severity: 'error',
+                message: 'If binding value is not boolean',
+                context: { ...baseContext, receivedType: typeof filteredValue },
+                docsUrl: './docs/error-codes.md#bind',
             });
         }
         const parentNode = this.node.parentNode;
         if (parentNode === null) {
             raiseError({
                 code: 'BIND-201',
-                message: 'ParentNode is null',
-                context: { where: 'BindingNodeIf.applyChange', nodeType: this.node.nodeType },
-                docsUrl: '/docs/error-codes.md#bind',
-                severity: 'error',
+                message: 'Parent node not found',
+                context: { ...baseContext, nodeType: this.node.nodeType },
+                docsUrl: './docs/error-codes.md#bind',
             });
         }
         if (filteredValue) {
@@ -4789,8 +4842,8 @@ class BindingNodeFor extends BindingNodeBlock {
         if (length < 0) {
             raiseError({
                 code: 'BIND-202',
-                message: 'Length is negative',
-                context: { where: 'BindingNodeFor.setPoolLength', length },
+                message: 'BindContent pool length is negative',
+                context: { where: 'BindingNodeFor.setPoolLength', bindName: this.name, requestedLength: length },
                 docsUrl: './docs/error-codes.md#bind',
             });
         }
@@ -4848,8 +4901,9 @@ class BindingNodeFor extends BindingNodeBlock {
     assignValue(_value) {
         raiseError({
             code: 'BIND-301',
-            message: 'Not implemented. Use update or applyChange',
+            message: 'Binding assignValue not implemented',
             context: { where: 'BindingNodeFor.assignValue' },
+            hint: 'Call applyChange to update loop bindings',
             docsUrl: './docs/error-codes.md#bind',
         });
     }
@@ -4862,24 +4916,29 @@ class BindingNodeFor extends BindingNodeBlock {
      */
     applyChange(renderer) {
         let newBindContents = [];
+        const baseContext = {
+            where: 'BindingNodeFor.applyChange',
+            bindName: this.name,
+            statePath: this.binding.bindingState.pattern,
+        };
         // Detect changes: adds, removes, changeIndexes, overwrites
         const newList = renderer.readonlyState[GetByRefSymbol](this.binding.bindingState.ref);
         if (!Array.isArray(newList)) {
             raiseError({
                 code: 'BIND-201',
-                message: 'Value is not array',
-                context: { where: 'BindingNodeFor.applyChange', ref: this.binding.bindingState.ref },
+                message: 'Loop value is not array',
+                context: { ...baseContext, receivedType: newList === null ? 'null' : typeof newList },
                 docsUrl: './docs/error-codes.md#bind',
             });
         }
         const newListIndexes = renderer.readonlyState[GetListIndexesByRefSymbol](this.binding.bindingState.ref) ?? [];
         const newListIndexesSet = new Set(newListIndexes);
-        const oldList = this._oldList ?? [];
+        const oldList = typeof this._oldList === "undefined" ? [] : this._oldList;
         if (!Array.isArray(oldList)) {
             raiseError({
                 code: 'BIND-201',
-                message: 'Old value is not array',
-                context: { where: 'BindingNodeFor.applyChange', ref: this.binding.bindingState.ref },
+                message: 'Previous loop value is not array',
+                context: { ...baseContext, receivedType: oldList === null ? 'null' : typeof oldList },
                 docsUrl: './docs/error-codes.md#bind',
             });
         }
@@ -4908,7 +4967,7 @@ class BindingNodeFor extends BindingNodeBlock {
                 raiseError({
                     code: 'BIND-201',
                     message: 'ListIndex is null',
-                    context: { where: 'BindingNodeFor.applyChange', ref: updatingRef },
+                    context: { ...baseContext, refPattern: updatingRef.info.pattern },
                     docsUrl: './docs/error-codes.md#bind',
                 });
             }
@@ -4922,8 +4981,8 @@ class BindingNodeFor extends BindingNodeBlock {
         }
         const parentNode = this.node.parentNode ?? raiseError({
             code: 'BIND-201',
-            message: 'ParentNode is null',
-            context: { where: 'BindingNodeFor.applyChange' },
+            message: 'Parent node not found',
+            context: { ...baseContext, nodeType: this.node.nodeType },
             docsUrl: './docs/error-codes.md#bind',
         });
         const removeBindContentsSet = new Set();
@@ -4934,9 +4993,9 @@ class BindingNodeFor extends BindingNodeBlock {
             const parentChildNodes = Array.from(parentNode.childNodes);
             const lastContent = this._bindContents.at(-1) ?? raiseError({
                 code: 'BIND-201',
-                message: 'Last content is null',
-                context: { where: 'BindingNodeFor.applyChange' },
-                docsUrl: '/docs/error-codes.md#bind',
+                message: 'Last BindContent not found',
+                context: { ...baseContext, bindContentCount: this._bindContents.length },
+                docsUrl: './docs/error-codes.md#bind',
             });
             let firstNode = parentChildNodes[0];
             while (firstNode && firstNode.nodeType === Node.TEXT_NODE && firstNode.textContent?.trim() === "") {
@@ -4966,7 +5025,7 @@ class BindingNodeFor extends BindingNodeBlock {
                         raiseError({
                             code: 'BIND-201',
                             message: 'BindContent not found',
-                            context: { where: 'BindingNodeFor.applyChange', when: 'removes' },
+                            context: { ...baseContext, phase: 'removes', listIndex: listIndex.index },
                             docsUrl: './docs/error-codes.md#bind',
                         });
                     }
@@ -5007,7 +5066,7 @@ class BindingNodeFor extends BindingNodeBlock {
                         raiseError({
                             code: 'BIND-201',
                             message: 'BindContent not found',
-                            context: { where: 'BindingNodeFor.applyChange', when: 'reuse' },
+                            context: { ...baseContext, phase: 'reuse', listIndex: listIndex.index },
                             docsUrl: './docs/error-codes.md#bind',
                         });
                     }
@@ -5048,8 +5107,8 @@ class BindingNodeFor extends BindingNodeBlock {
                         raiseError({
                             code: 'BIND-201',
                             message: 'BindContent not found',
-                            context: { where: 'BindingNodeFor.applyChange', when: 'reorder' },
-                            docsUrl: '/docs/error-codes.md#bind',
+                            context: { ...baseContext, phase: 'reorder', listIndex: listIndex.index },
+                            docsUrl: './docs/error-codes.md#bind',
                         });
                     }
                     bindContents[listIndex.index] = bindContent;
@@ -5065,7 +5124,7 @@ class BindingNodeFor extends BindingNodeBlock {
                         raiseError({
                             code: 'BIND-201',
                             message: 'BindContent not found',
-                            context: { where: 'BindingNodeFor.applyChange', when: 'overwrites' },
+                            context: { ...baseContext, phase: 'overwrites', listIndex: listIndex.index },
                             docsUrl: './docs/error-codes.md#bind',
                         });
                     }
@@ -5188,10 +5247,13 @@ class BindingNodeProperty extends BindingNode {
         if (decorates.length > 1) {
             raiseError({
                 code: "BIND-201",
-                message: "Has multiple decorators",
-                context: { where: "BindingNodeProperty.constructor", name: this.name, decoratesCount: decorates.length },
-                docsUrl: "/docs/error-codes.md#bind",
-                severity: "error",
+                message: "Property binding has multiple decorators",
+                context: {
+                    where: "BindingNodeProperty.constructor",
+                    bindName: this.name,
+                    decoratesCount: decorates.length,
+                },
+                docsUrl: "./docs/error-codes.md#bind",
             });
         }
         const event = (decorates[0]?.startsWith("on") ? decorates[0]?.slice(2) : decorates[0]) ?? null;
@@ -5254,10 +5316,13 @@ class BindingNodeProperty extends BindingNode {
         else {
             raiseError({
                 code: 'BIND-201',
-                message: `Property "${this.name}" does not exist on node`,
-                context: { where: 'BindingNodeProperty.assignValue', name: this.name },
-                docsUrl: '/docs/error-codes.md#bind',
-                severity: 'error',
+                message: `Property not found on node: ${this.name}`,
+                context: {
+                    where: 'BindingNodeProperty.assignValue',
+                    bindName: this.name,
+                    nodeType: this.node.nodeType,
+                },
+                docsUrl: './docs/error-codes.md#bind',
             });
         }
     }
@@ -5308,10 +5373,13 @@ class BindingNodeRadio extends BindingNode {
         if (decorates.length > 1) {
             raiseError({
                 code: "BIND-201",
-                message: "Has multiple decorators",
-                context: { where: "BindingNodeRadio.constructor", name: this.name, decoratesCount: decorates.length },
-                docsUrl: "/docs/error-codes.md#bind",
-                severity: "error",
+                message: "Radio binding has multiple decorators",
+                context: {
+                    where: "BindingNodeRadio.constructor",
+                    bindName: this.name,
+                    decoratesCount: decorates.length,
+                },
+                docsUrl: "./docs/error-codes.md#bind",
             });
         }
         const event = (decorates[0]?.startsWith("on") ? decorates[0]?.slice(2) : decorates[0]) ?? null;
@@ -5478,7 +5546,7 @@ function removeStructiveComponent(component) {
  *
  * @param {HTMLElement} component - The HTML element to extract the tag name from
  * @returns {string} The custom element tag name in lowercase
- * @throws {Error} CE-001 - When neither the tag name nor 'is' attribute contains a hyphen
+ * @throws {Error} COMP-401 - When neither the tag name nor 'is' attribute contains a hyphen
  *
  * @example
  * // Autonomous custom element
@@ -5495,19 +5563,22 @@ function getCustomTagName(component) {
     if (component.tagName.includes('-')) {
         return component.tagName.toLowerCase();
     }
+    const isAttribute = component.getAttribute('is');
     // Check if it's a customized built-in element (has 'is' attribute with hyphen)
-    else if (component.getAttribute('is')?.includes('-')) {
-        return component.getAttribute('is').toLowerCase();
+    if (isAttribute?.includes('-')) {
+        return isAttribute.toLowerCase();
     }
     // Neither format found - not a valid custom element
-    else {
-        raiseError({
-            code: 'CE-001',
-            message: 'Custom tag name not found',
-            context: { where: 'ComponentEngine.customTagName.get' },
-            docsUrl: './docs/error-codes.md#ce',
-        });
-    }
+    raiseError({
+        code: 'COMP-401',
+        message: 'Custom element tag name not found',
+        context: {
+            where: 'WebComponents.getCustomTagName',
+            tagName: component.tagName,
+            isAttribute: isAttribute ?? null,
+        },
+        docsUrl: './docs/error-codes.md#comp',
+    });
 }
 
 /**
@@ -5518,7 +5589,7 @@ function getCustomTagName(component) {
  * - Propagates state changes via NotifyRedrawSymbol
  * - Manages parent-child component relationships and lifecycle
  *
- * @throws COMP-401 Cannot determine custom element tag name: When tag name cannot be determined
+ * @throws COMP-401 Custom element tag name not found: When tag name cannot be determined
  */
 class BindingNodeComponent extends BindingNode {
     tagName;
@@ -5531,7 +5602,7 @@ class BindingNodeComponent extends BindingNode {
      * @param subName - Sub-property name (component state property)
      * @param filters - Filter functions to apply
      * @param decorates - Array of decorators
-     * @throws COMP-401 Cannot determine custom element tag name
+    * @throws COMP-401 Custom element tag name not found
      */
     constructor(binding, node, name, subName, filters, decorates) {
         super(binding, node, name, subName, filters, decorates);
@@ -5545,9 +5616,9 @@ class BindingNodeComponent extends BindingNode {
         else {
             raiseError({
                 code: 'COMP-401',
-                message: 'Cannot determine custom element tag name',
+                message: 'Custom element tag name not found',
                 context: { where: 'BindingNodeComponent.constructor' },
-                docsUrl: '/docs/error-codes.md#comp',
+                docsUrl: './docs/error-codes.md#comp',
             });
         }
     }
@@ -5562,12 +5633,13 @@ class BindingNodeComponent extends BindingNode {
         customElements.whenDefined(tagName).then(() => {
             component.state[NotifyRedrawSymbol](refs);
         }).catch((e) => {
-            const errorMessage = e instanceof Error ? e.message : String(e);
+            const cause = e instanceof Error ? e : new Error(String(e));
             raiseError({
                 code: 'COMP-402',
-                message: `Failed to define custom element "${tagName}": ${errorMessage}`,
+                message: `Custom element definition failed: ${tagName}`,
                 context: { where: 'BindingNodeComponent._notifyRedraw', tagName },
-                docsUrl: '/docs/error-codes.md#comp',
+                docsUrl: './docs/error-codes.md#comp',
+                cause,
             });
         });
     }
@@ -5624,12 +5696,13 @@ class BindingNodeComponent extends BindingNode {
             parentComponent.registerChildComponent(component);
             component.stateBinding.addBinding(this.binding);
         }).catch((e) => {
-            const errorMessage = e instanceof Error ? e.message : String(e);
+            const cause = e instanceof Error ? e : new Error(String(e));
             raiseError({
                 code: 'COMP-402',
-                message: `Failed to define custom element "${tagName}": ${errorMessage}`,
+                message: `Custom element definition failed: ${tagName}`,
                 context: { where: 'BindingNodeComponent.activate', tagName },
-                docsUrl: '/docs/error-codes.md#comp',
+                docsUrl: './docs/error-codes.md#comp',
+                cause,
             });
         });
         registerStructiveComponent(parentComponent, component);
@@ -5752,7 +5825,16 @@ function _getBindingNodeCreator(isComment, isElement, propertyName) {
     // Step 3: Error for unsupported properties on comment node
     // (Only "if" and "for" are allowed on comment nodes)
     if (isComment) {
-        raiseError(`getBindingNodeCreator: unknown node property ${propertyName}`);
+        raiseError({
+            code: "BIND-106",
+            message: `Comment binding property not supported: ${propertyName}`,
+            context: {
+                where: "BindingBuilder.getBindingNodeCreator",
+                propertyName,
+                nodeType: "Comment",
+            },
+            docsUrl: "./docs/error-codes.md#bind",
+        });
     }
     // Step 4: Determine by property name prefix (first part before dot)
     // Example: "attr.src" → nameElements[0] = "attr"
@@ -5875,9 +5957,12 @@ class BindingState {
                 raiseError({
                     code: 'BIND-201',
                     message: 'LoopContext is null',
-                    context: { pattern: this.pattern },
-                    docsUrl: '/docs/error-codes.md#bind',
-                    severity: 'error',
+                    context: {
+                        where: 'BindingState.ref',
+                        pattern: this.pattern,
+                        wildcardCount: this.info.wildcardCount,
+                    },
+                    docsUrl: './docs/error-codes.md#bind',
                 });
             }
             if (this._ref === null) {
@@ -5889,9 +5974,11 @@ class BindingState {
             return this._nullRef ?? raiseError({
                 code: 'BIND-201',
                 message: 'ref is null',
-                context: { pattern: this.pattern },
-                docsUrl: '/docs/error-codes.md#bind',
-                severity: 'error',
+                context: {
+                    where: 'BindingState.ref',
+                    pattern: this.pattern,
+                },
+                docsUrl: './docs/error-codes.md#bind',
             });
         }
     }
@@ -5936,21 +6023,26 @@ class BindingState {
      */
     activate() {
         if (this.info.wildcardCount > 0) {
+            const baseContext = {
+                where: 'BindingState.activate',
+                pattern: this.pattern,
+            };
             const lastWildcardPath = this.info.lastWildcardPath ??
                 raiseError({
                     code: 'BIND-201',
                     message: 'Wildcard last parentPath is null',
-                    context: { where: 'BindingState.init', pattern: this.pattern },
-                    docsUrl: '/docs/error-codes.md#bind',
-                    severity: 'error',
+                    context: baseContext,
+                    docsUrl: './docs/error-codes.md#bind',
                 });
             this._loopContext = this._binding.parentBindContent.currentLoopContext?.find(lastWildcardPath) ??
                 raiseError({
                     code: 'BIND-201',
                     message: 'LoopContext is null',
-                    context: { where: 'BindingState.init', lastWildcardPath },
-                    docsUrl: '/docs/error-codes.md#bind',
-                    severity: 'error',
+                    context: {
+                        ...baseContext,
+                        lastWildcardPath,
+                    },
+                    docsUrl: './docs/error-codes.md#bind',
                 });
         }
         this._binding.engine.saveBinding(this.ref, this._binding);
@@ -5984,6 +6076,7 @@ const createBindingState = (name, filterTexts) => (binding, filters) => {
 class BindingStateIndex {
     filters;
     _binding;
+    _pattern;
     _indexNumber;
     _loopContext = null;
     /**
@@ -5996,17 +6089,26 @@ class BindingStateIndex {
      */
     constructor(binding, pattern, filters) {
         this._binding = binding;
+        this._pattern = pattern;
         const indexNumber = Number(pattern.slice(1));
         if (isNaN(indexNumber)) {
             raiseError({
                 code: 'BIND-202',
                 message: 'Pattern is not a number',
                 context: { where: 'BindingStateIndex.constructor', pattern },
-                docsUrl: '/docs/error-codes.md#bind',
+                docsUrl: './docs/error-codes.md#bind',
             });
         }
         this._indexNumber = indexNumber;
         this.filters = filters;
+    }
+    createContext(where, extra = {}) {
+        return {
+            where,
+            pattern: this._pattern,
+            indexNumber: this._indexNumber,
+            ...extra,
+        };
     }
     /**
      * Not implemented for index binding.
@@ -6016,9 +6118,9 @@ class BindingStateIndex {
     get pattern() {
         return raiseError({
             code: 'BIND-301',
-            message: 'Not implemented',
-            context: { where: 'BindingStateIndex.pattern' },
-            docsUrl: '/docs/error-codes.md#bind',
+            message: 'Binding pattern not implemented',
+            context: this.createContext('BindingStateIndex.pattern'),
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**
@@ -6029,9 +6131,9 @@ class BindingStateIndex {
     get info() {
         return raiseError({
             code: 'BIND-301',
-            message: 'Not implemented',
-            context: { where: 'BindingStateIndex.info' },
-            docsUrl: '/docs/error-codes.md#bind',
+            message: 'Binding info not implemented',
+            context: this.createContext('BindingStateIndex.info'),
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**
@@ -6044,8 +6146,8 @@ class BindingStateIndex {
         return this._loopContext?.listIndex ?? raiseError({
             code: 'LIST-201',
             message: 'listIndex is null',
-            context: { where: 'BindingStateIndex.listIndex' },
-            docsUrl: '/docs/error-codes.md#list',
+            context: this.createContext('BindingStateIndex.listIndex'),
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     /**
@@ -6058,8 +6160,8 @@ class BindingStateIndex {
         return this._loopContext?.ref ?? raiseError({
             code: 'STATE-202',
             message: 'ref is null',
-            context: { where: 'BindingStateIndex.ref' },
-            docsUrl: '/docs/error-codes.md#state',
+            context: this.createContext('BindingStateIndex.ref'),
+            docsUrl: './docs/error-codes.md#state',
         });
     }
     /**
@@ -6082,8 +6184,8 @@ class BindingStateIndex {
         return this.listIndex?.index ?? raiseError({
             code: 'LIST-201',
             message: 'listIndex is null',
-            context: { where: 'BindingStateIndex.getValue' },
-            docsUrl: '/docs/error-codes.md#list',
+            context: this.createContext('BindingStateIndex.getValue'),
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     /**
@@ -6098,8 +6200,8 @@ class BindingStateIndex {
         let value = this.listIndex?.index ?? raiseError({
             code: 'LIST-201',
             message: 'listIndex is null',
-            context: { where: 'BindingStateIndex.getFilteredValue' },
-            docsUrl: '/docs/error-codes.md#list',
+            context: this.createContext('BindingStateIndex.getFilteredValue'),
+            docsUrl: './docs/error-codes.md#list',
         });
         for (let i = 0; i < this.filters.length; i++) {
             value = this.filters[i](value);
@@ -6117,9 +6219,9 @@ class BindingStateIndex {
     assignValue(_writeState, _handler, _value) {
         raiseError({
             code: 'BIND-301',
-            message: 'Not implemented',
-            context: { where: 'BindingStateIndex.assignValue' },
-            docsUrl: '/docs/error-codes.md#bind',
+            message: 'Binding assignValue not implemented',
+            context: this.createContext('BindingStateIndex.assignValue'),
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**
@@ -6128,28 +6230,32 @@ class BindingStateIndex {
      * @throws BIND-201 LoopContext is null or binding for list is null
      */
     activate() {
+        const baseContext = this.createContext('BindingStateIndex.activate');
         const loopContext = this._binding.parentBindContent.currentLoopContext ??
             raiseError({
                 code: 'BIND-201',
                 message: 'LoopContext is null',
-                context: { where: 'BindingStateIndex.init' },
-                docsUrl: '/docs/error-codes.md#bind',
+                context: baseContext,
+                docsUrl: './docs/error-codes.md#bind',
             });
         const loopContexts = loopContext.serialize();
         this._loopContext = loopContexts[this._indexNumber - 1] ??
             raiseError({
                 code: 'BIND-201',
                 message: 'Current loopContext is null',
-                context: { where: 'BindingStateIndex.init', indexNumber: this._indexNumber },
-                docsUrl: '/docs/error-codes.md#bind',
+                context: this.createContext('BindingStateIndex.activate', {
+                    serializedIndex: this._indexNumber - 1,
+                    serializedLength: loopContexts.length,
+                }),
+                docsUrl: './docs/error-codes.md#bind',
             });
-        const bindingForList = this._loopContext.bindContent.parentBinding;
+        const bindingForList = this._loopContext.bindContent?.parentBinding ?? null;
         if (bindingForList === null) {
             raiseError({
                 code: 'BIND-201',
                 message: 'Binding for list is null',
-                context: { where: 'BindingStateIndex.init' },
-                docsUrl: '/docs/error-codes.md#bind',
+                context: baseContext,
+                docsUrl: './docs/error-codes.md#bind',
             });
         }
         const bindings = bindingForList.bindingsByListIndex.get(this.listIndex);
@@ -6395,15 +6501,15 @@ const getNodeTypeByNode = (node) => (node instanceof Comment && node.textContent
         (node instanceof Comment && node.textContent?.[2] === "|") ? "Template" :
             (node instanceof SVGElement) ? "SVGElement" :
                 raiseError({
-                    code: 'BND-001',
-                    message: `Unknown NodeType: ${node.nodeType}`,
+                    code: 'BIND-105',
+                    message: `Node type not supported: ${node.nodeType}`,
                     context: {
-                        where: 'getNodeType.getNodeTypeByNode',
+                        where: 'BindingBuilder.getNodeType',
                         nodeType: node.nodeType,
                         nodeName: node.nodeName,
                         nodeConstructor: node.constructor.name
                     },
-                    docsUrl: './docs/error-codes.md#bnd'
+                    docsUrl: './docs/error-codes.md#bind'
                 });
 /**
  * Utility function that determines node type ("Text" | "HTMLElement" | "Template" | "SVGElement")
@@ -7376,7 +7482,7 @@ function getTemplateById(id) {
     return templateById[id] ?? raiseError({
         code: "TMP-001",
         message: `Template not found: ${id}`,
-        context: { where: 'registerTemplate.getTemplateById', templateId: id },
+        context: { where: 'Template.getTemplateById', templateId: id },
         docsUrl: "./docs/error-codes.md#tmp",
     });
 }
@@ -7527,7 +7633,7 @@ class LoopContext {
             code: 'STATE-202',
             message: 'ref is null',
             context: { where: 'LoopContext.ref', path: this.info.pattern },
-            docsUrl: '/docs/error-codes.md#state',
+            docsUrl: './docs/error-codes.md#state',
         });
     }
     /**
@@ -7547,7 +7653,7 @@ class LoopContext {
             code: 'LIST-201',
             message: 'listIndex is required',
             context: { where: 'LoopContext.listIndex', path: this.info.pattern },
-            docsUrl: '/docs/error-codes.md#list',
+            docsUrl: './docs/error-codes.md#list',
         });
     }
     /**
@@ -7649,15 +7755,15 @@ function createLoopContext(ref, bindContent) {
  *
  * @param id - Registered template ID
  * @returns DocumentFragment with copied template content
- * @throws BIND-101 Template not found
+ * @throws TMP-001 Template not found
  */
 function createContent(id) {
     const template = getTemplateById(id) ??
         raiseError({
-            code: "BIND-101",
+            code: "TMP-001",
             message: `Template not found: ${id}`,
             context: { where: 'BindContent.createContent', templateId: id },
-            docsUrl: "./docs/error-codes.md#bind",
+            docsUrl: "./docs/error-codes.md#tmp",
         });
     const fragment = document.importNode(template.content, true);
     if (hasLazyLoadComponents()) {
@@ -7678,7 +7784,7 @@ function createContent(id) {
  * @param engine - Component engine
  * @param content - Fragment copied from template
  * @returns Array of generated IBinding
- * @throws BIND-101 Data-bind is not set
+ * @throws BIND-101 Data-bind not registered
  * @throws BIND-102 Node not found
  * @throws BIND-103 Creator not found
  */
@@ -7686,7 +7792,7 @@ function createBindings(bindContent, id, engine, content) {
     const attributes = getDataBindAttributesById(id) ??
         raiseError({
             code: "BIND-101",
-            message: "Data-bind is not set",
+            message: "Data-bind not registered",
             context: { where: 'BindContent.createBindings', templateId: id },
             docsUrl: "./docs/error-codes.md#bind",
         });
@@ -7696,7 +7802,7 @@ function createBindings(bindContent, id, engine, content) {
         const node = resolveNodeFromPath(content, attribute.nodePath) ??
             raiseError({
                 code: "BIND-102",
-                message: `Node not found: ${String(attribute.nodePath)}`,
+                message: `Node not found by nodePath: ${String(attribute.nodePath)}`,
                 context: { where: 'BindContent.createBindings', templateId: id, nodePath: attribute.nodePath },
                 docsUrl: "./docs/error-codes.md#bind",
             });
@@ -7706,7 +7812,7 @@ function createBindings(bindContent, id, engine, content) {
                 raiseError({
                     code: "BIND-103",
                     // eslint-disable-next-line @typescript-eslint/no-base-to-string
-                    message: `Creator not found: ${String(bindText)}`,
+                    message: `Creator not found for bindText: ${String(bindText)}`,
                     context: { where: 'BindContent.createBindings', templateId: id, bindText },
                     docsUrl: "./docs/error-codes.md#bind",
                 });
@@ -7723,7 +7829,7 @@ function createBindings(bindContent, id, engine, content) {
  * BindContent class manages DOM fragments generated from templates and their binding information.
  * Supports hierarchical structure, loops, and lifecycle management.
  *
- * @throws BIND-101 Template not found (in createContent)
+ * @throws TMP-001 Template not found (in createContent)
  * @throws BIND-101/102/103 data-bind info issues (in createBindings)
  * @throws BIND-104 Child bindContent not found (getLastNode)
  * @throws BIND-201 LoopContext is null (assignListIndex)
@@ -7802,7 +7908,7 @@ class BindContent {
      * @param id - Template ID
      * @param engine - Component engine instance
      * @param loopRef - StatePropertyRef for loop context
-     * @throws BIND-101 Template not found or data-bind not set
+    * @throws TMP-001 Template not found or BIND-101 data-bind not set
      * @throws BIND-102 Node not found in template
      * @throws BIND-103 Creator not found for bindText
      */
@@ -7943,7 +8049,7 @@ class BindContent {
  * @param engine - Component engine instance
  * @param loopRef - StatePropertyRef for loop context
  * @returns Generated IBindContent instance
- * @throws BIND-101 Template not found or data-bind not set
+ * @throws TMP-001 Template not found or BIND-101 data-bind not set
  * @throws BIND-102 Node not found in template
  * @throws BIND-103 Creator not found for bindText
  */
@@ -8093,7 +8199,11 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-303",
                 message: `Parent path "${parentPath}" already has a child path`,
-                context: { parentPath, existingChildPath: this._childPathByParentPath.get(parentPath) },
+                context: {
+                    where: 'ComponentStateBinding.addBinding',
+                    parentPath,
+                    existingChildPath: this._childPathByParentPath.get(parentPath),
+                },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -8101,7 +8211,11 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-303",
                 message: `Child path "${childPath}" already has a parent path`,
-                context: { childPath, existingParentPath: this._parentPathByChildPath.get(childPath) },
+                context: {
+                    where: 'ComponentStateBinding.addBinding',
+                    childPath,
+                    existingParentPath: this._parentPathByChildPath.get(childPath),
+                },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -8150,7 +8264,7 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-302",
                 message: `No parent path found for child path "${childPath}"`,
-                context: { childPath },
+                context: { where: 'ComponentStateBinding.toParentPathFromChildPath', childPath },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -8162,7 +8276,11 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-302",
                 message: `No parent path found for child path "${childPath}"`,
-                context: { childPath, longestMatchPath },
+                context: {
+                    where: 'ComponentStateBinding.toParentPathFromChildPath',
+                    childPath,
+                    longestMatchPath,
+                },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -8185,7 +8303,7 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-302",
                 message: `No child path found for parent path "${parentPath}"`,
-                context: { parentPath },
+                context: { where: 'ComponentStateBinding.toChildPathFromParentPath', parentPath },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -8197,7 +8315,11 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-302",
                 message: `No child path found for parent path "${parentPath}"`,
-                context: { parentPath, longestMatchPath },
+                context: {
+                    where: 'ComponentStateBinding.toChildPathFromParentPath',
+                    parentPath,
+                    longestMatchPath,
+                },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -8271,7 +8393,6 @@ class ComponentStateInputHandler {
      *
      * @param object - Key-value pairs of state properties to assign
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     assignState(object) {
         // Synchronous processing
         createUpdater(this._engine, (updater) => {
@@ -8314,7 +8435,7 @@ class ComponentStateInputHandler {
                             parentPattern: parentPathRef.info.pattern,
                             childPattern: childPathInfo.pattern,
                         },
-                        docsUrl: '/docs/error-codes.md#list',
+                        docsUrl: './docs/error-codes.md#list',
                     });
                 }
                 const childRef = getStatePropertyRef(childPathInfo, childListIndex);
@@ -8344,7 +8465,12 @@ class ComponentStateInputHandler {
             const ref = getStatePropertyRef(getStructuredPathInfo(prop), null);
             return this._engine.getPropertyValue(ref);
         }
-        raiseError(`Property "${String(prop)}" is not supported in ComponentStateInput.`);
+        raiseError({
+            code: 'STATE-204',
+            message: `ComponentStateInput property not supported: ${String(prop)}`,
+            context: { where: 'ComponentStateInput.get', prop: String(prop) },
+            docsUrl: './docs/error-codes.md#state',
+        });
     }
     /**
      * Proxy set trap for updating state properties.
@@ -8363,7 +8489,12 @@ class ComponentStateInputHandler {
             this._engine.setPropertyValue(ref, value);
             return true;
         }
-        raiseError(`Property "${String(prop)}" is not supported in ComponentStateInput.`);
+        raiseError({
+            code: 'STATE-204',
+            message: `ComponentStateInput property not supported: ${String(prop)}`,
+            context: { where: 'ComponentStateInput.set', prop: String(prop) },
+            docsUrl: './docs/error-codes.md#state',
+        });
     }
 }
 /**
@@ -8406,13 +8537,12 @@ class ComponentStateOutput {
      * @throws CSO-101 No child path found for path
      * @throws CSO-102 No binding found for child path
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     get(ref) {
         const childPath = this._binding.startsWithByChildPath(ref.info);
         if (childPath === null) {
             raiseError({
                 code: 'CSO-101',
-                message: `No child path found for path "${ref.info.pattern}".`,
+                message: `Child path not found: ${ref.info.pattern}`,
                 context: { where: 'ComponentStateOutput.get', path: ref.info.pattern },
                 docsUrl: './docs/error-codes.md#cso',
             });
@@ -8421,7 +8551,7 @@ class ComponentStateOutput {
         if (typeof parentBinding === "undefined") {
             raiseError({
                 code: 'CSO-102',
-                message: `No binding found for child path "${childPath}".`,
+                message: `Child binding not registered: ${childPath}`,
                 context: { where: 'ComponentStateOutput.get', childPath },
                 docsUrl: './docs/error-codes.md#cso',
             });
@@ -8446,13 +8576,12 @@ class ComponentStateOutput {
      * @throws CSO-101 No child path found for path
      * @throws CSO-102 No binding found for child path
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     set(ref, value) {
         const childPath = this._binding.startsWithByChildPath(ref.info);
         if (childPath === null) {
             raiseError({
                 code: 'CSO-101',
-                message: `No child path found for path "${ref.info.pattern}".`,
+                message: `Child path not found: ${ref.info.pattern}`,
                 context: { where: 'ComponentStateOutput.set', path: ref.info.pattern },
                 docsUrl: './docs/error-codes.md#cso',
             });
@@ -8461,7 +8590,7 @@ class ComponentStateOutput {
         if (typeof parentBinding === "undefined") {
             raiseError({
                 code: 'CSO-102',
-                message: `No binding found for child path "${childPath}".`,
+                message: `Child binding not registered: ${childPath}`,
                 context: { where: 'ComponentStateOutput.set', childPath },
                 docsUrl: './docs/error-codes.md#cso',
             });
@@ -8500,7 +8629,7 @@ class ComponentStateOutput {
         if (childPath === null) {
             raiseError({
                 code: 'CSO-101',
-                message: `No child path found for path "${ref.info.pattern}".`,
+                message: `Child path not found: ${ref.info.pattern}`,
                 context: { where: 'ComponentStateOutput.getListIndexes', path: ref.info.pattern },
                 docsUrl: './docs/error-codes.md#cso',
             });
@@ -8509,7 +8638,7 @@ class ComponentStateOutput {
         if (typeof parentBinding === "undefined") {
             raiseError({
                 code: 'CSO-102',
-                message: `No binding found for child path "${childPath}".`,
+                message: `Child binding not registered: ${childPath}`,
                 context: { where: 'ComponentStateOutput.getListIndexes', childPath },
                 docsUrl: './docs/error-codes.md#cso',
             });
@@ -8550,7 +8679,7 @@ function createComponentStateOutput(binding, childEngine) {
  * - Binding addition, existence checking, and list management
  *
  * Error Codes:
- * - BIND-201: bindContent not initialized yet / Block parent node is not set
+ * - BIND-201: BindContent not initialized yet / Block parent node not set
  * - STATE-202: Failed to parse state from dataset
  *
  * Design Notes:
@@ -8640,13 +8769,13 @@ class ComponentEngine {
      * Throws BIND-201 if accessed before setup() is called.
      *
      * @returns IBindContent instance
-     * @throws BIND-201 bindContent not initialized yet
+    * @throws BIND-201 BindContent not initialized yet
      */
     get bindContent() {
         if (this._bindContent === null) {
             raiseError({
                 code: 'BIND-201',
-                message: 'bindContent not initialized yet',
+                message: 'BindContent not initialized yet',
                 context: { where: 'ComponentEngine.bindContent.get', componentId: this.owner.constructor.id },
                 docsUrl: './docs/error-codes.md#bind',
             });
@@ -8704,8 +8833,9 @@ class ComponentEngine {
      * - connectedCallback() is called when connected to DOM
      * - State initialization and rendering must be redone if reconnected after disconnect
      *
-     * @throws BIND-201 Block parent node is not set
+    * @throws BIND-201 Block parent node not set
      * @throws STATE-202 Failed to parse state from dataset
+     * @throws COMP-301 Error in connectedCallback
      */
     connectedCallback() {
         if (this.config.enableWebComponents) {
@@ -8715,9 +8845,9 @@ class ComponentEngine {
             // Block mode: Replace component with placeholder
             this._blockParentNode = this.owner.parentNode;
             this._blockPlaceholder = document.createComment("Structive block placeholder");
+            // Set flag to ignore disconnectedCallback triggered by replaceWith
+            this._ignoreDissconnectedCallback = true;
             try {
-                // Set flag to ignore disconnectedCallback triggered by replaceWith
-                this._ignoreDissconnectedCallback = true;
                 this.owner.replaceWith(this._blockPlaceholder);
             }
             finally {
@@ -8732,7 +8862,7 @@ class ComponentEngine {
             // Mount bind content after block placeholder
             const parentNode = this._blockParentNode ?? raiseError({
                 code: 'BIND-201',
-                message: 'Block parent node is not set',
+                message: 'Block parent node not set',
                 context: { where: 'ComponentEngine.connectedCallback', mode: 'block' },
                 docsUrl: './docs/error-codes.md#bind',
             });
@@ -8750,7 +8880,6 @@ class ComponentEngine {
                     message: 'Failed to parse state from dataset',
                     context: { where: 'ComponentEngine.connectedCallback', datasetState: this.owner.dataset.state },
                     docsUrl: './docs/error-codes.md#state',
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     cause: e,
                 });
             }
@@ -8777,7 +8906,7 @@ class ComponentEngine {
                 }).catch(() => {
                     raiseError({
                         code: 'COMP-301',
-                        message: 'Error in connectedCallback',
+                        message: 'Connected callback failed',
                         context: { where: 'ComponentEngine.connectedCallback' },
                         docsUrl: './docs/error-codes.md#comp',
                     });
@@ -8797,6 +8926,7 @@ class ComponentEngine {
      * - Unregisters from parent component
      * - Removes block placeholder if in block mode
      * - Inactivates and unmounts bindContent
+     * @throws COMP-302 Error in disconnectedCallback
      */
     disconnectedCallback() {
         // Ignore if flag is set (during replaceWith in connectedCallback)
@@ -8812,6 +8942,16 @@ class ComponentEngine {
                     });
                 });
             }
+        }
+        catch (e) {
+            raiseError({
+                code: 'COMP-302',
+                message: 'Disconnected callback failed',
+                context: { where: 'ComponentEngine.disconnectedCallback' },
+                docsUrl: './docs/error-codes.md#comp',
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                cause: e,
+            });
         }
         finally {
             // Unregister from parent component
@@ -8856,9 +8996,7 @@ class ComponentEngine {
      * @param ref - State property reference
      * @returns Property value
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     getPropertyValue(ref) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         let value;
         // Synchronous operation
         createUpdater(this, (updater) => {
@@ -8875,7 +9013,6 @@ class ComponentEngine {
      * @param ref - State property reference
      * @param value - New value to set
      */
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setPropertyValue(ref, value) {
         // Synchronous operation
         createUpdater(this, (updater) => {
@@ -9042,7 +9179,7 @@ function replaceMustacheWithTemplateTag(html) {
                 raiseError({
                     code: 'TMP-102',
                     message: 'Endif without if',
-                    context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+                    context: { where: 'Template.replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
                     docsUrl: './docs/error-codes.md#tmp',
                 });
             }
@@ -9062,7 +9199,7 @@ function replaceMustacheWithTemplateTag(html) {
                     raiseError({
                         code: 'TMP-102',
                         message: 'Endif without if',
-                        context: { where: 'replaceMustacheWithTemplateTag', got: info.type, expr },
+                        context: { where: 'Template.replaceMustacheWithTemplateTag', got: info.type, expr },
                         docsUrl: './docs/error-codes.md#tmp',
                     });
                 }
@@ -9074,7 +9211,7 @@ function replaceMustacheWithTemplateTag(html) {
             const info = stack.pop() ?? raiseError({
                 code: 'TMP-102',
                 message: 'Endfor without for',
-                context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
                 docsUrl: './docs/error-codes.md#tmp',
             });
             if (info.type === 'for') {
@@ -9084,7 +9221,7 @@ function replaceMustacheWithTemplateTag(html) {
             raiseError({
                 code: 'TMP-102',
                 message: 'Endfor without for',
-                context: { where: 'replaceMustacheWithTemplateTag', got: info.type, expr },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', got: info.type, expr },
                 docsUrl: './docs/error-codes.md#tmp',
             });
         }
@@ -9092,7 +9229,7 @@ function replaceMustacheWithTemplateTag(html) {
             const lastInfo = stack.at(-1) ?? raiseError({
                 code: 'TMP-102',
                 message: 'Elseif without if',
-                context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
                 docsUrl: './docs/error-codes.md#tmp',
             });
             if (lastInfo.type === 'if' || lastInfo.type === 'elseif') {
@@ -9102,7 +9239,7 @@ function replaceMustacheWithTemplateTag(html) {
             raiseError({
                 code: 'TMP-102',
                 message: 'Elseif without if',
-                context: { where: 'replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
                 docsUrl: './docs/error-codes.md#tmp',
             });
         }
@@ -9111,7 +9248,7 @@ function replaceMustacheWithTemplateTag(html) {
             const lastInfo = stack.at(-1) ?? raiseError({
                 code: 'TMP-102',
                 message: 'Else without if',
-                context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
                 docsUrl: './docs/error-codes.md#tmp',
             });
             if (lastInfo.type === 'if') {
@@ -9123,7 +9260,7 @@ function replaceMustacheWithTemplateTag(html) {
             return raiseError({
                 code: 'TMP-102',
                 message: 'Else without if',
-                context: { where: 'replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
                 docsUrl: './docs/error-codes.md#tmp',
             });
         }
@@ -9135,7 +9272,7 @@ function replaceMustacheWithTemplateTag(html) {
         return raiseError({
             code: 'TMP-102',
             message: 'Unreachable: All Mustache types should be handled by preceding branches',
-            context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+            context: { where: 'Template.replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
             docsUrl: './docs/error-codes.md#tmp',
         });
         /* c8 ignore stop */
@@ -9356,6 +9493,7 @@ const checkPathRegexp = /^[a-zA-Z_$][0-9a-zA-Z_$]*(\.[a-zA-Z_$][0-9a-zA-Z_$]*|\.
  * @throws {Error} STATE-202 - When path or segment name is invalid
  */
 function createAccessorFunctions(info, getters) {
+    const baseContext = { where: 'StateProperty.createAccessorFunctions', pattern: info.pattern };
     // Find all cumulative paths that match available getters
     const matchPaths = new Set(info.cumulativePaths).intersection(getters);
     let len = -1;
@@ -9379,7 +9517,7 @@ function createAccessorFunctions(info, getters) {
             raiseError({
                 code: "STATE-202",
                 message: `Invalid path: ${matchPath}`,
-                context: { matchPath },
+                context: { ...baseContext, matchPath },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -9401,7 +9539,7 @@ function createAccessorFunctions(info, getters) {
                     raiseError({
                         code: "STATE-202",
                         message: `Invalid segment name: ${segment}`,
-                        context: { segment, matchPath },
+                        context: { ...baseContext, segment, matchPath },
                         docsUrl: "./docs/error-codes.md#state",
                     });
                 }
@@ -9437,7 +9575,7 @@ function createAccessorFunctions(info, getters) {
                     raiseError({
                         code: "STATE-202",
                         message: `Invalid segment name: ${segment}`,
-                        context: { segment },
+                        context: { ...baseContext, segment },
                         docsUrl: "./docs/error-codes.md#state",
                     });
                 }
@@ -10320,7 +10458,12 @@ function loadLazyLoadComponent(tagName) {
             raiseError({
                 code: "IMP-202",
                 message: `Failed to load lazy component for tagName: ${tagName}`,
-                context: { where: 'loadFromImportMap.loadLazyLoadComponent', tagName, error },
+                context: {
+                    where: "WebComponents.loadFromImportMap.loadLazyLoadComponent",
+                    tagName,
+                    alias,
+                    errorMessage: error instanceof Error ? error.message : String(error),
+                },
                 docsUrl: "./docs/error-codes.md#imp",
                 severity: "error",
             });
@@ -10611,9 +10754,8 @@ class MainWrapper extends HTMLElement {
                 raiseError({
                     code: 'TMP-101',
                     message: `Failed to load layout from ${config$2.layoutPath}`,
-                    context: { layoutPath: config$2.layoutPath },
-                    docsUrl: '/docs/error-codes.md#tmp',
-                    severity: 'error',
+                    context: { where: 'MainWrapper.loadLayout', layoutPath: config$2.layoutPath },
+                    docsUrl: './docs/error-codes.md#tmp',
                 });
             }
         }

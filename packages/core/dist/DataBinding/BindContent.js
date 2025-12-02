@@ -11,15 +11,15 @@ import { hasLazyLoadComponents, loadLazyLoadComponent } from "../WebComponents/l
  *
  * @param id - Registered template ID
  * @returns DocumentFragment with copied template content
- * @throws BIND-101 Template not found
+ * @throws TMP-001 Template not found
  */
 function createContent(id) {
     const template = getTemplateById(id) ??
         raiseError({
-            code: "BIND-101",
+            code: "TMP-001",
             message: `Template not found: ${id}`,
             context: { where: 'BindContent.createContent', templateId: id },
-            docsUrl: "./docs/error-codes.md#bind",
+            docsUrl: "./docs/error-codes.md#tmp",
         });
     const fragment = document.importNode(template.content, true);
     if (hasLazyLoadComponents()) {
@@ -40,7 +40,7 @@ function createContent(id) {
  * @param engine - Component engine
  * @param content - Fragment copied from template
  * @returns Array of generated IBinding
- * @throws BIND-101 Data-bind is not set
+ * @throws BIND-101 Data-bind not registered
  * @throws BIND-102 Node not found
  * @throws BIND-103 Creator not found
  */
@@ -48,7 +48,7 @@ function createBindings(bindContent, id, engine, content) {
     const attributes = getDataBindAttributesById(id) ??
         raiseError({
             code: "BIND-101",
-            message: "Data-bind is not set",
+            message: "Data-bind not registered",
             context: { where: 'BindContent.createBindings', templateId: id },
             docsUrl: "./docs/error-codes.md#bind",
         });
@@ -58,7 +58,7 @@ function createBindings(bindContent, id, engine, content) {
         const node = resolveNodeFromPath(content, attribute.nodePath) ??
             raiseError({
                 code: "BIND-102",
-                message: `Node not found: ${String(attribute.nodePath)}`,
+                message: `Node not found by nodePath: ${String(attribute.nodePath)}`,
                 context: { where: 'BindContent.createBindings', templateId: id, nodePath: attribute.nodePath },
                 docsUrl: "./docs/error-codes.md#bind",
             });
@@ -68,7 +68,7 @@ function createBindings(bindContent, id, engine, content) {
                 raiseError({
                     code: "BIND-103",
                     // eslint-disable-next-line @typescript-eslint/no-base-to-string
-                    message: `Creator not found: ${String(bindText)}`,
+                    message: `Creator not found for bindText: ${String(bindText)}`,
                     context: { where: 'BindContent.createBindings', templateId: id, bindText },
                     docsUrl: "./docs/error-codes.md#bind",
                 });
@@ -85,7 +85,7 @@ function createBindings(bindContent, id, engine, content) {
  * BindContent class manages DOM fragments generated from templates and their binding information.
  * Supports hierarchical structure, loops, and lifecycle management.
  *
- * @throws BIND-101 Template not found (in createContent)
+ * @throws TMP-001 Template not found (in createContent)
  * @throws BIND-101/102/103 data-bind info issues (in createBindings)
  * @throws BIND-104 Child bindContent not found (getLastNode)
  * @throws BIND-201 LoopContext is null (assignListIndex)
@@ -165,7 +165,7 @@ class BindContent {
      * @param id - Template ID
      * @param engine - Component engine instance
      * @param loopRef - StatePropertyRef for loop context
-     * @throws BIND-101 Template not found or data-bind not set
+    * @throws TMP-001 Template not found or BIND-101 data-bind not set
      * @throws BIND-102 Node not found in template
      * @throws BIND-103 Creator not found for bindText
      */
@@ -306,7 +306,7 @@ class BindContent {
  * @param engine - Component engine instance
  * @param loopRef - StatePropertyRef for loop context
  * @returns Generated IBindContent instance
- * @throws BIND-101 Template not found or data-bind not set
+ * @throws TMP-001 Template not found or BIND-101 data-bind not set
  * @throws BIND-102 Node not found in template
  * @throws BIND-103 Creator not found for bindText
  */

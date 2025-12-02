@@ -5,6 +5,17 @@ import * as registerTemplateMod from "../../../src/Template/registerTemplate";
 import * as registerAttrMod from "../../../src/BindingBuilder/registerDataBindAttributes";
 import { COMMENT_TEMPLATE_MARK } from "../../../src/constants";
 
+type StructiveError = Error & { code?: string; context?: Record<string, unknown> };
+
+function captureError(fn: () => unknown): StructiveError {
+  try {
+    fn();
+  } catch (err) {
+    return err as StructiveError;
+  }
+  throw new Error("Expected error to be thrown");
+}
+
 function ensureTemplate(id: number, html = `<div>if-content</div>`) {
   const tpl = document.createElement("template");
   tpl.innerHTML = html;
@@ -44,7 +55,9 @@ describe("BindingNodeIf", () => {
     const comment = document.createComment(`${COMMENT_TEMPLATE_MARK}310`);
     const binding = createBindingStub(engine, comment);
     const node = createBindingNodeIf("if", [], [])(binding, comment, engine.inputFilters);
-    expect(() => node.assignValue(true)).toThrow(/Not implemented/i);
+    const err = captureError(() => node.assignValue(true));
+    expect(err.code).toBe("BIND-301");
+    expect(err.message).toMatch(/Binding assignValue not implemented/);
   });
 
   it("parentNode が null だとエラー", () => {
@@ -54,7 +67,7 @@ describe("BindingNodeIf", () => {
     const binding = createBindingStub(engine, comment);
     const node = createBindingNodeIf("if", [], [])(binding, comment, engine.inputFilters);
     binding.bindingState.getFilteredValue.mockReturnValue(true);
-    expect(() => node.applyChange(createRendererStub())).toThrow(/ParentNode is null/);
+    expect(() => node.applyChange(createRendererStub())).toThrow(/Parent node not found/);
   });
 
   it("値が boolean でないとエラー", () => {
@@ -66,7 +79,7 @@ describe("BindingNodeIf", () => {
     const binding = createBindingStub(engine, comment);
     const node = createBindingNodeIf("if", [], [])(binding, comment, engine.inputFilters);
     binding.bindingState.getFilteredValue.mockReturnValue(123);
-    expect(() => node.applyChange(createRendererStub({ readonlyState: {} }))).toThrow(/Value is not boolean/);
+    expect(() => node.applyChange(createRendererStub({ readonlyState: {} }))).toThrow(/If binding value is not boolean/);
   });
 
   it("false 分岐で unmount まで到達", () => {

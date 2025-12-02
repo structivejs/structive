@@ -515,7 +515,7 @@ describe("BindingNodeComponent", () => {
           createBindingNodeComponent("state.foo", [], []) as any,
           createBindingState as any
         );
-      }).toThrow('Cannot determine custom element tag name');
+      }).toThrow('Custom element tag name not found');
     });
 
     it("_notifyRedraw: whenDefined が reject した場合、COMP-402 エラーを投げる", async () => {
@@ -546,15 +546,17 @@ describe("BindingNodeComponent", () => {
       // Promise が reject されるまで待つ
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // raiseError が COMP-402 で呼ばれたことを確認
+      // raiseError が COMP-402 で呼ばれ、元のエラーが cause として渡されたことを確認
       expect(raiseErrorSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           code: 'COMP-402',
-          message: expect.stringContaining('Failed to define custom element'),
+          message: 'Custom element definition failed: mock-component',
+          docsUrl: './docs/error-codes.md#comp',
           context: expect.objectContaining({
             where: 'BindingNodeComponent._notifyRedraw',
             tagName: 'mock-component'
-          })
+          }),
+          cause: testError,
         })
       );
       
@@ -590,15 +592,17 @@ describe("BindingNodeComponent", () => {
       // Promise が reject されるまで待つ
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // raiseError が COMP-402 で呼ばれ、String(e) が使われたことを確認
+      // raiseError が COMP-402 で呼ばれ、String(e) が cause.message に反映されたことを確認
       expect(raiseErrorSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           code: 'COMP-402',
-          message: expect.stringContaining('String error message'),
+          message: 'Custom element definition failed: mock-component',
+          docsUrl: './docs/error-codes.md#comp',
           context: expect.objectContaining({
             where: 'BindingNodeComponent._notifyRedraw',
             tagName: 'mock-component'
-          })
+          }),
+          cause: expect.objectContaining({ message: 'String error message' }),
         })
       );
       
@@ -633,15 +637,17 @@ describe("BindingNodeComponent", () => {
       // Promise が reject されるまで待つ
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // raiseError が COMP-402 で呼ばれたことを確認
+      // raiseError が COMP-402 で呼ばれ、元のエラーが cause として渡されたことを確認
       expect(raiseErrorSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           code: 'COMP-402',
-          message: expect.stringContaining('Failed to define custom element'),
+          message: 'Custom element definition failed: mock-component',
+          docsUrl: './docs/error-codes.md#comp',
           context: expect.objectContaining({
             where: 'BindingNodeComponent.activate',
             tagName: 'mock-component'
-          })
+          }),
+          cause: testError,
         })
       );
       
@@ -676,15 +682,17 @@ describe("BindingNodeComponent", () => {
       // Promise が reject されるまで待つ
       await new Promise(resolve => setTimeout(resolve, 50));
       
-      // raiseError が COMP-402 で呼ばれ、String(e) が使われたことを確認
+      // raiseError が COMP-402 で呼ばれ、String(e) が cause.message に反映されたことを確認
       expect(raiseErrorSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           code: 'COMP-402',
-          message: expect.stringContaining('[object Object]'),
+          message: 'Custom element definition failed: mock-component',
+          docsUrl: './docs/error-codes.md#comp',
           context: expect.objectContaining({
             where: 'BindingNodeComponent.activate',
             tagName: 'mock-component'
-          })
+          }),
+          cause: expect.objectContaining({ message: '[object Object]' }),
         })
       );
       

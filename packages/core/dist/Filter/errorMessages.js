@@ -15,6 +15,7 @@
  * - valueMustBeDate: Error when value is not a Date
  */
 import { raiseError } from "../utils";
+const createContext = (where, fnName) => ({ where, fnName });
 /**
  * Throws error when filter requires at least one option but none provided.
  *
@@ -26,7 +27,7 @@ export function optionsRequired(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires at least one option`,
-        context: { fnName },
+        context: createContext("Filter.optionsRequired", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
@@ -41,7 +42,7 @@ export function optionMustBeNumber(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires a number as option`,
-        context: { fnName },
+        context: createContext("Filter.optionMustBeNumber", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
@@ -56,7 +57,7 @@ export function valueMustBeNumber(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires a number value`,
-        context: { fnName },
+        context: createContext("Filter.valueMustBeNumber", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
@@ -71,7 +72,7 @@ export function valueMustBeString(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires a string value`,
-        context: { fnName },
+        context: createContext("Filter.valueMustBeString", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
@@ -86,7 +87,7 @@ export function valueMustBeBoolean(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires a boolean value`,
-        context: { fnName },
+        context: createContext("Filter.valueMustBeBoolean", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }
@@ -101,7 +102,7 @@ export function valueMustBeDate(fnName) {
     raiseError({
         code: "FLT-202",
         message: `${fnName} requires a date value`,
-        context: { fnName },
+        context: createContext("Filter.valueMustBeDate", fnName),
         docsUrl: "./docs/error-codes.md#flt",
     });
 }

@@ -50,10 +50,13 @@ export function getAll(
         for(let i = 0; i < info.wildcardInfos.length; i++) {
           const wildcardPattern = info.wildcardInfos[i] ?? raiseError({
             code: 'BIND-201',
-            message: 'wildcardPattern is null',
-            context: { index: i, infoPattern: info.pattern },
-            docsUrl: '/docs/error-codes.md#bind',
-            severity: 'error',
+            message: 'Wildcard info is missing',
+            context: {
+              where: 'StateClass.getAll',
+              wildcardIndex: i,
+              pattern: info.pattern,
+            },
+            docsUrl: './docs/error-codes.md#bind',
           });
           const listIndex = getContextListIndex(handler, wildcardPattern.pattern);
           if (listIndex) {
@@ -98,9 +101,11 @@ export function getAll(
           raiseError({
             code: 'LIST-201',
             message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
-            context: { pattern: wildcardParentPattern.pattern },
-            docsUrl: '/docs/error-codes.md#list',
-            severity: 'error',
+            context: {
+              where: 'StateClass.getAll',
+              pattern: wildcardParentPattern.pattern,
+            },
+            docsUrl: './docs/error-codes.md#list',
           });
         }
         const index = indexes[indexPos] ?? null;
@@ -122,9 +127,12 @@ export function getAll(
           const listIndex = listIndexes[index] ?? raiseError({
             code: 'LIST-201',
             message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
-            context: { pattern: wildcardParentPattern.pattern, index },
-            docsUrl: '/docs/error-codes.md#list',
-            severity: 'error',
+            context: {
+              where: 'StateClass.getAll',
+              pattern: wildcardParentPattern.pattern,
+              index,
+            },
+            docsUrl: './docs/error-codes.md#list',
           });
           // Continue to next wildcard level if exists
           if ((wildardIndexPos + 1) < wildcardParentInfos.length) {

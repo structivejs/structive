@@ -50,17 +50,17 @@ describe('BindingBuilder', () => {
 
     it('should throw error for unknown node types', () => {
       const node = createMockNode('UnknownNode', 999);
-      expect(() => getNodeType(node)).toThrow('Unknown NodeType: 999');
+      expect(() => getNodeType(node)).toThrow('Node type not supported: 999');
     });
 
     it('should handle comment nodes without proper format', () => {
       const node = createMockNode('Comment', Node.COMMENT_NODE, 'regular comment');
-      expect(() => getNodeType(node)).toThrow('Unknown NodeType');
+      expect(() => getNodeType(node)).toThrow('Node type not supported');
     });
 
     it('should handle comment nodes with null textContent', () => {
       const node = createMockNode('Comment', Node.COMMENT_NODE, undefined);
-      expect(() => getNodeType(node)).toThrow('Unknown NodeType');
+      expect(() => getNodeType(node)).toThrow('Node type not supported');
     });
 
     it('should cache results with same node key', () => {

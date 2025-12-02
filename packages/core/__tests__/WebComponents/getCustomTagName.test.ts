@@ -101,7 +101,7 @@ describe("WebComponents/getCustomTagName", () => {
       const component = document.createElement("div");
       Object.defineProperty(component, "tagName", { value: "DIV", writable: false });
       
-      expect(() => getCustomTagName(component)).toThrow(/Custom tag name not found/);
+      expect(() => getCustomTagName(component)).toThrow(/Custom element tag name not found/);
     });
 
     it("is属性にハイフンが含まれない場合エラーを投げる", () => {

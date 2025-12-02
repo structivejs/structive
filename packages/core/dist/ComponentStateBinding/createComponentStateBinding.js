@@ -36,7 +36,11 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-303",
                 message: `Parent path "${parentPath}" already has a child path`,
-                context: { parentPath, existingChildPath: this._childPathByParentPath.get(parentPath) },
+                context: {
+                    where: 'ComponentStateBinding.addBinding',
+                    parentPath,
+                    existingChildPath: this._childPathByParentPath.get(parentPath),
+                },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -44,7 +48,11 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-303",
                 message: `Child path "${childPath}" already has a parent path`,
-                context: { childPath, existingParentPath: this._parentPathByChildPath.get(childPath) },
+                context: {
+                    where: 'ComponentStateBinding.addBinding',
+                    childPath,
+                    existingParentPath: this._parentPathByChildPath.get(childPath),
+                },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -93,7 +101,7 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-302",
                 message: `No parent path found for child path "${childPath}"`,
-                context: { childPath },
+                context: { where: 'ComponentStateBinding.toParentPathFromChildPath', childPath },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -105,7 +113,11 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-302",
                 message: `No parent path found for child path "${childPath}"`,
-                context: { childPath, longestMatchPath },
+                context: {
+                    where: 'ComponentStateBinding.toParentPathFromChildPath',
+                    childPath,
+                    longestMatchPath,
+                },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -128,7 +140,7 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-302",
                 message: `No child path found for parent path "${parentPath}"`,
-                context: { parentPath },
+                context: { where: 'ComponentStateBinding.toChildPathFromParentPath', parentPath },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }
@@ -140,7 +152,11 @@ class ComponentStateBinding {
             raiseError({
                 code: "STATE-302",
                 message: `No child path found for parent path "${parentPath}"`,
-                context: { parentPath, longestMatchPath },
+                context: {
+                    where: 'ComponentStateBinding.toChildPathFromParentPath',
+                    parentPath,
+                    longestMatchPath,
+                },
                 docsUrl: "./docs/error-codes.md#state",
             });
         }

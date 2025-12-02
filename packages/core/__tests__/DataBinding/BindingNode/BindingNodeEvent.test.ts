@@ -72,16 +72,7 @@ describe("BindingNodeEvent", () => {
     const binding = createBindingStub(engine, button);
     binding.bindingState.getValue = vi.fn(() => 123);
     
-    let error201Thrown = false;
-    let error202Thrown = false;
-    
-    vi.spyOn(UtilsMod, "raiseError").mockImplementation((payload: any) => {
-      if (payload.code === 'BIND-201') {
-        error201Thrown = true;
-      }
-      if (payload.code === 'BIND-202') {
-        error202Thrown = true;
-      }
+    const raiseErrorSpy = vi.spyOn(UtilsMod, "raiseError").mockImplementation((payload: any) => {
       const err = new Error(payload.message || payload.code);
       (err as any).code = payload.code;
       throw err;
@@ -103,7 +94,19 @@ describe("BindingNodeEvent", () => {
     // 同期的にエラーが発生する
     expect(() => (node as any).handler(ev)).toThrow();
     
-    expect(error201Thrown).toBe(true);
+    expect(raiseErrorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'BIND-201',
+        message: 'Binding value is not a function',
+        docsUrl: './docs/error-codes.md#bind',
+        context: expect.objectContaining({
+          where: 'BindingNodeEvent.handler',
+          bindName: 'onClick',
+          eventName: 'Click',
+          receivedType: 'number',
+        }),
+      })
+    );
   });
 
   it("update/applyChange は no-op", () => {
@@ -130,11 +133,7 @@ describe("BindingNodeEvent", () => {
     const unhandledRejectionHandler = vi.fn();
     process.on('unhandledRejection', unhandledRejectionHandler);
     
-    let raiseErrorCalled = false;
-    vi.spyOn(UtilsMod, "raiseError").mockImplementation((payload: any) => {
-      if (payload.code === 'BIND-202') {
-        raiseErrorCalled = true;
-      }
+    const raiseErrorSpy = vi.spyOn(UtilsMod, "raiseError").mockImplementation((payload: any) => {
       const err = new Error(payload.message || payload.code);
       (err as any).code = payload.code;
       throw err;
@@ -158,7 +157,19 @@ describe("BindingNodeEvent", () => {
     // エラーが catch されるまで待つ
     await new Promise(resolve => setTimeout(resolve, 50));
     
-    expect(raiseErrorCalled).toBe(true);
+    expect(raiseErrorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'BIND-202',
+        message: 'Event handler rejected',
+        docsUrl: './docs/error-codes.md#bind',
+        context: expect.objectContaining({
+          where: 'BindingNodeEvent.handler',
+          bindName: 'onClick',
+          eventName: 'Click',
+        }),
+        cause: testError,
+      })
+    );
     
     // Clean up
     process.off('unhandledRejection', unhandledRejectionHandler);
@@ -178,11 +189,7 @@ describe("BindingNodeEvent", () => {
     const unhandledRejectionHandler = vi.fn();
     process.on('unhandledRejection', unhandledRejectionHandler);
     
-    let errorMessage = '';
-    vi.spyOn(UtilsMod, "raiseError").mockImplementation((payload: any) => {
-      if (payload.code === 'BIND-202') {
-        errorMessage = payload.message;
-      }
+    const raiseErrorSpy = vi.spyOn(UtilsMod, "raiseError").mockImplementation((payload: any) => {
       const err = new Error(payload.message || payload.code);
       (err as any).code = payload.code;
       throw err;
@@ -206,7 +213,19 @@ describe("BindingNodeEvent", () => {
     // エラーが catch されるまで待つ
     await new Promise(resolve => setTimeout(resolve, 50));
     
-    expect(errorMessage).toContain('String error');
+    expect(raiseErrorSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        code: 'BIND-202',
+        message: 'Event handler rejected',
+        docsUrl: './docs/error-codes.md#bind',
+        context: expect.objectContaining({
+          where: 'BindingNodeEvent.handler',
+          bindName: 'onClick',
+          eventName: 'Click',
+        }),
+        cause: expect.objectContaining({ message: 'String error' }),
+      })
+    );
     
     // Clean up
     process.off('unhandledRejection', unhandledRejectionHandler);

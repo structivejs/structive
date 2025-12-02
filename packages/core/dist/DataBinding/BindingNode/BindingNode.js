@@ -135,9 +135,9 @@ export class BindingNode {
     assignValue(_value) {
         raiseError({
             code: 'BIND-301',
-            message: 'Not implemented',
+            message: 'Binding assignValue not implemented',
             context: { where: 'BindingNode.assignValue', name: this.name },
-            docsUrl: '/docs/error-codes.md#bind',
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**
@@ -152,9 +152,9 @@ export class BindingNode {
     updateElements(_listIndexes, _values) {
         raiseError({
             code: 'BIND-301',
-            message: 'Not implemented',
+            message: 'Binding updateElements not implemented',
             context: { where: 'BindingNode.updateElements', name: this.name },
-            docsUrl: '/docs/error-codes.md#bind',
+            docsUrl: './docs/error-codes.md#bind',
         });
     }
     /**

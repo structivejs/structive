@@ -33,8 +33,7 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
    * 
    * @param object - Key-value pairs of state properties to assign
    */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  assignState(object: Record<string, any>): void {
+  assignState(object: Record<string, unknown>): void {
     // Synchronous processing
     createUpdater<void>(this._engine, (updater) => {
       updater.update(null, (stateProxy, ) => {
@@ -76,7 +75,7 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
               parentPattern: parentPathRef.info.pattern,
               childPattern: childPathInfo.pattern,
             },
-            docsUrl: '/docs/error-codes.md#list',
+            docsUrl: './docs/error-codes.md#list',
           });
         }
         const childRef = getStatePropertyRef(childPathInfo, childListIndex);
@@ -96,7 +95,7 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
    * @throws Error if property is not supported
    */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  get(_target: any, prop: PropertyKey, _receiver: IComponentStateInput): any {
+  get(_target: any, prop: PropertyKey, _receiver: IComponentStateInput): unknown {
     if (prop === AssignStateSymbol) {
       return this.assignState.bind(this);
     } else if (prop === NotifyRedrawSymbol) {
@@ -105,7 +104,12 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
       const ref = getStatePropertyRef(getStructuredPathInfo(prop), null);
       return this._engine.getPropertyValue(ref);
     }
-    raiseError(`Property "${String(prop)}" is not supported in ComponentStateInput.`);
+    raiseError({
+      code: 'STATE-204',
+      message: `ComponentStateInput property not supported: ${String(prop)}`,
+      context: { where: 'ComponentStateInput.get', prop: String(prop) },
+      docsUrl: './docs/error-codes.md#state',
+    });
   }
 
   /**
@@ -125,7 +129,12 @@ class ComponentStateInputHandler implements IComponentStateInputHandler {
       this._engine.setPropertyValue(ref, value);
       return true;
     }
-    raiseError(`Property "${String(prop)}" is not supported in ComponentStateInput.`);
+    raiseError({
+      code: 'STATE-204',
+      message: `ComponentStateInput property not supported: ${String(prop)}`,
+      context: { where: 'ComponentStateInput.set', prop: String(prop) },
+      docsUrl: './docs/error-codes.md#state',
+    });
   }
 }
 

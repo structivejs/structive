@@ -61,6 +61,7 @@ class Renderer {
             raiseError({
                 code: "UPD-002",
                 message: "ReadonlyState not initialized",
+                context: { where: "Updater.Renderer.readonlyState" },
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }
@@ -71,6 +72,7 @@ class Renderer {
             raiseError({
                 code: "UPD-002",
                 message: "ReadonlyHandler not initialized",
+                context: { where: "Updater.Renderer.readonlyHandler" },
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }
@@ -127,7 +129,11 @@ class Renderer {
                 const listRef = ref.parentRef ?? raiseError({
                     code: "UPD-004",
                     message: `ParentInfo is null for ref: ${ref.key}`,
-                    context: { refKey: ref.key, pattern: ref.info.pattern },
+                    context: {
+                        where: "Updater.Renderer.render",
+                        refKey: ref.key,
+                        pattern: ref.info.pattern,
+                    },
                     docsUrl: "./docs/error-codes.md#upd",
                 });
                 // Group element refs by their parent list
@@ -165,7 +171,7 @@ class Renderer {
                     raiseError({
                         code: "PATH-101",
                         message: `PathNode not found: ${ref.info.pattern}`,
-                        context: { pattern: ref.info.pattern },
+                        context: { where: "Updater.Renderer.render", pattern: ref.info.pattern },
                         docsUrl: "./docs/error-codes.md#path",
                     });
                 }
@@ -256,7 +262,7 @@ class Renderer {
                     raiseError({
                         code: "PATH-101",
                         message: `PathNode not found: ${depInfo.pattern}`,
-                        context: { pattern: depInfo.pattern },
+                        context: { where: "Updater.Renderer.renderItem", pattern: depInfo.pattern },
                         docsUrl: "./docs/error-codes.md#path",
                     });
                 }

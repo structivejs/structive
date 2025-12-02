@@ -60,7 +60,7 @@ export function replaceMustacheWithTemplateTag(html) {
                 raiseError({
                     code: 'TMP-102',
                     message: 'Endif without if',
-                    context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+                    context: { where: 'Template.replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
                     docsUrl: './docs/error-codes.md#tmp',
                 });
             }
@@ -80,7 +80,7 @@ export function replaceMustacheWithTemplateTag(html) {
                     raiseError({
                         code: 'TMP-102',
                         message: 'Endif without if',
-                        context: { where: 'replaceMustacheWithTemplateTag', got: info.type, expr },
+                        context: { where: 'Template.replaceMustacheWithTemplateTag', got: info.type, expr },
                         docsUrl: './docs/error-codes.md#tmp',
                     });
                 }
@@ -92,7 +92,7 @@ export function replaceMustacheWithTemplateTag(html) {
             const info = stack.pop() ?? raiseError({
                 code: 'TMP-102',
                 message: 'Endfor without for',
-                context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
                 docsUrl: './docs/error-codes.md#tmp',
             });
             if (info.type === 'for') {
@@ -102,7 +102,7 @@ export function replaceMustacheWithTemplateTag(html) {
             raiseError({
                 code: 'TMP-102',
                 message: 'Endfor without for',
-                context: { where: 'replaceMustacheWithTemplateTag', got: info.type, expr },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', got: info.type, expr },
                 docsUrl: './docs/error-codes.md#tmp',
             });
         }
@@ -110,7 +110,7 @@ export function replaceMustacheWithTemplateTag(html) {
             const lastInfo = stack.at(-1) ?? raiseError({
                 code: 'TMP-102',
                 message: 'Elseif without if',
-                context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
                 docsUrl: './docs/error-codes.md#tmp',
             });
             if (lastInfo.type === 'if' || lastInfo.type === 'elseif') {
@@ -120,7 +120,7 @@ export function replaceMustacheWithTemplateTag(html) {
             raiseError({
                 code: 'TMP-102',
                 message: 'Elseif without if',
-                context: { where: 'replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
                 docsUrl: './docs/error-codes.md#tmp',
             });
         }
@@ -129,7 +129,7 @@ export function replaceMustacheWithTemplateTag(html) {
             const lastInfo = stack.at(-1) ?? raiseError({
                 code: 'TMP-102',
                 message: 'Else without if',
-                context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
                 docsUrl: './docs/error-codes.md#tmp',
             });
             if (lastInfo.type === 'if') {
@@ -141,7 +141,7 @@ export function replaceMustacheWithTemplateTag(html) {
             return raiseError({
                 code: 'TMP-102',
                 message: 'Else without if',
-                context: { where: 'replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
+                context: { where: 'Template.replaceMustacheWithTemplateTag', got: lastInfo.type, expr },
                 docsUrl: './docs/error-codes.md#tmp',
             });
         }
@@ -153,7 +153,7 @@ export function replaceMustacheWithTemplateTag(html) {
         return raiseError({
             code: 'TMP-102',
             message: 'Unreachable: All Mustache types should be handled by preceding branches',
-            context: { where: 'replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
+            context: { where: 'Template.replaceMustacheWithTemplateTag', expr, stackDepth: stack.length },
             docsUrl: './docs/error-codes.md#tmp',
         });
         /* c8 ignore stop */

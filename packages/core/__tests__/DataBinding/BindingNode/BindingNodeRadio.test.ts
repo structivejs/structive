@@ -94,7 +94,7 @@ describe("BindingNodeRadio", () => {
     // 複数のデコレータが指定された場合
     expect(() => {
       createBindingNodeRadio("checked", [], ["onclick", "onchange"])(binding, input, engine.inputFilters);
-    }).toThrow(/Has multiple decorators/);
+    }).toThrow(/Radio binding has multiple decorators/);
   });
 
   it("readonly/ro デコレータの場合はイベントリスナー追加しない", () => {

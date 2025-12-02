@@ -38,6 +38,7 @@ const checkPathRegexp = /^[a-zA-Z_$][0-9a-zA-Z_$]*(\.[a-zA-Z_$][0-9a-zA-Z_$]*|\.
  * @throws {Error} STATE-202 - When path or segment name is invalid
  */
 export function createAccessorFunctions(info: IStructuredPathInfo, getters: Set<string>): IAccessorFunctions {
+  const baseContext = { where: 'StateProperty.createAccessorFunctions', pattern: info.pattern };
   // Find all cumulative paths that match available getters
   const matchPaths = new Set(info.cumulativePaths).intersection(getters);
   let len = -1;
@@ -61,7 +62,7 @@ export function createAccessorFunctions(info: IStructuredPathInfo, getters: Set<
       raiseError({
         code: "STATE-202",
         message: `Invalid path: ${matchPath}`,
-        context: { matchPath },
+        context: { ...baseContext, matchPath },
         docsUrl: "./docs/error-codes.md#state",
       });
     }
@@ -82,7 +83,7 @@ export function createAccessorFunctions(info: IStructuredPathInfo, getters: Set<
           raiseError({
             code: "STATE-202",
             message: `Invalid segment name: ${segment}`,
-            context: { segment, matchPath },
+            context: { ...baseContext, segment, matchPath },
             docsUrl: "./docs/error-codes.md#state",
           });
         }
@@ -116,7 +117,7 @@ export function createAccessorFunctions(info: IStructuredPathInfo, getters: Set<
           raiseError({
             code: "STATE-202",
             message: `Invalid segment name: ${segment}`,
-            context: { segment },
+            context: { ...baseContext, segment },
             docsUrl: "./docs/error-codes.md#state",
           });
         }

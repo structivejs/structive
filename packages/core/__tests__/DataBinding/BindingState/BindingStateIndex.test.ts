@@ -1,6 +1,17 @@
 import { describe, it, expect } from "vitest";
 import { createBindingStateIndex } from "../../../src/DataBinding/BindingState/BindingStateIndex";
 
+type StructiveError = Error & { code?: string; context?: Record<string, unknown>; docsUrl?: string };
+
+function captureError(fn: () => unknown): StructiveError {
+  try {
+    fn();
+  } catch (err) {
+    return err as StructiveError;
+  }
+  throw new Error("Expected error to be thrown");
+}
+
 function createEngine() {
   return {
     outputFilters: {
@@ -40,8 +51,23 @@ describe("BindingStateIndex", () => {
     const binding = createBinding(engine, { serialize: () => [] } as any);
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
-    expect(() => (bs as any).pattern).toThrowError(/Not implemented/);
-    expect(() => (bs as any).info).toThrowError(/Not implemented/);
+    const patternErr = captureError(() => (bs as any).pattern);
+    expect(patternErr.code).toBe("BIND-301");
+    expect(patternErr.message).toMatch(/Binding pattern not implemented/);
+    expect(patternErr.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.pattern",
+      pattern: "$1",
+      indexNumber: 1,
+    }));
+
+    const infoErr = captureError(() => (bs as any).info);
+    expect(infoErr.code).toBe("BIND-301");
+    expect(infoErr.message).toMatch(/Binding info not implemented/);
+    expect(infoErr.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.info",
+      pattern: "$1",
+      indexNumber: 1,
+    }));
   });
 
   it("activate で対象インデックスに登録され、getValue/getFilteredValue/ref が取得できる", () => {
@@ -57,7 +83,14 @@ describe("BindingStateIndex", () => {
     const bs = factory(binding, engine.outputFilters);
 
     // activate 前アクセスはエラー
-  expect(() => (bs as any).getValue({} as any)).toThrowError(/listIndex is null/);
+    const preActivateErr = captureError(() => (bs as any).getValue({} as any));
+    expect(preActivateErr.message).toMatch(/listIndex is null/i);
+    expect(preActivateErr.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.listIndex",
+      pattern: "$2",
+      indexNumber: 2,
+    }));
+    expect(preActivateErr.docsUrl).toBe("./docs/error-codes.md#list");
 
     bs.activate();
 
@@ -67,8 +100,8 @@ describe("BindingStateIndex", () => {
     expect(set!.has(binding)).toBe(true);
 
     // 値参照とフィルタ
-  expect((bs as any).getValue({} as any, {} as any)).toBe(1);
-  expect((bs as any).getFilteredValue({} as any, {} as any)).toBe(11);
+    expect((bs as any).getValue({} as any, {} as any)).toBe(1);
+    expect((bs as any).getFilteredValue({} as any, {} as any)).toBe(11);
 
     // ref も参照できる
     expect(bs.ref).toBe(ctx2.ref);
@@ -80,7 +113,14 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    expect(() => bs.ref).toThrow(/ref is null/i);
+    const err = captureError(() => bs.ref);
+    expect(err.message).toMatch(/ref is null/i);
+    expect(err.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.ref",
+      pattern: "$1",
+      indexNumber: 1,
+    }));
+    expect(err.docsUrl).toBe("./docs/error-codes.md#state");
   });
 
   it("binding と filters のゲッターが期待通り返る", () => {
@@ -98,7 +138,13 @@ describe("BindingStateIndex", () => {
     const engine = createEngine();
     const binding = createBinding(engine, { serialize: () => [] });
     const factory = createBindingStateIndex("abc", []);
-    expect(() => factory(binding, engine.outputFilters)).toThrowError(/pattern is not a number/i);
+    const err = captureError(() => factory(binding, engine.outputFilters));
+    expect(err.code).toBe("BIND-202");
+    expect(err.message).toMatch(/Pattern is not a number/i);
+    expect(err.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.constructor",
+      pattern: "abc",
+    }));
   });
 
   it("currentLoopContext が null だと activate でエラー", () => {
@@ -106,7 +152,13 @@ describe("BindingStateIndex", () => {
     const binding = createBinding(engine, null);
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
-    expect(() => bs.activate()).toThrowError(/loopContext is null/i);
+    const err = captureError(() => bs.activate());
+    expect(err.message).toMatch(/LoopContext is null/i);
+    expect(err.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.activate",
+      pattern: "$1",
+      indexNumber: 1,
+    }));
   });
 
   it("シリアライズ結果の範囲外インデックスは activate でエラー", () => {
@@ -115,7 +167,14 @@ describe("BindingStateIndex", () => {
     const binding = createBinding(engine, root);
     const factory = createBindingStateIndex("$2", []);
     const bs = factory(binding, engine.outputFilters);
-    expect(() => bs.activate()).toThrowError("Current loopContext is null");
+    const err = captureError(() => bs.activate());
+    expect(err.message).toMatch(/Current loopContext is null/);
+    expect(err.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.activate",
+      pattern: "$2",
+      serializedIndex: 1,
+      serializedLength: 1,
+    }));
   });
 
   it("assignValue は未実装エラー", () => {
@@ -126,7 +185,13 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
     bs.activate();
-  expect(() => (bs as any).assignValue({} as any, {} as any, 123)).toThrowError(/not implemented/i);
+    const err = captureError(() => (bs as any).assignValue({} as any, {} as any, 123));
+    expect(err.code).toBe("BIND-301");
+    expect(err.message).toMatch(/Binding assignValue not implemented/);
+    expect(err.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.assignValue",
+      pattern: "$1",
+    }));
   });
 
   it("listIndex.index が無い場合は getValue/getFilteredValue がエラー", () => {
@@ -139,8 +204,18 @@ describe("BindingStateIndex", () => {
 
     bs.activate();
 
-    expect(() => bs.getValue({} as any, {} as any)).toThrow(/listIndex is null/i);
-    expect(() => bs.getFilteredValue({} as any, {} as any)).toThrow(/listIndex is null/i);
+    const getValueErr = captureError(() => bs.getValue({} as any, {} as any));
+    expect(getValueErr.message).toMatch(/listIndex is null/i);
+    expect(getValueErr.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.getValue",
+      pattern: "$1",
+    }));
+    const filteredErr = captureError(() => bs.getFilteredValue({} as any, {} as any));
+    expect(filteredErr.message).toMatch(/listIndex is null/i);
+    expect(filteredErr.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.getFilteredValue",
+      pattern: "$1",
+    }));
   });
 
   it("activate を複数回呼んでも Set は重複しない", () => {
@@ -177,7 +252,12 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    expect(() => bs.activate()).toThrowError(/Binding for list is null/);
+    const err = captureError(() => bs.activate());
+    expect(err.message).toMatch(/Binding for list is null/);
+    expect(err.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.activate",
+      pattern: "$1",
+    }));
   });
 
   it("bindContent.parentBinding が undefined の場合も activate でエラー", () => {
@@ -202,8 +282,9 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    // 現在の実装では parentBinding の null/undefined チェックがないため TypeError になる
-    expect(() => bs.activate()).toThrow();
+    const err = captureError(() => bs.activate());
+    expect(err.message).toMatch(/Binding for list is null/);
+    expect(err.context).toEqual(expect.objectContaining({ where: "BindingStateIndex.activate" }));
   });
 
   it("直接的にparentBinding が null の場合の初期化エラー", () => {
@@ -228,7 +309,9 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    expect(() => bs.activate()).toThrowError(/Binding for list is null/);
+    const err = captureError(() => bs.activate());
+    expect(err.message).toMatch(/Binding for list is null/);
+    expect(err.context).toEqual(expect.objectContaining({ where: "BindingStateIndex.activate" }));
   });
 
   it("bindContentにparentBindingプロパティが存在しない場合の初期化エラー", () => {
@@ -254,8 +337,9 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    // 現在の実装では parentBinding の null/undefined チェックがないため TypeError になる
-    expect(() => bs.activate()).toThrow();
+    const err = captureError(() => bs.activate());
+    expect(err.message).toMatch(/Binding for list is null/);
+    expect(err.context).toEqual(expect.objectContaining({ where: "BindingStateIndex.activate" }));
   });
 
   it("デバッグ: 直接的なテストケース", () => {
@@ -283,7 +367,9 @@ describe("BindingStateIndex", () => {
     const bs = factory(binding as any, engine.outputFilters);
     
     // 期待: "Binding for list is null" エラーで145-146行が実行される
-    expect(() => bs.activate()).toThrowError(/Binding for list is null/);
+    const err = captureError(() => bs.activate());
+    expect(err.message).toMatch(/Binding for list is null/);
+    expect(err.context).toEqual(expect.objectContaining({ where: "BindingStateIndex.activate" }));
   });
 
   it("明示的なnullケースでのエラー処理", () => {
@@ -306,7 +392,9 @@ describe("BindingStateIndex", () => {
       };
 
       const bs = factory(binding as any, engine.outputFilters);
-      expect(() => bs.activate()).toThrowError(/Binding for list is null/);
+      const err = captureError(() => bs.activate());
+      expect(err.message).toMatch(/Binding for list is null/);
+      expect(err.context).toEqual(expect.objectContaining({ where: "BindingStateIndex.activate" }));
     }
   });
 
@@ -362,7 +450,9 @@ describe("BindingStateIndex", () => {
     const factory = createBindingStateIndex("$1", []);
     const bs = factory(binding, engine.outputFilters);
 
-    expect(() => bs.activate()).toThrow("Binding for list is null");
+    const err = captureError(() => bs.activate());
+    expect(err.message).toMatch(/Binding for list is null/);
+    expect(err.context).toEqual(expect.objectContaining({ where: "BindingStateIndex.activate" }));
   });
 
   it("inactivate でループコンテキストがクリアされる", () => {
@@ -380,6 +470,11 @@ describe("BindingStateIndex", () => {
 
     // inactivate後はアクセスできない
     bs.inactivate();
-    expect(() => bs.ref).toThrow(/ref is null/i);
+    const err = captureError(() => bs.ref);
+    expect(err.message).toMatch(/ref is null/i);
+    expect(err.context).toEqual(expect.objectContaining({
+      where: "BindingStateIndex.ref",
+      pattern: "$1",
+    }));
   });
 });

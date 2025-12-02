@@ -108,7 +108,7 @@ describe("BindingNodeProperty", () => {
 
     expect(() => {
       createBindingNodeProperty("value", [], ["oninput", "onchange"])(binding, textarea, engine.inputFilters);
-    }).toThrow(/Has multiple decorators/);
+    }).toThrow(/Property binding has multiple decorators/);
   });
 
   it("decorates 未指定かつデフォルトイベントが無い場合はイベント登録しない", () => {
@@ -363,7 +363,7 @@ describe("BindingNodeProperty", () => {
       node.assignValue("some value");
       expect.fail("エラーが投げられるべき");
     } catch (err: any) {
-      expect(err.message).toContain('Property "nonExistentProperty" does not exist on node');
+      expect(err.message).toContain('Property not found on node: nonExistentProperty');
       expect(err.code).toBe("BIND-201");
     }
   });

@@ -38,7 +38,7 @@ export class BindingNodeBlock extends BindingNode {
             code: 'BIND-201',
             message: 'Invalid node',
             context: { where: 'BindingNodeBlock.id', textContent: this.node.textContent ?? null },
-            docsUrl: '/docs/error-codes.md#bind',
+            docsUrl: './docs/error-codes.md#bind',
             severity: 'error',
         });
         const [id,] = commentText.split(' ', 2);
@@ -48,7 +48,7 @@ export class BindingNodeBlock extends BindingNode {
                 code: 'BIND-201',
                 message: 'Invalid node',
                 context: { where: 'BindingNodeBlock.id', textContent: this.node.textContent },
-                docsUrl: '/docs/error-codes.md#bind',
+                docsUrl: './docs/error-codes.md#bind',
                 severity: 'error',
             });
         }

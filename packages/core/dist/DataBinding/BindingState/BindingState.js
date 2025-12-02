@@ -52,9 +52,12 @@ class BindingState {
                 raiseError({
                     code: 'BIND-201',
                     message: 'LoopContext is null',
-                    context: { pattern: this.pattern },
-                    docsUrl: '/docs/error-codes.md#bind',
-                    severity: 'error',
+                    context: {
+                        where: 'BindingState.ref',
+                        pattern: this.pattern,
+                        wildcardCount: this.info.wildcardCount,
+                    },
+                    docsUrl: './docs/error-codes.md#bind',
                 });
             }
             if (this._ref === null) {
@@ -66,9 +69,11 @@ class BindingState {
             return this._nullRef ?? raiseError({
                 code: 'BIND-201',
                 message: 'ref is null',
-                context: { pattern: this.pattern },
-                docsUrl: '/docs/error-codes.md#bind',
-                severity: 'error',
+                context: {
+                    where: 'BindingState.ref',
+                    pattern: this.pattern,
+                },
+                docsUrl: './docs/error-codes.md#bind',
             });
         }
     }
@@ -113,21 +118,26 @@ class BindingState {
      */
     activate() {
         if (this.info.wildcardCount > 0) {
+            const baseContext = {
+                where: 'BindingState.activate',
+                pattern: this.pattern,
+            };
             const lastWildcardPath = this.info.lastWildcardPath ??
                 raiseError({
                     code: 'BIND-201',
                     message: 'Wildcard last parentPath is null',
-                    context: { where: 'BindingState.init', pattern: this.pattern },
-                    docsUrl: '/docs/error-codes.md#bind',
-                    severity: 'error',
+                    context: baseContext,
+                    docsUrl: './docs/error-codes.md#bind',
                 });
             this._loopContext = this._binding.parentBindContent.currentLoopContext?.find(lastWildcardPath) ??
                 raiseError({
                     code: 'BIND-201',
                     message: 'LoopContext is null',
-                    context: { where: 'BindingState.init', lastWildcardPath },
-                    docsUrl: '/docs/error-codes.md#bind',
-                    severity: 'error',
+                    context: {
+                        ...baseContext,
+                        lastWildcardPath,
+                    },
+                    docsUrl: './docs/error-codes.md#bind',
                 });
         }
         this._binding.engine.saveBinding(this.ref, this._binding);

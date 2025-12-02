@@ -73,11 +73,9 @@ export interface IComponentEngine {
   disconnectedCallback(): void;
   getListIndexes(ref: IStatePropertyRef): IListIndex[] | null;
   /** Gets the property value by reference */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getPropertyValue(ref: IStatePropertyRef): any;
+  getPropertyValue(ref: IStatePropertyRef): unknown;
   /** Sets the property value by reference */
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setPropertyValue(ref: IStatePropertyRef, value: any): void;
+  setPropertyValue(ref: IStatePropertyRef, value: unknown): void;
   /** Registers a Structive component as a child */
   registerChildComponent(component: StructiveComponent): void;
   /** Unregisters a Structive component from children */

@@ -130,6 +130,7 @@ class Updater {
                             raiseError({
                                 code: 'UPD-005',
                                 message: 'An error occurred during asynchronous state update.',
+                                context: { where: 'Updater.update.updatedCallback' },
                                 docsUrl: "./docs/error-codes.md#upd",
                             });
                         });
@@ -221,6 +222,7 @@ class Updater {
                 raiseError({
                     code: "UPD-004",
                     message: `Path node not found for pattern: ${depPath}`,
+                    context: { where: 'Updater.recursiveCollectMaybeUpdates', depPath },
                     docsUrl: "./docs/error-codes.md#upd",
                 });
             }
@@ -245,6 +247,7 @@ class Updater {
             raiseError({
                 code: "UPD-003",
                 message: `Path node not found for pattern: ${path}`,
+                context: { where: 'Updater.collectMaybeUpdates', path },
                 docsUrl: "./docs/error-codes.md#upd",
             });
         }

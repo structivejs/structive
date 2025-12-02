@@ -57,9 +57,13 @@ export function resolve(
       raiseError({
         code: 'STATE-202',
         message: `indexes length is insufficient: ${path}`,
-        context: { path, expected: info.wildcardParentInfos.length, received: indexes.length },
-        docsUrl: '/docs/error-codes.md#state',
-        severity: 'error',
+        context: {
+          where: 'StateClass.resolve',
+          path,
+          expected: info.wildcardParentInfos.length,
+          received: indexes.length,
+        },
+        docsUrl: './docs/error-codes.md#state',
       });
     }
     // Resolve ListIndex for each wildcard level by walking through the hierarchy
@@ -76,9 +80,11 @@ export function resolve(
         raiseError({
           code: 'LIST-201',
           message: `ListIndexes not found: ${wildcardParentPattern.pattern}`,
-          context: { pattern: wildcardParentPattern.pattern },
-          docsUrl: '/docs/error-codes.md#list',
-          severity: 'error',
+          context: {
+            where: 'StateClass.resolve',
+            pattern: wildcardParentPattern.pattern,
+          },
+          docsUrl: './docs/error-codes.md#list',
         });
       }
       // Get the specific list index for this level using provided index
@@ -86,9 +92,12 @@ export function resolve(
       listIndex = listIndexes[index] ?? raiseError({
         code: 'LIST-201',
         message: `ListIndex not found: ${wildcardParentPattern.pattern}`,
-        context: { pattern: wildcardParentPattern.pattern, index },
-        docsUrl: '/docs/error-codes.md#list',
-        severity: 'error',
+        context: {
+          where: 'StateClass.resolve',
+          pattern: wildcardParentPattern.pattern,
+          index,
+        },
+        docsUrl: './docs/error-codes.md#list',
       });
     }
 
@@ -111,9 +120,11 @@ export function resolve(
         raiseError({
           code: 'STATE-202',
           message: `Cannot set value on a readonly proxy: ${path}`,
-          context: { path },
-          docsUrl: '/docs/error-codes.md#state',
-          severity: 'error',
+          context: {
+            where: 'StateClass.resolve',
+            path,
+          },
+          docsUrl: './docs/error-codes.md#state',
         });
       }
     }

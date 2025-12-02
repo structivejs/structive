@@ -81,9 +81,8 @@ export class MainWrapper extends HTMLElement {
         raiseError({
           code: 'TMP-101',
           message: `Failed to load layout from ${config.layoutPath}`,
-          context: { layoutPath: config.layoutPath },
-          docsUrl: '/docs/error-codes.md#tmp',
-          severity: 'error',
+          context: { where: 'MainWrapper.loadLayout', layoutPath: config.layoutPath },
+          docsUrl: './docs/error-codes.md#tmp',
         });
       }
     } else {

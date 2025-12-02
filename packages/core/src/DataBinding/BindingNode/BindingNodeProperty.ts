@@ -101,10 +101,13 @@ class BindingNodeProperty extends BindingNode {
     if (decorates.length > 1) {
       raiseError({
         code: "BIND-201",
-        message: "Has multiple decorators",
-        context: { where: "BindingNodeProperty.constructor", name: this.name, decoratesCount: decorates.length },
-        docsUrl: "/docs/error-codes.md#bind",
-        severity: "error",
+        message: "Property binding has multiple decorators",
+        context: {
+          where: "BindingNodeProperty.constructor",
+          bindName: this.name,
+          decoratesCount: decorates.length,
+        },
+        docsUrl: "./docs/error-codes.md#bind",
       });
     }
     
@@ -169,10 +172,13 @@ class BindingNodeProperty extends BindingNode {
     } else {
       raiseError({
         code: 'BIND-201',
-        message: `Property "${this.name}" does not exist on node`,
-        context: { where: 'BindingNodeProperty.assignValue', name: this.name },
-        docsUrl: '/docs/error-codes.md#bind',
-        severity: 'error',
+        message: `Property not found on node: ${this.name}`,
+        context: {
+          where: 'BindingNodeProperty.assignValue',
+          bindName: this.name,
+          nodeType: this.node.nodeType,
+        },
+        docsUrl: './docs/error-codes.md#bind',
       });
     }
   }

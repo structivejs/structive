@@ -45,7 +45,11 @@ class StatePropertyRef implements IStatePropertyRef {
     return this._listIndexRef.deref() ?? raiseError({
       code: "LIST-201",
       message: "listIndex is null",
-      context: { sid: this.info.sid, key: this.key },
+      context: {
+        where: 'StatePropertyRef.get listIndex',
+        sid: this.info.sid,
+        key: this.key,
+      },
       docsUrl: "./docs/error-codes.md#list",
     });
   }
