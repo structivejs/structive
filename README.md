@@ -8,7 +8,8 @@ Structive is a declarative template engine where structure itself carries meanin
 
 ### Getting Started
 
-- [Quick start](docs/GettingStarted.md)
+- [Quick start](docs/getting-started.md)
+- [Error codes](docs/error-codes.md)
 
 ## Features
 
@@ -29,8 +30,17 @@ npm test
 # Run tests with coverage
 npm run test:coverage
 
+# Lint
+npm run lint
+
+# Auto-fix lint issues
+npm run lint:fix
+
 # Build
 npm run build
+
+# Clean dist artifacts
+npm run clean
 ```
 
 ## License

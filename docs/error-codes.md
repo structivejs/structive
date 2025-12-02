@@ -43,7 +43,7 @@ Structive error codes follow a `PREFIX-NNN` format to make it easy to grasp "wha
 - CSS: StyleSheet registration
   - e.g., CSS-001 Stylesheet not found
 - UPD: Updater / Renderer
-  - e.g., UPD-001 Engine not initialized / UPD-006 ListDiff is null during renderItem
+  - e.g., UPD-001 Engine not initialized
 
 ## Message Guidelines
 
@@ -85,6 +85,7 @@ Structive error codes follow a `PREFIX-NNN` format to make it easy to grasp "wha
 - IMP-201 Lazy component alias not found
 - PATH-101 PathNode not found
 - LIST-201 ListIndex not found
+- STATE-101 State class not registered
 - STATE-301 Readonly property mutation
 - STC-001 State property missing / not an array
 - CSO-101 Child path not found
@@ -370,6 +371,13 @@ Examples:
   - Context: `{ where: 'StateProperty.createAccessorFunctions', pattern, segment }`
 - `STATE-202 Pattern is reserved word`
   - Context: `{ where: 'StateProperty.getStructuredPathInfo', structuredPath }`
+
+### STATE-101 State class not registered
+- Where: `StateClass.getStateClassById`
+- Condition: Attempting to retrieve a StateClass ID that has not been registered via `registerStateClass`
+- Message: `StateClass not found: ${id}`
+- Context example: `{ where: 'StateClass.getStateClassById', stateClassId: id }`
+- Hint: Call `registerStateClass` before `getStateClassById`, keep IDs unique per StateClass instance, and ensure teardown paths clear stale IDs when components unmount.
 
 ### STATE-204 ComponentStateInput property not supported
 - Where: `ComponentStateInput.get` / `ComponentStateInput.set`

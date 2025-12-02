@@ -8,7 +8,8 @@ Structiveは、構造自体が意味を持つ宣言的なテンプレートエ�
 
 ### はじめに
 
-- [クイックスタートガイド](docs/GettingStarted.ja.md)
+- [クイックスタートガイド](docs/getting-started.ja.md)
+- [エラーコードガイド](docs/error-codes.ja.md)
 
 ## 特徴
 
@@ -29,8 +30,17 @@ npm test
 # カバレッジ付きテストの実行
 npm run test:coverage
 
+# Lintの実行
+npm run lint
+
+# Lintの自動修正
+npm run lint:fix
+
 # ビルド
 npm run build
+
+# distのクリア
+npm run clean
 ```
 
 ## ライセンス

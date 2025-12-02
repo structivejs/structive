@@ -3887,9 +3887,8 @@ class Renderer {
      * Dynamic dependencies
      * - Based on paths registered in pathManager.dynamicDependencies, render recursively while expanding wildcards
      *
-     * Throws
-     * - UPD-006: ListDiff is not calculated (null) in WILDCARD branch
-     * - PATH-101: PathNode not detected for dynamic dependency
+    * Throws
+    * - PATH-101: PathNode not detected for dynamic dependency
      */
     renderItem(ref, node) {
         this.processedRefs.add(ref);

@@ -43,7 +43,7 @@ Structive のエラーコードは「何が起き、どこで発生し、なぜ�
 - CSS: StyleSheet 登録
   - 例: CSS-001 Stylesheet not found
 - UPD: Updater / Renderer
-  - 例: UPD-001 Engine not initialized / UPD-006 ListDiff is null during renderItem
+  - 例: UPD-001 Engine not initialized
 
 ## メッセージ記述ガイドライン
 
@@ -85,6 +85,7 @@ Structive のエラーコードは「何が起き、どこで発生し、なぜ�
 - IMP-201 Lazy component alias not found
 - PATH-101 PathNode not found
 - LIST-201 ListIndex not found
+- STATE-101 State class not registered
 - STATE-301 Readonly property mutation
 - STC-001 State property missing / not an array
 - CSO-101 Child path not found
@@ -366,6 +367,13 @@ Structive のエラーコードは「何が起き、どこで発生し、なぜ�
   - Context: `{ where: 'StateProperty.createAccessorFunctions', pattern, segment }`
 - `STATE-202 Pattern is reserved word`
   - Context: `{ where: 'StateProperty.getStructuredPathInfo', structuredPath }`
+
+### STATE-101 State class not registered
+- **Where**: `StateClass.getStateClassById`
+- **Condition**: `registerStateClass` で登録されていない ID を取得しようとした
+- **Message**: `StateClass not found: ${id}`
+- **Context 例**: `{ where: 'StateClass.getStateClassById', stateClassId: id }`
+- **Hint**: `registerStateClass` を先に呼び出し、StateClass ごとの ID を一意に保ち、アンマウント時に不要な ID を解放する。
 
 ### STATE-204 ComponentStateInput property not supported
 - **Where**: `ComponentStateInput.get`, `ComponentStateInput.set`
