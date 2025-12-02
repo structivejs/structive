@@ -138,6 +138,8 @@ bootstrapStructive();
 
 ## 7. トラブルシューティング
 - 「コンポーネントが表示されない」場合は Import Map キーと `<hello-world>` のタグ名が一致しているか確認してください。
+- テンプレートが適用されない場合は、各 `.sfc.html` のマークアップが 1 つの `<template>` で囲まれているか、タグ名が小文字 `<template>` になっているか確認してください。
+- `<script>` に `type="module"` を付与していないと ES Module として解釈されず Structive が実行されません。EasyLoader や SFC クラス、独自ローダーなど Structive 関連のスクリプトには必ず `type="module"` を指定してください。
 - CORS エラーが発生する場合は SFC を配信しているサーバー側の `Access-Control-Allow-Origin` を確認してください。
 - ルーター用のプレースホルダが必要な構成 (`default.js` など) では `<app-main>` や `<view-router>` を DOM に配置するか、`config.autoInsertMainWrapper` の挙動を確認してください。
 

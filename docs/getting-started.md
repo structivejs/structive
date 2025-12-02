@@ -136,6 +136,8 @@ bootstrapStructive();
 
 ## 7. Troubleshooting
 - Nothing renders: double-check that the Import Map key matches the `<hello-world>` tag name.
+- Template not picked up: ensure each `.sfc.html` file wraps markup in a single `<template>` root and that the tag is spelled in lowercase (browsers treat `<Template>` as invalid).
+- Script errors: confirm every `<script>` that loads Structive (EasyLoader, SFC logic, custom loaders) includes `type="module"`; omitting it makes browsers treat the code as classic scripts and prevents ES module execution.
 - CORS errors: ensure the server hosting your SFCs sets `Access-Control-Allow-Origin` appropriately.
 - Router/MainWrapper presets: when using files like `default.js`, make sure elements such as `<app-main>` or `<view-router>` exist in the DOM, or review `config.autoInsertMainWrapper`.
 
