@@ -1,6 +1,6 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { createUpdater } from "../../Updater/Updater.js";
 import { raiseError } from "../../utils.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * BindingNodeEvent class implements event binding (onClick, onInput, etc.).
@@ -100,7 +100,7 @@ class BindingNodeEvent extends BindingNode {
  * @returns Function that creates BindingNodeEvent with binding, node, and filters
  */
 export const createBindingNodeEvent = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     const subName = name.slice(2);
     return new BindingNodeEvent(binding, node, name, subName, filterFns, decorates);
 };

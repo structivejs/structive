@@ -1,4 +1,4 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * BindingNodeStyle class implements binding processing for style attributes.
@@ -31,7 +31,7 @@ class BindingNodeStyle extends BindingNode {
  * @returns Function that creates BindingNodeStyle with binding, node, and filters
  */
 export const createBindingNodeStyle = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     const [, subName] = name.split(".");
     return new BindingNodeStyle(binding, node, name, subName, filterFns, decorates);
 };

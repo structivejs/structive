@@ -1,9 +1,9 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { GetByRefSymbol, GetListIndexesByRefSymbol } from "../../StateClass/symbols.js";
 import { getStructuredPathInfo } from "../../StateProperty/getStructuredPathInfo.js";
 import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef.js";
 import { raiseError } from "../../utils.js";
 import { createBindContent } from "../BindContent.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNodeBlock } from "./BindingNodeBlock.js";
 // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
 const USE_ALL_APPEND = globalThis.__STRUCTIVE_USE_ALL_APPEND__ === true;
@@ -386,6 +386,6 @@ class BindingNodeFor extends BindingNodeBlock {
  * @returns Function that creates BindingNodeFor with binding, node, and filters
  */
 export const createBindingNodeFor = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeFor(binding, node, name, "", filterFns, decorates);
 };

@@ -1319,6 +1319,21 @@ function createFilters(filters, texts) {
     return result;
 }
 
+const filtersByFilterTextsByFilters = new Map();
+function createBindingFilters(filters, filterTexts) {
+    let filtersByFilterTexts = filtersByFilterTextsByFilters.get(filters);
+    if (!filtersByFilterTexts) {
+        filtersByFilterTexts = new Map();
+        filtersByFilterTextsByFilters.set(filters, filtersByFilterTexts);
+    }
+    let filterFns = filtersByFilterTexts.get(filterTexts);
+    if (!filterFns) {
+        filterFns = createFilters(filters, filterTexts);
+        filtersByFilterTexts.set(filterTexts, filterFns);
+    }
+    return filterFns;
+}
+
 /**
  * BindingNode class is the base class for binding processing on a single target node (Element, Text, etc.).
  *
@@ -1576,7 +1591,7 @@ class BindingNodeAttribute extends BindingNode {
  * @returns Function that creates BindingNodeAttribute with binding, node, and filters
  */
 const createBindingNodeAttribute = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     const [, subName] = name.split(".");
     return new BindingNodeAttribute(binding, node, name, subName, filterFns, decorates);
 };
@@ -4419,7 +4434,7 @@ class BindingNodeCheckbox extends BindingNode {
  * @returns Function that creates BindingNodeCheckbox with binding, node, and filters
  */
 const createBindingNodeCheckbox = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeCheckbox(binding, node, name, "", filterFns, decorates);
 };
 
@@ -4460,7 +4475,7 @@ class BindingNodeClassList extends BindingNode {
  * @returns Function that creates BindingNodeClassList with binding, node, and filters
  */
 const createBindingNodeClassList = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeClassList(binding, node, name, "", filterFns, decorates);
 };
 
@@ -4500,7 +4515,7 @@ class BindingNodeClassName extends BindingNode {
  * @returns Function that creates BindingNodeClassName with binding, node, and filters
  */
 const createBindingNodeClassName = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     const [, subName] = name.split(".");
     return new BindingNodeClassName(binding, node, name, subName, filterFns, decorates);
 };
@@ -4603,7 +4618,7 @@ class BindingNodeEvent extends BindingNode {
  * @returns Function that creates BindingNodeEvent with binding, node, and filters
  */
 const createBindingNodeEvent = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     const subName = name.slice(2);
     return new BindingNodeEvent(binding, node, name, subName, filterFns, decorates);
 };
@@ -4780,7 +4795,7 @@ class BindingNodeIf extends BindingNodeBlock {
  * @returns Function that creates BindingNodeIf with binding, node, and filters
  */
 const createBindingNodeIf = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeIf(binding, node, name, "", filterFns, decorates);
 };
 
@@ -5165,7 +5180,7 @@ class BindingNodeFor extends BindingNodeBlock {
  * @returns Function that creates BindingNodeFor with binding, node, and filters
  */
 const createBindingNodeFor = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeFor(binding, node, name, "", filterFns, decorates);
 };
 
@@ -5335,7 +5350,7 @@ class BindingNodeProperty extends BindingNode {
  * @returns Function that creates BindingNodeProperty with binding, node, and filters
  */
 const createBindingNodeProperty = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeProperty(binding, node, name, "", filterFns, decorates);
 };
 
@@ -5444,7 +5459,7 @@ class BindingNodeRadio extends BindingNode {
  * @returns Function that creates BindingNodeRadio with binding, node, and filters
  */
 const createBindingNodeRadio = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeRadio(binding, node, name, "", filterFns, decorates);
 };
 
@@ -5479,7 +5494,7 @@ class BindingNodeStyle extends BindingNode {
  * @returns Function that creates BindingNodeStyle with binding, node, and filters
  */
 const createBindingNodeStyle = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     const [, subName] = name.split(".");
     return new BindingNodeStyle(binding, node, name, subName, filterFns, decorates);
 };
@@ -5732,7 +5747,7 @@ class BindingNodeComponent extends BindingNode {
  * @returns Function that creates BindingNodeComponent with binding, node, and filters
  */
 const createBindingNodeComponent = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     const [, subName] = name.split(".");
     return new BindingNodeComponent(binding, node, name, subName, filterFns, decorates);
 };
@@ -6075,7 +6090,7 @@ class BindingState {
  * @returns Function that creates BindingState with binding and filters
  */
 const createBindingState = (name, filterTexts) => (binding, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingState(binding, name, filterFns);
 };
 
@@ -6292,7 +6307,7 @@ class BindingStateIndex {
  * @returns Function that creates BindingStateIndex with binding and filters
  */
 const createBindingStateIndex = (name, filterTexts) => (binding, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingStateIndex(binding, name, filterFns);
 };
 

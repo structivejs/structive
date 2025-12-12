@@ -1,6 +1,6 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { createUpdater } from "../../Updater/Updater.js";
 import { raiseError } from "../../utils.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * Checks if element supports bidirectional binding.
@@ -168,6 +168,6 @@ class BindingNodeProperty extends BindingNode {
  * @returns Function that creates BindingNodeProperty with binding, node, and filters
  */
 export const createBindingNodeProperty = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeProperty(binding, node, name, "", filterFns, decorates);
 };

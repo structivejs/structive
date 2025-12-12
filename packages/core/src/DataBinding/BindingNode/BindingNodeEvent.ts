@@ -1,9 +1,9 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { IFilterText } from "../../BindingBuilder/types";
 import { Filters, FilterWithOptions } from "../../Filter/types";
 import { IRenderer } from "../../Updater/types.js";
 import { createUpdater } from "../../Updater/Updater.js";
 import { raiseError } from "../../utils.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { IBinding } from "../types";
 import { BindingNode } from "./BindingNode.js";
 import { CreateBindingNodeFn } from "./types";
@@ -123,7 +123,7 @@ class BindingNodeEvent extends BindingNode {
 export const createBindingNodeEvent: CreateBindingNodeFn = 
   (name: string, filterTexts: IFilterText[], decorates: string[]) => 
     (binding:IBinding, node: Node, filters: FilterWithOptions) => {
-      const filterFns = createFilters(filters, filterTexts);
+      const filterFns = createBindingFilters(filters, filterTexts);
       const subName = name.slice(2);
       return new BindingNodeEvent(binding, node, name, subName, filterFns, decorates);
     }

@@ -1,6 +1,6 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { createUpdater } from "../../Updater/Updater.js";
 import { raiseError } from "../../utils.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * BindingNodeRadio class implements binding processing for radio buttons.
@@ -107,6 +107,6 @@ class BindingNodeRadio extends BindingNode {
  * @returns Function that creates BindingNodeRadio with binding, node, and filters
  */
 export const createBindingNodeRadio = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeRadio(binding, node, name, "", filterFns, decorates);
 };

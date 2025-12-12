@@ -1,4 +1,3 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { IFilterText } from "../../BindingBuilder/types";
 import { Filters, FilterWithOptions } from "../../Filter/types";
 import { getStructuredPathInfo } from "../../StateProperty/getStructuredPathInfo.js";
@@ -6,6 +5,7 @@ import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef.js"
 import { IRenderer } from "../../Updater/types.js";
 import { raiseError } from "../../utils.js";
 import { createBindContent } from "../BindContent.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { IBindContent, IBinding } from "../types";
 import { BindingNodeBlock } from "./BindingNodeBlock.js";
 import { CreateBindingNodeFn } from "./types";
@@ -151,6 +151,6 @@ class BindingNodeIf extends BindingNodeBlock {
 export const createBindingNodeIf: CreateBindingNodeFn = 
   (name: string, filterTexts: IFilterText[], decorates: string[]) => 
     (binding:IBinding, node: Node, filters: FilterWithOptions) => {
-      const filterFns = createFilters(filters, filterTexts);
+      const filterFns = createBindingFilters(filters, filterTexts);
       return new BindingNodeIf(binding, node, name, "", filterFns, decorates);
     }

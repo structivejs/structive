@@ -1,5 +1,5 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { raiseError } from "../../utils.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * BindingNodeClassName class implements toggle control for individual class names.
@@ -37,7 +37,7 @@ class BindingNodeClassName extends BindingNode {
  * @returns Function that creates BindingNodeClassName with binding, node, and filters
  */
 export const createBindingNodeClassName = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     const [, subName] = name.split(".");
     return new BindingNodeClassName(binding, node, name, subName, filterFns, decorates);
 };

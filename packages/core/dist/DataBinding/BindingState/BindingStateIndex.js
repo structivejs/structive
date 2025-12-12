@@ -1,5 +1,5 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { raiseError } from "../../utils.js";
+import { createBindingFilters } from "../BindingFilter.js";
 /**
  * BindingStateIndex manages binding state for loop index values ($1, $2, ...).
  * - Extracts index from loop context, supports filtering
@@ -213,6 +213,6 @@ class BindingStateIndex {
  * @returns Function that creates BindingStateIndex with binding and filters
  */
 export const createBindingStateIndex = (name, filterTexts) => (binding, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingStateIndex(binding, name, filterFns);
 };

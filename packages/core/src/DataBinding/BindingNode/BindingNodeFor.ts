@@ -1,4 +1,3 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { IFilterText } from "../../BindingBuilder/types";
 import { FilterWithOptions } from "../../Filter/types";
 import { IListIndex } from "../../ListIndex/types.js";
@@ -9,6 +8,7 @@ import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef.js"
 import { IRenderer } from "../../Updater/types.js";
 import { raiseError } from "../../utils.js";
 import { createBindContent } from "../BindContent.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { IBindContent, IBinding } from "../types";
 import { BindingNodeBlock } from "./BindingNodeBlock.js";
 import { CreateBindingNodeFn } from "./types";
@@ -408,6 +408,6 @@ class BindingNodeFor extends BindingNodeBlock {
 export const createBindingNodeFor: CreateBindingNodeFn = 
 (name: string, filterTexts: IFilterText[], decorates: string[]) => 
   (binding:IBinding, node: Node, filters: FilterWithOptions) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeFor(binding, node, name, "", filterFns, decorates);
   }

@@ -1,6 +1,6 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { IFilterText } from "../../BindingBuilder/types";
 import { FilterWithOptions } from "../../Filter/types";
+import { createBindingFilters } from "../BindingFilter.js";
 import { IBinding } from "../types";
 import { BindingNode } from "./BindingNode.js";
 import { CreateBindingNodeFn } from "./types";
@@ -40,7 +40,7 @@ class BindingNodeAttribute extends BindingNode {
 export const createBindingNodeAttribute: CreateBindingNodeFn = 
   (name: string, filterTexts: IFilterText[], decorates: string[]) => 
     (binding:IBinding, node: Node, filters: FilterWithOptions) => {
-      const filterFns = createFilters(filters, filterTexts);
+      const filterFns = createBindingFilters(filters, filterTexts);
       const [, subName] = name.split(".");
       return new BindingNodeAttribute(binding, node, name, subName, filterFns, decorates);
     }

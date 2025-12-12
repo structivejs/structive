@@ -1,9 +1,9 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { IFilterText } from "../../BindingBuilder/types";
 import { Filters, FilterWithOptions } from "../../Filter/types";
 import { ILoopContext } from "../../LoopContext/types.js";
 import { IStateHandler, IStateProxy, IWritableStateHandler, IWritableStateProxy } from "../../StateClass/types";
 import { raiseError } from "../../utils.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { IBinding } from "../types";
 import { CreateBindingStateFn, IBindingState } from "./types";
 
@@ -240,7 +240,6 @@ class BindingStateIndex implements IBindingState {
 export const createBindingStateIndex: CreateBindingStateFn = 
   (name: string, filterTexts: IFilterText[]) => 
     (binding:IBinding, filters:FilterWithOptions) => {
-      const filterFns = createFilters(filters, filterTexts);
+      const filterFns = createBindingFilters(filters, filterTexts);
       return new BindingStateIndex(binding, name, filterFns);
     }
-

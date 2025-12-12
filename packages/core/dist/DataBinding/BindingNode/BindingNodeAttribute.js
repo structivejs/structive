@@ -1,4 +1,4 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * BindingNodeAttribute class implements binding node for attribute bindings (e.g., attr.src, attr.alt).
@@ -31,7 +31,7 @@ class BindingNodeAttribute extends BindingNode {
  * @returns Function that creates BindingNodeAttribute with binding, node, and filters
  */
 export const createBindingNodeAttribute = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     const [, subName] = name.split(".");
     return new BindingNodeAttribute(binding, node, name, subName, filterFns, decorates);
 };

@@ -1,9 +1,9 @@
-import { createFilters } from "../../BindingBuilder/createFilters";
 import { getByRef } from "../../StateClass/methods/getByRef.js";
 import { setByRef } from "../../StateClass/methods/setByRef.js";
 import { getStructuredPathInfo } from "../../StateProperty/getStructuredPathInfo.js";
 import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef.js";
 import { raiseError } from "../../utils.js";
+import { createBindingFilters } from "../BindingFilter";
 class BindingStateInternal {
     pattern;
     info;
@@ -171,6 +171,6 @@ class BindingState {
  * @returns Function that creates BindingState with binding and filters
  */
 export const createBindingState = (name, filterTexts) => (binding, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingState(binding, name, filterFns);
 };

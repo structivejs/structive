@@ -1,8 +1,8 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { NotifyRedrawSymbol } from "../../ComponentStateInput/symbols.js";
 import { raiseError } from "../../utils.js";
 import { registerStructiveComponent, removeStructiveComponent } from "../../WebComponents/findStructiveParent.js";
 import { getCustomTagName } from "../../WebComponents/getCustomTagName.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * BindingNodeComponent class implements binding processing to StructiveComponent (custom component).
@@ -156,7 +156,7 @@ class BindingNodeComponent extends BindingNode {
  * @returns Function that creates BindingNodeComponent with binding, node, and filters
  */
 export const createBindingNodeComponent = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     const [, subName] = name.split(".");
     return new BindingNodeComponent(binding, node, name, subName, filterFns, decorates);
 };

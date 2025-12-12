@@ -1,4 +1,3 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { IFilterText } from "../../BindingBuilder/types";
 import { NotifyRedrawSymbol } from "../../ComponentStateInput/symbols.js";
 import { Filters, FilterWithOptions } from "../../Filter/types";
@@ -8,6 +7,7 @@ import { raiseError } from "../../utils.js";
 import { registerStructiveComponent, removeStructiveComponent } from "../../WebComponents/findStructiveParent.js";
 import { getCustomTagName } from "../../WebComponents/getCustomTagName.js";
 import { StructiveComponent } from "../../WebComponents/types";
+import { createBindingFilters } from "../BindingFilter.js";
 import { IBinding } from "../types";
 import { BindingNode } from "./BindingNode.js";
 import { CreateBindingNodeFn } from "./types";
@@ -188,7 +188,7 @@ class BindingNodeComponent extends BindingNode {
 export const createBindingNodeComponent: CreateBindingNodeFn = 
   (name: string, filterTexts: IFilterText[], decorates: string[]) => 
     (binding:IBinding, node: Node, filters: FilterWithOptions) => {
-      const filterFns = createFilters(filters, filterTexts);
+      const filterFns = createBindingFilters(filters, filterTexts);
       const [, subName] = name.split(".");
       return new BindingNodeComponent(binding, node, name, subName, filterFns, decorates);
     }

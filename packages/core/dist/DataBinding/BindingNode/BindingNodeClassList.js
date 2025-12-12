@@ -1,5 +1,5 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { raiseError } from "../../utils.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * BindingNodeClassList class implements binding for class attribute (classList).
@@ -38,6 +38,6 @@ class BindingNodeClassList extends BindingNode {
  * @returns Function that creates BindingNodeClassList with binding, node, and filters
  */
 export const createBindingNodeClassList = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeClassList(binding, node, name, "", filterFns, decorates);
 };

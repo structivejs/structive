@@ -1,8 +1,8 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { getStructuredPathInfo } from "../../StateProperty/getStructuredPathInfo.js";
 import { getStatePropertyRef } from "../../StatePropertyRef/StatepropertyRef.js";
 import { raiseError } from "../../utils.js";
 import { createBindContent } from "../BindContent.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNodeBlock } from "./BindingNodeBlock.js";
 /**
  * BindingNode for conditional rendering (if binding).
@@ -121,6 +121,6 @@ class BindingNodeIf extends BindingNodeBlock {
  * @returns Function that creates BindingNodeIf with binding, node, and filters
  */
 export const createBindingNodeIf = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeIf(binding, node, name, "", filterFns, decorates);
 };

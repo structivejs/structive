@@ -1,6 +1,6 @@
-import { createFilters } from "../../BindingBuilder/createFilters.js";
 import { createUpdater } from "../../Updater/Updater.js";
 import { raiseError } from "../../utils.js";
+import { createBindingFilters } from "../BindingFilter.js";
 import { BindingNode } from "./BindingNode.js";
 /**
  * BindingNodeCheckbox class implements binding for checkboxes (input[type="checkbox"]).
@@ -107,6 +107,6 @@ class BindingNodeCheckbox extends BindingNode {
  * @returns Function that creates BindingNodeCheckbox with binding, node, and filters
  */
 export const createBindingNodeCheckbox = (name, filterTexts, decorates) => (binding, node, filters) => {
-    const filterFns = createFilters(filters, filterTexts);
+    const filterFns = createBindingFilters(filters, filterTexts);
     return new BindingNodeCheckbox(binding, node, name, "", filterFns, decorates);
 };
