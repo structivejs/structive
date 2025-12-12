@@ -13,6 +13,8 @@ proxies. It coordinates three main concepts:
 
 - `Binding.ts`: Implements the `Binding` class responsible for activation,
   change application, and redraw coordination between node and state.
+- `BindingFilter.ts`: Provides caching and creation logic for binding filters,
+  optimizing filter chain instantiation.
 - `BindContent.ts`: Manages nested bindable content, loop contexts, and child
   bindings created inside structural directives.
 - `types.ts`: Shared interfaces (`IBinding`, `IBindContent`, `IBindingNode`,
