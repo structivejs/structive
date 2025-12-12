@@ -175,16 +175,17 @@ describe("BindingState", () => {
   });
 
   it("エラー: lastWildcardPath が null の場合", () => {
+    const pattern = "items.*.name:lastWildcardNull";
     const mockBindContent = { currentLoopContext: null } as any;
     const binding = { parentBindContent: mockBindContent, engine } as any;
     const infoStub = {
-      pattern: "items.*.name",
+      pattern,
       wildcardCount: 1,
       lastWildcardPath: null,
     } as any;
     const spy = vi.spyOn(getStructuredPathInfoMod, "getStructuredPathInfo").mockReturnValue(infoStub);
 
-    const factory = createBindingState("items.*.name", []);
+    const factory = createBindingState(pattern, []);
     const bindingState = factory(binding, engine.outputFilters);
 
     expect.assertions(2);
@@ -195,7 +196,7 @@ describe("BindingState", () => {
       expect(typedError.message).toMatch(/Wildcard last parentPath is null/);
       expect(typedError.context).toEqual(expect.objectContaining({
         where: "BindingState.activate",
-        pattern: "items.*.name",
+        pattern,
       }));
     }
 
@@ -226,30 +227,21 @@ describe("BindingState", () => {
     expect(engine.removeBinding).toHaveBeenCalledWith(savedRef, binding);
   });
 
-  it("ref getter: nullRefがnullでない場合にnullRefがundefinedの時のエラー処理", () => {
+  it("ref getter: nullRefがundefinedを返した場合はundefinedをそのまま返す", () => {
     const mockBindContent = { currentLoopContext: null } as any;
     const binding = { parentBindContent: mockBindContent, engine } as any;
+    const pattern = "user.name#undefinedRef";
 
     // getStatePropertyRefがundefinedを返すようにモック
     const getStatePropertyRefSpy = vi.spyOn(getStatePropertyRefMod, "getStatePropertyRef")
       .mockReturnValue(undefined as any);
 
-    const factory = createBindingState("user.name", []);
+    const factory = createBindingState(pattern, []);
     const bindingState = factory(binding, engine.outputFilters);
     
-    // この状態でrefにアクセスすると、"ref is null"エラーが発生する
-    expect.assertions(2);
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-      bindingState.ref;
-    } catch (error) {
-      const typedError = error as Error & { context?: Record<string, unknown> };
-      expect(typedError.message).toMatch(/ref is null/i);
-      expect(typedError.context).toEqual(expect.objectContaining({
-        where: "BindingState.ref",
-        pattern: "user.name",
-      }));
-    }
+    // nullRef が undefined の場合でもそのまま値を返す
+    expect(bindingState.ref).toBeUndefined();
+    expect(getStatePropertyRefSpy).toHaveBeenCalledTimes(1);
     
     getStatePropertyRefSpy.mockRestore();
   });

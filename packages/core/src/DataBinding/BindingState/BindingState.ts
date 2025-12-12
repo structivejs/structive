@@ -13,19 +13,36 @@ import { raiseError } from "../../utils.js";
 import { IBinding } from "../types";
 import { CreateBindingStateFn, IBindingState } from "./types";
 
+interface IBindingStateInternal {
+  pattern: string;
+  info: IStructuredPathInfo;
+  nullRef: IStatePropertyRef | null;
+}
+
+class BindingStateInternal implements IBindingStateInternal {
+  readonly pattern: string
+  readonly info: IStructuredPathInfo;
+  readonly nullRef: IStatePropertyRef | null;
+  constructor(pattern: string) {
+    this.pattern = pattern;
+    this.info = getStructuredPathInfo(pattern);
+    this.nullRef = (this.info.wildcardCount === 0) ? getStatePropertyRef(this.info, null) : null;
+  }
+}
+
+const bindingStateInternalByPattern = new Map<string, IBindingStateInternal>();
+
 /**
  * BindingState class manages state property access, filtering, and updates for bindings.
  * - Supports wildcard paths for array bindings with dynamic index resolution
  * - Handles bidirectional binding via assignValue
  */
 class BindingState implements IBindingState {
-  readonly pattern: string;
-  readonly info: IStructuredPathInfo;
   readonly filters: Filters;
   readonly isLoopIndex: boolean = false;
 
+  private _internal: IBindingStateInternal;
   private _binding: IBinding;
-  private _nullRef: IStatePropertyRef | null = null;
   private _ref: IStatePropertyRef | null = null;
   private _loopContext: ILoopContext | null = null;
 
@@ -41,13 +58,23 @@ class BindingState implements IBindingState {
     pattern: string, 
     filters: Filters
   ) {
+    const internal = bindingStateInternalByPattern.get(pattern);
+    if (internal) {
+      this._internal = internal;
+    } else {
+      this._internal = new BindingStateInternal(pattern);
+      bindingStateInternalByPattern.set(pattern, this._internal);
+    }
     this._binding = binding;
-    this.pattern = pattern;
-    this.info = getStructuredPathInfo(pattern);
     this.filters = filters;
-    this._nullRef = (this.info.wildcardCount === 0) ? getStatePropertyRef(this.info, null) : null;
   }
 
+  get pattern(): string {
+    return this._internal.pattern;
+  }
+  get info(): IStructuredPathInfo {
+    return this._internal.info;
+  }
   /**
    * Returns list index from state property reference.
    * 
@@ -64,7 +91,7 @@ class BindingState implements IBindingState {
    * @throws BIND-201 LoopContext is null or ref is null
    */
   get ref() {
-    if (this._nullRef === null) {
+    if (this._internal.nullRef === null) {
       if (this._loopContext === null) {
         raiseError({
           code: 'BIND-201',
@@ -82,15 +109,7 @@ class BindingState implements IBindingState {
       }
       return this._ref;
     } else {
-      return this._nullRef ?? raiseError({
-        code: 'BIND-201',
-        message: 'ref is null',
-        context: {
-          where: 'BindingState.ref',
-          pattern: this.pattern,
-        },
-        docsUrl: './docs/error-codes.md#bind',
-      });
+      return this._internal.nullRef;
     }
   }
 

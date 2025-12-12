@@ -5908,18 +5908,27 @@ function getBindingNodeCreator(node, propertyName, filterTexts, decorates) {
     return fn(propertyName, filterTexts, decorates);
 }
 
+class BindingStateInternal {
+    pattern;
+    info;
+    nullRef;
+    constructor(pattern) {
+        this.pattern = pattern;
+        this.info = getStructuredPathInfo(pattern);
+        this.nullRef = (this.info.wildcardCount === 0) ? getStatePropertyRef(this.info, null) : null;
+    }
+}
+const bindingStateInternalByPattern = new Map();
 /**
  * BindingState class manages state property access, filtering, and updates for bindings.
  * - Supports wildcard paths for array bindings with dynamic index resolution
  * - Handles bidirectional binding via assignValue
  */
 class BindingState {
-    pattern;
-    info;
     filters;
     isLoopIndex = false;
+    _internal;
     _binding;
-    _nullRef = null;
     _ref = null;
     _loopContext = null;
     /**
@@ -5930,11 +5939,22 @@ class BindingState {
      * @param filters - Filter functions to apply
      */
     constructor(binding, pattern, filters) {
+        const internal = bindingStateInternalByPattern.get(pattern);
+        if (internal) {
+            this._internal = internal;
+        }
+        else {
+            this._internal = new BindingStateInternal(pattern);
+            bindingStateInternalByPattern.set(pattern, this._internal);
+        }
         this._binding = binding;
-        this.pattern = pattern;
-        this.info = getStructuredPathInfo(pattern);
         this.filters = filters;
-        this._nullRef = (this.info.wildcardCount === 0) ? getStatePropertyRef(this.info, null) : null;
+    }
+    get pattern() {
+        return this._internal.pattern;
+    }
+    get info() {
+        return this._internal.info;
     }
     /**
      * Returns list index from state property reference.
@@ -5951,7 +5971,7 @@ class BindingState {
      * @throws BIND-201 LoopContext is null or ref is null
      */
     get ref() {
-        if (this._nullRef === null) {
+        if (this._internal.nullRef === null) {
             if (this._loopContext === null) {
                 raiseError({
                     code: 'BIND-201',
@@ -5970,15 +5990,7 @@ class BindingState {
             return this._ref;
         }
         else {
-            return this._nullRef ?? raiseError({
-                code: 'BIND-201',
-                message: 'ref is null',
-                context: {
-                    where: 'BindingState.ref',
-                    pattern: this.pattern,
-                },
-                docsUrl: './docs/error-codes.md#bind',
-            });
+            return this._internal.nullRef;
         }
     }
     /**
