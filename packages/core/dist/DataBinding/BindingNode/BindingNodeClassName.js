@@ -28,6 +28,7 @@ class BindingNodeClassName extends BindingNode {
         element.classList.toggle(this.subName, value);
     }
 }
+const subNameByName = {};
 /**
  * Factory function to generate class name binding node.
  *
@@ -38,6 +39,6 @@ class BindingNodeClassName extends BindingNode {
  */
 export const createBindingNodeClassName = (name, filterTexts, decorates) => (binding, node, filters) => {
     const filterFns = createBindingFilters(filters, filterTexts);
-    const [, subName] = name.split(".");
+    const subName = subNameByName[name] ?? (subNameByName[name] = name.split(".")[1]);
     return new BindingNodeClassName(binding, node, name, subName, filterFns, decorates);
 };

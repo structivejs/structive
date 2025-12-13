@@ -30,6 +30,8 @@ class BindingNodeStyle extends BindingNode {
   }
 }
 
+const subNameByName: Record<string, string> = {};
+
 /**
  * Factory function to generate style attribute binding node.
  * 
@@ -42,6 +44,6 @@ export const createBindingNodeStyle: CreateBindingNodeFn =
   (name: string, filterTexts: IFilterText[], decorates: string[]) => 
     (binding:IBinding, node: Node, filters: FilterWithOptions) => {
       const filterFns = createBindingFilters(filters, filterTexts);
-      const [, subName] = name.split(".");
+      const subName = subNameByName[name] ?? (subNameByName[name] = name.split(".")[1]);
       return new BindingNodeStyle(binding, node, name, subName, filterFns, decorates);
     }

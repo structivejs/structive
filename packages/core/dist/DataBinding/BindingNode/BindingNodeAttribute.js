@@ -22,6 +22,7 @@ class BindingNodeAttribute extends BindingNode {
         element.setAttribute(this.subName, stringValue);
     }
 }
+const subNameByName = {};
 /**
  * Factory function to generate attribute binding node.
  *
@@ -32,6 +33,6 @@ class BindingNodeAttribute extends BindingNode {
  */
 export const createBindingNodeAttribute = (name, filterTexts, decorates) => (binding, node, filters) => {
     const filterFns = createBindingFilters(filters, filterTexts);
-    const [, subName] = name.split(".");
+    const subName = subNameByName[name] ?? (subNameByName[name] = name.split(".")[1]);
     return new BindingNodeAttribute(binding, node, name, subName, filterFns, decorates);
 };

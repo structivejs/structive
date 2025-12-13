@@ -1319,7 +1319,22 @@ function createFilters(filters, texts) {
     return result;
 }
 
+/**
+ * Creates and caches filter functions for data binding.
+ *
+ * This module provides a caching mechanism for filter creation to avoid
+ * recreating filter chains for the same filter definitions and text patterns.
+ */
+// Cache storage: Map<FilterDefinitions, Map<FilterTextPatterns, CreatedFilters>>
 const filtersByFilterTextsByFilters = new Map();
+/**
+ * Creates a list of filter functions based on the provided definitions and text patterns.
+ * Results are cached to improve performance when the same filters are requested multiple times.
+ *
+ * @param filters - The available filter definitions (map of filter names to functions/options).
+ * @param filterTexts - The parsed filter text patterns from the binding string.
+ * @returns An array of executable filter functions.
+ */
 function createBindingFilters(filters, filterTexts) {
     let filtersByFilterTexts = filtersByFilterTextsByFilters.get(filters);
     if (!filtersByFilterTexts) {
@@ -1582,6 +1597,7 @@ class BindingNodeAttribute extends BindingNode {
         element.setAttribute(this.subName, stringValue);
     }
 }
+const subNameByName$4 = {};
 /**
  * Factory function to generate attribute binding node.
  *
@@ -1592,7 +1608,7 @@ class BindingNodeAttribute extends BindingNode {
  */
 const createBindingNodeAttribute = (name, filterTexts, decorates) => (binding, node, filters) => {
     const filterFns = createBindingFilters(filters, filterTexts);
-    const [, subName] = name.split(".");
+    const subName = subNameByName$4[name] ?? (subNameByName$4[name] = name.split(".")[1]);
     return new BindingNodeAttribute(binding, node, name, subName, filterFns, decorates);
 };
 
@@ -4506,6 +4522,7 @@ class BindingNodeClassName extends BindingNode {
         element.classList.toggle(this.subName, value);
     }
 }
+const subNameByName$3 = {};
 /**
  * Factory function to generate class name binding node.
  *
@@ -4516,7 +4533,7 @@ class BindingNodeClassName extends BindingNode {
  */
 const createBindingNodeClassName = (name, filterTexts, decorates) => (binding, node, filters) => {
     const filterFns = createBindingFilters(filters, filterTexts);
-    const [, subName] = name.split(".");
+    const subName = subNameByName$3[name] ?? (subNameByName$3[name] = name.split(".")[1]);
     return new BindingNodeClassName(binding, node, name, subName, filterFns, decorates);
 };
 
@@ -4609,6 +4626,7 @@ class BindingNodeEvent extends BindingNode {
     applyChange(_renderer) {
     }
 }
+const subNameByName$2 = {};
 /**
  * Factory function to generate event binding node.
  *
@@ -4619,7 +4637,7 @@ class BindingNodeEvent extends BindingNode {
  */
 const createBindingNodeEvent = (name, filterTexts, decorates) => (binding, node, filters) => {
     const filterFns = createBindingFilters(filters, filterTexts);
-    const subName = name.slice(2);
+    const subName = subNameByName$2[name] ?? (subNameByName$2[name] = name.slice(2));
     return new BindingNodeEvent(binding, node, name, subName, filterFns, decorates);
 };
 
@@ -5485,6 +5503,7 @@ class BindingNodeStyle extends BindingNode {
         element.style.setProperty(this.subName, stringValue.toString());
     }
 }
+const subNameByName$1 = {};
 /**
  * Factory function to generate style attribute binding node.
  *
@@ -5495,7 +5514,7 @@ class BindingNodeStyle extends BindingNode {
  */
 const createBindingNodeStyle = (name, filterTexts, decorates) => (binding, node, filters) => {
     const filterFns = createBindingFilters(filters, filterTexts);
-    const [, subName] = name.split(".");
+    const subName = subNameByName$1[name] ?? (subNameByName$1[name] = name.split(".")[1]);
     return new BindingNodeStyle(binding, node, name, subName, filterFns, decorates);
 };
 
@@ -5738,6 +5757,7 @@ class BindingNodeComponent extends BindingNode {
         }
     }
 }
+const subNameByName = {};
 /**
  * Factory function to generate component binding node.
  *
@@ -5748,7 +5768,7 @@ class BindingNodeComponent extends BindingNode {
  */
 const createBindingNodeComponent = (name, filterTexts, decorates) => (binding, node, filters) => {
     const filterFns = createBindingFilters(filters, filterTexts);
-    const [, subName] = name.split(".");
+    const subName = subNameByName[name] ?? (subNameByName[name] = name.split(".")[1]);
     return new BindingNodeComponent(binding, node, name, subName, filterFns, decorates);
 };
 
@@ -5933,7 +5953,7 @@ class BindingStateInternal {
         this.nullRef = (this.info.wildcardCount === 0) ? getStatePropertyRef(this.info, null) : null;
     }
 }
-const bindingStateInternalByPattern = new Map();
+const bindingStateInternalByPattern = {};
 /**
  * BindingState class manages state property access, filtering, and updates for bindings.
  * - Supports wildcard paths for array bindings with dynamic index resolution
@@ -5954,14 +5974,8 @@ class BindingState {
      * @param filters - Filter functions to apply
      */
     constructor(binding, pattern, filters) {
-        const internal = bindingStateInternalByPattern.get(pattern);
-        if (internal) {
-            this._internal = internal;
-        }
-        else {
-            this._internal = new BindingStateInternal(pattern);
-            bindingStateInternalByPattern.set(pattern, this._internal);
-        }
+        this._internal = bindingStateInternalByPattern[pattern] ??
+            (bindingStateInternalByPattern[pattern] = new BindingStateInternal(pattern));
         this._binding = binding;
         this.filters = filters;
     }
@@ -6094,6 +6108,24 @@ const createBindingState = (name, filterTexts) => (binding, filters) => {
     return new BindingState(binding, name, filterFns);
 };
 
+class BindingStateIndexInternal {
+    pattern;
+    indexNumber;
+    constructor(pattern) {
+        this.pattern = pattern;
+        const indexNumber = Number(pattern.slice(1));
+        if (isNaN(indexNumber)) {
+            raiseError({
+                code: 'BIND-202',
+                message: 'Pattern is not a number',
+                context: { where: 'BindingStateIndex.constructor', pattern },
+                docsUrl: './docs/error-codes.md#bind',
+            });
+        }
+        this.indexNumber = indexNumber;
+    }
+}
+const bindingStateIndexInternalByPattern = {};
 /**
  * BindingStateIndex manages binding state for loop index values ($1, $2, ...).
  * - Extracts index from loop context, supports filtering
@@ -6101,9 +6133,8 @@ const createBindingState = (name, filterTexts) => (binding, filters) => {
  */
 class BindingStateIndex {
     filters;
+    _internal;
     _binding;
-    _pattern;
-    _indexNumber;
     _loopContext = null;
     /**
      * Constructor initializes BindingStateIndex for loop index binding.
@@ -6115,24 +6146,15 @@ class BindingStateIndex {
      */
     constructor(binding, pattern, filters) {
         this._binding = binding;
-        this._pattern = pattern;
-        const indexNumber = Number(pattern.slice(1));
-        if (isNaN(indexNumber)) {
-            raiseError({
-                code: 'BIND-202',
-                message: 'Pattern is not a number',
-                context: { where: 'BindingStateIndex.constructor', pattern },
-                docsUrl: './docs/error-codes.md#bind',
-            });
-        }
-        this._indexNumber = indexNumber;
+        this._internal = bindingStateIndexInternalByPattern[pattern] ??
+            (bindingStateIndexInternalByPattern[pattern] = new BindingStateIndexInternal(pattern));
         this.filters = filters;
     }
     createContext(where, extra = {}) {
         return {
             where,
-            pattern: this._pattern,
-            indexNumber: this._indexNumber,
+            pattern: this._internal.pattern,
+            indexNumber: this._internal.indexNumber,
             ...extra,
         };
     }
@@ -6265,12 +6287,12 @@ class BindingStateIndex {
                 docsUrl: './docs/error-codes.md#bind',
             });
         const loopContexts = loopContext.serialize();
-        this._loopContext = loopContexts[this._indexNumber - 1] ??
+        this._loopContext = loopContexts[this._internal.indexNumber - 1] ??
             raiseError({
                 code: 'BIND-201',
                 message: 'Current loopContext is null',
                 context: this.createContext('BindingStateIndex.activate', {
-                    serializedIndex: this._indexNumber - 1,
+                    serializedIndex: this._internal.indexNumber - 1,
                     serializedLength: loopContexts.length,
                 }),
                 docsUrl: './docs/error-codes.md#bind',

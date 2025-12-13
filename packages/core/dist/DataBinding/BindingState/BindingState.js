@@ -14,7 +14,7 @@ class BindingStateInternal {
         this.nullRef = (this.info.wildcardCount === 0) ? getStatePropertyRef(this.info, null) : null;
     }
 }
-const bindingStateInternalByPattern = new Map();
+const bindingStateInternalByPattern = {};
 /**
  * BindingState class manages state property access, filtering, and updates for bindings.
  * - Supports wildcard paths for array bindings with dynamic index resolution
@@ -35,14 +35,8 @@ class BindingState {
      * @param filters - Filter functions to apply
      */
     constructor(binding, pattern, filters) {
-        const internal = bindingStateInternalByPattern.get(pattern);
-        if (internal) {
-            this._internal = internal;
-        }
-        else {
-            this._internal = new BindingStateInternal(pattern);
-            bindingStateInternalByPattern.set(pattern, this._internal);
-        }
+        this._internal = bindingStateInternalByPattern[pattern] ??
+            (bindingStateInternalByPattern[pattern] = new BindingStateInternal(pattern));
         this._binding = binding;
         this.filters = filters;
     }

@@ -14,9 +14,9 @@ import { IBinding } from "../types";
 import { CreateBindingStateFn, IBindingState } from "./types";
 
 interface IBindingStateInternal {
-  pattern: string;
-  info: IStructuredPathInfo;
-  nullRef: IStatePropertyRef | null;
+  readonly pattern: string;
+  readonly info: IStructuredPathInfo;
+  readonly nullRef: IStatePropertyRef | null;
 }
 
 class BindingStateInternal implements IBindingStateInternal {
@@ -30,7 +30,7 @@ class BindingStateInternal implements IBindingStateInternal {
   }
 }
 
-const bindingStateInternalByPattern = new Map<string, IBindingStateInternal>();
+const bindingStateInternalByPattern: Record<string, IBindingStateInternal> = {};
 
 /**
  * BindingState class manages state property access, filtering, and updates for bindings.
@@ -58,13 +58,8 @@ class BindingState implements IBindingState {
     pattern: string, 
     filters: Filters
   ) {
-    const internal = bindingStateInternalByPattern.get(pattern);
-    if (internal) {
-      this._internal = internal;
-    } else {
-      this._internal = new BindingStateInternal(pattern);
-      bindingStateInternalByPattern.set(pattern, this._internal);
-    }
+    this._internal = bindingStateInternalByPattern[pattern] ?? 
+      (bindingStateInternalByPattern[pattern] = new BindingStateInternal(pattern));
     this._binding = binding;
     this.filters = filters;
   }

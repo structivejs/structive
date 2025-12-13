@@ -35,6 +35,8 @@ class BindingNodeClassName extends BindingNode {
   }
 }
 
+const subNameByName: Record<string, string> = {};
+
 /**
  * Factory function to generate class name binding node.
  * 
@@ -47,6 +49,6 @@ export const createBindingNodeClassName: CreateBindingNodeFn =
   (name: string, filterTexts: IFilterText[], decorates: string[]) => 
     (binding:IBinding, node: Node, filters: FilterWithOptions) => {
       const filterFns = createBindingFilters(filters, filterTexts);
-      const [, subName] = name.split(".");
+      const subName = subNameByName[name] ?? (subNameByName[name] = name.split(".")[1]);
       return new BindingNodeClassName(binding, node, name, subName, filterFns, decorates);
     }

@@ -22,6 +22,7 @@ class BindingNodeStyle extends BindingNode {
         element.style.setProperty(this.subName, stringValue.toString());
     }
 }
+const subNameByName = {};
 /**
  * Factory function to generate style attribute binding node.
  *
@@ -32,6 +33,6 @@ class BindingNodeStyle extends BindingNode {
  */
 export const createBindingNodeStyle = (name, filterTexts, decorates) => (binding, node, filters) => {
     const filterFns = createBindingFilters(filters, filterTexts);
-    const [, subName] = name.split(".");
+    const subName = subNameByName[name] ?? (subNameByName[name] = name.split(".")[1]);
     return new BindingNodeStyle(binding, node, name, subName, filterFns, decorates);
 };

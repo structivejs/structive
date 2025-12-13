@@ -29,6 +29,9 @@ class BindingNodeAttribute extends BindingNode {
     element.setAttribute(this.subName, stringValue);
   }
 }
+
+const subNameByName: Record<string, string> = {};
+
 /**
  * Factory function to generate attribute binding node.
  * 
@@ -41,6 +44,6 @@ export const createBindingNodeAttribute: CreateBindingNodeFn =
   (name: string, filterTexts: IFilterText[], decorates: string[]) => 
     (binding:IBinding, node: Node, filters: FilterWithOptions) => {
       const filterFns = createBindingFilters(filters, filterTexts);
-      const [, subName] = name.split(".");
+      const subName = subNameByName[name] ?? (subNameByName[name] = name.split(".")[1]);
       return new BindingNodeAttribute(binding, node, name, subName, filterFns, decorates);
     }

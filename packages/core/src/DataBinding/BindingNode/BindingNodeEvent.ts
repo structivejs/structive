@@ -112,6 +112,8 @@ class BindingNodeEvent extends BindingNode {
   }
 }
 
+const subNameByName: Record<string, string> = {};
+
 /**
  * Factory function to generate event binding node.
  * 
@@ -124,6 +126,6 @@ export const createBindingNodeEvent: CreateBindingNodeFn =
   (name: string, filterTexts: IFilterText[], decorates: string[]) => 
     (binding:IBinding, node: Node, filters: FilterWithOptions) => {
       const filterFns = createBindingFilters(filters, filterTexts);
-      const subName = name.slice(2);
+      const subName = subNameByName[name] ?? (subNameByName[name] = name.slice(2));
       return new BindingNodeEvent(binding, node, name, subName, filterFns, decorates);
     }

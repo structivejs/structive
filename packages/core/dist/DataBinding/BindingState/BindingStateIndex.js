@@ -1,5 +1,23 @@
 import { raiseError } from "../../utils.js";
 import { createBindingFilters } from "../BindingFilter.js";
+class BindingStateIndexInternal {
+    pattern;
+    indexNumber;
+    constructor(pattern) {
+        this.pattern = pattern;
+        const indexNumber = Number(pattern.slice(1));
+        if (isNaN(indexNumber)) {
+            raiseError({
+                code: 'BIND-202',
+                message: 'Pattern is not a number',
+                context: { where: 'BindingStateIndex.constructor', pattern },
+                docsUrl: './docs/error-codes.md#bind',
+            });
+        }
+        this.indexNumber = indexNumber;
+    }
+}
+const bindingStateIndexInternalByPattern = {};
 /**
  * BindingStateIndex manages binding state for loop index values ($1, $2, ...).
  * - Extracts index from loop context, supports filtering
@@ -7,9 +25,8 @@ import { createBindingFilters } from "../BindingFilter.js";
  */
 class BindingStateIndex {
     filters;
+    _internal;
     _binding;
-    _pattern;
-    _indexNumber;
     _loopContext = null;
     /**
      * Constructor initializes BindingStateIndex for loop index binding.
@@ -21,24 +38,15 @@ class BindingStateIndex {
      */
     constructor(binding, pattern, filters) {
         this._binding = binding;
-        this._pattern = pattern;
-        const indexNumber = Number(pattern.slice(1));
-        if (isNaN(indexNumber)) {
-            raiseError({
-                code: 'BIND-202',
-                message: 'Pattern is not a number',
-                context: { where: 'BindingStateIndex.constructor', pattern },
-                docsUrl: './docs/error-codes.md#bind',
-            });
-        }
-        this._indexNumber = indexNumber;
+        this._internal = bindingStateIndexInternalByPattern[pattern] ??
+            (bindingStateIndexInternalByPattern[pattern] = new BindingStateIndexInternal(pattern));
         this.filters = filters;
     }
     createContext(where, extra = {}) {
         return {
             where,
-            pattern: this._pattern,
-            indexNumber: this._indexNumber,
+            pattern: this._internal.pattern,
+            indexNumber: this._internal.indexNumber,
             ...extra,
         };
     }
@@ -171,12 +179,12 @@ class BindingStateIndex {
                 docsUrl: './docs/error-codes.md#bind',
             });
         const loopContexts = loopContext.serialize();
-        this._loopContext = loopContexts[this._indexNumber - 1] ??
+        this._loopContext = loopContexts[this._internal.indexNumber - 1] ??
             raiseError({
                 code: 'BIND-201',
                 message: 'Current loopContext is null',
                 context: this.createContext('BindingStateIndex.activate', {
-                    serializedIndex: this._indexNumber - 1,
+                    serializedIndex: this._internal.indexNumber - 1,
                     serializedLength: loopContexts.length,
                 }),
                 docsUrl: './docs/error-codes.md#bind',

@@ -177,6 +177,8 @@ class BindingNodeComponent extends BindingNode {
 
 }
 
+const subNameByName: Record<string, string> = {};
+
 /**
  * Factory function to generate component binding node.
  * 
@@ -189,6 +191,6 @@ export const createBindingNodeComponent: CreateBindingNodeFn =
   (name: string, filterTexts: IFilterText[], decorates: string[]) => 
     (binding:IBinding, node: Node, filters: FilterWithOptions) => {
       const filterFns = createBindingFilters(filters, filterTexts);
-      const [, subName] = name.split(".");
+      const subName = subNameByName[name] ?? (subNameByName[name] = name.split(".")[1]);
       return new BindingNodeComponent(binding, node, name, subName, filterFns, decorates);
     }
