@@ -10,8 +10,8 @@ vi.mock('../../src/BindingBuilder/createFilters', () => ({
 }));
 
 describe('createBindingFilters', () => {
-  const mockFilters: FilterWithOptions = new Map();
-  const mockFilterTexts: IFilterText[] = [{ name: 'test', args: [] }];
+  const mockFilters: FilterWithOptions = {};
+  const mockFilterTexts: IFilterText[] = [{ name: 'test', options: [] }];
   const mockCreatedFilters: Filters = [() => 'result'];
 
   beforeEach(() => {
@@ -27,43 +27,23 @@ describe('createBindingFilters', () => {
 
   it('should cache the result for the same filters and filterTexts', () => {
     // First call
-    const result1 = createBindingFilters(mockFilters, mockFilterTexts);
-    
-    // Second call with same references
-    const result2 = createBindingFilters(mockFilters, mockFilterTexts);
-
-    // Should be called only once due to caching
-    // Note: Since module state persists, if previous test ran, it might be cached already?
-    // But we use the same mock objects.
-    // To be safe against test order, we should use unique objects for this test or rely on the fact that
-    // we can't easily reset the module state without reloading the module.
-    // However, createFilters mock is cleared in beforeEach.
-    // If the cache is hit, createFilters won't be called.
-    
-    // If the previous test 'should create filters using createFilters' ran, the cache is already populated for mockFilters/mockFilterTexts.
-    // So createFilters might not be called at all in this test if it runs after.
-    // Let's check if createFilters was called.
-    
-    // Actually, to test caching properly in the presence of module-level state, 
-    // we should use fresh objects for this specific test case to ensure we start with a clean slate (cache miss),
-    // then call again to verify cache hit.
-    
-    const localFilters: FilterWithOptions = new Map();
-    const localFilterTexts: IFilterText[] = [{ name: 'local', args: [] }];
+    const localFilters: FilterWithOptions = {};
+    const localFilterTexts: IFilterText[] = [{ name: 'local', options: [] }];
     
     const res1 = createBindingFilters(localFilters, localFilterTexts);
     expect(createFilters).toHaveBeenCalledWith(localFilters, localFilterTexts);
     expect(createFilters).toHaveBeenCalledTimes(1);
     
+    // Second call with same references
     const res2 = createBindingFilters(localFilters, localFilterTexts);
     expect(createFilters).toHaveBeenCalledTimes(1); // Still 1
     expect(res1).toBe(res2);
   });
 
   it('should create new filters for different filterTexts', () => {
-    const localFilters: FilterWithOptions = new Map();
-    const text1: IFilterText[] = [{ name: '1', args: [] }];
-    const text2: IFilterText[] = [{ name: '2', args: [] }];
+    const localFilters: FilterWithOptions = {};
+    const text1: IFilterText[] = [{ name: '1', options: [] }];
+    const text2: IFilterText[] = [{ name: '2', options: [] }];
     
     const res1 = createBindingFilters(localFilters, text1);
     const res2 = createBindingFilters(localFilters, text2);
@@ -74,9 +54,9 @@ describe('createBindingFilters', () => {
   });
 
    it('should create new filters for different filters map', () => {
-    const filters1: FilterWithOptions = new Map();
-    const filters2: FilterWithOptions = new Map();
-    const text: IFilterText[] = [{ name: 'text', args: [] }];
+    const filters1: FilterWithOptions = {};
+    const filters2: FilterWithOptions = {};
+    const text: IFilterText[] = [{ name: 'text', options: [] }];
 
     const res1 = createBindingFilters(filters1, text);
     const res2 = createBindingFilters(filters2, text);
@@ -85,7 +65,7 @@ describe('createBindingFilters', () => {
   });
 
   it('should handle empty inputs', () => {
-    const emptyFilters: FilterWithOptions = new Map();
+    const emptyFilters: FilterWithOptions = {};
     const emptyTexts: IFilterText[] = [];
     
     createBindingFilters(emptyFilters, emptyTexts);
