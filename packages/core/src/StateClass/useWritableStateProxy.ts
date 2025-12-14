@@ -47,7 +47,7 @@ class StateHandler implements IWritableStateHandler {
     ConnectedCallbackSymbol, DisconnectedCallbackSymbol,
     UpdatedCallbackSymbol
   ]);
-  readonly apis: Set<PropertyKey> = new Set<PropertyKey>([ "$resolve", "$getAll", "$trackDependency", "$navigate", "$component" ]);
+  readonly apis: Set<PropertyKey> = new Set<PropertyKey>([ "$resolve", "$getAll", "$trackDependency", "$navigate", "$component", "$invoke" ]);
   
   /**
    * Constructs a new StateHandler for writable state proxy.

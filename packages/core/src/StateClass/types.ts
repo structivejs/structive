@@ -48,6 +48,8 @@ export interface IState {
   $getAll?(pattern:string, indexes?: number[]): unknown[];
   /** Registers a dependency for tracking */
   $trackDependency?(pattern:string): void;
+  /** Invokes a callback within the state context */
+  $invoke<T>(callback: () => T): T;
 }
 
 /**

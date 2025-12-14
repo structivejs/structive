@@ -35,6 +35,7 @@ import { disconnectedCallback } from "../apis/disconnectedCallback.js";
 import { getAll } from "../apis/getAll.js";
 import { getListIndexesByRef } from "../methods/getListIndexesByRef.js";
 import { updatedCallback } from "../apis/updatedCallback.js";
+import { invoke } from "../apis/invoke.js";
 
 /**
  * Proxy trap handler for property access on State objects.
@@ -87,6 +88,8 @@ export function get(
           return (to:string) => getRouter()?.navigate(to);
         case "$component":
           return handler.engine.owner;
+        case "$invoke":
+          return invoke(target, prop, receiver, handler);
       }
     }
     // Regular property access: resolve path, get list index, and retrieve value
