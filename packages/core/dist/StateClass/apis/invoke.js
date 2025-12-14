@@ -3,7 +3,7 @@ import { raiseError } from "../../utils";
 export function invoke(_target, _prop, _receiver, handler) {
     return (callback) => {
         const resultPromise = createUpdater(handler.engine, (updater) => {
-            return updater.update(null, (state, handler) => {
+            return updater.update(null, (state, _handler) => {
                 if (typeof callback === "function") {
                     return Reflect.apply(callback, state, []);
                 }
