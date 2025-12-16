@@ -205,3 +205,10 @@ export interface IRenderer {
    */
   createReadonlyState<T>(callback: ReadonlyStateCallback<T>): T;
 }
+
+export type UpdateComplete = Promise<boolean>;
+
+export interface IUpdateCompleteQueue {
+  readonly current: UpdateComplete | null;
+  enqueue(updateComplete: UpdateComplete): void;
+}
