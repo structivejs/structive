@@ -13,6 +13,7 @@
  *   docsUrl: './docs/error-codes.md#upd'
  * });
  */
+import { config } from "./WebComponents/getGlobalConfig";
 
 /**
  * Payload object for structured error information.
@@ -88,6 +89,20 @@ export function raiseError(messageOrPayload: string | StructiveErrorPayload): ne
   
   // Handle structured payload
   const { message, code, context, hint, docsUrl, severity, cause } = messageOrPayload;
+
+  if (config.debug) {
+    // eslint-disable-next-line no-console
+    console.group(`[Structive Error] ${code}: ${message}`);
+    // eslint-disable-next-line no-console
+    if (context) {console.log('Context:', context);}
+    // eslint-disable-next-line no-console
+    if (hint) {console.log('Hint:', hint);}
+    // eslint-disable-next-line no-console
+    if (docsUrl) {console.log('Docs:', docsUrl);}
+    if (cause) {console.error('Cause:', cause);}
+    // eslint-disable-next-line no-console
+    console.groupEnd();
+  }
   
   // Create base Error with the message
   const err: unknown = new Error(message);
