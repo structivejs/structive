@@ -4,9 +4,13 @@
 import { describe, it, expect, vi } from "vitest";
 import { getComponentConfig } from "../../src/WebComponents/getComponentConfig";
 
-vi.mock("../../src/WebComponents/getGlobalConfig.js", () => ({
-  getGlobalConfig: () => ({ shadowDomMode: "auto" }),
-}));
+vi.mock("../../src/WebComponents/getGlobalConfig.js", () => {
+  const mockConfig = { shadowDomMode: "auto", debug: false };
+  return {
+    getGlobalConfig: () => mockConfig,
+    config: mockConfig
+  };
+});
 
 describe("WebComponents/getComponentConfig", () => {
   it("ユーザ未指定はグローバル設定を採用し、enableWebComponents は true", () => {

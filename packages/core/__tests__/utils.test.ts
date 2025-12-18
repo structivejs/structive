@@ -1,8 +1,24 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { raiseError } from '../src/utils.js';
+import { config } from '../src/WebComponents/getGlobalConfig';
 
 describe('utils', () => {
   describe('raiseError', () => {
+    const originalDebug = config.debug;
+    const consoleGroupSpy = vi.spyOn(console, 'group').mockImplementation(() => {});
+    const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleGroupEndSpy = vi.spyOn(console, 'groupEnd').mockImplementation(() => {});
+
+    beforeEach(() => {
+      config.debug = false;
+      vi.clearAllMocks();
+    });
+  
+    afterEach(() => {
+      config.debug = originalDebug;
+    });
+
     it('should throw an Error with the provided message', () => {
       const message = 'Test error message';
       
@@ -46,6 +62,37 @@ describe('utils', () => {
         expect(err.severity).toBe('warn');
         expect(err.cause).toBeInstanceOf(Error);
       }
+    });
+
+    it('should not log to console when debug is false', () => {
+      const payload = {
+        code: 'TEST-002',
+        message: 'Debug false error'
+      };
+
+      expect(() => raiseError(payload)).toThrow('Debug false error');
+      expect(consoleGroupSpy).not.toHaveBeenCalled();
+    });
+
+    it('should log to console when debug is true', () => {
+      config.debug = true;
+      const payload = {
+        code: 'TEST-003',
+        message: 'Debug true error',
+        context: { foo: 'bar' },
+        hint: 'Try this',
+        docsUrl: 'http://docs',
+        cause: 'Reason'
+      };
+
+      expect(() => raiseError(payload)).toThrow('Debug true error');
+      
+      expect(consoleGroupSpy).toHaveBeenCalledWith('[Structive Error] TEST-003: Debug true error');
+      expect(consoleLogSpy).toHaveBeenCalledWith('Context:', { foo: 'bar' });
+      expect(consoleLogSpy).toHaveBeenCalledWith('Hint:', 'Try this');
+      expect(consoleLogSpy).toHaveBeenCalledWith('Docs:', 'http://docs');
+      expect(consoleErrorSpy).toHaveBeenCalledWith('Cause:', 'Reason');
+      expect(consoleGroupEndSpy).toHaveBeenCalled();
     });
 
     it('should skip optional fields when payload omits them', () => {

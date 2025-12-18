@@ -9,11 +9,16 @@ import {
 } from "../../src/Filter/builtinFilters";
 
 // getGlobalConfig のモック
-vi.mock("../../src/WebComponents/getGlobalConfig.js", () => ({
-  getGlobalConfig: () => ({
-    locale: "ja-JP"
-  })
-}));
+vi.mock("../../src/WebComponents/getGlobalConfig.js", () => {
+  const mockConfig = {
+    locale: "ja-JP",
+    debug: false
+  };
+  return {
+    getGlobalConfig: () => mockConfig,
+    config: mockConfig
+  };
+});
 
 describe("Filter/builtinFilters", () => {
   describe("Comparison filters", () => {
