@@ -255,9 +255,9 @@ class ComponentEngine implements IComponentEngine {
     }
 
     // Perform initial render
+    this.bindContent.activate();
     createUpdater<void>(this, (updater) => {
       updater.initialRender((renderer) => {
-        this.bindContent.activate();
         renderer.createReadonlyState( () => {
           this.bindContent.applyChange(renderer);
         } );
@@ -329,11 +329,7 @@ class ComponentEngine implements IComponentEngine {
         this._blockParentNode = null;
       }
       // Inactivate state and unmount (bindContent.unmount is called within inactivate)
-      createUpdater<void>(this, (updater) => {
-        updater.initialRender(() => {
-          this.bindContent.inactivate();
-        });
-      });
+      this.bindContent.inactivate();
     }
 
   }

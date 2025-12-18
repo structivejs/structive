@@ -51,6 +51,9 @@ class Updater implements IUpdater {
   /** Cache mapping paths to their dependent paths for optimization */
   private _cacheUpdatedPathsByPath: Map<string, Set<string>> = new Map();
 
+  private _rendereringPromises: Promise<void>[] = [];
+  private _completedResolvers: PromiseWithResolvers<void> = Promise.withResolvers<void>();
+
   /**
    * Constructs a new Updater instance.
    * Automatically increments the engine's version number.
@@ -80,6 +83,10 @@ class Updater implements IUpdater {
    */
   get revision(): number {
     return this._revision;
+  }
+
+  get completedPromise(): Promise<void> {
+    return this._completedResolvers.promise;
   }
 
   /**
@@ -196,7 +203,9 @@ class Updater implements IUpdater {
         this._queue = [];
         
         // Execute rendering for all refs in this batch
-        render(queue, this._engine, this);
+        const resolver = Promise.withResolvers<void>();
+        this._rendereringPromises.push(resolver.promise);
+        render(queue, this._engine, this, resolver);
       }
     } finally {
       // Always reset rendering flag, even if errors occurred
@@ -212,8 +221,15 @@ class Updater implements IUpdater {
    * @returns {void}
    */
   initialRender(callback: (renderer: IRenderer) => void): void {
-    const renderer = createRenderer(this._engine, this);
-    callback(renderer);
+    const resolver = Promise.withResolvers<void>();
+    this._rendereringPromises.push(resolver.promise);
+    const renderer = createRenderer(this._engine, this, resolver);
+    try {
+      callback(renderer);
+    } finally {
+      // 2フェイズレンダリング対応時、この行は不要になる可能性あり
+      resolver.resolve();
+    }
   }
   /**
    * Recursively collects all paths that may be affected by a change to the given path.

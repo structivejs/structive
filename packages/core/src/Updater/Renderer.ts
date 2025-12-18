@@ -46,6 +46,7 @@ class Renderer implements IRenderer {
   private _updatingRefSet: Set<IStatePropertyRef> = new Set();
   private _readonlyState: IReadonlyStateProxy | null = null;
   private _readonlyHandler : IReadonlyStateHandler | null = null;
+  private _resolver: PromiseWithResolvers<void>;
 
   /**
    * Constructs a new Renderer instance.
@@ -53,9 +54,10 @@ class Renderer implements IRenderer {
    * @param {IComponentEngine} engine - The component engine to render
    * @param {IUpdater} updater - The updater managing this renderer
    */
-  constructor(engine: IComponentEngine, updater: IUpdater) {
+  constructor(engine: IComponentEngine, updater: IUpdater, resolver: PromiseWithResolvers<void>) {
     this._engine = engine;
     this._updater = updater;
+    this._resolver = resolver;
   }
 
   get updatingRefs(): IStatePropertyRef[] {
@@ -346,9 +348,18 @@ class Renderer implements IRenderer {
 /**
  * Convenience function. Creates a Renderer instance and calls render in one go.
  */
-export function render(refs: IStatePropertyRef[], engine: IComponentEngine, updater: IUpdater): void {
-  const renderer = new Renderer(engine, updater);
-  renderer.render(refs);
+export function render(
+  refs: IStatePropertyRef[], 
+  engine: IComponentEngine, 
+  updater: IUpdater,
+  resolver: PromiseWithResolvers<void>
+): void {
+  const renderer = new Renderer(engine, updater, resolver);
+  try {
+    renderer.render(refs);
+  } finally {
+    resolver.resolve();
+  }
 }
 
 /**
@@ -358,6 +369,10 @@ export function render(refs: IStatePropertyRef[], engine: IComponentEngine, upda
  * @param {IUpdater} updater - The updater managing this renderer
  * @returns {IRenderer} A new renderer instance
  */
-export function createRenderer(engine: IComponentEngine, updater: IUpdater): IRenderer {
-  return new Renderer(engine, updater);
+export function createRenderer(
+  engine: IComponentEngine, 
+  updater: IUpdater,
+  resolver: PromiseWithResolvers<void>
+): IRenderer {
+  return new Renderer(engine, updater, resolver);
 }
