@@ -18,7 +18,9 @@ class StateHandler {
     lastRefStack = null;
     loopContext = undefined;
     symbols = new Set([GetByRefSymbol, GetListIndexesByRefSymbol]);
-    apis = new Set(["$resolve", "$getAll", "$trackDependency", "$navigate", "$component"]);
+    apis = new Set([
+        "$resolve", "$getAll", "$trackDependency", "$navigate", "$component"
+    ]);
     /**
      * Constructs a new StateHandler for read-only state proxy.
      *

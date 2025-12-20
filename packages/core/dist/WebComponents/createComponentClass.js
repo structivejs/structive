@@ -251,6 +251,9 @@ export function createComponentClass(componentData) {
         get readyResolvers() {
             return this._engine.readyResolvers;
         }
+        get updateComplete() {
+            return this._engine.updateCompleteQueue.current;
+        }
         /**
          * Retrieves the set of bindings associated with a specific child component.
          *

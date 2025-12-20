@@ -22,6 +22,8 @@ import { getStatePropertyRef } from "../StatePropertyRef/StatepropertyRef.js";
 import { RESERVED_WORD_SET } from "../constants.js";
 import { addPathNode } from "../PathTree/PathNode.js";
 import { IStatePropertyRef } from "../StatePropertyRef/types.js";
+import { createCompleteQueue } from "../Updater/CompleteQueue.js";
+import { IUpdateCompleteQueue } from "../Updater/types.js";
 
 /**
  * ComponentEngine integrates state, dependencies, bindings, lifecycle, and rendering
@@ -89,6 +91,8 @@ class ComponentEngine implements IComponentEngine {
   /** Version and revision tracking by path */
   readonly versionRevisionByPath: Map<string, IVersionRevision> = new Map();
 
+  readonly updateCompleteQueue: IUpdateCompleteQueue = createCompleteQueue();
+  
   // ===== Private fields (Internal state) =====
   /** Bind content instance (initialized in setup()) */
   private _bindContent: IBindContent | null = null;

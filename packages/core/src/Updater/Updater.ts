@@ -8,8 +8,9 @@ import { IReadonlyStateHandler, IReadonlyStateProxy, IWritableStateHandler, IWri
 import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { raiseError } from "../utils";
-import { createRenderer, render } from "./Renderer";
-import { IListSnapshot, IRenderer, IUpdater, UpdateCallback } from "./types";
+import { createRenderer } from "./Renderer";
+import { createRenderMain } from "./RenderMain";
+import { IListSnapshot, IRenderer, IRenderMain, IUpdater, UpdateCallback, UpdateComplete } from "./types";
 
 
 /**
@@ -51,9 +52,9 @@ class Updater implements IUpdater {
   /** Cache mapping paths to their dependent paths for optimization */
   private _cacheUpdatedPathsByPath: Map<string, Set<string>> = new Map();
 
-  private _rendereringPromises: Promise<void>[] = [];
-  private _completedResolvers: PromiseWithResolvers<void> = Promise.withResolvers<void>();
+  private _completedResolvers: PromiseWithResolvers<boolean> = Promise.withResolvers<boolean>();
 
+  private _renderMain: IRenderMain;
   /**
    * Constructs a new Updater instance.
    * Automatically increments the engine's version number.
@@ -63,6 +64,8 @@ class Updater implements IUpdater {
   constructor(engine: IComponentEngine) {
     this._engine = engine;
     this._version = engine.versionUp();
+    this._renderMain = createRenderMain(engine, this, this._completedResolvers);
+    engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
   }
 
   /**
@@ -85,7 +88,7 @@ class Updater implements IUpdater {
     return this._revision;
   }
 
-  get completedPromise(): Promise<void> {
+  get updateComplete(): UpdateComplete {
     return this._completedResolvers.promise;
   }
 
@@ -111,13 +114,7 @@ class Updater implements IUpdater {
     // Collect all paths that might be affected by this change
     this.collectMaybeUpdates(this._engine, ref.info.pattern, this._engine.versionRevisionByPath, this._revision);
     
-    // Skip scheduling if already rendering (will process queue on next iteration)
-    if (this._rendering) {return;}
-    this._rendering = true;
-    queueMicrotask(() => {
-      // Execute rendering after async processing interruption or update completion
-      this.rendering();
-    });
+    this._renderMain.wakeup();
   }
 
   /**
@@ -171,6 +168,8 @@ class Updater implements IUpdater {
             });
           }
         });
+      } else {
+        this._renderMain.terminate();
       }
     };
     
@@ -185,33 +184,14 @@ class Updater implements IUpdater {
       updatedCallbackHandler();
     }
     return resultPromise;
- }
-
-  /**
-   * Executes the rendering process for all queued updates.
-   * Processes the queue in a loop until empty, allowing new updates during rendering.
-   * Ensures rendering flag is reset even if errors occur.
-   * 
-   * @returns {void}
-   */
-  rendering(): void {
-    try {
-      // Process queue until empty (new items may be added during rendering)
-      while( this._queue.length > 0 ) {
-        // Retrieve current queue and reset for new items
-        const queue = this._queue;
-        this._queue = [];
-        
-        // Execute rendering for all refs in this batch
-        const resolver = Promise.withResolvers<void>();
-        this._rendereringPromises.push(resolver.promise);
-        render(queue, this._engine, this, resolver);
-      }
-    } finally {
-      // Always reset rendering flag, even if errors occurred
-      this._rendering = false;
-    }
   }
+
+  retirieveAndClearQueue(): IStatePropertyRef[] {
+    const queue = this._queue;
+    this._queue = [];
+    return queue;
+  }
+
 
   /**
    * Performs the initial rendering of the component.
@@ -222,13 +202,12 @@ class Updater implements IUpdater {
    */
   initialRender(callback: (renderer: IRenderer) => void): void {
     const resolver = Promise.withResolvers<void>();
-    this._rendereringPromises.push(resolver.promise);
     const renderer = createRenderer(this._engine, this, resolver);
     try {
       callback(renderer);
     } finally {
       // 2フェイズレンダリング対応時、この行は不要になる可能性あり
-      resolver.resolve();
+      this._renderMain.terminate();
     }
   }
   /**

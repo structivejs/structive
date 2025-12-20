@@ -36,6 +36,7 @@ import { findStructiveParent } from "./findStructiveParent.js";
 import { IPathManager } from "../PathManager/types.js";
 import { createPathManager } from "../PathManager/PathManager.js";
 import { IComponentStateBinding } from "../ComponentStateBinding/types.js";
+import { UpdateComplete } from "../Updater/types.js";
 
 /**
  * Creates a custom Web Component class from user-defined component data.
@@ -282,6 +283,10 @@ export function createComponentClass(componentData: IUserComponentData): Structi
      */
     get readyResolvers(): PromiseWithResolvers<void> {
       return this._engine.readyResolvers;
+    }
+
+    get updateComplete(): UpdateComplete | null {
+      return this._engine.updateCompleteQueue.current;
     }
 
     /**

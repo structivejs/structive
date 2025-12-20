@@ -11,6 +11,7 @@ import { createUpdater } from "../Updater/Updater.js";
 import { getStatePropertyRef } from "../StatePropertyRef/StatepropertyRef.js";
 import { RESERVED_WORD_SET } from "../constants.js";
 import { addPathNode } from "../PathTree/PathNode.js";
+import { createCompleteQueue } from "../Updater/CompleteQueue.js";
 /**
  * ComponentEngine integrates state, dependencies, bindings, lifecycle, and rendering
  * for Structive components as the core engine.
@@ -71,6 +72,7 @@ class ComponentEngine {
     structiveChildComponents = new Set();
     /** Version and revision tracking by path */
     versionRevisionByPath = new Map();
+    updateCompleteQueue = createCompleteQueue();
     // ===== Private fields (Internal state) =====
     /** Bind content instance (initialized in setup()) */
     _bindContent = null;
@@ -232,9 +234,9 @@ class ComponentEngine {
             }
         }
         // Perform initial render
+        this.bindContent.activate();
         createUpdater(this, (updater) => {
             updater.initialRender((renderer) => {
-                this.bindContent.activate();
                 renderer.createReadonlyState(() => {
                     this.bindContent.applyChange(renderer);
                 });
@@ -309,11 +311,7 @@ class ComponentEngine {
                 this._blockParentNode = null;
             }
             // Inactivate state and unmount (bindContent.unmount is called within inactivate)
-            createUpdater(this, (updater) => {
-                updater.initialRender(() => {
-                    this.bindContent.inactivate();
-                });
-            });
+            this.bindContent.inactivate();
         }
     }
     /**

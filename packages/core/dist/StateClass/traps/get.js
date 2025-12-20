@@ -82,6 +82,13 @@ export function get(target, prop, receiver, handler) {
                     return handler.engine.owner;
                 case "$invoke":
                     return invoke(target, prop, receiver, handler);
+                case "$wrap":
+                    return (callback) => {
+                        const fn = invoke(target, prop, receiver, handler);
+                        return () => fn(callback);
+                    };
+                case "$updateComplete":
+                    return handler.updater.updateComplete;
             }
         }
         // Regular property access: resolve path, get list index, and retrieve value

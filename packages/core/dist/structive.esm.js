@@ -3401,6 +3401,13 @@ function get(target, prop, receiver, handler) {
                     return handler.engine.owner;
                 case "$invoke":
                     return invoke(target, prop, receiver, handler);
+                case "$wrap":
+                    return (callback) => {
+                        const fn = invoke(target, prop, receiver, handler);
+                        return () => fn(callback);
+                    };
+                case "$updateComplete":
+                    return handler.updater.updateComplete;
             }
         }
         // Regular property access: resolve path, get list index, and retrieve value
@@ -3452,7 +3459,9 @@ let StateHandler$1 = class StateHandler {
     lastRefStack = null;
     loopContext = undefined;
     symbols = new Set([GetByRefSymbol, GetListIndexesByRefSymbol]);
-    apis = new Set(["$resolve", "$getAll", "$trackDependency", "$navigate", "$component"]);
+    apis = new Set([
+        "$resolve", "$getAll", "$trackDependency", "$navigate", "$component"
+    ]);
     /**
      * Constructs a new StateHandler for read-only state proxy.
      *
@@ -3699,7 +3708,9 @@ class StateHandler {
         ConnectedCallbackSymbol, DisconnectedCallbackSymbol,
         UpdatedCallbackSymbol
     ]);
-    apis = new Set(["$resolve", "$getAll", "$trackDependency", "$navigate", "$component", "$invoke"]);
+    apis = new Set([
+        "$resolve", "$getAll", "$trackDependency", "$navigate", "$component", "$invoke", "$wrap", "$updateComplete"
+    ]);
     /**
      * Constructs a new StateHandler for writable state proxy.
      *
@@ -3809,15 +3820,17 @@ class Renderer {
     _updatingRefSet = new Set();
     _readonlyState = null;
     _readonlyHandler = null;
+    _resolver;
     /**
      * Constructs a new Renderer instance.
      *
      * @param {IComponentEngine} engine - The component engine to render
      * @param {IUpdater} updater - The updater managing this renderer
      */
-    constructor(engine, updater) {
+    constructor(engine, updater, resolver) {
         this._engine = engine;
         this._updater = updater;
+        this._resolver = resolver;
     }
     get updatingRefs() {
         return this._updatingRefs;
@@ -4081,9 +4094,14 @@ class Renderer {
 /**
  * Convenience function. Creates a Renderer instance and calls render in one go.
  */
-function render(refs, engine, updater) {
-    const renderer = new Renderer(engine, updater);
-    renderer.render(refs);
+function render(refs, engine, updater, resolver) {
+    const renderer = new Renderer(engine, updater, resolver);
+    try {
+        renderer.render(refs);
+    }
+    finally {
+        resolver.resolve();
+    }
 }
 /**
  * Creates a new Renderer instance.
@@ -4092,8 +4110,66 @@ function render(refs, engine, updater) {
  * @param {IUpdater} updater - The updater managing this renderer
  * @returns {IRenderer} A new renderer instance
  */
-function createRenderer(engine, updater) {
-    return new Renderer(engine, updater);
+function createRenderer(engine, updater, resolver) {
+    return new Renderer(engine, updater, resolver);
+}
+
+class RenderMain {
+    _engine;
+    _updater;
+    _waitResolver = Promise.withResolvers();
+    _completedResolvers;
+    constructor(engine, updater, completedResolvers) {
+        this._engine = engine;
+        this._updater = updater;
+        this._completedResolvers = completedResolvers;
+        queueMicrotask(() => {
+            this._main();
+        });
+    }
+    async _main() {
+        const renderPromises = [];
+        let termResolver = null;
+        let result = true;
+        while (termResolver === null) {
+            termResolver = await this._waitResolver.promise ?? null;
+            // Retrieve current queue and reset for new items
+            const queue = this._updater.retirieveAndClearQueue();
+            if (queue.length === 0) {
+                continue;
+            }
+            // Execute rendering for all refs in this batch
+            const resolver = Promise.withResolvers();
+            renderPromises.push(resolver.promise);
+            try {
+                // Render the queued refs
+                render(queue, this._engine, this._updater, resolver);
+            }
+            catch (e) {
+                console.error("Rendering error:", e);
+                resolver.reject();
+            }
+        }
+        try {
+            await Promise.all(renderPromises);
+        }
+        catch (_e) {
+            result = false;
+        }
+        finally {
+            termResolver.resolve(result);
+        }
+    }
+    wakeup() {
+        this._waitResolver.resolve();
+        this._waitResolver = Promise.withResolvers();
+    }
+    terminate() {
+        this._waitResolver.resolve(this._completedResolvers);
+    }
+}
+function createRenderMain(engine, updater, completedResolvers) {
+    return new RenderMain(engine, updater, completedResolvers);
 }
 
 /**
@@ -4127,6 +4203,8 @@ class Updater {
     _saveQueue = [];
     /** Cache mapping paths to their dependent paths for optimization */
     _cacheUpdatedPathsByPath = new Map();
+    _completedResolvers = Promise.withResolvers();
+    _renderMain;
     /**
      * Constructs a new Updater instance.
      * Automatically increments the engine's version number.
@@ -4136,6 +4214,8 @@ class Updater {
     constructor(engine) {
         this._engine = engine;
         this._version = engine.versionUp();
+        this._renderMain = createRenderMain(engine, this, this._completedResolvers);
+        engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
     }
     /**
      * Gets the current version number.
@@ -4154,6 +4234,9 @@ class Updater {
      */
     get revision() {
         return this._revision;
+    }
+    get updateComplete() {
+        return this._completedResolvers.promise;
     }
     /**
      * Adds a state property reference to the update queue and schedules rendering.
@@ -4174,15 +4257,7 @@ class Updater {
         this._saveQueue.push(ref);
         // Collect all paths that might be affected by this change
         this.collectMaybeUpdates(this._engine, ref.info.pattern, this._engine.versionRevisionByPath, this._revision);
-        // Skip scheduling if already rendering (will process queue on next iteration)
-        if (this._rendering) {
-            return;
-        }
-        this._rendering = true;
-        queueMicrotask(() => {
-            // Execute rendering after async processing interruption or update completion
-            this.rendering();
-        });
+        this._renderMain.wakeup();
     }
     /**
      * Executes a state update operation within a writable state context.
@@ -4229,6 +4304,9 @@ class Updater {
                     }
                 });
             }
+            else {
+                this._renderMain.terminate();
+            }
         };
         // Handle both Promise and non-Promise results
         if (resultPromise instanceof Promise) {
@@ -4243,28 +4321,10 @@ class Updater {
         }
         return resultPromise;
     }
-    /**
-     * Executes the rendering process for all queued updates.
-     * Processes the queue in a loop until empty, allowing new updates during rendering.
-     * Ensures rendering flag is reset even if errors occur.
-     *
-     * @returns {void}
-     */
-    rendering() {
-        try {
-            // Process queue until empty (new items may be added during rendering)
-            while (this._queue.length > 0) {
-                // Retrieve current queue and reset for new items
-                const queue = this._queue;
-                this._queue = [];
-                // Execute rendering for all refs in this batch
-                render(queue, this._engine, this);
-            }
-        }
-        finally {
-            // Always reset rendering flag, even if errors occurred
-            this._rendering = false;
-        }
+    retirieveAndClearQueue() {
+        const queue = this._queue;
+        this._queue = [];
+        return queue;
     }
     /**
      * Performs the initial rendering of the component.
@@ -4274,8 +4334,15 @@ class Updater {
      * @returns {void}
      */
     initialRender(callback) {
-        const renderer = createRenderer(this._engine, this);
-        callback(renderer);
+        const resolver = Promise.withResolvers();
+        const renderer = createRenderer(this._engine, this, resolver);
+        try {
+            callback(renderer);
+        }
+        finally {
+            // 2フェイズレンダリング対応時、この行は不要になる可能性あり
+            this._renderMain.terminate();
+        }
     }
     /**
      * Recursively collects all paths that may be affected by a change to the given path.
@@ -8772,6 +8839,64 @@ function createComponentStateOutput(binding, childEngine) {
     return new ComponentStateOutput(binding, childEngine);
 }
 
+class UpdateCompleteQueue {
+    _queue = [];
+    _processing = false;
+    get _currentItem() {
+        return this._queue.length > 0 ? this._queue[0] : null;
+    }
+    get current() {
+        return this._currentItem ? this._currentItem.notifyResolver.promise : null;
+    }
+    async _processNext(resolver) {
+        const item = this._currentItem ?? raiseError({
+            code: 'UPD-301',
+            message: 'No item in update complete queue to process',
+            context: { where: 'CompleteQueue.processNext' },
+            docsUrl: './docs/error-codes.md#upd',
+        });
+        let retValue = false;
+        try {
+            retValue = await item.completePromise; // 先につかむとは限らない
+        }
+        finally {
+            this._queue.shift();
+            item.notifyResolver.resolve(retValue);
+            resolver.resolve();
+        }
+    }
+    async _processQueue() {
+        if (this._processing) {
+            return;
+        }
+        this._processing = true;
+        try {
+            while (this._queue.length > 0) {
+                const resolver = Promise.withResolvers();
+                queueMicrotask(async () => {
+                    this._processNext(resolver);
+                });
+                await resolver.promise;
+            }
+        }
+        finally {
+            this._processing = false;
+        }
+    }
+    enqueue(updateComplete) {
+        this._queue.push({
+            completePromise: updateComplete,
+            notifyResolver: Promise.withResolvers(),
+        });
+        if (!this._processing) {
+            this._processQueue();
+        }
+    }
+}
+function createCompleteQueue() {
+    return new UpdateCompleteQueue();
+}
+
 /**
  * ComponentEngine integrates state, dependencies, bindings, lifecycle, and rendering
  * for Structive components as the core engine.
@@ -8832,6 +8957,7 @@ class ComponentEngine {
     structiveChildComponents = new Set();
     /** Version and revision tracking by path */
     versionRevisionByPath = new Map();
+    updateCompleteQueue = createCompleteQueue();
     // ===== Private fields (Internal state) =====
     /** Bind content instance (initialized in setup()) */
     _bindContent = null;
@@ -8993,9 +9119,9 @@ class ComponentEngine {
             }
         }
         // Perform initial render
+        this.bindContent.activate();
         createUpdater(this, (updater) => {
             updater.initialRender((renderer) => {
-                this.bindContent.activate();
                 renderer.createReadonlyState(() => {
                     this.bindContent.applyChange(renderer);
                 });
@@ -9070,11 +9196,7 @@ class ComponentEngine {
                 this._blockParentNode = null;
             }
             // Inactivate state and unmount (bindContent.unmount is called within inactivate)
-            createUpdater(this, (updater) => {
-                updater.initialRender(() => {
-                    this.bindContent.inactivate();
-                });
-            });
+            this.bindContent.inactivate();
         }
     }
     /**
@@ -10153,6 +10275,9 @@ function createComponentClass(componentData) {
          */
         get readyResolvers() {
             return this._engine.readyResolvers;
+        }
+        get updateComplete() {
+            return this._engine.updateCompleteQueue.current;
         }
         /**
          * Retrieves the set of bindings associated with a specific child component.

@@ -7,6 +7,7 @@ import { IListIndex } from "../ListIndex/types";
 import { IPathManager } from "../PathManager/types";
 import { IState, IStructiveState } from "../StateClass/types";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
+import { IUpdateCompleteQueue } from "../Updater/types";
 import { ComponentType, IComponentConfig, StructiveComponent } from "../WebComponents/types";
 
 /**
@@ -62,6 +63,7 @@ export interface IComponentEngine {
   readonly structiveChildComponents: Set<StructiveComponent>;
   readonly currentVersion: number;
   readonly versionRevisionByPath: Map<string, IVersionRevision>;
+  readonly updateCompleteQueue: IUpdateCompleteQueue;
 
   getCacheEntry(ref: IStatePropertyRef): ICacheEntry | null;
   setCacheEntry(ref: IStatePropertyRef, entry: ICacheEntry): void;

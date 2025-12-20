@@ -21,6 +21,7 @@ import { IComponentStateInput } from "../ComponentStateInput/types";
 import { Constructor } from "../types";
 import { IPathManager } from "../PathManager/types";
 import { IComponentStateBinding } from "../ComponentStateBinding/types";
+import { UpdateComplete } from "../Updater/types";
 
 export type ComponentType = 'autonomous' | 'builtin';
 
@@ -30,6 +31,7 @@ export interface IComponent {
   readonly stateBinding: IComponentStateBinding;
   readonly isStructive: boolean; // Whether the component is structive or not
   readonly readyResolvers: PromiseWithResolvers<void>;
+  readonly updateComplete: UpdateComplete | null; // Promise that resolves when the component has finished updating
   getBindingsFromChild(component:IComponent): Set<IBinding> | null; // Get the bindings by component
   registerChildComponent(component:StructiveComponent): void; // Register the child component
   unregisterChildComponent(component:StructiveComponent): void; // Unregister the child component

@@ -39,7 +39,9 @@ class StateHandler implements IReadonlyStateHandler {
   lastRefStack: IStatePropertyRef | null = null;
   loopContext: ILoopContext | null | undefined = undefined;
   readonly symbols: Set<PropertyKey> = new Set<PropertyKey>([ GetByRefSymbol, GetListIndexesByRefSymbol ]);
-  readonly apis: Set<PropertyKey> = new Set<PropertyKey>([ "$resolve", "$getAll", "$trackDependency", "$navigate", "$component" ]);
+  readonly apis: Set<PropertyKey> = new Set<PropertyKey>([ 
+    "$resolve", "$getAll", "$trackDependency", "$navigate", "$component" 
+  ]);
 
   /**
    * Constructs a new StateHandler for read-only state proxy.

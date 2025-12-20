@@ -23,7 +23,9 @@ class StateHandler {
         ConnectedCallbackSymbol, DisconnectedCallbackSymbol,
         UpdatedCallbackSymbol
     ]);
-    apis = new Set(["$resolve", "$getAll", "$trackDependency", "$navigate", "$component", "$invoke"]);
+    apis = new Set([
+        "$resolve", "$getAll", "$trackDependency", "$navigate", "$component", "$invoke", "$wrap", "$updateComplete"
+    ]);
     /**
      * Constructs a new StateHandler for writable state proxy.
      *

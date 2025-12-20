@@ -3,7 +3,8 @@ import { createReadonlyStateHandler, createReadonlyStateProxy } from "../StateCl
 import { UpdatedCallbackSymbol } from "../StateClass/symbols";
 import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { raiseError } from "../utils";
-import { createRenderer, render } from "./Renderer";
+import { createRenderer } from "./Renderer";
+import { createRenderMain } from "./RenderMain";
 /**
  * The Updater class plays a central role in state management and updates.
  * Instances are created on-demand when state updates are needed.
@@ -35,6 +36,8 @@ class Updater {
     _saveQueue = [];
     /** Cache mapping paths to their dependent paths for optimization */
     _cacheUpdatedPathsByPath = new Map();
+    _completedResolvers = Promise.withResolvers();
+    _renderMain;
     /**
      * Constructs a new Updater instance.
      * Automatically increments the engine's version number.
@@ -44,6 +47,8 @@ class Updater {
     constructor(engine) {
         this._engine = engine;
         this._version = engine.versionUp();
+        this._renderMain = createRenderMain(engine, this, this._completedResolvers);
+        engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
     }
     /**
      * Gets the current version number.
@@ -62,6 +67,9 @@ class Updater {
      */
     get revision() {
         return this._revision;
+    }
+    get updateComplete() {
+        return this._completedResolvers.promise;
     }
     /**
      * Adds a state property reference to the update queue and schedules rendering.
@@ -82,15 +90,7 @@ class Updater {
         this._saveQueue.push(ref);
         // Collect all paths that might be affected by this change
         this.collectMaybeUpdates(this._engine, ref.info.pattern, this._engine.versionRevisionByPath, this._revision);
-        // Skip scheduling if already rendering (will process queue on next iteration)
-        if (this._rendering) {
-            return;
-        }
-        this._rendering = true;
-        queueMicrotask(() => {
-            // Execute rendering after async processing interruption or update completion
-            this.rendering();
-        });
+        this._renderMain.wakeup();
     }
     /**
      * Executes a state update operation within a writable state context.
@@ -137,6 +137,9 @@ class Updater {
                     }
                 });
             }
+            else {
+                this._renderMain.terminate();
+            }
         };
         // Handle both Promise and non-Promise results
         if (resultPromise instanceof Promise) {
@@ -151,28 +154,10 @@ class Updater {
         }
         return resultPromise;
     }
-    /**
-     * Executes the rendering process for all queued updates.
-     * Processes the queue in a loop until empty, allowing new updates during rendering.
-     * Ensures rendering flag is reset even if errors occur.
-     *
-     * @returns {void}
-     */
-    rendering() {
-        try {
-            // Process queue until empty (new items may be added during rendering)
-            while (this._queue.length > 0) {
-                // Retrieve current queue and reset for new items
-                const queue = this._queue;
-                this._queue = [];
-                // Execute rendering for all refs in this batch
-                render(queue, this._engine, this);
-            }
-        }
-        finally {
-            // Always reset rendering flag, even if errors occurred
-            this._rendering = false;
-        }
+    retirieveAndClearQueue() {
+        const queue = this._queue;
+        this._queue = [];
+        return queue;
     }
     /**
      * Performs the initial rendering of the component.
@@ -182,8 +167,15 @@ class Updater {
      * @returns {void}
      */
     initialRender(callback) {
-        const renderer = createRenderer(this._engine, this);
-        callback(renderer);
+        const resolver = Promise.withResolvers();
+        const renderer = createRenderer(this._engine, this, resolver);
+        try {
+            callback(renderer);
+        }
+        finally {
+            // 2フェイズレンダリング対応時、この行は不要になる可能性あり
+            this._renderMain.terminate();
+        }
     }
     /**
      * Recursively collects all paths that may be affected by a change to the given path.

@@ -36,15 +36,17 @@ class Renderer {
     _updatingRefSet = new Set();
     _readonlyState = null;
     _readonlyHandler = null;
+    _resolver;
     /**
      * Constructs a new Renderer instance.
      *
      * @param {IComponentEngine} engine - The component engine to render
      * @param {IUpdater} updater - The updater managing this renderer
      */
-    constructor(engine, updater) {
+    constructor(engine, updater, resolver) {
         this._engine = engine;
         this._updater = updater;
+        this._resolver = resolver;
     }
     get updatingRefs() {
         return this._updatingRefs;
@@ -308,9 +310,14 @@ class Renderer {
 /**
  * Convenience function. Creates a Renderer instance and calls render in one go.
  */
-export function render(refs, engine, updater) {
-    const renderer = new Renderer(engine, updater);
-    renderer.render(refs);
+export function render(refs, engine, updater, resolver) {
+    const renderer = new Renderer(engine, updater, resolver);
+    try {
+        renderer.render(refs);
+    }
+    finally {
+        resolver.resolve();
+    }
 }
 /**
  * Creates a new Renderer instance.
@@ -319,6 +326,6 @@ export function render(refs, engine, updater) {
  * @param {IUpdater} updater - The updater managing this renderer
  * @returns {IRenderer} A new renderer instance
  */
-export function createRenderer(engine, updater) {
-    return new Renderer(engine, updater);
+export function createRenderer(engine, updater, resolver) {
+    return new Renderer(engine, updater, resolver);
 }

@@ -52,6 +52,12 @@ export interface IUpdater {
   readonly swapInfoByRef: Map<IStatePropertyRef, IListSnapshot>;
 
   /**
+   * Promise that resolves when all pending updates are complete.
+   * Resolves to true if any updates were made, false otherwise.
+   */
+  readonly updateComplete: UpdateComplete;
+
+  /**
    * Enqueues a reference for update in the next rendering cycle.
    * Changes are batched and processed together for efficiency.
    * 
@@ -94,6 +100,13 @@ export interface IUpdater {
    * @returns {void}
    */
   initialRender(callback: (renderer: IRenderer) => void): void;
+
+  /**
+   * Retrieves and clears the queue of state property references pending update.
+   * 
+   * @returns {IStatePropertyRef[]} Array of state property references to be updated
+   */
+  retirieveAndClearQueue(): IStatePropertyRef[]
 }
 
 /**
@@ -208,7 +221,18 @@ export interface IRenderer {
 
 export type UpdateComplete = Promise<boolean>;
 
+/**
+ * Interface for managing the update completion queue.
+ */
 export interface IUpdateCompleteQueue {
   readonly current: UpdateComplete | null;
   enqueue(updateComplete: UpdateComplete): void;
+}
+
+/**
+ * Interface for the main rendering process manager.
+ */
+export interface IRenderMain {
+  wakeup(): void;
+  terminate(): void;
 }
