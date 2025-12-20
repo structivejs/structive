@@ -3299,23 +3299,19 @@ function updatedCallback(target, refs, receiver, _handler) {
 
 function invoke(_target, _prop, _receiver, handler) {
     return (callback) => {
-        const resultPromise = createUpdater(handler.engine, (updater) => {
-            return updater.update(null, (state, _handler) => {
-                if (typeof callback === "function") {
-                    return Reflect.apply(callback, state, []);
-                }
-                else {
-                    raiseError({
-                        code: 'STATE-203',
-                        message: 'Callback is not a function',
-                        context: {
-                            where: 'StateClass.invoke',
-                            callback,
-                        },
-                        docsUrl: './docs/error-codes.md#state',
-                    });
-                }
+        if (typeof callback !== "function") {
+            raiseError({
+                code: 'STATE-203',
+                message: 'Callback is not a function',
+                context: {
+                    where: 'StateClass.invoke',
+                    callback,
+                },
+                docsUrl: './docs/error-codes.md#state',
             });
+        }
+        const resultPromise = handler.updater.invoke(() => {
+            return Reflect.apply(callback, _receiver, []);
         });
         if (resultPromise instanceof Promise) {
             resultPromise.catch((error) => {
@@ -4134,7 +4130,7 @@ class RenderMain {
         while (termResolver === null) {
             termResolver = await this._waitResolver.promise ?? null;
             // Retrieve current queue and reset for new items
-            const queue = this._updater.retirieveAndClearQueue();
+            const queue = this._updater.retrieveAndClearQueue();
             if (queue.length === 0) {
                 continue;
             }
@@ -4205,6 +4201,7 @@ class Updater {
     _cacheUpdatedPathsByPath = new Map();
     _completedResolvers = Promise.withResolvers();
     _renderMain;
+    _isAlive = true;
     /**
      * Constructs a new Updater instance.
      * Automatically increments the engine's version number.
@@ -4216,6 +4213,9 @@ class Updater {
         this._version = engine.versionUp();
         this._renderMain = createRenderMain(engine, this, this._completedResolvers);
         engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
+        this._completedResolvers.promise.finally(() => {
+            this._isAlive = false;
+        });
     }
     /**
      * Gets the current version number.
@@ -4235,8 +4235,32 @@ class Updater {
     get revision() {
         return this._revision;
     }
+    /**
+     * Gets a promise that resolves when all updates are complete.
+     * The promise resolves to true if all updates succeeded, false if any failed.
+     *
+     * @returns {UpdateComplete} Promise resolving when updates are complete
+     */
     get updateComplete() {
         return this._completedResolvers.promise;
+    }
+    rebuild() {
+        if (this._isAlive) {
+            raiseError({
+                code: 'UPD-006',
+                message: 'Updater has already been used. Create a new Updater instance for rebuild.',
+                context: { where: 'Updater.rebuild' },
+                docsUrl: "./docs/error-codes.md#upd",
+            });
+        }
+        this._isAlive = true;
+        this._completedResolvers = Promise.withResolvers();
+        this._version = this._engine.versionUp();
+        this._renderMain = createRenderMain(this._engine, this, this._completedResolvers);
+        this._engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
+        this._completedResolvers.promise.finally(() => {
+            this._isAlive = false;
+        });
     }
     /**
      * Adds a state property reference to the update queue and schedules rendering.
@@ -4321,7 +4345,12 @@ class Updater {
         }
         return resultPromise;
     }
-    retirieveAndClearQueue() {
+    /**
+     * Retrieves and clears the queue of state property references pending update.
+     *
+     * @returns {IStatePropertyRef[]} Array of state property references to be updated
+     */
+    retrieveAndClearQueue() {
         const queue = this._queue;
         this._queue = [];
         return queue;
@@ -4341,6 +4370,28 @@ class Updater {
         }
         finally {
             // 2フェイズレンダリング対応時、この行は不要になる可能性あり
+            this._renderMain.terminate();
+        }
+    }
+    /**
+     *
+     * @param callback
+     * @returns
+     */
+    invoke(callback) {
+        if (this._isAlive) {
+            raiseError({
+                code: 'UPD-006',
+                message: 'Updater has already been used. Create a new Updater instance for invoke.',
+                context: { where: 'Updater.invoke' },
+                docsUrl: "./docs/error-codes.md#upd",
+            });
+        }
+        this.rebuild();
+        try {
+            return callback();
+        }
+        finally {
             this._renderMain.terminate();
         }
     }

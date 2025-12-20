@@ -55,6 +55,8 @@ class Updater implements IUpdater {
   private _completedResolvers: PromiseWithResolvers<boolean> = Promise.withResolvers<boolean>();
 
   private _renderMain: IRenderMain;
+
+  private _isAlive: boolean = true;
   /**
    * Constructs a new Updater instance.
    * Automatically increments the engine's version number.
@@ -66,6 +68,9 @@ class Updater implements IUpdater {
     this._version = engine.versionUp();
     this._renderMain = createRenderMain(engine, this, this._completedResolvers);
     engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
+    this._completedResolvers.promise.finally(() => {
+      this._isAlive = false;
+    });
   }
 
   /**
@@ -88,10 +93,34 @@ class Updater implements IUpdater {
     return this._revision;
   }
 
+  /**
+   * Gets a promise that resolves when all updates are complete.
+   * The promise resolves to true if all updates succeeded, false if any failed.
+   * 
+   * @returns {UpdateComplete} Promise resolving when updates are complete
+   */
   get updateComplete(): UpdateComplete {
     return this._completedResolvers.promise;
   }
 
+  rebuild() {
+    if (this._isAlive) {
+      raiseError({
+        code: 'UPD-006',
+        message: 'Updater has already been used. Create a new Updater instance for rebuild.',
+        context: { where: 'Updater.rebuild' },
+        docsUrl: "./docs/error-codes.md#upd",
+      });
+    }
+    this._isAlive = true;
+    this._completedResolvers = Promise.withResolvers<boolean>();
+    this._version = this._engine.versionUp();
+    this._renderMain = createRenderMain(this._engine, this, this._completedResolvers);
+    this._engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
+    this._completedResolvers.promise.finally(() => {
+      this._isAlive = false;
+    });
+  }
   /**
    * Adds a state property reference to the update queue and schedules rendering.
    * Increments revision, collects dependent paths, and schedules async rendering via microtask.
@@ -186,12 +215,16 @@ class Updater implements IUpdater {
     return resultPromise;
   }
 
-  retirieveAndClearQueue(): IStatePropertyRef[] {
+  /**
+   * Retrieves and clears the queue of state property references pending update.
+   * 
+   * @returns {IStatePropertyRef[]} Array of state property references to be updated
+   */
+  retrieveAndClearQueue(): IStatePropertyRef[] {
     const queue = this._queue;
     this._queue = [];
     return queue;
   }
-
 
   /**
    * Performs the initial rendering of the component.
@@ -209,6 +242,29 @@ class Updater implements IUpdater {
       // 2フェイズレンダリング対応時、この行は不要になる可能性あり
       this._renderMain.terminate();
     }
+  }
+
+  /**
+   * 
+   * @param callback 
+   * @returns 
+   */
+  invoke<T>(callback: () => T): T {
+    if (this._isAlive) {
+      raiseError({
+        code: 'UPD-006',
+        message: 'Updater has already been used. Create a new Updater instance for invoke.',
+        context: { where: 'Updater.invoke' },
+        docsUrl: "./docs/error-codes.md#upd",
+      });
+    }
+    this.rebuild();
+    try {
+      return callback();
+    } finally {
+      this._renderMain.terminate();
+    }
+
   }
   /**
    * Recursively collects all paths that may be affected by a change to the given path.

@@ -11,22 +11,19 @@ export function invoke<T>(
   handler: IStateHandler
 ): InvokeFunction<T> {
   return (callback: () => T): T => {
-    const resultPromise = createUpdater<T>(handler.engine, (updater) => {
-      return updater.update<T>(null, (state, _handler) => {
-        if (typeof callback === "function") {
-          return Reflect.apply(callback, state, []);
-        } else {
-          raiseError({
-            code: 'STATE-203',
-            message: 'Callback is not a function',
-            context: {
-              where: 'StateClass.invoke',
-              callback,
-            },
-            docsUrl: './docs/error-codes.md#state',
-          });
-        }
+    if (typeof callback !== "function") {
+      raiseError({
+        code: 'STATE-203',
+        message: 'Callback is not a function',
+        context: {
+          where: 'StateClass.invoke',
+          callback,
+        },
+        docsUrl: './docs/error-codes.md#state',
       });
+    }
+    const resultPromise = handler.updater.invoke<T>((): T => {
+      return Reflect.apply(callback, _receiver, []);
     });
     if (resultPromise instanceof Promise) {
       resultPromise.catch((error: unknown) => {

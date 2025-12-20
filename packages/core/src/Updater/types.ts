@@ -106,7 +106,9 @@ export interface IUpdater {
    * 
    * @returns {IStatePropertyRef[]} Array of state property references to be updated
    */
-  retirieveAndClearQueue(): IStatePropertyRef[]
+  retrieveAndClearQueue(): IStatePropertyRef[];
+
+  invoke<T>(callback: () => T): T;
 }
 
 /**

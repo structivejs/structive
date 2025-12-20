@@ -1,24 +1,19 @@
-import { createUpdater } from "../../Updater/Updater";
 import { raiseError } from "../../utils";
 export function invoke(_target, _prop, _receiver, handler) {
     return (callback) => {
-        const resultPromise = createUpdater(handler.engine, (updater) => {
-            return updater.update(null, (state, _handler) => {
-                if (typeof callback === "function") {
-                    return Reflect.apply(callback, state, []);
-                }
-                else {
-                    raiseError({
-                        code: 'STATE-203',
-                        message: 'Callback is not a function',
-                        context: {
-                            where: 'StateClass.invoke',
-                            callback,
-                        },
-                        docsUrl: './docs/error-codes.md#state',
-                    });
-                }
+        if (typeof callback !== "function") {
+            raiseError({
+                code: 'STATE-203',
+                message: 'Callback is not a function',
+                context: {
+                    where: 'StateClass.invoke',
+                    callback,
+                },
+                docsUrl: './docs/error-codes.md#state',
             });
+        }
+        const resultPromise = handler.updater.invoke(() => {
+            return Reflect.apply(callback, _receiver, []);
         });
         if (resultPromise instanceof Promise) {
             resultPromise.catch((error) => {

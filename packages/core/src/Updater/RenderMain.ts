@@ -29,7 +29,7 @@ class RenderMain implements IRenderMain {
     while(termResolver === null) {
       termResolver = await this._waitResolver.promise ?? null;
       // Retrieve current queue and reset for new items
-      const queue = this._updater.retirieveAndClearQueue();
+      const queue = this._updater.retrieveAndClearQueue();
       if (queue.length === 0) {
         continue;
       }
