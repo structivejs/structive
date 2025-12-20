@@ -103,12 +103,12 @@ class Updater implements IUpdater {
     return this._completedResolvers.promise;
   }
 
-  rebuild() {
+  private _rebuild() {
     if (this._isAlive) {
       raiseError({
         code: 'UPD-006',
         message: 'Updater has already been used. Create a new Updater instance for rebuild.',
-        context: { where: 'Updater.rebuild' },
+        context: { where: 'Updater._rebuild' },
         docsUrl: "./docs/error-codes.md#upd",
       });
     }
@@ -258,7 +258,7 @@ class Updater implements IUpdater {
         docsUrl: "./docs/error-codes.md#upd",
       });
     }
-    this.rebuild();
+    this._rebuild();
     try {
       return callback();
     } finally {
