@@ -5,6 +5,79 @@ import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { raiseError } from "../utils";
 import { createRenderer } from "./Renderer";
 import { createRenderMain } from "./RenderMain";
+class UpdaterObserver {
+    _version = 0;
+    _processResolvers = [];
+    _waitResolver = null;
+    _renderMain;
+    _processing = false;
+    constructor(renderMain) {
+        this._renderMain = renderMain;
+    }
+    createProcessResolver() {
+        const resolver = Promise.withResolvers();
+        this._processResolvers.push(resolver);
+        if (this._waitResolver === null) {
+            this._main();
+        }
+        else {
+            this._waitResolver.reject();
+        }
+        return resolver;
+    }
+    _getVersionUp() {
+        this._version++;
+        return this._version;
+    }
+    _nextWaitPromise() {
+        const version = this._getVersionUp();
+        this._waitResolver = Promise.withResolvers();
+        const processPromises = this._processResolvers.map(c => c.promise);
+        Promise.all(processPromises).then(() => {
+            if (this._version !== version) {
+                return;
+            }
+            if (this._waitResolver === null) {
+                raiseError({
+                    code: 'UPD-007',
+                    message: 'UpdaterObserver waitResolver is null.',
+                    context: { where: 'UpdaterObserver.nextWaitPromise' },
+                    docsUrl: "./docs/error-codes.md#upd",
+                });
+            }
+            this._waitResolver.resolve();
+        });
+        return this._waitResolver.promise;
+    }
+    async _main() {
+        this._processing = true;
+        try {
+            let waitPromise = this._nextWaitPromise();
+            while (waitPromise) {
+                try {
+                    await waitPromise;
+                    break;
+                }
+                catch (e) {
+                    waitPromise = this._nextWaitPromise();
+                }
+            }
+        }
+        finally {
+            // 終了処理
+            this._renderMain.terminate();
+            this._processing = false;
+            this._waitResolver = null;
+            this._processResolvers = [];
+        }
+    }
+    get isProcessing() {
+        return this._processing;
+    }
+}
+function createUpdaterObserver(renderMain) {
+    return new UpdaterObserver(renderMain);
+}
 /**
  * The Updater class plays a central role in state management and updates.
  * Instances are created on-demand when state updates are needed.
@@ -39,6 +112,7 @@ class Updater {
     _completedResolvers = Promise.withResolvers();
     _renderMain;
     _isAlive = true;
+    _observer;
     /**
      * Constructs a new Updater instance.
      * Automatically increments the engine's version number.
@@ -49,6 +123,7 @@ class Updater {
         this._engine = engine;
         this._version = engine.versionUp();
         this._renderMain = createRenderMain(engine, this, this._completedResolvers);
+        this._observer = createUpdaterObserver(this._renderMain);
         engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
         this._completedResolvers.promise.finally(() => {
             this._isAlive = false;
@@ -94,6 +169,7 @@ class Updater {
         this._completedResolvers = Promise.withResolvers();
         this._version = this._engine.versionUp();
         this._renderMain = createRenderMain(this._engine, this, this._completedResolvers);
+        this._observer = createUpdaterObserver(this._renderMain);
         this._engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
         this._completedResolvers.promise.finally(() => {
             this._isAlive = false;
@@ -136,6 +212,7 @@ class Updater {
      * });
      */
     update(loopContext, callback) {
+        const resolvers = this._observer.createProcessResolver();
         // Create writable state proxy and execute update callback
         const resultPromise = useWritableStateProxy(this._engine, this, this._engine.state, loopContext, (state, handler) => {
             // Execute user's state modification callback
@@ -166,7 +243,7 @@ class Updater {
                 });
             }
             else {
-                this._renderMain.terminate();
+                resolvers.resolve();
             }
         };
         // Handle both Promise and non-Promise results
@@ -200,6 +277,7 @@ class Updater {
      * @returns {void}
      */
     initialRender(callback) {
+        const processResolvers = this._observer.createProcessResolver();
         const resolver = Promise.withResolvers();
         const renderer = createRenderer(this._engine, this, resolver);
         try {
@@ -207,7 +285,7 @@ class Updater {
         }
         finally {
             // 2フェイズレンダリング対応時、この行は不要になる可能性あり
-            this._renderMain.terminate();
+            processResolvers.resolve();
         }
     }
     /**
@@ -216,20 +294,15 @@ class Updater {
      * @returns
      */
     invoke(callback) {
-        if (this._isAlive) {
-            raiseError({
-                code: 'UPD-006',
-                message: 'Updater has already been used. Create a new Updater instance for invoke.',
-                context: { where: 'Updater.invoke' },
-                docsUrl: "./docs/error-codes.md#upd",
-            });
+        if (!this._isAlive) {
+            this._rebuild();
         }
-        this._rebuild();
+        const processResolvers = this._observer.createProcessResolver();
         try {
             return callback();
         }
         finally {
-            this._renderMain.terminate();
+            processResolvers.resolve();
         }
     }
     /**

@@ -12,6 +12,82 @@ import { createRenderer } from "./Renderer";
 import { createRenderMain } from "./RenderMain";
 import { IListSnapshot, IRenderer, IRenderMain, IUpdater, UpdateCallback, UpdateComplete } from "./types";
 
+class UpdaterObserver {
+  private _version: number = 0;
+  private _processResolvers: PromiseWithResolvers<void>[] = [];
+  private _waitResolver: PromiseWithResolvers<void> | null = null;
+  private _renderMain: IRenderMain;
+  private _processing: boolean = false;
+  constructor(renderMain: IRenderMain) {
+    this._renderMain = renderMain;
+  }
+
+  createProcessResolver(): PromiseWithResolvers<void> {
+    const resolver = Promise.withResolvers<void>();
+    this._processResolvers.push(resolver);
+    if (this._waitResolver === null) {
+      this._main();
+    } else {
+      this._waitResolver.reject();
+    }
+    return resolver;
+  }
+
+  private _getVersionUp(): number {
+    this._version++;
+    return this._version;
+  }
+
+  private _nextWaitPromise(): Promise<void> {
+    const version = this._getVersionUp();
+    this._waitResolver = Promise.withResolvers<void>();
+    const processPromises = this._processResolvers.map(c => c.promise);
+    Promise.all(processPromises).then(() => {
+      if (this._version !== version) {
+        return;
+      }
+      if (this._waitResolver === null) {
+        raiseError({
+          code: 'UPD-007',
+          message: 'UpdaterObserver waitResolver is null.',
+          context: { where: 'UpdaterObserver.nextWaitPromise' },
+          docsUrl: "./docs/error-codes.md#upd",
+        });
+      }
+      this._waitResolver.resolve();
+    });
+    return this._waitResolver.promise;
+  }
+
+  private async _main() {
+    this._processing = true;
+    try {
+      let waitPromise = this._nextWaitPromise();
+      while(waitPromise) {
+        try {
+          await waitPromise;
+          break;
+        } catch(e) {
+          waitPromise = this._nextWaitPromise();
+        }
+      }
+    } finally {
+      // 終了処理
+      this._renderMain.terminate();
+      this._processing = false;
+      this._waitResolver = null;
+      this._processResolvers = [];
+    }
+  }
+
+  get isProcessing(): boolean {
+    return this._processing;
+  }
+}
+
+function createUpdaterObserver(renderMain: IRenderMain): UpdaterObserver {
+  return new UpdaterObserver(renderMain);
+}
 
 /**
  * The Updater class plays a central role in state management and updates.
@@ -57,6 +133,8 @@ class Updater implements IUpdater {
   private _renderMain: IRenderMain;
 
   private _isAlive: boolean = true;
+
+  private _observer: UpdaterObserver;
   /**
    * Constructs a new Updater instance.
    * Automatically increments the engine's version number.
@@ -67,6 +145,7 @@ class Updater implements IUpdater {
     this._engine = engine;
     this._version = engine.versionUp();
     this._renderMain = createRenderMain(engine, this, this._completedResolvers);
+    this._observer = createUpdaterObserver(this._renderMain);
     engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
     this._completedResolvers.promise.finally(() => {
       this._isAlive = false;
@@ -116,6 +195,7 @@ class Updater implements IUpdater {
     this._completedResolvers = Promise.withResolvers<boolean>();
     this._version = this._engine.versionUp();
     this._renderMain = createRenderMain(this._engine, this, this._completedResolvers);
+    this._observer = createUpdaterObserver(this._renderMain);
     this._engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
     this._completedResolvers.promise.finally(() => {
       this._isAlive = false;
@@ -165,6 +245,7 @@ class Updater implements IUpdater {
     loopContext: ILoopContext | null, 
     callback: UpdateCallback<R>
   ): R {
+    const resolvers = this._observer.createProcessResolver();
     // Create writable state proxy and execute update callback
     const resultPromise: R = useWritableStateProxy<R>(this._engine, this, this._engine.state, loopContext, 
       (state:IWritableStateProxy, handler:IWritableStateHandler): R => {
@@ -198,7 +279,7 @@ class Updater implements IUpdater {
           }
         });
       } else {
-        this._renderMain.terminate();
+        resolvers.resolve();
       }
     };
     
@@ -234,13 +315,14 @@ class Updater implements IUpdater {
    * @returns {void}
    */
   initialRender(callback: (renderer: IRenderer) => void): void {
+    const processResolvers = this._observer.createProcessResolver();
     const resolver = Promise.withResolvers<void>();
     const renderer = createRenderer(this._engine, this, resolver);
     try {
       callback(renderer);
     } finally {
       // 2フェイズレンダリング対応時、この行は不要になる可能性あり
-      this._renderMain.terminate();
+      processResolvers.resolve();
     }
   }
 
@@ -250,19 +332,14 @@ class Updater implements IUpdater {
    * @returns 
    */
   invoke<T>(callback: () => T): T {
-    if (this._isAlive) {
-      raiseError({
-        code: 'UPD-006',
-        message: 'Updater has already been used. Create a new Updater instance for invoke.',
-        context: { where: 'Updater.invoke' },
-        docsUrl: "./docs/error-codes.md#upd",
-      });
+    if (!this._isAlive) {
+      this._rebuild();
     }
-    this._rebuild();
+    const processResolvers = this._observer.createProcessResolver();
     try {
       return callback();
     } finally {
-      this._renderMain.terminate();
+      processResolvers.resolve();
     }
 
   }
