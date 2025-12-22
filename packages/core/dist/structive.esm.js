@@ -4206,8 +4206,8 @@ class UpdateActivityTracker {
             if (this._waitResolver === null) {
                 raiseError({
                     code: 'UPD-007',
-                    message: 'UpdaterObserver waitResolver is null.',
-                    context: { where: 'UpdaterObserver.nextWaitPromise' },
+                    message: 'UpdateActivityTracker waitResolver is null.',
+                    context: { where: 'UpdateActivityTracker.nextWaitPromise' },
                     docsUrl: "./docs/error-codes.md#upd",
                 });
             }
@@ -4231,9 +4231,9 @@ class UpdateActivityTracker {
         }
         finally {
             // 終了処理
+            this._waitResolver = null;
             this._renderMain.terminate();
             this._processing = false;
-            this._waitResolver = null;
             this._processResolvers = [];
         }
     }
