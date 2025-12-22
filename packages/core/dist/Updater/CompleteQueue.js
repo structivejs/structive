@@ -33,7 +33,8 @@ class UpdateCompleteQueue {
         try {
             while (this._queue.length > 0) {
                 const resolver = Promise.withResolvers();
-                queueMicrotask(async () => {
+                queueMicrotask(() => {
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     this._processNext(resolver);
                 });
                 await resolver.promise;
@@ -49,6 +50,7 @@ class UpdateCompleteQueue {
             notifyResolver: Promise.withResolvers(),
         });
         if (!this._processing) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             this._processQueue();
         }
     }

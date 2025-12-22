@@ -1,4 +1,3 @@
-import { createUpdater } from "../../Updater/Updater";
 import { raiseError } from "../../utils";
 import { IStateHandler, IStateProxy } from "../types";
 

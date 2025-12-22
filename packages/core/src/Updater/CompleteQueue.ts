@@ -43,7 +43,8 @@ class UpdateCompleteQueue implements IUpdateCompleteQueue {
     try {
       while (this._queue.length > 0) {
         const resolver = Promise.withResolvers<void>();
-        queueMicrotask(async () => {
+        queueMicrotask(() => {
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
           this._processNext(resolver);
         });
         await resolver.promise;
@@ -59,6 +60,7 @@ class UpdateCompleteQueue implements IUpdateCompleteQueue {
       notifyResolver: Promise.withResolvers<boolean>(),
     });
     if (!this._processing) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
       this._processQueue();
     }
   }

@@ -9,6 +9,7 @@ class RenderMain {
         this._updater = updater;
         this._completedResolvers = completedResolvers;
         queueMicrotask(() => {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             this._main();
         });
     }

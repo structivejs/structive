@@ -238,3 +238,8 @@ export interface IRenderMain {
   wakeup(): void;
   terminate(): void;
 }
+
+export interface IUpdateActivityTracker {
+  readonly isProcessing: boolean;
+  createProcessResolver(): PromiseWithResolvers<void>;
+}

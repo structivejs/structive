@@ -4120,6 +4120,7 @@ class RenderMain {
         this._updater = updater;
         this._completedResolvers = completedResolvers;
         queueMicrotask(() => {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             this._main();
         });
     }
@@ -4168,7 +4169,7 @@ function createRenderMain(engine, updater, completedResolvers) {
     return new RenderMain(engine, updater, completedResolvers);
 }
 
-class UpdaterObserver {
+class UpdateActivityTracker {
     _version = 0;
     _processResolvers = [];
     _waitResolver = null;
@@ -4181,6 +4182,7 @@ class UpdaterObserver {
         const resolver = Promise.withResolvers();
         this._processResolvers.push(resolver);
         if (this._waitResolver === null) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             this._main();
         }
         else {
@@ -4196,6 +4198,7 @@ class UpdaterObserver {
         const version = this._getVersionUp();
         this._waitResolver = Promise.withResolvers();
         const processPromises = this._processResolvers.map(c => c.promise);
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         Promise.all(processPromises).then(() => {
             if (this._version !== version) {
                 return;
@@ -4216,12 +4219,12 @@ class UpdaterObserver {
         this._processing = true;
         try {
             let waitPromise = this._nextWaitPromise();
-            while (waitPromise) {
+            while (waitPromise !== null) {
                 try {
                     await waitPromise;
                     break;
                 }
-                catch (e) {
+                catch (_e) {
                     waitPromise = this._nextWaitPromise();
                 }
             }
@@ -4238,9 +4241,10 @@ class UpdaterObserver {
         return this._processing;
     }
 }
-function createUpdaterObserver(renderMain) {
-    return new UpdaterObserver(renderMain);
+function createUpdateActivityTracker(renderMain) {
+    return new UpdateActivityTracker(renderMain);
 }
+
 /**
  * The Updater class plays a central role in state management and updates.
  * Instances are created on-demand when state updates are needed.
@@ -4275,7 +4279,7 @@ class Updater {
     _completedResolvers = Promise.withResolvers();
     _renderMain;
     _isAlive = true;
-    _observer;
+    _tracker;
     /**
      * Constructs a new Updater instance.
      * Automatically increments the engine's version number.
@@ -4286,8 +4290,9 @@ class Updater {
         this._engine = engine;
         this._version = engine.versionUp();
         this._renderMain = createRenderMain(engine, this, this._completedResolvers);
-        this._observer = createUpdaterObserver(this._renderMain);
+        this._tracker = createUpdateActivityTracker(this._renderMain);
         engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this._completedResolvers.promise.finally(() => {
             this._isAlive = false;
         });
@@ -4332,8 +4337,9 @@ class Updater {
         this._completedResolvers = Promise.withResolvers();
         this._version = this._engine.versionUp();
         this._renderMain = createRenderMain(this._engine, this, this._completedResolvers);
-        this._observer = createUpdaterObserver(this._renderMain);
+        this._tracker = createUpdateActivityTracker(this._renderMain);
         this._engine.updateCompleteQueue.enqueue(this._completedResolvers.promise);
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
         this._completedResolvers.promise.finally(() => {
             this._isAlive = false;
         });
@@ -4375,7 +4381,7 @@ class Updater {
      * });
      */
     update(loopContext, callback) {
-        const resolvers = this._observer.createProcessResolver();
+        const resolvers = this._tracker.createProcessResolver();
         // Create writable state proxy and execute update callback
         const resultPromise = useWritableStateProxy(this._engine, this, this._engine.state, loopContext, (state, handler) => {
             // Execute user's state modification callback
@@ -4440,7 +4446,7 @@ class Updater {
      * @returns {void}
      */
     initialRender(callback) {
-        const processResolvers = this._observer.createProcessResolver();
+        const processResolvers = this._tracker.createProcessResolver();
         const resolver = Promise.withResolvers();
         const renderer = createRenderer(this._engine, this, resolver);
         try {
@@ -4460,7 +4466,7 @@ class Updater {
         if (!this._isAlive) {
             this._rebuild();
         }
-        const processResolvers = this._observer.createProcessResolver();
+        const processResolvers = this._tracker.createProcessResolver();
         try {
             return callback();
         }
@@ -8997,7 +9003,8 @@ class UpdateCompleteQueue {
         try {
             while (this._queue.length > 0) {
                 const resolver = Promise.withResolvers();
-                queueMicrotask(async () => {
+                queueMicrotask(() => {
+                    // eslint-disable-next-line @typescript-eslint/no-floating-promises
                     this._processNext(resolver);
                 });
                 await resolver.promise;
@@ -9013,6 +9020,7 @@ class UpdateCompleteQueue {
             notifyResolver: Promise.withResolvers(),
         });
         if (!this._processing) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
             this._processQueue();
         }
     }
