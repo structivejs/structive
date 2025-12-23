@@ -17,6 +17,7 @@ class RenderMain implements IRenderMain {
     this._engine = engine;
     this._updater = updater;
     this._completedResolvers = completedResolvers;
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     this._main();
   }
 

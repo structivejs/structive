@@ -207,8 +207,8 @@ export interface IRenderer {
   readonly updatingRefSet: Set<IStatePropertyRef>;
 
   readonly renderPhase: RenderPhase;
-  readonly applyPhaseBinidings: Set<IBinding>;
-  readonly applySelectPhaseBinidings: Set<IBinding>;
+  readonly applyPhaseBinidings: IBinding[];
+  readonly applySelectPhaseBinidings: IBinding[];
   /**
    * Starts the rendering process for the given state property references.
    * Traverses dependencies, applies binding changes, and coordinates the update.

@@ -47,8 +47,8 @@ class Renderer implements IRenderer {
   private _readonlyState: IReadonlyStateProxy | null = null;
   private _readonlyHandler : IReadonlyStateHandler | null = null;
   private _renderPhase: RenderPhase = 'build';
-  private _applyPhaseBinidings: Set<IBinding> = new Set();
-  private _applySelectPhaseBinidings: Set<IBinding> = new Set();
+  private _applyPhaseBinidings: IBinding[] = [];
+  private _applySelectPhaseBinidings: IBinding[] = [];
 
   /**
    * Constructs a new Renderer instance.
@@ -69,11 +69,11 @@ class Renderer implements IRenderer {
     return this._updatingRefSet;
   }
 
-  get applyPhaseBinidings(): Set<IBinding> {
+  get applyPhaseBinidings(): IBinding[] {
     return this._applyPhaseBinidings;
   }
 
-  get applySelectPhaseBinidings(): Set<IBinding> {
+  get applySelectPhaseBinidings(): IBinding[] {
     return this._applySelectPhaseBinidings;
   }
   /**
@@ -230,20 +230,33 @@ class Renderer implements IRenderer {
         }
       }
 
-      this._renderPhase = 'apply';
-      // Phase 5: Apply changes for bindings registered during 'build' phase
-      for(const binding of this._applyPhaseBinidings) {
-        binding.applyChange(this);
-      }
-
-      this._renderPhase = 'applySelect';
-      // Phase 6: Apply changes for select element bindings registered during 'apply' phase
-      for(const binding of this._applySelectPhaseBinidings) {
-        binding.applyChange(this);
-      }
+      this._applyPhaseRender();
+      this._applySelectPhaseRender();
     });
   }
 
+  private _applyPhaseRender(): void {
+    this._renderPhase = 'apply';
+    try {
+      for(let i = 0; i < this._applyPhaseBinidings.length; i++) {
+        this._applyPhaseBinidings[i].applyChange(this);
+      }
+    } finally {
+      this._applyPhaseBinidings = [];
+    }
+  }
+
+  private _applySelectPhaseRender(): void {
+    this._renderPhase = 'applySelect';
+    try {
+      for(let i = 0; i < this._applySelectPhaseBinidings.length; i++) {
+        this._applySelectPhaseBinidings[i].applyChange(this);
+      }
+    } finally {
+      this._applySelectPhaseBinidings = [];
+    }
+  }
+  
   /**
    * Renders a single reference ref and its corresponding PathNode.
    *
@@ -369,14 +382,8 @@ class Renderer implements IRenderer {
   initialRender(root: IBindContent): void {
     this.createReadonlyState( () => {
       root.applyChange(this);
-      this._renderPhase = 'apply';
-      for(const binding of this._applyPhaseBinidings) {
-        binding.applyChange(this);
-      }
-      this._renderPhase = 'applySelect';
-      for(const binding of this._applySelectPhaseBinidings) {
-        binding.applyChange(this);
-      }
+      this._applyPhaseRender();
+      this._applySelectPhaseRender();
     });
   }
 }

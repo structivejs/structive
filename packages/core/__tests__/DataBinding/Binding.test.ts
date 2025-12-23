@@ -176,12 +176,12 @@ describe("Binding", () => {
     const renderer: any = {
       updatedBindings: new Set(),
       processedRefs: new Set(),
-      applyPhaseBinidings: new Set(),
+      applyPhaseBinidings: [] as any[],
       renderPhase: 'build',
     };
     
     binding.applyChange(renderer);
-    expect(renderer.applyPhaseBinidings.has(binding)).toBe(true);
+    expect(renderer.applyPhaseBinidings.includes(binding)).toBe(true);
     expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
   });
 
@@ -192,7 +192,7 @@ describe("Binding", () => {
     const renderer: any = {
       updatedBindings: new Set(),
       processedRefs: new Set(),
-      applyPhaseBinidings: new Set(),
+      applyPhaseBinidings: [] as any[],
       renderPhase: 'apply',
     };
     
@@ -209,14 +209,14 @@ describe("Binding", () => {
     const renderer: any = {
       updatedBindings: new Set(),
       processedRefs: new Set(),
-      applyPhaseBinidings: new Set(),
-      applySelectPhaseBinidings: new Set(),
+      applyPhaseBinidings: [] as any[],
+      applySelectPhaseBinidings: [] as any[],
       renderPhase: 'build',
     };
     
     binding.applyChange(renderer);
-    expect(renderer.applySelectPhaseBinidings.has(binding)).toBe(true);
-    expect(renderer.applyPhaseBinidings.has(binding)).toBe(false);
+    expect(renderer.applySelectPhaseBinidings.includes(binding)).toBe(true);
+    expect(renderer.applyPhaseBinidings.includes(binding)).toBe(false);
     expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
     
     // cleanup

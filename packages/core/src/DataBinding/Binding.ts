@@ -97,9 +97,9 @@ class Binding implements IBinding {
     if (renderer.updatedBindings.has(this)) {return;}
     if (renderer.renderPhase === 'build' && !this.bindingNode.buildable) {
       if (this.bindingNode.isSelectElement) {
-        renderer.applySelectPhaseBinidings.add(this);
+        renderer.applySelectPhaseBinidings.push(this);
       } else {
-        renderer.applyPhaseBinidings.add(this);
+        renderer.applyPhaseBinidings.push(this);
       }
       return;
     } else if (renderer.renderPhase === 'apply' && (this.bindingNode.buildable || this.bindingNode.isSelectElement)) {

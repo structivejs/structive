@@ -77,10 +77,10 @@ class Binding {
         }
         if (renderer.renderPhase === 'build' && !this.bindingNode.buildable) {
             if (this.bindingNode.isSelectElement) {
-                renderer.applySelectPhaseBinidings.add(this);
+                renderer.applySelectPhaseBinidings.push(this);
             }
             else {
-                renderer.applyPhaseBinidings.add(this);
+                renderer.applyPhaseBinidings.push(this);
             }
             return;
         }

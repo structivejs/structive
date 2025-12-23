@@ -123,7 +123,7 @@ describe("Renderer Real Implementation", () => {
       expect(renderer.lastListInfoByRef).toBeInstanceOf(Map);
       expect(renderer.updatingRefs).toEqual([]);
       expect(renderer.updatingRefSet).toBeInstanceOf(Set);
-      expect(renderer.applyPhaseBinidings).toBeInstanceOf(Set);
+      expect(Array.isArray(renderer.applyPhaseBinidings)).toBe(true);
       expect(renderer.renderPhase).toBe("build");
     });
   });
@@ -511,7 +511,7 @@ describe("Renderer Real Implementation", () => {
       const applyPhaseBinding = { applyChange: vi.fn() };
       const buildPhaseBinding = {
         applyChange: vi.fn((renderer: IRenderer) => {
-          renderer.applyPhaseBinidings.add(applyPhaseBinding as any);
+          renderer.applyPhaseBinidings.push(applyPhaseBinding as any);
         }),
       };
       engine.getBindings.mockReturnValue([buildPhaseBinding]);
@@ -541,7 +541,7 @@ describe("Renderer Real Implementation", () => {
       };
       const buildPhaseBinding = {
         applyChange: vi.fn((renderer: IRenderer) => {
-          renderer.applyPhaseBinidings.add(applyPhaseBinding as any);
+          renderer.applyPhaseBinidings.push(applyPhaseBinding as any);
         }),
       };
       engine.getBindings.mockReturnValue([buildPhaseBinding]);
@@ -567,7 +567,7 @@ describe("Renderer Real Implementation", () => {
       const applySelectPhaseBinding = { applyChange: vi.fn() };
       const buildPhaseBinding = {
         applyChange: vi.fn((renderer: IRenderer) => {
-          renderer.applySelectPhaseBinidings.add(applySelectPhaseBinding as any);
+          renderer.applySelectPhaseBinidings.push(applySelectPhaseBinding as any);
         }),
       };
       engine.getBindings.mockReturnValue([buildPhaseBinding]);
@@ -597,7 +597,7 @@ describe("Renderer Real Implementation", () => {
       };
       const buildPhaseBinding = {
         applyChange: vi.fn((renderer: IRenderer) => {
-          renderer.applySelectPhaseBinidings.add(applySelectPhaseBinding as any);
+          renderer.applySelectPhaseBinidings.push(applySelectPhaseBinding as any);
         }),
       };
       engine.getBindings.mockReturnValue([buildPhaseBinding]);
@@ -1219,7 +1219,7 @@ describe("Renderer Real Implementation", () => {
       // Root that adds binding to applyPhaseBinidings in build phase
       const mockRoot = {
         applyChange: vi.fn((renderer: IRenderer) => {
-          renderer.applyPhaseBinidings.add(applyPhaseBinding as any);
+          renderer.applyPhaseBinidings.push(applyPhaseBinding as any);
         }),
       };
 
@@ -1240,7 +1240,7 @@ describe("Renderer Real Implementation", () => {
       // Root that adds binding to applySelectPhaseBinidings in build phase
       const mockRoot = {
         applyChange: vi.fn((renderer: IRenderer) => {
-          renderer.applySelectPhaseBinidings.add(applySelectPhaseBinding as any);
+          renderer.applySelectPhaseBinidings.push(applySelectPhaseBinding as any);
         }),
       };
 
@@ -1268,8 +1268,8 @@ describe("Renderer Real Implementation", () => {
       const mockRoot = {
         applyChange: vi.fn((renderer: IRenderer) => {
           callOrder.push("build");
-          renderer.applyPhaseBinidings.add(applyPhaseBinding as any);
-          renderer.applySelectPhaseBinidings.add(applySelectPhaseBinding as any);
+          renderer.applyPhaseBinidings.push(applyPhaseBinding as any);
+          renderer.applySelectPhaseBinidings.push(applySelectPhaseBinding as any);
         }),
       };
 
@@ -1300,8 +1300,8 @@ describe("Renderer Real Implementation", () => {
       const mockRoot = {
         applyChange: vi.fn((renderer: IRenderer) => {
           capturedPhases.push(`build:${renderer.renderPhase}`);
-          renderer.applyPhaseBinidings.add(applyPhaseBinding as any);
-          renderer.applySelectPhaseBinidings.add(applySelectPhaseBinding as any);
+          renderer.applyPhaseBinidings.push(applyPhaseBinding as any);
+          renderer.applySelectPhaseBinidings.push(applySelectPhaseBinding as any);
         }),
       };
 

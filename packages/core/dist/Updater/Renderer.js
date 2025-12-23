@@ -37,8 +37,8 @@ class Renderer {
     _readonlyState = null;
     _readonlyHandler = null;
     _renderPhase = 'build';
-    _applyPhaseBinidings = new Set();
-    _applySelectPhaseBinidings = new Set();
+    _applyPhaseBinidings = [];
+    _applySelectPhaseBinidings = [];
     /**
      * Constructs a new Renderer instance.
      *
@@ -202,17 +202,31 @@ class Renderer {
                     }
                 }
             }
-            this._renderPhase = 'apply';
-            // Phase 5: Apply changes for bindings registered during 'build' phase
-            for (const binding of this._applyPhaseBinidings) {
-                binding.applyChange(this);
-            }
-            this._renderPhase = 'applySelect';
-            // Phase 6: Apply changes for select element bindings registered during 'apply' phase
-            for (const binding of this._applySelectPhaseBinidings) {
-                binding.applyChange(this);
-            }
+            this._applyPhaseRender();
+            this._applySelectPhaseRender();
         });
+    }
+    _applyPhaseRender() {
+        this._renderPhase = 'apply';
+        try {
+            for (let i = 0; i < this._applyPhaseBinidings.length; i++) {
+                this._applyPhaseBinidings[i].applyChange(this);
+            }
+        }
+        finally {
+            this._applyPhaseBinidings = [];
+        }
+    }
+    _applySelectPhaseRender() {
+        this._renderPhase = 'applySelect';
+        try {
+            for (let i = 0; i < this._applySelectPhaseBinidings.length; i++) {
+                this._applySelectPhaseBinidings[i].applyChange(this);
+            }
+        }
+        finally {
+            this._applySelectPhaseBinidings = [];
+        }
     }
     /**
      * Renders a single reference ref and its corresponding PathNode.
@@ -329,14 +343,8 @@ class Renderer {
     initialRender(root) {
         this.createReadonlyState(() => {
             root.applyChange(this);
-            this._renderPhase = 'apply';
-            for (const binding of this._applyPhaseBinidings) {
-                binding.applyChange(this);
-            }
-            this._renderPhase = 'applySelect';
-            for (const binding of this._applySelectPhaseBinidings) {
-                binding.applyChange(this);
-            }
+            this._applyPhaseRender();
+            this._applySelectPhaseRender();
         });
     }
 }
