@@ -26,6 +26,9 @@ vi.mock("../../src/StatePropertyRef/StatepropertyRef", () => ({
 
 import { render } from "../../src/Updater/Renderer";
 
+// Helper to create a dummy resolver for tests
+const makeDummyResolver = () => Promise.withResolvers<void>();
+
 type TestRef = {
   info: any;
   listIndex: any;
@@ -58,6 +61,10 @@ const makeEngine = () => ({
   getBindings: vi.fn((_ref: TestRef) => [] as any[]),
   structiveChildComponents: new Set<any>(),
   bindingsByComponent: new WeakMap<any, Set<any>>(),
+  updateCompleteQueue: {
+    enqueue: vi.fn(),
+    current: Promise.resolve(true),
+  },
 });
 
 const makeUpdater = () => ({
@@ -195,7 +202,7 @@ describe("Updater/Renderer (real implementation)", () => {
       parentRef: info === listDetailInfo ? listRef : null,
     }));
 
-    render([listRef, itemRef], engine as any, updater as any);
+    render([listRef, itemRef], engine as any, updater as any, makeDummyResolver());
 
     expect(bindCallLog).toEqual(expect.arrayContaining(["list", "wildcard"]));
     expect(capturedRenderer).not.toBeNull();
@@ -249,7 +256,7 @@ describe("Updater/Renderer (real implementation)", () => {
     }));
     getStructuredPathInfoMock.mockImplementation((path: string) => (path === "list" ? listInfo : itemInfo));
 
-    render([itemRef], engine as any, makeUpdater() as any);
+    render([itemRef], engine as any, makeUpdater() as any, makeDummyResolver());
 
     expect(listBinding.applyChange).toHaveBeenCalledTimes(1);
     expect(listIndexFromReadonly.index).toBe(100);
@@ -274,7 +281,7 @@ describe("Updater/Renderer (real implementation)", () => {
     } as any;
     engine.getBindings.mockImplementation((ref: TestRef) => (ref === listRef ? [listBinding] : []));
 
-    render([itemRef], engine as any, makeUpdater() as any);
+    render([itemRef], engine as any, makeUpdater() as any, makeDummyResolver());
 
     expect(listBinding.applyChange).toHaveBeenCalledTimes(1);
   });
@@ -304,7 +311,7 @@ describe("Updater/Renderer (real implementation)", () => {
       childNodeByName: new Map(),
     }));
 
-    render([itemRef], engine as any, makeUpdater() as any);
+    render([itemRef], engine as any, makeUpdater() as any, makeDummyResolver());
 
     expect(binding.applyChange).not.toHaveBeenCalled();
   });
@@ -326,7 +333,7 @@ describe("Updater/Renderer (real implementation)", () => {
 
     findPathNodeByPathMock.mockReturnValue({ currentPath: "root", childNodeByName: new Map() });
 
-    render([ref], engine as any, makeUpdater() as any);
+    render([ref], engine as any, makeUpdater() as any, makeDummyResolver());
 
     expect(binding.applyChange).not.toHaveBeenCalled();
   });
@@ -344,7 +351,7 @@ describe("Updater/Renderer (real implementation)", () => {
 
     const ref: TestRef = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null };
 
-    render([ref], engine as any, makeUpdater() as any);
+    render([ref], engine as any, makeUpdater() as any, makeDummyResolver());
 
     expect(childBinding.notifyRedraw).toHaveBeenCalledTimes(1);
     expect(childBinding.notifyRedraw).toHaveBeenCalledWith([ref]);
@@ -360,7 +367,7 @@ describe("Updater/Renderer (real implementation)", () => {
 
     const ref: TestRef = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null };
 
-    expect(() => render([ref], engine as any, makeUpdater() as any)).not.toThrow();
+    expect(() => render([ref], engine as any, makeUpdater() as any, makeDummyResolver())).not.toThrow();
   });
 
   it("parentRef が null の要素は UPD-004 を投げる", () => {
@@ -369,7 +376,7 @@ describe("Updater/Renderer (real implementation)", () => {
     const badInfo = { pattern: "list.item", wildcardCount: 0, wildcardParentInfos: [], parentInfo: { pattern: "list" } };
     const badRef: TestRef = { info: badInfo, listIndex: { index: 0 }, key: "bad", parentRef: null };
 
-    expect(() => render([badRef], engine as any, makeUpdater() as any)).toThrowError(/ParentInfo is null/);
+    expect(() => render([badRef], engine as any, makeUpdater() as any, makeDummyResolver())).toThrowError(/ParentInfo is null/);
   });
 
   it("PathNode が存在しない場合は PATH-101", () => {
@@ -377,7 +384,7 @@ describe("Updater/Renderer (real implementation)", () => {
     const ref: TestRef = { info: { pattern: "missing" }, listIndex: null, key: "missing", parentRef: null };
     findPathNodeByPathMock.mockReturnValueOnce(null);
 
-    expect(() => render([ref], engine as any, makeUpdater() as any)).toThrowError(/PathNode not found: missing/);
+    expect(() => render([ref], engine as any, makeUpdater() as any, makeDummyResolver())).toThrowError(/PathNode not found: missing/);
   });
 
   it("動的依存のノードがなければ PATH-101", () => {
@@ -393,7 +400,7 @@ describe("Updater/Renderer (real implementation)", () => {
 
     const ref: TestRef = { info: { pattern: "root" }, listIndex: null, key: "root", parentRef: null };
 
-    expect(() => render([ref], engine as any, makeUpdater() as any)).toThrowError(/PathNode not found: missingDep/);
+    expect(() => render([ref], engine as any, makeUpdater() as any, makeDummyResolver())).toThrowError(/PathNode not found: missingDep/);
   });
 
   it("リスト参照でインデックスが未取得の場合でも空集合として差分計算する", () => {
@@ -420,7 +427,7 @@ describe("Updater/Renderer (real implementation)", () => {
     } as any;
     engine.getBindings.mockReturnValue([listBinding]);
 
-    render([listRef], engine as any, makeUpdater() as any);
+    render([listRef], engine as any, makeUpdater() as any, makeDummyResolver());
 
     expect(listBinding.applyChange).toHaveBeenCalledTimes(1);
   });
@@ -464,7 +471,7 @@ describe("Updater/Renderer (real implementation)", () => {
 
     const rootRef: TestRef = { info: rootInfo, listIndex: null, key: "root-null", parentRef: null };
 
-    render([rootRef], engine as any, makeUpdater() as any);
+    render([rootRef], engine as any, makeUpdater() as any, makeDummyResolver());
 
     expect(getListIndexesSpy).toHaveBeenCalled();
     expect(findPathNodeByPathMock).toHaveBeenCalledWith(rootNode, "dep/*");

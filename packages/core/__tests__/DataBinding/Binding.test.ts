@@ -168,4 +168,36 @@ describe("Binding", () => {
     binding.applyChange(renderer);
     expect(renderer.processedRefs.has(mockBindingState.ref)).toBe(false);
   });
+
+  it("applyChange: buildフェーズで buildable=false の場合は applyPhaseBinidings に追加してスキップ", () => {
+    mockBindingNode.buildable = false;
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+      applyPhaseBinidings: new Set(),
+      renderPhase: 'build',
+    };
+    
+    binding.applyChange(renderer);
+    expect(renderer.applyPhaseBinidings.has(binding)).toBe(true);
+    expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
+  });
+
+  it("applyChange: applyフェーズで buildable=true の場合はスキップ", () => {
+    mockBindingNode.buildable = true;
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+      applyPhaseBinidings: new Set(),
+      renderPhase: 'apply',
+    };
+    
+    binding.applyChange(renderer);
+    expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
+    expect(renderer.updatedBindings.has(binding)).toBe(false);
+  });
 });

@@ -17,6 +17,10 @@ export function createEngineStub() {
       hasDisconnectedCallback: false,
       hasUpdatedCallback: false,
     },
+    updateCompleteQueue: {
+      enqueue: vi.fn(),
+      current: Promise.resolve(true),
+    },
   } as any;
 }
 

@@ -226,13 +226,9 @@ class Renderer implements IRenderer {
       }
 
       this._renderPhase = 'apply';
-      try {
-        // Phase 5: Apply changes for bindings registered during 'build' phase
-        for(const binding of this._applyPhaseBinidings) {
-//          if (this.updatedBindings.has(binding)) {continue;}
-          binding.applyChange(this);
-        }
-      } finally {
+      // Phase 5: Apply changes for bindings registered during 'build' phase
+      for(const binding of this._applyPhaseBinidings) {
+        binding.applyChange(this);
       }
     });
   }

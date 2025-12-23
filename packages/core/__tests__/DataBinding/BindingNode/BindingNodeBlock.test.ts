@@ -47,6 +47,14 @@ describe("BindingNodeBlock", () => {
       expect(node.filters).toEqual(filters);
       expect(node.decorates).toEqual(decorates);
     });
+
+    it("buildable getter は true を返す", () => {
+      const engine = createEngineStub();
+      const comment = document.createComment("@@|0");
+      const binding = createBindingStub(engine, comment);
+      const node = new BindingNodeBlock(binding, comment, "block", "block", [], []);
+      expect(node.buildable).toBe(true);
+    });
   });
 
   describe("異常系: textContent が null または不正", () => {

@@ -85,4 +85,12 @@ describe("BindingNode", () => {
     expect(() => node.activate()).not.toThrow();
     expect(() => node.inactivate()).not.toThrow();
   });
+
+  it("buildable getter returns false by default", () => {
+    const binding = {} as any;
+    const div = document.createElement("div");
+    const node = new BindingNode(binding as any, div, "value", "value", [], []);
+    
+    expect(node.buildable).toBe(false);
+  });
 });

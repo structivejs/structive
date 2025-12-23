@@ -96,3 +96,5 @@ class UpdateActivityTracker {
 export function createUpdateActivityTracker(renderMain) {
     return new UpdateActivityTracker(renderMain);
 }
+// Export for testing purposes only
+export { UpdateActivityTracker as _UpdateActivityTracker };

@@ -49,6 +49,7 @@ const connectedSpy = vi.fn();
 const disconnectedSpy = vi.fn();
 const registerChildSpy = vi.fn();
 const unregisterChildSpy = vi.fn();
+const updateCompletePromise = Promise.resolve(true);
 const engineObj = {
   setup: setupSpy,
   connectedCallback: connectedSpy,
@@ -60,6 +61,7 @@ const engineObj = {
   bindingsByComponent: new Map<any, any>(),
   registerChildComponent: registerChildSpy,
   unregisterChildComponent: unregisterChildSpy,
+  updateCompleteQueue: { current: updateCompletePromise },
 };
 const createComponentEngineMock = vi.fn(() => engineObj);
 vi.mock("../../src/ComponentEngine/ComponentEngine", () => ({ createComponentEngine: () => createComponentEngineMock() }));
@@ -82,6 +84,7 @@ describe("WebComponents/createComponentClass", () => {
     vi.clearAllMocks();
     engineObj.stateClass = { $isStructive: true };
     engineObj.bindingsByComponent = new Map<any, any>();
+    engineObj.updateCompleteQueue = { current: updateCompletePromise };
     // ensure customElements.define doesn't actually register
     vi.spyOn(customElements, "define").mockImplementation(() => undefined as any);
   });
@@ -185,6 +188,9 @@ describe("WebComponents/createComponentClass", () => {
     const p2 = inst.parentStructiveComponent;
     expect(p1).toBe(p2);
     expect(findStructiveParentMock).toHaveBeenCalledTimes(1);
+
+    // updateComplete は updateCompleteQueue.current を返す
+    expect(inst.updateComplete).toBe(updateCompletePromise);
   });
 
   it("define は extends あり/なしで customElements.define の引数が変わる", () => {

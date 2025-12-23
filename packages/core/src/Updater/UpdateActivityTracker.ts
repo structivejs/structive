@@ -100,3 +100,6 @@ class UpdateActivityTracker implements IUpdateActivityTracker  {
 export function createUpdateActivityTracker(renderMain: IRenderMain): IUpdateActivityTracker {
   return new UpdateActivityTracker(renderMain);
 }
+
+// Export for testing purposes only
+export { UpdateActivityTracker as _UpdateActivityTracker };

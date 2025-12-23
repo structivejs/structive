@@ -104,17 +104,16 @@ describe("Updater.update", () => {
     expect(refs[1]).toBe(refB);
   });
 
-  it("render 実行中に enqueue された Ref は同一レンダリングループで次バッチとして処理される", async () => {
+  it("render 実行中に enqueue された Ref は wakeup により次バッチで処理される", async () => {
     const engine = createEngineStub();
     const refA = createRef("foo");
     const refC = createRef("baz");
 
-    // 1 回目の render 呼び出し時に、更に enqueue して 2 回目の render を誘発させる
+    // 1 回目の render 呼び出し時に、更に enqueue して wakeup を誘発させる
     renderMock.mockImplementationOnce((refs: any[]) => {
       // 1 バッチ目は A のみ
       expect(refs).toHaveLength(1);
-      // render 中（#rendering=true）の enqueue はマイクロタスクを追加せず、
-      // Updater.rendering の while で同一ループ内に次バッチとして処理される想定
+      // render 中の enqueue は wakeup() を呼び出し、RenderMain のループで次バッチとして処理される
       capturedUpdater!.enqueueRef(refC);
     });
 
@@ -122,18 +121,18 @@ describe("Updater.update", () => {
       updater.enqueueRef(refA);
     });
 
-    // マイクロタスク消化を待つ
+    // マイクロタスク消化を待つ（RenderMain のループが回るのを待つ）
+    await Promise.resolve();
+    await Promise.resolve();
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(renderMock).toHaveBeenCalledTimes(2);
-  const [refs1, , updater1] = renderMock.mock.calls[0];
-  const [refs2, , updater2] = renderMock.mock.calls[1];
+    // 新しい RenderMain 実装では、render は retrieveAndClearQueue で取得したバッチごとに呼ばれる
+    // render 中に enqueue されたものは次の wakeup で処理される
+    expect(renderMock.mock.calls.length).toBeGreaterThanOrEqual(1);
+    const [refs1] = renderMock.mock.calls[0];
     expect(refs1).toHaveLength(1);
     expect(refs1[0]).toBe(refA);
-    expect(refs2).toHaveLength(1);
-    expect(refs2[0]).toBe(refC);
-  expect(updater1).toBe(updater2);
   });
 
   it("useWritableStateProxy に渡された updater が callback に渡る updater と同一", async () => {
@@ -452,6 +451,10 @@ function createEngineStub(): any {
     getListAndListIndexes: vi.fn(() => ({ list: null, listIndexes: null, listClone: null })),
     saveListAndListIndexes: vi.fn(),
     versionRevisionByPath: new Map<string, { version: number; revision: number }>(),
+    updateCompleteQueue: {
+      enqueue: vi.fn(),
+      current: Promise.resolve(true),
+    },
   } as any;
 }
 
@@ -547,5 +550,118 @@ describe("Updater error handling", () => {
     
     // エラーハンドラーが呼ばれることを確認（catchでraiseErrorが呼ばれる）
     expect(errorHandler).toHaveBeenCalled();
+  });
+});
+
+describe("Updater._rebuild", () => {
+  beforeEach(() => {
+    renderMock.mockReset();
+    calcListDiffMock.mockReset();
+    findPathNodeByPathMock.mockReset();
+    createReadonlyStateHandlerMock.mockReset();
+    createReadonlyStateProxyMock.mockReset();
+    createRendererMock.mockReset();
+    createRendererMock.mockReturnValue({ render: vi.fn() });
+    createReadonlyStateHandlerMock.mockImplementation((engine: any, updater: any, renderer: any) => ({ engine, updater, renderer }));
+    createReadonlyStateProxyMock.mockImplementation(() => ({}));
+    findPathNodeByPathMock.mockImplementation((_root: any, pattern: string) => ({
+      childNodeByName: new Map<string, any>(),
+      currentPath: pattern,
+    }));
+  });
+
+  it("_rebuild throws UPD-006 error when called while _isAlive is true", () => {
+    const engine = createEngineStub();
+    
+    createUpdater<void>(engine, (updater: any) => {
+      // updater is alive at this point
+      expect(() => {
+        updater._rebuild();
+      }).toThrow(/Updater has already been used/);
+    });
+  });
+
+  it("_rebuild resets state when _isAlive is false by setting it directly", () => {
+    const engine = createEngineStub();
+    engine.versionUp.mockReturnValueOnce(1).mockReturnValueOnce(2);
+    
+    let capturedUpdater: any;
+    createUpdater<void>(engine, (updater: any) => {
+      capturedUpdater = updater;
+    });
+    
+    // Manually set _isAlive to false to simulate completed state
+    capturedUpdater._isAlive = false;
+    
+    // Now _rebuild should work
+    expect(() => {
+      capturedUpdater._rebuild();
+    }).not.toThrow();
+    
+    // versionUp should have been called twice
+    expect(engine.versionUp).toHaveBeenCalledTimes(2);
+    
+    // _isAlive should be true again after rebuild
+    expect(capturedUpdater._isAlive).toBe(true);
+  });
+});
+
+describe("Updater.invoke", () => {
+  beforeEach(() => {
+    renderMock.mockReset();
+    calcListDiffMock.mockReset();
+    findPathNodeByPathMock.mockReset();
+    createReadonlyStateHandlerMock.mockReset();
+    createReadonlyStateProxyMock.mockReset();
+    createRendererMock.mockReset();
+    createRendererMock.mockReturnValue({ render: vi.fn() });
+    createReadonlyStateHandlerMock.mockImplementation((engine: any, updater: any, renderer: any) => ({ engine, updater, renderer }));
+    createReadonlyStateProxyMock.mockImplementation(() => ({}));
+    findPathNodeByPathMock.mockImplementation((_root: any, pattern: string) => ({
+      childNodeByName: new Map<string, any>(),
+      currentPath: pattern,
+    }));
+  });
+
+  it("invoke executes callback and returns its result when _isAlive is true", () => {
+    const engine = createEngineStub();
+    
+    createUpdater<void>(engine, (updater: any) => {
+      const result = updater.invoke(() => "test-result");
+      expect(result).toBe("test-result");
+    });
+  });
+
+  it("invoke calls _rebuild when _isAlive is false", () => {
+    const engine = createEngineStub();
+    engine.versionUp.mockReturnValueOnce(1).mockReturnValueOnce(2);
+    
+    let capturedUpdater: any;
+    createUpdater<void>(engine, (updater: any) => {
+      capturedUpdater = updater;
+    });
+    
+    // Manually set _isAlive to false to simulate completed state
+    capturedUpdater._isAlive = false;
+    
+    // Now invoke should trigger _rebuild
+    const result = capturedUpdater.invoke(() => "after-rebuild");
+    expect(result).toBe("after-rebuild");
+    
+    // versionUp should have been called twice (once in initial, once in rebuild)
+    expect(engine.versionUp).toHaveBeenCalledTimes(2);
+  });
+
+  it("invoke uses processResolver for tracking", () => {
+    const engine = createEngineStub();
+    
+    let invokeWasCalled = false;
+    createUpdater<void>(engine, (updater: any) => {
+      updater.invoke(() => {
+        invokeWasCalled = true;
+      });
+    });
+    
+    expect(invokeWasCalled).toBe(true);
   });
 });

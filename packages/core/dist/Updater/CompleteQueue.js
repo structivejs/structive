@@ -58,3 +58,5 @@ class UpdateCompleteQueue {
 export function createCompleteQueue() {
     return new UpdateCompleteQueue();
 }
+// Export for testing purposes only
+export { UpdateCompleteQueue as _UpdateCompleteQueue };

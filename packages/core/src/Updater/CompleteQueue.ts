@@ -69,3 +69,6 @@ class UpdateCompleteQueue implements IUpdateCompleteQueue {
 export function createCompleteQueue(): IUpdateCompleteQueue {
   return new UpdateCompleteQueue();
 }
+
+// Export for testing purposes only
+export { UpdateCompleteQueue as _UpdateCompleteQueue };
