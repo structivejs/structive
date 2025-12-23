@@ -20,6 +20,9 @@ export class BindingNodeBlock extends BindingNode {
     get id() {
         return this._id;
     }
+    get buildable() {
+        return true;
+    }
     /**
      * Extracts and validates template ID from comment node.
      * Rejects leading zeros, decimals, negatives, NaN, and Infinity.

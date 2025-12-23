@@ -208,8 +208,7 @@ class Updater {
      */
     initialRender(callback) {
         const processResolvers = this._tracker.createProcessResolver();
-        const resolver = Promise.withResolvers();
-        const renderer = createRenderer(this._engine, this, resolver);
+        const renderer = createRenderer(this._engine, this);
         try {
             callback(renderer);
         }

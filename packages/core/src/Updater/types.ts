@@ -26,6 +26,11 @@ export type UpdateCallback<T> = (state: IWritableStateProxy, handler: IWritableS
 export type ReadonlyStateCallback<T> = (state: IReadonlyStateProxy, handler: IReadonlyStateHandler) => T;
 
 /**
+ * Type representing the current phase of rendering.
+ */
+export type RenderPhase = 'build' | 'apply';
+
+/**
  * Interface for managing state updates and triggering rendering as needed.
  * Coordinates state modifications, queues changes, and orchestrates the rendering cycle.
  * 
@@ -201,6 +206,8 @@ export interface IRenderer {
    */
   readonly updatingRefSet: Set<IStatePropertyRef>;
 
+  readonly renderPhase: RenderPhase;
+  readonly applyPhaseBinidings: Set<IBinding>;
   /**
    * Starts the rendering process for the given state property references.
    * Traverses dependencies, applies binding changes, and coordinates the update.
@@ -239,7 +246,11 @@ export interface IRenderMain {
   terminate(): void;
 }
 
+/**
+ * Interface for tracking update activity within the system.
+ */
 export interface IUpdateActivityTracker {
   readonly isProcessing: boolean;
   createProcessResolver(): PromiseWithResolvers<void>;
 }
+

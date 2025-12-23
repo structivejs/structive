@@ -145,6 +145,9 @@ export class BindingNode implements IBindingNode {
     this._decorates = decorates;
   }
   
+  get buildable(): boolean {
+    return false;
+  }
   /**
    * Method to assign value to DOM (unimplemented in base class, must override in subclasses).
    * - Attribute binding: Set attribute value

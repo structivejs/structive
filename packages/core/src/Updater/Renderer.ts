@@ -12,7 +12,7 @@ import { IStructuredPathInfo } from "../StateProperty/types";
 import { getStatePropertyRef } from "../StatePropertyRef/StatepropertyRef";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { raiseError } from "../utils";
-import { IListSnapshot, IRenderer, IUpdater, ReadonlyStateCallback } from "./types";
+import { IListSnapshot, IRenderer, IUpdater, ReadonlyStateCallback, RenderPhase } from "./types";
 
 /**
  * Renderer is a coordinator that responds to State changes (a set of IStatePropertyRef references)
@@ -46,7 +46,8 @@ class Renderer implements IRenderer {
   private _updatingRefSet: Set<IStatePropertyRef> = new Set();
   private _readonlyState: IReadonlyStateProxy | null = null;
   private _readonlyHandler : IReadonlyStateHandler | null = null;
-  private _resolver: PromiseWithResolvers<void>;
+  private _renderPhase: RenderPhase = 'build';
+  private _applyPhaseBinidings: Set<IBinding> = new Set();
 
   /**
    * Constructs a new Renderer instance.
@@ -54,10 +55,9 @@ class Renderer implements IRenderer {
    * @param {IComponentEngine} engine - The component engine to render
    * @param {IUpdater} updater - The updater managing this renderer
    */
-  constructor(engine: IComponentEngine, updater: IUpdater, resolver: PromiseWithResolvers<void>) {
+  constructor(engine: IComponentEngine, updater: IUpdater) {
     this._engine = engine;
     this._updater = updater;
-    this._resolver = resolver;
   }
 
   get updatingRefs(): IStatePropertyRef[] {
@@ -68,6 +68,9 @@ class Renderer implements IRenderer {
     return this._updatingRefSet;
   }
 
+  get applyPhaseBinidings(): Set<IBinding> {
+    return this._applyPhaseBinidings;
+  }
   /**
    * Gets the read-only State view. Throws exception if not during render execution.
    * Throws: UPD-002
@@ -94,6 +97,10 @@ class Renderer implements IRenderer {
       });
     }
     return this._readonlyHandler;
+  }
+
+  get renderPhase(): RenderPhase {
+    return this._renderPhase;
   }
 
   /**
@@ -216,6 +223,16 @@ class Renderer implements IRenderer {
             binding.notifyRedraw(remainItems);
           }
         }
+      }
+
+      this._renderPhase = 'apply';
+      try {
+        // Phase 5: Apply changes for bindings registered during 'build' phase
+        for(const binding of this._applyPhaseBinidings) {
+//          if (this.updatedBindings.has(binding)) {continue;}
+          binding.applyChange(this);
+        }
+      } finally {
       }
     });
   }
@@ -354,7 +371,7 @@ export function render(
   updater: IUpdater,
   resolver: PromiseWithResolvers<void>
 ): void {
-  const renderer = new Renderer(engine, updater, resolver);
+  const renderer = new Renderer(engine, updater);
   try {
     renderer.render(refs);
   } finally {
@@ -371,8 +388,7 @@ export function render(
  */
 export function createRenderer(
   engine: IComponentEngine, 
-  updater: IUpdater,
-  resolver: PromiseWithResolvers<void>
+  updater: IUpdater
 ): IRenderer {
-  return new Renderer(engine, updater, resolver);
+  return new Renderer(engine, updater);
 }

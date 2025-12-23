@@ -122,6 +122,9 @@ export class BindingNode {
         this._filters = filters;
         this._decorates = decorates;
     }
+    get buildable() {
+        return false;
+    }
     /**
      * Method to assign value to DOM (unimplemented in base class, must override in subclasses).
      * - Attribute binding: Set attribute value

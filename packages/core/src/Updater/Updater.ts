@@ -243,8 +243,7 @@ class Updater implements IUpdater {
    */
   initialRender(callback: (renderer: IRenderer) => void): void {
     const processResolvers = this._tracker.createProcessResolver();
-    const resolver = Promise.withResolvers<void>();
-    const renderer = createRenderer(this._engine, this, resolver);
+    const renderer = createRenderer(this._engine, this);
     try {
       callback(renderer);
     } finally {

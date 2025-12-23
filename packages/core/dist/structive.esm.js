@@ -1493,6 +1493,9 @@ class BindingNode {
         this._filters = filters;
         this._decorates = decorates;
     }
+    get buildable() {
+        return false;
+    }
     /**
      * Method to assign value to DOM (unimplemented in base class, must override in subclasses).
      * - Attribute binding: Set attribute value
@@ -3816,23 +3819,26 @@ class Renderer {
     _updatingRefSet = new Set();
     _readonlyState = null;
     _readonlyHandler = null;
-    _resolver;
+    _renderPhase = 'build';
+    _applyPhaseBinidings = new Set();
     /**
      * Constructs a new Renderer instance.
      *
      * @param {IComponentEngine} engine - The component engine to render
      * @param {IUpdater} updater - The updater managing this renderer
      */
-    constructor(engine, updater, resolver) {
+    constructor(engine, updater) {
         this._engine = engine;
         this._updater = updater;
-        this._resolver = resolver;
     }
     get updatingRefs() {
         return this._updatingRefs;
     }
     get updatingRefSet() {
         return this._updatingRefSet;
+    }
+    get applyPhaseBinidings() {
+        return this._applyPhaseBinidings;
     }
     /**
      * Gets the read-only State view. Throws exception if not during render execution.
@@ -3859,6 +3865,9 @@ class Renderer {
             });
         }
         return this._readonlyHandler;
+    }
+    get renderPhase() {
+        return this._renderPhase;
     }
     /**
      * Creates a read-only state and passes it to the callback
@@ -3971,6 +3980,16 @@ class Renderer {
                         binding.notifyRedraw(remainItems);
                     }
                 }
+            }
+            this._renderPhase = 'apply';
+            try {
+                // Phase 5: Apply changes for bindings registered during 'build' phase
+                for (const binding of this._applyPhaseBinidings) {
+                    //          if (this.updatedBindings.has(binding)) {continue;}
+                    binding.applyChange(this);
+                }
+            }
+            finally {
             }
         });
     }
@@ -4091,7 +4110,7 @@ class Renderer {
  * Convenience function. Creates a Renderer instance and calls render in one go.
  */
 function render(refs, engine, updater, resolver) {
-    const renderer = new Renderer(engine, updater, resolver);
+    const renderer = new Renderer(engine, updater);
     try {
         renderer.render(refs);
     }
@@ -4106,8 +4125,8 @@ function render(refs, engine, updater, resolver) {
  * @param {IUpdater} updater - The updater managing this renderer
  * @returns {IRenderer} A new renderer instance
  */
-function createRenderer(engine, updater, resolver) {
-    return new Renderer(engine, updater, resolver);
+function createRenderer(engine, updater) {
+    return new Renderer(engine, updater);
 }
 
 class RenderMain {
@@ -4469,8 +4488,7 @@ class Updater {
      */
     initialRender(callback) {
         const processResolvers = this._tracker.createProcessResolver();
-        const resolver = Promise.withResolvers();
-        const renderer = createRenderer(this._engine, this, resolver);
+        const renderer = createRenderer(this._engine, this);
         try {
             callback(renderer);
         }
@@ -4938,6 +4956,9 @@ class BindingNodeBlock extends BindingNode {
      */
     get id() {
         return this._id;
+    }
+    get buildable() {
+        return true;
     }
     /**
      * Extracts and validates template ID from comment node.
@@ -7889,6 +7910,13 @@ class Binding {
      */
     applyChange(renderer) {
         if (renderer.updatedBindings.has(this)) {
+            return;
+        }
+        if (renderer.renderPhase === 'build' && !this.bindingNode.buildable) {
+            renderer.applyPhaseBinidings.add(this);
+            return;
+        }
+        else if (renderer.renderPhase === 'apply' && this.bindingNode.buildable) {
             return;
         }
         renderer.updatedBindings.add(this);

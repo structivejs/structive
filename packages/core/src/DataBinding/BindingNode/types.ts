@@ -61,6 +61,8 @@ export interface IBindingNodeBase {
    * Value after filter application.
    */
   readonly filteredValue: unknown;
+
+  readonly buildable: boolean;
   
   /**
    * Assigns value to binding node and updates DOM.
