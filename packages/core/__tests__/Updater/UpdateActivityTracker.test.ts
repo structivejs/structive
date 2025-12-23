@@ -2,7 +2,20 @@
  * @vitest-environment node
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { createUpdateActivityTracker, _UpdateActivityTracker } from "../../src/Updater/UpdateActivityTracker.js";
+import { createUpdateActivityTracker, _UpdateActivityTracker } from "../../src/Updater/UpdateActivityTracker";
+
+declare const process: any;
+
+// Helper to create a resolver compatible with Promise.withResolvers
+const createResolver = <T>() => {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: any) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
 
 describe("UpdateActivityTracker", () => {
   beforeEach(() => {
@@ -372,7 +385,7 @@ describe("UpdateActivityTracker", () => {
       // Manually set state to trigger the else branch in createProcessResolver
       // _waitResolver is null, _mainResolver is not null
       tracker._waitResolver = null;
-      tracker._mainResolver = Promise.withResolvers<void>();
+      tracker._mainResolver = createResolver<void>();
       
       // This should trigger the else branch (lines 23-28)
       const resolver = tracker.createProcessResolver();
@@ -399,7 +412,7 @@ describe("UpdateActivityTracker", () => {
       const tracker = new _UpdateActivityTracker(renderMain) as any;
       
       // Manually set _mainResolver to simulate already running
-      tracker._mainResolver = Promise.withResolvers<void>();
+      tracker._mainResolver = createResolver<void>();
       
       // Call _main directly - should return early
       await tracker._main();
@@ -418,7 +431,7 @@ describe("UpdateActivityTracker", () => {
       tracker._observedResolvers = [];
       
       // Create a resolver that will be observed
-      const testResolver = Promise.withResolvers<void>();
+      const testResolver = createResolver<void>();
       tracker._observedResolvers.push(testResolver);
       
       // Call _nextWaitPromise to set up the internal callback
@@ -438,12 +451,12 @@ describe("UpdateActivityTracker", () => {
       const errorPromise = new Promise<Error>((resolve) => {
         const handler = (event: PromiseRejectionEvent | Error) => {
           const error = event instanceof Error ? event : (event as any).reason;
-          if (error && error.code === 'UPD-007') {
-            process.off('unhandledRejection', handler as any);
+          if (error && (error as any).code === 'UPD-007') {
+            (process as any).off('unhandledRejection', handler as any);
             resolve(error);
           }
         };
-        process.on('unhandledRejection', handler as any);
+        (process as any).on('unhandledRejection', handler as any);
       });
       
       // Wait for the callback to execute
@@ -456,7 +469,7 @@ describe("UpdateActivityTracker", () => {
         new Promise<Error>((_, reject) => setTimeout(() => reject(new Error('Timeout')), 100))
       ]);
       
-      expect(error.code).toBe('UPD-007');
+      expect((error as any).code).toBe('UPD-007');
     });
   });
 });

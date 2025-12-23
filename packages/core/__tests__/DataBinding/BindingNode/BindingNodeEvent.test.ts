@@ -4,6 +4,8 @@ import { createBindingStub, createEngineStub, createRendererStub } from "../help
 import * as UpdaterMod from "../../../src/Updater/Updater";
 import * as UtilsMod from "../../../src/utils";
 
+declare const process: any;
+
 describe("BindingNodeEvent", () => {
   afterEach(() => {
     vi.restoreAllMocks();

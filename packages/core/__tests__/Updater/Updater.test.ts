@@ -1,5 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+declare const process: any;
+
 // 共有状態: モック間で Updater インスタンスを受け渡すため
 let capturedUpdater: any = null;
 
@@ -164,7 +166,7 @@ describe("Updater.update", () => {
     const { UpdatedCallbackSymbol } = await import("../../src/StateClass/symbols");
     
     // useWritableStateProxyの動作を変更
-    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void>) => {
+    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => any) => {
       capturedUpdater = updater;
       const dummyHandler = {} as any;
       
@@ -176,7 +178,7 @@ describe("Updater.update", () => {
     });
 
     // 2回目の呼び出し（queueMicrotask内）用のモック
-    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void>) => {
+    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => any) => {
       const dummyHandler = {} as any;
       
       const mockState = {
@@ -513,7 +515,7 @@ describe("Updater error handling", () => {
     const updatedCallbackMock = vi.fn().mockReturnValue(rejectedPromise);
     
     // 1回目の呼び出し（通常のupdate）
-    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void>) => {
+    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => any) => {
       capturedUpdater = updater;
       const dummyHandler = {} as any;
       const mockState = {
@@ -523,7 +525,7 @@ describe("Updater error handling", () => {
     });
 
     // 2回目の呼び出し（queueMicrotask内）- これがPromiseを返してrejectする
-    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => Promise<void> | void) => {
+    vi.mocked(originalMock).mockImplementationOnce(async (engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => any) => {
       const dummyHandler = {} as any;
       const mockState = {
         [UpdatedCallbackSymbol]: updatedCallbackMock

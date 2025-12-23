@@ -77,7 +77,7 @@ describe("PathManager/types", () => {
         dynamicDependencies: new Map<string, Set<string>>(),
         rootNode: mockRootNode,
         addDynamicDependency: (target: string, source: string) => {}
-      };
+      } as any;
     });
 
     test("should have all required Set properties", () => {

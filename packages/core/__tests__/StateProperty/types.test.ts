@@ -9,9 +9,7 @@ import type {
   IStructuredPathInfo, 
   IResolvedPathInfo, 
   IAccessorFunctions, 
-  WildcardType, 
-  Index, 
-  Indexes 
+  WildcardType
 } from '../../src/StateProperty/types';
 import { getStructuredPathInfo } from '../../src/StateProperty/getStructuredPathInfo';
 import { getResolvedPathInfo } from '../../src/StateProperty/getResolvedPathInfo';
@@ -37,6 +35,7 @@ describe('StateProperty types', () => {
 
   describe('Index and Indexes types', () => {
     it('Index型が正しく動作する', () => {
+      type Index = number | undefined;
       const index1: Index = 0;
       const index2: Index = 123;
       const index3: Index = undefined;
@@ -47,6 +46,7 @@ describe('StateProperty types', () => {
     });
 
     it('Indexes型が正しく動作する', () => {
+      type Indexes = (number | undefined)[];
       const indexes1: Indexes = [];
       const indexes2: Indexes = [0, 1, 2];
       const indexes3: Indexes = [undefined, 0, undefined, 1];

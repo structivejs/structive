@@ -1294,7 +1294,7 @@ describe("BindingNodeFor coverage", () => {
     container.appendChild(comment);
     document.body.appendChild(container);
 
-    const binding = createBindingStub(engine);
+    const binding = createBindingStub(engine, comment);
     const node = createBindingNodeFor("items", [], [])(binding, comment, {} as any);
 
     const idx = createIndexes(3);
@@ -1317,7 +1317,7 @@ describe("BindingNodeFor coverage", () => {
     expect(unmountSpy).toHaveBeenCalled();
     expect(inactivateSpy).toHaveBeenCalled();
     expect(node.bindContents.length).toBe(0);
-    expect(node.poolLength).toBe(3);
+    expect((node as any).poolLength).toBe(3);
 
     document.body.removeChild(container);
   });

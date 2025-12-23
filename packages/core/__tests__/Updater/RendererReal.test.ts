@@ -75,6 +75,17 @@ const makeUpdater = () => {
   return { updater, listDiffByRef };
 };
 
+// Helper to create a resolver compatible with Promise.withResolvers
+const createResolver = <T>() => {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: any) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+
 describe("Renderer Real Implementation", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -121,7 +132,7 @@ describe("Renderer Real Implementation", () => {
     it("should create renderer and call render, then resolve", () => {
       const engine = makeEngine();
       const { updater } = makeUpdater();
-      const resolver = Promise.withResolvers<void>();
+      const resolver = createResolver<void>();
       const resolveSpy = vi.spyOn(resolver, "resolve");
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
@@ -137,7 +148,7 @@ describe("Renderer Real Implementation", () => {
     it("should resolve even if render throws", () => {
       const engine = makeEngine();
       const { updater } = makeUpdater();
-      const resolver = Promise.withResolvers<void>();
+      const resolver = createResolver<void>();
       const resolveSpy = vi.spyOn(resolver, "resolve");
 
       // Make render throw by returning null for PathNode
@@ -157,7 +168,7 @@ describe("Renderer Real Implementation", () => {
       const renderer = createRenderer(engine, updater);
 
       // Pre-populate the state
-      renderer.processedRefs.add({ key: "old" });
+      renderer.processedRefs.add({ key: "old" } as any);
       renderer.updatedBindings.add({ key: "old-binding" } as any);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
@@ -647,7 +658,7 @@ describe("Renderer Real Implementation", () => {
       // Set previous list info
       renderer.lastListInfoByRef.set(ref, { 
         value: [1, 2], 
-        listIndexes: [listIndex1, listIndex2] 
+        listIndexes: [listIndex1, listIndex2] as any
       });
 
       renderer.render([ref]);

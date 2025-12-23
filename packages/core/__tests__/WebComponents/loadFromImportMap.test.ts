@@ -3,6 +3,8 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+declare const process: any;
+
 const entryRouteMock = vi.fn();
 vi.mock("../../src/Router/Router", () => ({ entryRoute: (...args:any[]) => entryRouteMock(...args) }));
 

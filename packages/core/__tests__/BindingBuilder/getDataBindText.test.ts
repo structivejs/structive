@@ -11,7 +11,7 @@ import * as templateModule from '../../src/Template/registerTemplate.js';
 const mockGetTemplateById = vi.mocked(templateModule.getTemplateById);
 
 // DOM環境をモック
-const createMockNode = (constructor: string, nodeType?: number, textContent?: string, attributes?: Record<string, string>) => {
+const createMockNode = (constructor: string, nodeType?: number, textContent?: string | null, attributes?: Record<string, string>) => {
   const node = {
     constructor: { name: constructor },
     nodeType: nodeType,

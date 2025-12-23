@@ -50,8 +50,7 @@ const createMockRef = (pattern: string, wildcardCount: number = 0, index?: numbe
     lastWildcardPath: null,
     lastWildcardInfo: null,
     pattern,
-    wildcardCount,
-    children: {}
+    wildcardCount
   },
   listIndex: wildcardCount > 0 ? {
     parentListIndex: null,

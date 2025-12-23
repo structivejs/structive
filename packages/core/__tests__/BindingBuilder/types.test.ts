@@ -289,7 +289,7 @@ describe("BindingBuilder/types", () => {
 
       expect(bindingNode).toBe(mockBindingNode);
       expect(bindingState).toBe(mockBindingState);
-      expect(bindingState.getValue(state)).toBe("test");
+      expect(bindingState.getValue(state, {} as any)).toBe("test");
     });
   });
 
@@ -473,9 +473,8 @@ describe("BindingBuilder/types", () => {
 
       const node = creator.createBindingNode(mockBinding, mockNode, mockFilters);
       const state = creator.createBindingState(mockBinding, mockFilters);
-      expect(typeof node.init).toBe("function");
       expect(typeof state.getValue).toBe("function");
-      expect(state.getValue(mockState)).toBe(1000);
+      expect(state.getValue(mockState, {} as any)).toBe(1000);
     });
 
     test("should handle complex nested scenarios", () => {

@@ -55,8 +55,8 @@ describe("StateClass proxies", () => {
   it("createReadonlyStateProxy: get は trap を経由し set は例外", () => {
     const engine = makeEngine();
     const updater = makeUpdater();
-    const handler = createReadonlyStateHandler(engine, updater);
-    const state = { foo: 1 };
+    const handler = createReadonlyStateHandler(engine, updater, null);
+    const state = { foo: 1 } as any;
     const proxy = createReadonlyStateProxy(state, handler);
 
   trapGetMock.mockImplementation((target, prop, receiver) => {
@@ -76,8 +76,8 @@ describe("StateClass proxies", () => {
   it("createReadonlyStateProxy: has トラップはシンボルと API を判定", () => {
     const engine = makeEngine();
     const updater = makeUpdater();
-    const handler = createReadonlyStateHandler(engine, updater);
-    const state = { foo: 1 };
+    const handler = createReadonlyStateHandler(engine, updater, null);
+    const state = { foo: 1 } as any;
     const proxy = createReadonlyStateProxy(state, handler);
 
     expect("foo" in proxy).toBe(true);
@@ -94,7 +94,7 @@ describe("StateClass proxies", () => {
   it("useWritableStateProxy: get/set がトラップ経由で呼ばれる（非同期）", async () => {
     const engine = makeEngine();
     const updater = makeUpdater();
-    const state = { foo: 1 };
+    const state = { foo: 1 } as any;
 
   trapGetMock.mockImplementation((target, prop, receiver) => {
       if (prop === "foo") {
@@ -116,7 +116,7 @@ describe("StateClass proxies", () => {
   it("useWritableStateProxy: get/set がトラップ経由で呼ばれる（同期）", () => {
     const engine = makeEngine();
     const updater = makeUpdater();
-    const state = { foo: 1 };
+    const state = { foo: 1 } as any;
 
   trapGetMock.mockImplementation((target, prop, receiver) => {
       if (prop === "foo") {
@@ -137,7 +137,7 @@ describe("StateClass proxies", () => {
   it("useWritableStateProxy: has トラップはシンボルと API を判定", async () => {
     const engine = makeEngine();
     const updater = makeUpdater();
-    const state = { foo: 1 };
+    const state = { foo: 1 } as any;
 
     await useWritableStateProxy(engine, updater, state, null, async (proxy) => {
       expect("foo" in proxy).toBe(true);

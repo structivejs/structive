@@ -122,10 +122,10 @@ describe("StateClass/traps get", () => {
     const navigateMock = vi.fn();
     getRouterMock.mockReturnValue({ navigate: navigateMock });
 
-    const resolveFn = get({}, "$resolve", {} as any, handler);
-    const getAllFn = get({}, "$getAll", {} as any, handler);
-    const trackFn = get({}, "$trackDependency", {} as any, handler);
-    const navigateFn = get({}, "$navigate", {} as any, handler);
+    const resolveFn = get({}, "$resolve", {} as any, handler) as any;
+    const getAllFn = get({}, "$getAll", {} as any, handler) as any;
+    const trackFn = get({}, "$trackDependency", {} as any, handler) as any;
+    const navigateFn = get({}, "$navigate", {} as any, handler) as any;
     const component = get({}, "$component", {} as any, handler);
 
     expect(resolveFn()).toBe("resolve");
@@ -182,19 +182,19 @@ describe("StateClass/traps get", () => {
     const target = {};
     const receiver = {};
 
-    const getByRefFn = get(target, GetByRefSymbol, receiver as any, handler);
+    const getByRefFn = get(target, GetByRefSymbol, receiver as any, handler) as any;
     getByRefFn(ref);
     expect(getByRefMock).toHaveBeenCalledWith(target, ref, receiver, handler);
 
-    const setByRefFn = get(target, SetByRefSymbol, receiver as any, handler);
+    const setByRefFn = get(target, SetByRefSymbol, receiver as any, handler) as any;
     setByRefFn(ref, "value");
     expect(setByRefMock).toHaveBeenCalledWith(target, ref, "value", receiver, handler);
 
-    const connectedFn = get(target, ConnectedCallbackSymbol, receiver as any, handler);
+    const connectedFn = get(target, ConnectedCallbackSymbol, receiver as any, handler) as any;
     connectedFn();
     expect(connectedCallbackMock).toHaveBeenCalled();
 
-    const disconnectedFn = get(target, DisconnectedCallbackSymbol, receiver as any, handler);
+    const disconnectedFn = get(target, DisconnectedCallbackSymbol, receiver as any, handler) as any;
     disconnectedFn();
     expect(disconnectedCallbackMock).toHaveBeenCalled();
   });
@@ -205,7 +205,7 @@ describe("StateClass/traps get", () => {
     const target = {};
     const receiver = {};
 
-    const getListIndexesFn = get(target, GetListIndexesByRefSymbol, receiver as any, handler);
+    const getListIndexesFn = get(target, GetListIndexesByRefSymbol, receiver as any, handler) as any;
     getListIndexesFn(ref);
 
     expect(getListIndexesByRefMock).toHaveBeenCalledWith(target, ref, receiver, handler);
@@ -217,7 +217,7 @@ describe("StateClass/traps get", () => {
     const target = {};
     const receiver = {};
 
-    const updatedFn = get(target, UpdatedCallbackSymbol, receiver as any, handler);
+    const updatedFn = get(target, UpdatedCallbackSymbol, receiver as any, handler) as any;
     updatedFn(refs);
 
     expect(updatedCallbackMock).toHaveBeenCalledWith(target, refs, receiver, handler);

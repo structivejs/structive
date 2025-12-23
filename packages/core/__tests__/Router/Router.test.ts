@@ -146,7 +146,7 @@ describe("Router", () => {
   it("location の末尾が originalFileName と一致する場合に末尾空文字へ置換する", () => {
     const el = createRouterElement();
     document.body.appendChild(el);
-    el.originalFileName = "index.html";
+    (el as any).originalFileName = "index.html";
     history.pushState({}, "", "/index.html");
     el.render();
     const slotContent = el.querySelector('[slot="content"]');

@@ -303,7 +303,7 @@ describe("BindContent", () => {
     // テスト用に loopContext を差し替え
     const assign = vi.fn();
     (bc as any).loopContext = { assignListIndex: assign };
-    bc.bindings = [mockBinding];
+    (bc as any).bindings = [mockBinding];
     bc.assignListIndex({} as any);
     expect(assign).toHaveBeenCalled();
     // assignListIndex では binding の activate は呼ばれない

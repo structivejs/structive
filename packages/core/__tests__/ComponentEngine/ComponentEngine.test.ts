@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, type Mock } from "vitest";
 import { getStructuredPathInfo } from "../../src/StateProperty/getStructuredPathInfo";
 import { getStatePropertyRef } from "../../src/StatePropertyRef/StatepropertyRef";
 import { ConnectedCallbackSymbol, DisconnectedCallbackSymbol, GetByRefSymbol, GetListIndexesByRefSymbol, SetByRefSymbol } from "../../src/StateClass/symbols";
@@ -145,7 +145,7 @@ vi.mock("../../src/Updater/Updater", () => {
           });
           const blocker = updateBlockerPromise;
           if (isPromiseResult) {
-            return normalizedResult.then((value) => blocker.then(() => value));
+            return normalizedResult.then((value: any) => blocker.then(() => value));
           }
           return blocker.then(() => normalizedResult);
         }),
@@ -474,7 +474,7 @@ describe("ComponentEngine", () => {
     } as any;
     el.parentStructiveComponent = parent;
     await engine.connectedCallback();
-    const raiseErrorSpy = UtilsMod.raiseError as vi.Mock;
+    const raiseErrorSpy = UtilsMod.raiseError as unknown as Mock;
     const beforeRaiseCalls = raiseErrorSpy.mock.calls.length;
     const disconnectedError = new Error("disconnect failed");
     nextDisconnectedCallbackImpl = () => { throw disconnectedError; };
@@ -546,7 +546,7 @@ describe("ComponentEngine", () => {
     engine.setup();
     (engine.pathManager as any).hasConnectedCallback = true;
     const resolveSpy = vi.spyOn(engine.readyResolvers, "resolve");
-    const raiseErrorSpy = UtilsMod.raiseError as vi.Mock;
+    const raiseErrorSpy = UtilsMod.raiseError as unknown as Mock;
     const initialRaiseErrorCalls = raiseErrorSpy.mock.calls.length;
     raiseErrorSpy.mockImplementation((() => undefined) as never);
     const PromiseCtor = engine.readyResolvers.promise.constructor as PromiseConstructor;

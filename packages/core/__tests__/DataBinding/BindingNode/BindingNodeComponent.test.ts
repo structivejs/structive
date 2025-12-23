@@ -3,6 +3,9 @@ import { createBinding } from "../../../src/DataBinding/Binding";
 import { createBindingNodeComponent } from "../../../src/DataBinding/BindingNode/BindingNodeComponent";
 import { NotifyRedrawSymbol } from "../../../src/ComponentStateInput/symbols";
 import { getStatePropertyRef } from "../../../src/StatePropertyRef/StatepropertyRef";
+import { registerStructiveComponent, removeStructiveComponent } from "../../../src/WebComponents/findStructiveParent";
+
+declare const process: any;
 
 // モック設定
 vi.mock("../../../src/WebComponents/findStructiveParent", () => ({
@@ -26,8 +29,6 @@ const getCustomTagNameMock = vi.fn((component: HTMLElement) => {
 vi.mock("../../../src/WebComponents/getCustomTagName", () => ({
   getCustomTagName: (component: HTMLElement) => getCustomTagNameMock(component)
 }));
-
-import { registerStructiveComponent, removeStructiveComponent } from "../../../src/WebComponents/findStructiveParent";
 
 // ヘルパー: 簡易な info/listIndex を生成
 function makeInfo(pattern: string, pathSegments: string[], wildcardCount: number, cumulative: string[]): any {

@@ -31,9 +31,22 @@ vi.mock("../../src/StatePropertyRef/StatepropertyRef", () => ({
 }));
 
 // SUT
-import { render, createRenderer } from "../../src/Updater/Renderer";
+import { render as originalRender, createRenderer } from "../../src/Updater/Renderer";
+
+const render = (refs: any[], engine: any, updater: any) => originalRender(refs, engine, updater, createResolver<void>());
+
 
 // Helpers
+const createResolver = <T>() => {
+  let resolve!: (value: T | PromiseLike<T>) => void;
+  let reject!: (reason?: any) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+};
+
 const makeReadonlyState = (getByRefValue: any = undefined, getListIndexesValue: any = undefined) => ({
   [SetCacheableSymbol]: (cb: Function) => cb(),
   [GetByRefSymbol]: (ref: any) => (typeof getByRefValue === "function" ? getByRefValue(ref) : getByRefValue),

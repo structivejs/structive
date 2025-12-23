@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { BindingNodeBlock } from "../../../src/DataBinding/BindingNode/BindingNodeBlock";
 import { createBindingStub, createEngineStub } from "../helpers/bindingNodeHarness";
 
@@ -40,7 +40,7 @@ describe("BindingNodeBlock", () => {
       const engine = createEngineStub();
       const comment = document.createComment("@@|99");
       const binding = createBindingStub(engine, comment);
-      const filters = [{ name: "testFilter", args: [] }];
+      const filters = [vi.fn((v: any) => v)];
       const decorates = ["decorate1"];
       const node = new BindingNodeBlock(binding, comment, "block", "block", filters, decorates);
       expect(node.id).toBe(99);

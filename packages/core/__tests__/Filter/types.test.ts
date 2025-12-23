@@ -130,7 +130,7 @@ describe("Filter/types", () => {
         (value: any) => `[${value}]`
       ];
       
-      const result = filters.reduce((acc, filter) => filter(acc), "hello");
+      const result = filters.reduce((acc, filter) => filter(acc) as string, "hello");
       expect(result).toBe("[HELLO]");
     });
 
@@ -271,7 +271,7 @@ describe("Filter/types", () => {
       
       // Create filter chain
       const filterChain: Filters = [upperFilter, prefixFilter];
-      const result = filterChain.reduce((acc, filter) => filter(acc), "hello");
+      const result = filterChain.reduce((acc, filter) => filter(acc) as string, "hello");
       expect(result).toBe(">> HELLO");
     });
 

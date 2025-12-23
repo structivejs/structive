@@ -15,11 +15,11 @@ describe('BindingBuilder', () => {
     });
 
     const mockTrimFilter = vi.fn((options?: string[]) => {
-      return vi.fn((value: string) => value.trim());
+      return vi.fn((value: any) => value.trim());
     });
 
     const mockUppercaseFilter = vi.fn((options?: string[]) => {
-      return vi.fn((value: string) => value.toUpperCase());
+      return vi.fn((value: any) => value.toUpperCase());
     });
 
     const filters: FilterWithOptions = {

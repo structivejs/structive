@@ -170,7 +170,7 @@ describe("Binding", () => {
   });
 
   it("applyChange: buildフェーズで buildable=false の場合は applyPhaseBinidings に追加してスキップ", () => {
-    mockBindingNode.buildable = false;
+    (mockBindingNode as any).buildable = false;
     const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
     
     const renderer: any = {
@@ -186,7 +186,7 @@ describe("Binding", () => {
   });
 
   it("applyChange: applyフェーズで buildable=true の場合はスキップ", () => {
-    mockBindingNode.buildable = true;
+    (mockBindingNode as any).buildable = true;
     const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
     
     const renderer: any = {
