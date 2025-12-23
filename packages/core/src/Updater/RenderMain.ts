@@ -17,10 +17,7 @@ class RenderMain implements IRenderMain {
     this._engine = engine;
     this._updater = updater;
     this._completedResolvers = completedResolvers;
-    queueMicrotask(() => {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      this._main();
-    });
+    this._main();
   }
 
   private async _main() {
