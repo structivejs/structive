@@ -203,14 +203,14 @@ class Updater {
      * Performs the initial rendering of the component.
      * Creates a renderer and passes it to the callback for setup.
      *
-     * @param {function(IRenderer): void} callback - Callback receiving the renderer
+     * @param {IBindContent} root - The root BindContent for initial rendering
      * @returns {void}
      */
-    initialRender(callback) {
+    initialRender(root) {
         const processResolvers = this._tracker.createProcessResolver();
         const renderer = createRenderer(this._engine, this);
         try {
-            callback(renderer);
+            renderer.initialRender(root);
         }
         finally {
             // 2フェイズレンダリング対応時、この行は不要になる可能性あり

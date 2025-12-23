@@ -3821,6 +3821,7 @@ class Renderer {
     _readonlyHandler = null;
     _renderPhase = 'build';
     _applyPhaseBinidings = new Set();
+    _applySelectPhaseBinidings = new Set();
     /**
      * Constructs a new Renderer instance.
      *
@@ -3839,6 +3840,9 @@ class Renderer {
     }
     get applyPhaseBinidings() {
         return this._applyPhaseBinidings;
+    }
+    get applySelectPhaseBinidings() {
+        return this._applySelectPhaseBinidings;
     }
     /**
      * Gets the read-only State view. Throws exception if not during render execution.
@@ -3986,6 +3990,11 @@ class Renderer {
             for (const binding of this._applyPhaseBinidings) {
                 binding.applyChange(this);
             }
+            this._renderPhase = 'applySelect';
+            // Phase 6: Apply changes for select element bindings registered during 'apply' phase
+            for (const binding of this._applySelectPhaseBinidings) {
+                binding.applyChange(this);
+            }
         });
     }
     /**
@@ -4099,6 +4108,19 @@ class Renderer {
                 }
             }
         }
+    }
+    initialRender(root) {
+        this.createReadonlyState(() => {
+            root.applyChange(this);
+            this._renderPhase = 'apply';
+            for (const binding of this._applyPhaseBinidings) {
+                binding.applyChange(this);
+            }
+            this._renderPhase = 'applySelect';
+            for (const binding of this._applySelectPhaseBinidings) {
+                binding.applyChange(this);
+            }
+        });
     }
 }
 /**
@@ -4478,14 +4500,14 @@ class Updater {
      * Performs the initial rendering of the component.
      * Creates a renderer and passes it to the callback for setup.
      *
-     * @param {function(IRenderer): void} callback - Callback receiving the renderer
+     * @param {IBindContent} root - The root BindContent for initial rendering
      * @returns {void}
      */
-    initialRender(callback) {
+    initialRender(root) {
         const processResolvers = this._tracker.createProcessResolver();
         const renderer = createRenderer(this._engine, this);
         try {
-            callback(renderer);
+            renderer.initialRender(root);
         }
         finally {
             // 2フェイズレンダリング対応時、この行は不要になる可能性あり
@@ -7908,10 +7930,18 @@ class Binding {
             return;
         }
         if (renderer.renderPhase === 'build' && !this.bindingNode.buildable) {
-            renderer.applyPhaseBinidings.add(this);
+            if (this.bindingNode.isSelectElement) {
+                renderer.applySelectPhaseBinidings.add(this);
+            }
+            else {
+                renderer.applyPhaseBinidings.add(this);
+            }
             return;
         }
-        else if (renderer.renderPhase === 'apply' && this.bindingNode.buildable) {
+        else if (renderer.renderPhase === 'apply' && (this.bindingNode.buildable || this.bindingNode.isSelectElement)) {
+            return;
+        }
+        else if (renderer.renderPhase === 'applySelect' && (this.bindingNode.buildable || !this.bindingNode.isSelectElement)) {
             return;
         }
         renderer.updatedBindings.add(this);
@@ -9298,11 +9328,7 @@ class ComponentEngine {
         // Perform initial render
         this.bindContent.activate();
         createUpdater(this, (updater) => {
-            updater.initialRender((renderer) => {
-                renderer.createReadonlyState(() => {
-                    this.bindContent.applyChange(renderer);
-                });
-            });
+            updater.initialRender(this.bindContent);
         });
         // Call state's connectedCallback if implemented
         if (this.pathManager.hasConnectedCallback) {

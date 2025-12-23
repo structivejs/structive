@@ -1,4 +1,4 @@
-import { IBinding } from "../DataBinding/types";
+import { IBindContent, IBinding } from "../DataBinding/types";
 import { IListIndex } from "../ListIndex/types";
 import { ILoopContext } from "../LoopContext/types";
 import { IReadonlyStateHandler, IReadonlyStateProxy, IWritableStateHandler, IWritableStateProxy } from "../StateClass/types";
@@ -28,7 +28,7 @@ export type ReadonlyStateCallback<T> = (state: IReadonlyStateProxy, handler: IRe
 /**
  * Type representing the current phase of rendering.
  */
-export type RenderPhase = 'build' | 'apply';
+export type RenderPhase = 'build' | 'apply' | 'applySelect';
 
 /**
  * Interface for managing state updates and triggering rendering as needed.
@@ -104,7 +104,7 @@ export interface IUpdater {
    * @param {function(IRenderer): void} callback - Callback receiving the renderer instance
    * @returns {void}
    */
-  initialRender(callback: (renderer: IRenderer) => void): void;
+  initialRender(root: IBindContent): void;
 
   /**
    * Retrieves and clears the queue of state property references pending update.
@@ -208,6 +208,7 @@ export interface IRenderer {
 
   readonly renderPhase: RenderPhase;
   readonly applyPhaseBinidings: Set<IBinding>;
+  readonly applySelectPhaseBinidings: Set<IBinding>;
   /**
    * Starts the rendering process for the given state property references.
    * Traverses dependencies, applies binding changes, and coordinates the update.
@@ -216,6 +217,8 @@ export interface IRenderer {
    * @returns {void}
    */
   render(items: IStatePropertyRef[]): void;
+
+  initialRender(root: IBindContent): void;
 
   /**
    * Creates a read-only state context and executes a callback within it.

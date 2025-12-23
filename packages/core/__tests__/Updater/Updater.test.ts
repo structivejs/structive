@@ -484,7 +484,7 @@ function createPathNode(path: string, childNodeByName: Map<string, any> = new Ma
 }
 
 describe("Updater initialRender tests", () => {
-  it("initialRender calls createRenderer and executes callback", () => {
+  it("initialRender calls createRenderer and passes root to renderer.initialRender", () => {
     const engine = createEngineStub();
     
     let capturedUpdater: any;
@@ -492,17 +492,22 @@ describe("Updater initialRender tests", () => {
       capturedUpdater = updater;
     });
     
-    const callbackSpy = vi.fn();
+    // モックの initialRender メソッドを追加
+    const rendererInitialRenderMock = vi.fn();
+    createRendererMock.mockReturnValue({
+      render: vi.fn(),
+      initialRender: rendererInitialRenderMock,
+    });
     
-    capturedUpdater.initialRender(callbackSpy);
+    const mockRoot = { applyChange: vi.fn() };
     
-    // コールバックが呼ばれることを確認
-    expect(callbackSpy).toHaveBeenCalledWith(expect.anything());
+    capturedUpdater.initialRender(mockRoot);
     
-    // コールバックの引数がrendererオブジェクトであることを確認
-    const renderer = callbackSpy.mock.calls[0][0];
-    expect(renderer).toBeDefined();
-    expect(typeof renderer.render).toBe('function');
+    // createRenderer が呼ばれることを確認
+    expect(createRendererMock).toHaveBeenCalled();
+    
+    // renderer.initialRender が root を引数に呼ばれることを確認
+    expect(rendererInitialRenderMock).toHaveBeenCalledWith(mockRoot);
   });
 });
 

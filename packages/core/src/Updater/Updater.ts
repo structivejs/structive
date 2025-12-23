@@ -1,4 +1,5 @@
 import { IComponentEngine, IVersionRevision } from "../ComponentEngine/types";
+import { IBindContent } from "../DataBinding/types";
 import { ILoopContext } from "../LoopContext/types";
 import { findPathNodeByPath } from "../PathTree/PathNode";
 import { IPathNode } from "../PathTree/types";
@@ -10,7 +11,7 @@ import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { raiseError } from "../utils";
 import { createRenderer } from "./Renderer";
 import { createRenderMain } from "./RenderMain";
-import { IListSnapshot, IRenderer, IRenderMain, IUpdater, IUpdateActivityTracker, UpdateCallback, UpdateComplete } from "./types";
+import { IListSnapshot, IRenderMain, IUpdater, IUpdateActivityTracker, UpdateCallback, UpdateComplete } from "./types";
 import { createUpdateActivityTracker } from "./UpdateActivityTracker";
 
 
@@ -238,14 +239,14 @@ class Updater implements IUpdater {
    * Performs the initial rendering of the component.
    * Creates a renderer and passes it to the callback for setup.
    * 
-   * @param {function(IRenderer): void} callback - Callback receiving the renderer
+   * @param {IBindContent} root - The root BindContent for initial rendering
    * @returns {void}
    */
-  initialRender(callback: (renderer: IRenderer) => void): void {
+  initialRender(root: IBindContent): void {
     const processResolvers = this._tracker.createProcessResolver();
     const renderer = createRenderer(this._engine, this);
     try {
-      callback(renderer);
+      renderer.initialRender(root);
     } finally {
       // 2フェイズレンダリング対応時、この行は不要になる可能性あり
       processResolvers.resolve();

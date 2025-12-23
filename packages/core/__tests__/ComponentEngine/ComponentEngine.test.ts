@@ -92,7 +92,7 @@ vi.mock("../../src/Updater/Updater", () => {
       const enqueueRef = vi.fn();
       const updater = {
         enqueueRef,
-        initialRender: vi.fn((renderFn: any) => {
+        initialRender: vi.fn((root: any) => {
           // initialRenderのモック実装
           const renderer = {
             createReadonlyState: vi.fn((fn: any) => {
@@ -104,7 +104,8 @@ vi.mock("../../src/Updater/Updater", () => {
               return fn(readonlyProxy, handler);
             }),
           };
-          renderFn(renderer);
+          // root.applyChange(renderer) を呼び出す
+          root.applyChange(renderer);
         }),
         update: vi.fn((_loop: any, fn: any) => {
           updateCallCount++;

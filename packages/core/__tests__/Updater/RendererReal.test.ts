@@ -560,6 +560,62 @@ describe("Renderer Real Implementation", () => {
     });
   });
 
+  describe("Phase 6: ApplySelect phase bindings", () => {
+    it("should apply bindings in applySelect phase during render", () => {
+      const engine = makeEngine();
+      
+      const applySelectPhaseBinding = { applyChange: vi.fn() };
+      const buildPhaseBinding = {
+        applyChange: vi.fn((renderer: IRenderer) => {
+          renderer.applySelectPhaseBinidings.add(applySelectPhaseBinding as any);
+        }),
+      };
+      engine.getBindings.mockReturnValue([buildPhaseBinding]);
+
+      const topNode = { childNodeByName: new Map(), currentPath: "root" };
+      findPathNodeByPathMock.mockReturnValue(topNode);
+
+      const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
+
+      const { updater } = makeUpdater();
+      const renderer = createRenderer(engine, updater);
+
+      renderer.render([ref]);
+
+      expect(buildPhaseBinding.applyChange).toHaveBeenCalledTimes(1);
+      expect(applySelectPhaseBinding.applyChange).toHaveBeenCalledTimes(1);
+    });
+
+    it("should set renderPhase to 'applySelect' during phase 6", () => {
+      const engine = makeEngine();
+      
+      let capturedPhase: string | undefined;
+      const applySelectPhaseBinding = { 
+        applyChange: vi.fn((renderer: IRenderer) => {
+          capturedPhase = renderer.renderPhase;
+        }) 
+      };
+      const buildPhaseBinding = {
+        applyChange: vi.fn((renderer: IRenderer) => {
+          renderer.applySelectPhaseBinidings.add(applySelectPhaseBinding as any);
+        }),
+      };
+      engine.getBindings.mockReturnValue([buildPhaseBinding]);
+
+      const topNode = { childNodeByName: new Map(), currentPath: "root" };
+      findPathNodeByPathMock.mockReturnValue(topNode);
+
+      const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
+
+      const { updater } = makeUpdater();
+      const renderer = createRenderer(engine, updater);
+
+      renderer.render([ref]);
+
+      expect(capturedPhase).toBe("applySelect");
+    });
+  });
+
   describe("renderItem", () => {
     it("should skip already updated bindings", () => {
       const engine = makeEngine();
@@ -1151,6 +1207,114 @@ describe("Renderer Real Implementation", () => {
 
       // Binding should only be called once despite being in array twice
       expect(binding.applyChange).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe("initialRender method", () => {
+    it("should apply bindings in apply phase during initialRender", () => {
+      const engine = makeEngine();
+      
+      const applyPhaseBinding = { applyChange: vi.fn() };
+      
+      // Root that adds binding to applyPhaseBinidings in build phase
+      const mockRoot = {
+        applyChange: vi.fn((renderer: IRenderer) => {
+          renderer.applyPhaseBinidings.add(applyPhaseBinding as any);
+        }),
+      };
+
+      const { updater } = makeUpdater();
+      const renderer = createRenderer(engine, updater);
+
+      renderer.initialRender(mockRoot as any);
+
+      expect(mockRoot.applyChange).toHaveBeenCalledTimes(1);
+      expect(applyPhaseBinding.applyChange).toHaveBeenCalledTimes(1);
+    });
+
+    it("should apply bindings in applySelect phase during initialRender", () => {
+      const engine = makeEngine();
+      
+      const applySelectPhaseBinding = { applyChange: vi.fn() };
+      
+      // Root that adds binding to applySelectPhaseBinidings in build phase
+      const mockRoot = {
+        applyChange: vi.fn((renderer: IRenderer) => {
+          renderer.applySelectPhaseBinidings.add(applySelectPhaseBinding as any);
+        }),
+      };
+
+      const { updater } = makeUpdater();
+      const renderer = createRenderer(engine, updater);
+
+      renderer.initialRender(mockRoot as any);
+
+      expect(mockRoot.applyChange).toHaveBeenCalledTimes(1);
+      expect(applySelectPhaseBinding.applyChange).toHaveBeenCalledTimes(1);
+    });
+
+    it("should apply both apply and applySelect phase bindings in order during initialRender", () => {
+      const engine = makeEngine();
+      
+      const callOrder: string[] = [];
+      const applyPhaseBinding = { 
+        applyChange: vi.fn(() => callOrder.push("apply")) 
+      };
+      const applySelectPhaseBinding = { 
+        applyChange: vi.fn(() => callOrder.push("applySelect")) 
+      };
+      
+      // Root that adds bindings to both phases
+      const mockRoot = {
+        applyChange: vi.fn((renderer: IRenderer) => {
+          callOrder.push("build");
+          renderer.applyPhaseBinidings.add(applyPhaseBinding as any);
+          renderer.applySelectPhaseBinidings.add(applySelectPhaseBinding as any);
+        }),
+      };
+
+      const { updater } = makeUpdater();
+      const renderer = createRenderer(engine, updater);
+
+      renderer.initialRender(mockRoot as any);
+
+      // Verify correct order: build -> apply -> applySelect
+      expect(callOrder).toEqual(["build", "apply", "applySelect"]);
+    });
+
+    it("should set correct renderPhase during each phase of initialRender", () => {
+      const engine = makeEngine();
+      
+      const capturedPhases: string[] = [];
+      const applyPhaseBinding = { 
+        applyChange: vi.fn((renderer: IRenderer) => {
+          capturedPhases.push(`apply:${renderer.renderPhase}`);
+        }) 
+      };
+      const applySelectPhaseBinding = { 
+        applyChange: vi.fn((renderer: IRenderer) => {
+          capturedPhases.push(`applySelect:${renderer.renderPhase}`);
+        }) 
+      };
+      
+      const mockRoot = {
+        applyChange: vi.fn((renderer: IRenderer) => {
+          capturedPhases.push(`build:${renderer.renderPhase}`);
+          renderer.applyPhaseBinidings.add(applyPhaseBinding as any);
+          renderer.applySelectPhaseBinidings.add(applySelectPhaseBinding as any);
+        }),
+      };
+
+      const { updater } = makeUpdater();
+      const renderer = createRenderer(engine, updater);
+
+      renderer.initialRender(mockRoot as any);
+
+      expect(capturedPhases).toEqual([
+        "build:build",
+        "apply:apply",
+        "applySelect:applySelect"
+      ]);
     });
   });
 });

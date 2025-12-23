@@ -32,7 +32,7 @@ function createMinimalEngine(): IComponentEngine {
 }
 
 describe("Updater.initialRender Real Implementation", () => {
-  it("initialRender creates processResolver and calls callback with renderer", () => {
+  it("initialRender creates processResolver and calls root.applyChange with renderer", () => {
     const engine = createMinimalEngine();
     
     let capturedUpdater: any;
@@ -40,19 +40,22 @@ describe("Updater.initialRender Real Implementation", () => {
       capturedUpdater = updater;
     });
     
-    // Call initialRender with a callback
-    let receivedRenderer: any = null;
-    capturedUpdater.initialRender((renderer: any) => {
-      receivedRenderer = renderer;
-    });
+    // Create a mock root with applyChange method
+    const mockRoot = {
+      applyChange: vi.fn(),
+    };
     
-    // Verify the renderer was passed to the callback
-    expect(receivedRenderer).toBeDefined();
-    expect(receivedRenderer.render).toBeDefined();
-    expect(typeof receivedRenderer.render).toBe("function");
+    capturedUpdater.initialRender(mockRoot);
+    
+    // Verify applyChange was called with a renderer
+    expect(mockRoot.applyChange).toHaveBeenCalled();
+    const renderer = mockRoot.applyChange.mock.calls[0][0];
+    expect(renderer).toBeDefined();
+    expect(renderer.render).toBeDefined();
+    expect(typeof renderer.render).toBe("function");
   });
 
-  it("initialRender resolves processResolver in finally block even when callback throws", () => {
+  it("initialRender resolves processResolver in finally block even when applyChange throws", () => {
     const engine = createMinimalEngine();
     
     let capturedUpdater: any;
@@ -60,12 +63,17 @@ describe("Updater.initialRender Real Implementation", () => {
       capturedUpdater = updater;
     });
     
-    // Call initialRender with a callback that throws
+    // Create a mock root that throws in applyChange
+    const mockRoot = {
+      applyChange: vi.fn(() => {
+        throw new Error("Test error in applyChange");
+      }),
+    };
+    
+    // Call initialRender with a root that throws
     expect(() => {
-      capturedUpdater.initialRender(() => {
-        throw new Error("Test error in callback");
-      });
-    }).toThrow("Test error in callback");
+      capturedUpdater.initialRender(mockRoot);
+    }).toThrow("Test error in applyChange");
     
     // The test passes if the finally block executed properly (processResolvers.resolve() was called)
     // This covers the finally block in lines 251-253

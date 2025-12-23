@@ -38,6 +38,7 @@ class Renderer {
     _readonlyHandler = null;
     _renderPhase = 'build';
     _applyPhaseBinidings = new Set();
+    _applySelectPhaseBinidings = new Set();
     /**
      * Constructs a new Renderer instance.
      *
@@ -56,6 +57,9 @@ class Renderer {
     }
     get applyPhaseBinidings() {
         return this._applyPhaseBinidings;
+    }
+    get applySelectPhaseBinidings() {
+        return this._applySelectPhaseBinidings;
     }
     /**
      * Gets the read-only State view. Throws exception if not during render execution.
@@ -203,6 +207,11 @@ class Renderer {
             for (const binding of this._applyPhaseBinidings) {
                 binding.applyChange(this);
             }
+            this._renderPhase = 'applySelect';
+            // Phase 6: Apply changes for select element bindings registered during 'apply' phase
+            for (const binding of this._applySelectPhaseBinidings) {
+                binding.applyChange(this);
+            }
         });
     }
     /**
@@ -316,6 +325,19 @@ class Renderer {
                 }
             }
         }
+    }
+    initialRender(root) {
+        this.createReadonlyState(() => {
+            root.applyChange(this);
+            this._renderPhase = 'apply';
+            for (const binding of this._applyPhaseBinidings) {
+                binding.applyChange(this);
+            }
+            this._renderPhase = 'applySelect';
+            for (const binding of this._applySelectPhaseBinidings) {
+                binding.applyChange(this);
+            }
+        });
     }
 }
 /**

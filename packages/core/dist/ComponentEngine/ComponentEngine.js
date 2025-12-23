@@ -236,11 +236,7 @@ class ComponentEngine {
         // Perform initial render
         this.bindContent.activate();
         createUpdater(this, (updater) => {
-            updater.initialRender((renderer) => {
-                renderer.createReadonlyState(() => {
-                    this.bindContent.applyChange(renderer);
-                });
-            });
+            updater.initialRender(this.bindContent);
         });
         // Call state's connectedCallback if implemented
         if (this.pathManager.hasConnectedCallback) {

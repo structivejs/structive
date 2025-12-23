@@ -1,6 +1,6 @@
 import { IComponentEngine } from "../ComponentEngine/types";
 import { WILDCARD } from "../constants";
-import { IBinding } from "../DataBinding/types";
+import { IBindContent, IBinding } from "../DataBinding/types";
 import { IListIndex } from "../ListIndex/types";
 import { findPathNodeByPath } from "../PathTree/PathNode";
 import { IPathNode } from "../PathTree/types";
@@ -48,6 +48,7 @@ class Renderer implements IRenderer {
   private _readonlyHandler : IReadonlyStateHandler | null = null;
   private _renderPhase: RenderPhase = 'build';
   private _applyPhaseBinidings: Set<IBinding> = new Set();
+  private _applySelectPhaseBinidings: Set<IBinding> = new Set();
 
   /**
    * Constructs a new Renderer instance.
@@ -70,6 +71,10 @@ class Renderer implements IRenderer {
 
   get applyPhaseBinidings(): Set<IBinding> {
     return this._applyPhaseBinidings;
+  }
+
+  get applySelectPhaseBinidings(): Set<IBinding> {
+    return this._applySelectPhaseBinidings;
   }
   /**
    * Gets the read-only State view. Throws exception if not during render execution.
@@ -230,6 +235,12 @@ class Renderer implements IRenderer {
       for(const binding of this._applyPhaseBinidings) {
         binding.applyChange(this);
       }
+
+      this._renderPhase = 'applySelect';
+      // Phase 6: Apply changes for select element bindings registered during 'apply' phase
+      for(const binding of this._applySelectPhaseBinidings) {
+        binding.applyChange(this);
+      }
     });
   }
 
@@ -355,7 +366,19 @@ class Renderer implements IRenderer {
     }
   }
 
-  
+  initialRender(root: IBindContent): void {
+    this.createReadonlyState( () => {
+      root.applyChange(this);
+      this._renderPhase = 'apply';
+      for(const binding of this._applyPhaseBinidings) {
+        binding.applyChange(this);
+      }
+      this._renderPhase = 'applySelect';
+      for(const binding of this._applySelectPhaseBinidings) {
+        binding.applyChange(this);
+      }
+    });
+  }
 }
 
 /**

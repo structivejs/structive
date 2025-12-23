@@ -200,4 +200,77 @@ describe("Binding", () => {
     expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
     expect(renderer.updatedBindings.has(binding)).toBe(false);
   });
+
+  it("applyChange: buildフェーズで isSelectElement=true の場合は applySelectPhaseBinidings に追加してスキップ", () => {
+    (mockBindingNode as any).buildable = false;
+    (mockBindingNode as any).isSelectElement = true;
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+      applyPhaseBinidings: new Set(),
+      applySelectPhaseBinidings: new Set(),
+      renderPhase: 'build',
+    };
+    
+    binding.applyChange(renderer);
+    expect(renderer.applySelectPhaseBinidings.has(binding)).toBe(true);
+    expect(renderer.applyPhaseBinidings.has(binding)).toBe(false);
+    expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
+    
+    // cleanup
+    (mockBindingNode as any).isSelectElement = false;
+  });
+
+  it("applyChange: applySelectフェーズで buildable=true の場合はスキップ", () => {
+    (mockBindingNode as any).buildable = true;
+    (mockBindingNode as any).isSelectElement = false;
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+      renderPhase: 'applySelect',
+    };
+    
+    binding.applyChange(renderer);
+    expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
+    expect(renderer.updatedBindings.has(binding)).toBe(false);
+  });
+
+  it("applyChange: applySelectフェーズで isSelectElement=false の場合はスキップ", () => {
+    (mockBindingNode as any).buildable = false;
+    (mockBindingNode as any).isSelectElement = false;
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+      renderPhase: 'applySelect',
+    };
+    
+    binding.applyChange(renderer);
+    expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
+    expect(renderer.updatedBindings.has(binding)).toBe(false);
+  });
+
+  it("applyChange: applyフェーズで isSelectElement=true の場合はスキップ", () => {
+    (mockBindingNode as any).buildable = false;
+    (mockBindingNode as any).isSelectElement = true;
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+      renderPhase: 'apply',
+    };
+    
+    binding.applyChange(renderer);
+    expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
+    expect(renderer.updatedBindings.has(binding)).toBe(false);
+    
+    // cleanup
+    (mockBindingNode as any).isSelectElement = false;
+  });
 });
