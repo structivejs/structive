@@ -1,4 +1,4 @@
-import { getListPathsSetById, getPathsSetById } from "../BindingBuilder/registerDataBindAttributes";
+import { getBuildablePathsSetById, getListPathsSetById, getPathsSetById } from "../BindingBuilder/registerDataBindAttributes";
 import { CONNECTED_CALLBACK_FUNC_NAME, DISCONNECTED_CALLBACK_FUNC_NAME, RESERVED_WORD_SET, UPDATED_CALLBACK_FUNC_NAME } from "../constants";
 import { addPathNode, createRootNode } from "../PathTree/PathNode";
 import { createAccessorFunctions } from "../StateProperty/createAccessorFunctions";
@@ -10,6 +10,7 @@ import { getStructuredPathInfo } from "../StateProperty/getStructuredPathInfo";
 class PathManager {
     alls = new Set();
     lists = new Set();
+    buildables = new Set();
     elements = new Set();
     funcs = new Set();
     getters = new Set();
@@ -47,12 +48,16 @@ class PathManager {
                 }
             }
         }
+        // Configure list paths
         const lists = getListPathsSetById(this._id);
         this.lists = this.lists.union(lists).union(listsFromAlls);
         for (const listPath of this.lists) {
             const elementPath = `${listPath}.*`;
             this.elements.add(elementPath);
         }
+        // Configure buildable paths
+        const buildables = getBuildablePathsSetById(this._id);
+        this.buildables = this.buildables.union(buildables);
         let currentProto = this._stateClass.prototype;
         while (currentProto && currentProto !== Object.prototype) {
             const getters = Object.getOwnPropertyDescriptors(currentProto);

@@ -3,6 +3,7 @@ import { IListIndex } from "../ListIndex/types";
 import { IWritableStateHandler, IWritableStateProxy } from "../StateClass/types";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { IRenderer } from "../Updater/types";
+import { raiseError } from "../utils";
 import { CreateBindingNodeByNodeFn, IBindingNode } from "./BindingNode/types";
 import { CreateBindingStateByStateFn, IBindingState } from "./BindingState/types";
 import { IBindContent, IBinding } from "./types";
@@ -106,6 +107,19 @@ class Binding implements IBinding {
       return;
     } else if (renderer.renderPhase === 'applySelect' && (this.bindingNode.buildable || !this.bindingNode.isSelectElement)) {
       return;
+    } else if (renderer.renderPhase === 'direct') {
+      if (this.bindingNode.isSelectElement) {
+        renderer.applySelectPhaseBinidings.push(this);
+        return;
+      }
+      if (this.bindingNode.buildable) {
+        raiseError({
+          code: 'BIND-101',
+          message: 'Direct render phase cannot process buildable bindings',
+          context: { where: 'Binding.applyChange', name: this.bindingNode.name },
+          docsUrl: './docs/error-codes.md#bind',
+        });
+      }
     }
     renderer.updatedBindings.add(this);
     this.bindingNode.applyChange(renderer);

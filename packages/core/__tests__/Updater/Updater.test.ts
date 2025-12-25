@@ -229,6 +229,7 @@ describe("Updater.collectMaybeUpdates", () => {
           ["dep", []],
         ]),
         lists: new Set<string>(),
+        buildables: new Set<string>(),
         elements: new Set<string>(),
       },
     };
@@ -270,6 +271,7 @@ describe("Updater.collectMaybeUpdates", () => {
         dynamicDependencies: new Map(),
         lists: new Set<string>(),
         elements: new Set<string>(["root"]),
+        buildables: new Set<string>(),
       },
     };
 
@@ -406,6 +408,7 @@ describe("Updater その他のAPI", () => {
         dynamicDependencies: new Map([["root", ["missing"]]]),
         lists: new Set<string>(),
         elements: new Set<string>(),
+        buildables: new Set<string>(),
       },
     };
 
@@ -429,6 +432,7 @@ describe("Updater その他のAPI", () => {
         dynamicDependencies: new Map(),
         lists: new Set<string>(),
         elements: new Set<string>(),
+        buildables: new Set<string>(),
       },
     };
 
@@ -449,6 +453,7 @@ function createEngineStub(): any {
       dynamicDependencies: new Map<string, Set<string>>(),
       lists: new Set<string>(),
       elements: new Set<string>(),
+      buildables: new Set<string>(),
     },
     getListAndListIndexes: vi.fn(() => ({ list: null, listIndexes: null, listClone: null })),
     saveListAndListIndexes: vi.fn(),

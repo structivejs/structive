@@ -2,7 +2,7 @@
  * @vitest-environment jsdom
  */
 import { describe, test, expect, vi, beforeEach } from "vitest";
-import { registerDataBindAttributes, getDataBindAttributesById, getPathsSetById, getListPathsSetById } from "../../src/BindingBuilder/registerDataBindAttributes";
+import { registerDataBindAttributes, getDataBindAttributesById, getPathsSetById, getListPathsSetById, getBuildablePathsSetById } from "../../src/BindingBuilder/registerDataBindAttributes";
 import type { IDataBindAttributes, IBindText } from "../../src/BindingBuilder/types";
 
 // Mock dependencies
@@ -186,12 +186,14 @@ describe("BindingBuilder/registerDataBindAttributes", () => {
       expect(retrieved).toEqual(result);
     });
 
-    test("should return empty arrays for non-existent IDs", () => {
+    test("should return empty Sets for non-existent IDs", () => {
       const paths = getPathsSetById(999);
       const listPaths = getListPathsSetById(999);
 
-      expect(paths).toEqual([]);
-      expect(listPaths).toEqual([]);
+      expect(paths).toBeInstanceOf(Set);
+      expect(listPaths).toBeInstanceOf(Set);
+      expect(paths.size).toBe(0);
+      expect(listPaths.size).toBe(0);
     });
   });
 
@@ -278,6 +280,13 @@ describe("BindingBuilder/registerDataBindAttributes", () => {
       
       expect(paths.size).toBe(0);
       expect(listPaths.size).toBe(0);
+    });
+
+    test("should return empty Set for non-existent ID in getBuildablePathsSetById", () => {
+      const result = getBuildablePathsSetById(99999);
+      
+      expect(result).toBeInstanceOf(Set);
+      expect(result.size).toBe(0);
     });
   });
 });

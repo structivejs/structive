@@ -49,6 +49,7 @@ const makeEngine = () => {
       rootNode: { name: "root" },
       dynamicDependencies: new Map<string, Set<string>>(),
       lists: new Set<string>(),
+      buildables: new Set<string>(),
       elements: new Set<string>(),
     },
     bindingsByListIndex: new WeakMap<any, Set<any>>(),
@@ -506,6 +507,7 @@ describe("Renderer Real Implementation", () => {
   describe("Phase 5: Apply phase bindings", () => {
     it("should apply bindings in apply phase", () => {
       const engine = makeEngine();
+      engine.pathManager.buildables.add("root"); // Add to buildables to avoid direct phase
       
       // Create a binding that registers itself for apply phase
       const applyPhaseBinding = { applyChange: vi.fn() };
@@ -532,6 +534,7 @@ describe("Renderer Real Implementation", () => {
 
     it("should set renderPhase to 'apply' during phase 5", () => {
       const engine = makeEngine();
+      engine.pathManager.buildables.add("root"); // Add to buildables to avoid direct phase
       
       let capturedPhase: string | undefined;
       const applyPhaseBinding = { 

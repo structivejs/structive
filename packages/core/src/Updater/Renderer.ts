@@ -144,6 +144,7 @@ class Renderer implements IRenderer {
     this.createReadonlyState( () => {
       // First, process list reordering
       const remainItems: IStatePropertyRef[] = [];
+      const remainPathSet: Set<string> = new Set();
       const itemsByListRef = new Map<IStatePropertyRef, Set<IStatePropertyRef>>();
       const refSet = new Set<IStatePropertyRef>();
       
@@ -156,6 +157,7 @@ class Renderer implements IRenderer {
         if (!this._engine.pathManager.elements.has(ref.info.pattern)) {
           // Not a list element - handle later
           remainItems.push(ref);
+          remainPathSet.add(ref.info.pattern);
           continue;
         }
         
@@ -199,6 +201,9 @@ class Renderer implements IRenderer {
       }
 
       // Phase 3: Process remaining refs (non-list-elements)
+      if (remainPathSet.intersection(this._engine.pathManager.buildables).size === 0) {
+        this._renderPhase = 'direct';
+      }
       for(let i = 0; i < remainItems.length; i++) {
         const ref = remainItems[i];
         
@@ -230,7 +235,9 @@ class Renderer implements IRenderer {
         }
       }
 
-      this._applyPhaseRender();
+      if (this._renderPhase !== 'direct') {
+        this._applyPhaseRender();
+      }
       this._applySelectPhaseRender();
     });
   }
@@ -256,7 +263,7 @@ class Renderer implements IRenderer {
       this._applySelectPhaseBinidings = [];
     }
   }
-  
+
   /**
    * Renders a single reference ref and its corresponding PathNode.
    *

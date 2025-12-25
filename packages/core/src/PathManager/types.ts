@@ -17,6 +17,11 @@ export interface IPathManager {
    */
   readonly lists: Set<string>;
   /**
+   * Set of buildable paths
+   * Obtained from {{ for: }} and {{ if: }}
+   */
+  readonly buildables: Set<string>;
+  /**
    * Set of list element paths
    * Derived from list paths, e.g., list -> list.*, always ending with *
    */

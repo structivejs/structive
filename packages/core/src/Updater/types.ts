@@ -28,7 +28,7 @@ export type ReadonlyStateCallback<T> = (state: IReadonlyStateProxy, handler: IRe
 /**
  * Type representing the current phase of rendering.
  */
-export type RenderPhase = 'build' | 'apply' | 'applySelect';
+export type RenderPhase = 'build' | 'apply' | 'applySelect' | 'direct';
 
 /**
  * Interface for managing state updates and triggering rendering as needed.

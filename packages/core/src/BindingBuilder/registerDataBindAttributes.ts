@@ -25,6 +25,14 @@ const listPathsSetById: { [key: number]: Set<string> } = {};
 const pathsSetById: { [key: number]: Set<string> } = {};
 
 /**
+ * Cache of "for" and "if" binding stateProperty sets per template ID.
+ * Used to identify state paths related to loops (lists) and conditionals.
+ * 
+ * Example: "for:items" or "if:isVisible" → "items" or "isVisible" is added to buildablePathsSetById[id]
+ */
+const buildablePathsSetById: { [key: number]: Set<string> } = {};
+
+/**
  * Internal utility function that extracts data-bind target nodes from template's DocumentFragment
  * and converts them to IDataBindAttributes array.
  * 
@@ -106,6 +114,7 @@ export function registerDataBindAttributes(
   // Step 2: Get state path sets corresponding to rootId (create new if first time)
   const paths = pathsSetById[rootId] ?? (pathsSetById[rootId] = new Set<string>());
   const listPaths = listPathsSetById[rootId] ?? (listPathsSetById[rootId] = new Set<string>());
+  const buildablePaths = buildablePathsSetById[rootId] ?? (buildablePathsSetById[rootId] = new Set<string>());
   
   // Step 3: Traverse each binding attribute and register state paths
   for (let i = 0; i < dataBindAttributes.length; i++) {
@@ -121,6 +130,11 @@ export function registerDataBindAttributes(
       // If "for" binding (loop), also add to listPaths
       if (bindText.nodeProperty === "for") {
         listPaths.add(bindText.stateProperty);
+      }
+
+      // If "for" or "if" binding (conditional), also add to buildablePaths
+      if (bindText.nodeProperty === "if" || bindText.nodeProperty === "for") {
+        buildablePaths.add(bindText.stateProperty);
       }
     }
   }
@@ -169,10 +183,10 @@ export const getDataBindAttributesById = (id: number): IDataBindAttributes[] => 
  * ```
  * 
  * @param id - Template ID
- * @returns State path set of "for" bindings (empty array if not registered)
+ * @returns State path set of "for" bindings (empty Set if not registered)
  */
 export const getListPathsSetById = (id: number): Set<string> => {
-  return listPathsSetById[id] ?? [];
+  return listPathsSetById[id] ?? new Set();
 };
 
 /**
@@ -198,8 +212,35 @@ export const getListPathsSetById = (id: number): Set<string> => {
  * ```
  * 
  * @param id - Template ID
- * @returns State path set of all bindings (empty array if not registered)
+ * @returns State path set of all bindings (empty Set if not registered)
  */
 export const getPathsSetById = (id: number): Set<string> => {
-  return pathsSetById[id] ?? [];
+  return pathsSetById[id] ?? new Set();
+};
+
+/**
+ * Gets "for" and "if" binding (loop and conditional) stateProperty set from template ID.
+ *
+ * Used to identify state paths related to loops and conditionals.
+ * Returns empty array if not registered.
+ * 
+ * Usage example:
+ * ```typescript
+ * // Assuming template contains:
+ * // <!-- @@:for:items -->
+ * // <!-- @@:if:isVisible -->
+ * registerDataBindAttributes(1, template.content);
+ * const buildablePaths = getBuildablePathsSetById(1);
+ * // → Set { "items", "isVisible" }
+ * // Monitor buildable state changes
+ * if (buildablePaths.has("isVisible")) {
+ *   // Process isVisible change 
+ * }
+ * ```
+ * 
+ * @param id - Template ID
+ * @returns State path set of "for" and "if" bindings (empty Set if not registered)
+ */
+export const getBuildablePathsSetById = (id: number): Set<string> => {
+  return buildablePathsSetById[id] ?? new Set();
 };

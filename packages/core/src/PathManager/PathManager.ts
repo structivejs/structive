@@ -1,4 +1,4 @@
-import { getListPathsSetById, getPathsSetById } from "../BindingBuilder/registerDataBindAttributes";
+import { getBuildablePathsSetById, getListPathsSetById, getPathsSetById } from "../BindingBuilder/registerDataBindAttributes";
 import { CONNECTED_CALLBACK_FUNC_NAME, DISCONNECTED_CALLBACK_FUNC_NAME, RESERVED_WORD_SET, UPDATED_CALLBACK_FUNC_NAME } from "../constants";
 import { addPathNode, createRootNode } from "../PathTree/PathNode";
 import { IPathNode } from "../PathTree/types";
@@ -15,6 +15,7 @@ import { Dependencies, IPathManager } from "./types";
 class PathManager implements IPathManager {
   readonly alls: Set<string> = new Set<string>();
   readonly lists: Set<string> = new Set<string>();
+  readonly buildables: Set<string> = new Set<string>();
   readonly elements: Set<string> = new Set<string>();
   readonly funcs: Set<string> = new Set<string>();
   readonly getters: Set<string> = new Set<string>();
@@ -54,12 +55,18 @@ class PathManager implements IPathManager {
         }
       }
     }
+    // Configure list paths
     const lists = getListPathsSetById(this._id);
     this.lists = this.lists.union(lists).union(listsFromAlls);
     for(const listPath of this.lists) {
       const elementPath = `${listPath  }.*`;
       this.elements.add(elementPath);
     }
+    
+    // Configure buildable paths
+    const buildables = getBuildablePathsSetById(this._id);
+    this.buildables = this.buildables.union(buildables);
+
     let currentProto: unknown = this._stateClass.prototype;
     while (currentProto && currentProto !== Object.prototype) {
       const getters = Object.getOwnPropertyDescriptors(currentProto);

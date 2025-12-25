@@ -34,6 +34,7 @@ describe("Binding", () => {
       inputFilters: {},
       outputFilters: {},
       pathManager: {
+        buildables: new Set<string>(),
         dynamicDependencies: new Map<string, Set<string>>(),
       },
       getBindings: vi.fn(() => []),
@@ -272,5 +273,45 @@ describe("Binding", () => {
     
     // cleanup
     (mockBindingNode as any).isSelectElement = false;
+  });
+
+  it("applyChange: directフェーズで isSelectElement=true の場合は applySelectPhaseBinidings に追加", () => {
+    (mockBindingNode as any).buildable = false;
+    (mockBindingNode as any).isSelectElement = true;
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+      renderPhase: 'direct',
+      applySelectPhaseBinidings: [],
+    };
+    
+    binding.applyChange(renderer);
+    expect(renderer.applySelectPhaseBinidings.includes(binding)).toBe(true);
+    expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
+    
+    // cleanup
+    (mockBindingNode as any).isSelectElement = false;
+  });
+
+  it("applyChange: directフェーズで buildable=true の場合はエラーを投げる", () => {
+    (mockBindingNode as any).buildable = true;
+    (mockBindingNode as any).isSelectElement = false;
+    (mockBindingNode as any).name = "testBinding";
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+      renderPhase: 'direct',
+    };
+    
+    expect(() => {
+      binding.applyChange(renderer);
+    }).toThrow(/Direct render phase cannot process buildable bindings/);
+    
+    // cleanup
+    (mockBindingNode as any).buildable = false;
   });
 });

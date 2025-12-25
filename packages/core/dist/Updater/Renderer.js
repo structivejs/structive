@@ -125,6 +125,7 @@ class Renderer {
         this.createReadonlyState(() => {
             // First, process list reordering
             const remainItems = [];
+            const remainPathSet = new Set();
             const itemsByListRef = new Map();
             const refSet = new Set();
             // Phase 1: Classify refs into list elements and other refs
@@ -135,6 +136,7 @@ class Renderer {
                 if (!this._engine.pathManager.elements.has(ref.info.pattern)) {
                     // Not a list element - handle later
                     remainItems.push(ref);
+                    remainPathSet.add(ref.info.pattern);
                     continue;
                 }
                 // This is a list element - group by parent list ref
@@ -175,6 +177,9 @@ class Renderer {
                 this.processedRefs.add(listRef);
             }
             // Phase 3: Process remaining refs (non-list-elements)
+            if (remainPathSet.intersection(this._engine.pathManager.buildables).size === 0) {
+                this._renderPhase = 'direct';
+            }
             for (let i = 0; i < remainItems.length; i++) {
                 const ref = remainItems[i];
                 // Find the PathNode for this ref pattern
@@ -202,7 +207,9 @@ class Renderer {
                     }
                 }
             }
-            this._applyPhaseRender();
+            if (this._renderPhase !== 'direct') {
+                this._applyPhaseRender();
+            }
             this._applySelectPhaseRender();
         });
     }

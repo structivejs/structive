@@ -3908,6 +3908,7 @@ class Renderer {
         this.createReadonlyState(() => {
             // First, process list reordering
             const remainItems = [];
+            const remainPathSet = new Set();
             const itemsByListRef = new Map();
             const refSet = new Set();
             // Phase 1: Classify refs into list elements and other refs
@@ -3918,6 +3919,7 @@ class Renderer {
                 if (!this._engine.pathManager.elements.has(ref.info.pattern)) {
                     // Not a list element - handle later
                     remainItems.push(ref);
+                    remainPathSet.add(ref.info.pattern);
                     continue;
                 }
                 // This is a list element - group by parent list ref
@@ -3958,6 +3960,9 @@ class Renderer {
                 this.processedRefs.add(listRef);
             }
             // Phase 3: Process remaining refs (non-list-elements)
+            if (remainPathSet.intersection(this._engine.pathManager.buildables).size === 0) {
+                this._renderPhase = 'direct';
+            }
             for (let i = 0; i < remainItems.length; i++) {
                 const ref = remainItems[i];
                 // Find the PathNode for this ref pattern
@@ -3985,7 +3990,9 @@ class Renderer {
                     }
                 }
             }
-            this._applyPhaseRender();
+            if (this._renderPhase !== 'direct') {
+                this._applyPhaseRender();
+            }
             this._applySelectPhaseRender();
         });
     }
@@ -7592,6 +7599,13 @@ const listPathsSetById = {};
  */
 const pathsSetById = {};
 /**
+ * Cache of "for" and "if" binding stateProperty sets per template ID.
+ * Used to identify state paths related to loops (lists) and conditionals.
+ *
+ * Example: "for:items" or "if:isVisible" → "items" or "isVisible" is added to buildablePathsSetById[id]
+ */
+const buildablePathsSetById = {};
+/**
  * Internal utility function that extracts data-bind target nodes from template's DocumentFragment
  * and converts them to IDataBindAttributes array.
  *
@@ -7666,6 +7680,7 @@ function registerDataBindAttributes(id, content, rootId = id) {
     // Step 2: Get state path sets corresponding to rootId (create new if first time)
     const paths = pathsSetById[rootId] ?? (pathsSetById[rootId] = new Set());
     const listPaths = listPathsSetById[rootId] ?? (listPathsSetById[rootId] = new Set());
+    const buildablePaths = buildablePathsSetById[rootId] ?? (buildablePathsSetById[rootId] = new Set());
     // Step 3: Traverse each binding attribute and register state paths
     for (let i = 0; i < dataBindAttributes.length; i++) {
         const attribute = dataBindAttributes[i];
@@ -7677,6 +7692,10 @@ function registerDataBindAttributes(id, content, rootId = id) {
             // If "for" binding (loop), also add to listPaths
             if (bindText.nodeProperty === "for") {
                 listPaths.add(bindText.stateProperty);
+            }
+            // If "for" or "if" binding (conditional), also add to buildablePaths
+            if (bindText.nodeProperty === "if" || bindText.nodeProperty === "for") {
+                buildablePaths.add(bindText.stateProperty);
             }
         }
     }
@@ -7722,10 +7741,10 @@ const getDataBindAttributesById = (id) => {
  * ```
  *
  * @param id - Template ID
- * @returns State path set of "for" bindings (empty array if not registered)
+ * @returns State path set of "for" bindings (empty Set if not registered)
  */
 const getListPathsSetById = (id) => {
-    return listPathsSetById[id] ?? [];
+    return listPathsSetById[id] ?? new Set();
 };
 /**
  * Gets all binding stateProperty set from template ID.
@@ -7750,10 +7769,36 @@ const getListPathsSetById = (id) => {
  * ```
  *
  * @param id - Template ID
- * @returns State path set of all bindings (empty array if not registered)
+ * @returns State path set of all bindings (empty Set if not registered)
  */
 const getPathsSetById = (id) => {
-    return pathsSetById[id] ?? [];
+    return pathsSetById[id] ?? new Set();
+};
+/**
+ * Gets "for" and "if" binding (loop and conditional) stateProperty set from template ID.
+ *
+ * Used to identify state paths related to loops and conditionals.
+ * Returns empty array if not registered.
+ *
+ * Usage example:
+ * ```typescript
+ * // Assuming template contains:
+ * // <!-- @@:for:items -->
+ * // <!-- @@:if:isVisible -->
+ * registerDataBindAttributes(1, template.content);
+ * const buildablePaths = getBuildablePathsSetById(1);
+ * // → Set { "items", "isVisible" }
+ * // Monitor buildable state changes
+ * if (buildablePaths.has("isVisible")) {
+ *   // Process isVisible change
+ * }
+ * ```
+ *
+ * @param id - Template ID
+ * @returns State path set of "for" and "if" bindings (empty Set if not registered)
+ */
+const getBuildablePathsSetById = (id) => {
+    return buildablePathsSetById[id] ?? new Set();
 };
 
 /**
@@ -7949,6 +7994,20 @@ class Binding {
         }
         else if (renderer.renderPhase === 'applySelect' && (this.bindingNode.buildable || !this.bindingNode.isSelectElement)) {
             return;
+        }
+        else if (renderer.renderPhase === 'direct') {
+            if (this.bindingNode.isSelectElement) {
+                renderer.applySelectPhaseBinidings.push(this);
+                return;
+            }
+            if (this.bindingNode.buildable) {
+                raiseError({
+                    code: 'BIND-101',
+                    message: 'Direct render phase cannot process buildable bindings',
+                    context: { where: 'Binding.applyChange', name: this.bindingNode.name },
+                    docsUrl: './docs/error-codes.md#bind',
+                });
+            }
         }
         renderer.updatedBindings.add(this);
         this.bindingNode.applyChange(renderer);
@@ -10042,6 +10101,7 @@ function createAccessorFunctions(info, getters) {
 class PathManager {
     alls = new Set();
     lists = new Set();
+    buildables = new Set();
     elements = new Set();
     funcs = new Set();
     getters = new Set();
@@ -10079,12 +10139,16 @@ class PathManager {
                 }
             }
         }
+        // Configure list paths
         const lists = getListPathsSetById(this._id);
         this.lists = this.lists.union(lists).union(listsFromAlls);
         for (const listPath of this.lists) {
             const elementPath = `${listPath}.*`;
             this.elements.add(elementPath);
         }
+        // Configure buildable paths
+        const buildables = getBuildablePathsSetById(this._id);
+        this.buildables = this.buildables.union(buildables);
         let currentProto = this._stateClass.prototype;
         while (currentProto && currentProto !== Object.prototype) {
             const getters = Object.getOwnPropertyDescriptors(currentProto);

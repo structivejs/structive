@@ -53,6 +53,7 @@ const makeEngine = () => ({
     rootNode: { currentPath: "root", childNodeByName: new Map() },
     dynamicDependencies: new Map<string, Set<string>>(),
     lists: new Set<string>(),
+    buildables: new Set<string>(),
     elements: new Set<string>(),
     getters: {
       intersection: () => new Set<string>(),

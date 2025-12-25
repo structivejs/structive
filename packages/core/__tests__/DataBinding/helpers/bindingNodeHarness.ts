@@ -13,6 +13,7 @@ export function createEngineStub() {
     getListAndListIndexes: vi.fn(() => ({ list: null, listIndexes: null, listClone: null })),
     versionUp: vi.fn(() => 1),
     pathManager: {
+      buildables: new Set<string>(),
       hasConnectedCallback: false,
       hasDisconnectedCallback: false,
       hasUpdatedCallback: false,

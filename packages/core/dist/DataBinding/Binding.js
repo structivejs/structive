@@ -1,3 +1,4 @@
+import { raiseError } from "../utils";
 /**
  * Coordinates BindingNode (DOM operations) and BindingState (state management) to achieve reactive binding.
  *
@@ -89,6 +90,20 @@ class Binding {
         }
         else if (renderer.renderPhase === 'applySelect' && (this.bindingNode.buildable || !this.bindingNode.isSelectElement)) {
             return;
+        }
+        else if (renderer.renderPhase === 'direct') {
+            if (this.bindingNode.isSelectElement) {
+                renderer.applySelectPhaseBinidings.push(this);
+                return;
+            }
+            if (this.bindingNode.buildable) {
+                raiseError({
+                    code: 'BIND-101',
+                    message: 'Direct render phase cannot process buildable bindings',
+                    context: { where: 'Binding.applyChange', name: this.bindingNode.name },
+                    docsUrl: './docs/error-codes.md#bind',
+                });
+            }
         }
         renderer.updatedBindings.add(this);
         this.bindingNode.applyChange(renderer);

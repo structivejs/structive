@@ -18,6 +18,7 @@ function createMinimalEngine(): IComponentEngine {
       rootNode: { childNodeByName: new Map(), currentPath: "" },
       dynamicDependencies: new Map(),
       lists: new Set(),
+      buildables: new Set(),
       elements: new Set(),
       hasUpdatedCallback: false,
     },

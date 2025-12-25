@@ -10,7 +10,8 @@ import type { Constructor } from "../../src/types";
 // モック対象モジュール
 vi.mock("../../src/BindingBuilder/registerDataBindAttributes", () => ({
   getPathsSetById: vi.fn(),
-  getListPathsSetById: vi.fn()
+  getListPathsSetById: vi.fn(),
+  getBuildablePathsSetById: vi.fn()
 }));
 
 vi.mock("../../src/StateProperty/getStructuredPathInfo", () => ({
@@ -27,13 +28,14 @@ vi.mock("../../src/PathTree/PathNode", () => ({
 }));
 
 // モック関数のインポート
-import { getPathsSetById, getListPathsSetById } from "../../src/BindingBuilder/registerDataBindAttributes";
+import { getPathsSetById, getListPathsSetById, getBuildablePathsSetById } from "../../src/BindingBuilder/registerDataBindAttributes";
 import { getStructuredPathInfo } from "../../src/StateProperty/getStructuredPathInfo";
 import { createAccessorFunctions } from "../../src/StateProperty/createAccessorFunctions";
 import { createRootNode, addPathNode } from "../../src/PathTree/PathNode";
 
 const mockGetPathsSetById = vi.mocked(getPathsSetById);
 const mockGetListPathsSetById = vi.mocked(getListPathsSetById);
+const mockGetBuildablePathsSetById = vi.mocked(getBuildablePathsSetById);
 const mockGetStructuredPathInfo = vi.mocked(getStructuredPathInfo);
 const mockCreateAccessorFunctions = vi.mocked(createAccessorFunctions);
 const mockCreateRootNode = vi.mocked(createRootNode);
@@ -76,6 +78,7 @@ describe("PathManager/PathManager", () => {
     // デフォルトのモック戻り値
     mockGetPathsSetById.mockReturnValue(new Set());
     mockGetListPathsSetById.mockReturnValue(new Set());
+    mockGetBuildablePathsSetById.mockReturnValue(new Set());
     mockGetStructuredPathInfo.mockReturnValue({
       cumulativePathSet: new Set(),
       pathSegments: [],

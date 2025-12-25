@@ -62,6 +62,7 @@ const makeEngine = () => {
       rootNode: { name: "root" },
       dynamicDependencies,
       lists: new Set<string>(),
+      buildables: new Set<string>(),
       elements: new Set<string>(),
     },
     bindingsByListIndex: new WeakMap<any, Set<any>>(),
