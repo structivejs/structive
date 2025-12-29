@@ -425,23 +425,23 @@ describe("BindingNodeFor coverage", () => {
     expect(spyInsert).not.toHaveBeenCalled();
   });
 
-  it("poolLength の setter 負数はエラー", () => {
+  it("_poolLength の setter 負数はエラー", () => {
     const engine = createEngineStub();
     const comment = document.createComment("@@|304");
     const binding = createBindingStub(engine, comment);
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
-  expect(() => { node.poolLength = -1; }).toThrowError(/length is negative/i);
+    expect(() => { node._poolLength = -1; }).toThrowError(/length is negative/i);
   });
 
-  it("loopInfo はキャッシュされ、getStructuredPathInfo は1回のみ", () => {
+  it("_loopInfo はキャッシュされ、getStructuredPathInfo は1回のみ", () => {
     const spy = vi.spyOn(GetStructuredPathInfoMod, "getStructuredPathInfo");
     const engine = createEngineStub();
     const comment = document.createComment("@@|305");
     const binding = createBindingStub(engine, comment);
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
     // 2回アクセス
-    const a = node.loopInfo;
-    const b = node.loopInfo;
+    const a = node._loopInfo;
+    const b = node._loopInfo;
     expect(a).toBe(b);
     expect(spy).toHaveBeenCalledTimes(1);
   });
@@ -1247,24 +1247,18 @@ describe("BindingNodeFor coverage", () => {
     arrayFromSpy.mockRestore();
   });
 
-  it("isAllAppend ブランチを通過する", async () => {
-    (globalThis as any).__STRUCTIVE_USE_ALL_APPEND__ = true;
-    vi.resetModules();
+  it("isAllNew かつ isConnected の場合 DocumentFragment を使用する", () => {
+    setupTemplate();
+    const engine = createEngineStub();
+    const container = document.createElement("div");
+    const comment = document.createComment("@@|330");
+    container.appendChild(comment);
+    // DOMに接続してisConnectedをtrueにする
+    document.body.appendChild(container);
+    
     try {
-      const registerTemplate = await import("../../../src/Template/registerTemplate");
-      const registerAttributes = await import("../../../src/BindingBuilder/registerDataBindAttributes");
-      const tpl = document.createElement("template");
-      tpl.innerHTML = `<div>for-item</div>`;
-      vi.spyOn(registerTemplate, "getTemplateById").mockReturnValue(tpl);
-      vi.spyOn(registerAttributes, "getDataBindAttributesById").mockReturnValue([] as any);
-
-  const { createBindingNodeFor: createBindingNodeForWithAppend } = await import("../../../src/DataBinding/BindingNode/BindingNodeFor");
-  const engine = createEngineStub();
-  const container = document.createElement("div");
-  const comment = document.createComment("@@|330");
-      container.appendChild(comment);
       const binding = createBindingStub(engine, comment);
-      const node = createBindingNodeForWithAppend("for", [], [])(binding, comment, engine.inputFilters) as any;
+      const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
 
       const idx = createIndexes(2);
       const diff = {
@@ -1281,8 +1275,7 @@ describe("BindingNodeFor coverage", () => {
       expect(spy.mock.calls[0][0]).toBeInstanceOf(DocumentFragment);
       spy.mockRestore();
     } finally {
-      delete (globalThis as any).__STRUCTIVE_USE_ALL_APPEND__;
-      vi.resetModules();
+      document.body.removeChild(container);
     }
   });
 
@@ -1317,7 +1310,7 @@ describe("BindingNodeFor coverage", () => {
     expect(unmountSpy).toHaveBeenCalled();
     expect(inactivateSpy).toHaveBeenCalled();
     expect(node.bindContents.length).toBe(0);
-    expect((node as any).poolLength).toBe(3);
+    expect((node as any)._poolLength).toBe(3);
 
     document.body.removeChild(container);
   });
@@ -1452,6 +1445,147 @@ describe("BindingNodeFor coverage", () => {
     // エラーなく処理される（length は 0 として扱われる）
     expect(() => node.applyChange(renderer)).not.toThrow();
     
+    document.body.removeChild(container);
+  });
+
+  it("_poolBindContents で 1000件以上の要素を concat で処理する", () => {
+    setupTemplate();
+    const engine = createEngineStub();
+    const comment = document.createComment("@@|500");
+    const binding = createBindingStub(engine, comment);
+    const container = document.createElement("div");
+    container.appendChild(comment);
+    document.body.appendChild(container);
+
+    const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
+
+    // 最初に1001件追加
+    const LARGE_COUNT = 1001;
+    const idxLarge = createIndexes(LARGE_COUNT);
+    const renderer1 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => Array.from({ length: LARGE_COUNT }, () => ({}))),
+        [GetListIndexesByRefSymbol]: vi.fn(() => idxLarge),
+      },
+    });
+    node.applyChange(renderer1);
+    expect(node.bindContents.length).toBe(LARGE_COUNT);
+    expect(node._poolLength).toBe(0);
+
+    // 1件だけ残す → 1000件がプールに入る（elseブランチ: _bindContentPool = bindContents）
+    const idx1 = createIndexes(1);
+    const renderer2 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => [{}]),
+        [GetListIndexesByRefSymbol]: vi.fn(() => idx1),
+      },
+    });
+    node.applyChange(renderer2);
+    expect(node._poolLength).toBe(1000); // プールに1000件
+    expect(node.bindContents.length).toBe(1);
+
+    // 2件追加 → プールから1件再利用 → プールに999件残る
+    const idx2 = createIndexes(2);
+    const renderer3 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => [{}, {}]),
+        [GetListIndexesByRefSymbol]: vi.fn(() => idx2),
+      },
+    });
+    node.applyChange(renderer3);
+    expect(node._poolLength).toBe(999); // プールに999件
+    expect(node.bindContents.length).toBe(2);
+
+    // 全削除 → プールに2件追加（pushブランチ: 2 < 1000）
+    const renderer4 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => []),
+        [GetListIndexesByRefSymbol]: vi.fn(() => []),
+      },
+    });
+    node.applyChange(renderer4);
+    expect(node._poolLength).toBe(999 + 2); // プールに1001件
+    expect(node.bindContents.length).toBe(0);
+
+    // 1001件追加 → プールから全部再利用 → プールは0件
+    const renderer5 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => Array.from({ length: LARGE_COUNT }, () => ({}))),
+        [GetListIndexesByRefSymbol]: vi.fn(() => idxLarge),
+      },
+    });
+    node.applyChange(renderer5);
+    expect(node._poolLength).toBe(0);
+    expect(node.bindContents.length).toBe(LARGE_COUNT);
+
+    // 1件だけ残す → 1000件がプールに入る
+    const renderer6 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => [{}]),
+        [GetListIndexesByRefSymbol]: vi.fn(() => idx1),
+      },
+    });
+    node.applyChange(renderer6);
+    expect(node._poolLength).toBe(1000);
+
+    // ここでさらに1000件削除（1件→0件ではなく、プールに既にある状態で1000件以上追加）
+    // → 1002件追加して、1000件削除する
+    const idxLarge2 = createIndexes(1002);
+    const renderer7 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => Array.from({ length: 1002 }, () => ({}))),
+        [GetListIndexesByRefSymbol]: vi.fn(() => idxLarge2),
+      },
+    });
+    node.applyChange(renderer7);
+    expect(node._poolLength).toBe(0); // プールから全部再利用
+    expect(node.bindContents.length).toBe(1002);
+
+    // 1件だけ残す → プールに1001件追加
+    const renderer8 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => [{}]),
+        [GetListIndexesByRefSymbol]: vi.fn(() => idx1),
+      },
+    });
+    node.applyChange(renderer8);
+    expect(node._poolLength).toBe(1001); // elseブランチ
+
+    // さらに10件追加 → プールから10件使用、プール991件
+    const idx11 = createIndexes(11);
+    const renderer9 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => Array.from({ length: 11 }, () => ({}))),
+        [GetListIndexesByRefSymbol]: vi.fn(() => idx11),
+      },
+    });
+    node.applyChange(renderer9);
+    expect(node._poolLength).toBe(991);
+
+    // 1001件追加して、プールから残りを使い、さらに追加 → その後1000件削除
+    // この時点でプールに991件あり、1001-11=990件追加すると、プールから990件使用、プール1件
+    const idxLarge3 = createIndexes(1001);
+    const renderer10 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => Array.from({ length: 1001 }, () => ({}))),
+        [GetListIndexesByRefSymbol]: vi.fn(() => idxLarge3),
+      },
+    });
+    node.applyChange(renderer10);
+    expect(node._poolLength).toBe(1); // 991 - 990 = 1
+    expect(node.bindContents.length).toBe(1001);
+
+    // 全削除 → プールに既に1件ある状態で1001件追加 → concatブランチを通る！
+    const renderer11 = createRendererStub({
+      readonlyState: {
+        [GetByRefSymbol]: vi.fn(() => []),
+        [GetListIndexesByRefSymbol]: vi.fn(() => []),
+      },
+    });
+    node.applyChange(renderer11);
+    expect(node._poolLength).toBe(1 + 1001); // concatで結合
+    expect(node.bindContents.length).toBe(0);
+
     document.body.removeChild(container);
   });
 });
