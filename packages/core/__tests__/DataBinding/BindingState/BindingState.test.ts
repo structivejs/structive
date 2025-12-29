@@ -36,7 +36,7 @@ describe("BindingState", () => {
 
   it("非ワイルドカード: activate/saveBinding/get/assignValue", () => {
     const mockBindContent = { currentLoopContext: null } as any;
-    const binding = { parentBindContent: mockBindContent, engine } as any;
+    const binding = { parentBindContent: mockBindContent, engine, bindingNode: { renderable: true } } as any;
 
     // フィルタなし
     const factory = createBindingState("user.name", []);
@@ -59,7 +59,7 @@ describe("BindingState", () => {
 
   it("フィルタ適用: upper と add", () => {
     const mockBindContent = { currentLoopContext: null } as any;
-    const binding = { parentBindContent: mockBindContent, engine } as any;
+    const binding = { parentBindContent: mockBindContent, engine, bindingNode: { renderable: true } } as any;
 
     const factory = createBindingState("user.score", [
       { name: "add", options: ["10"] },
@@ -85,7 +85,7 @@ describe("BindingState", () => {
     } as any;
 
     const mockBindContent = { currentLoopContext: loopContext } as any;
-    const binding = { parentBindContent: mockBindContent, engine } as any;
+    const binding = { parentBindContent: mockBindContent, engine, bindingNode: { renderable: true } } as any;
 
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);
@@ -103,7 +103,7 @@ describe("BindingState", () => {
 
   it("フィルタチェーン: upper -> add", () => {
     const mockBindContent = { currentLoopContext: null } as any;
-    const binding = { parentBindContent: mockBindContent, engine } as any;
+    const binding = { parentBindContent: mockBindContent, engine, bindingNode: { renderable: true } } as any;
 
     const factory = createBindingState("user.label", [
       { name: "upper", options: [] },
@@ -120,7 +120,7 @@ describe("BindingState", () => {
 
   it("ゲッター: pattern/info/listIndex/filters/binding", () => {
     const mockBindContent = { currentLoopContext: null } as any;
-    const binding = { parentBindContent: mockBindContent, engine } as any;
+    const binding = { parentBindContent: mockBindContent, engine, bindingNode: { renderable: true } } as any;
 
     const factory = createBindingState("user.name", []);
     const bindingState = factory(binding, engine.outputFilters);
@@ -212,7 +212,7 @@ describe("BindingState", () => {
     } as any;
 
     const mockBindContent = { currentLoopContext: loopContext } as any;
-    const binding = { parentBindContent: mockBindContent, engine } as any;
+    const binding = { parentBindContent: mockBindContent, engine, bindingNode: { renderable: true } } as any;
 
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);

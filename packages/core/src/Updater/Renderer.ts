@@ -12,7 +12,8 @@ import { IStructuredPathInfo } from "../StateProperty/types";
 import { getStatePropertyRef } from "../StatePropertyRef/StatepropertyRef";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { raiseError } from "../utils";
-import { IListSnapshot, IRenderer, IUpdater, ReadonlyStateCallback, RenderPhase } from "./types";
+import { config } from "../WebComponents/getGlobalConfig";
+import { IListSnapshot, IRenderer, IRenderReport, IUpdater, ReadonlyStateCallback, RenderPhase } from "./types";
 
 /**
  * Renderer is a coordinator that responds to State changes (a set of IStatePropertyRef references)
@@ -134,7 +135,7 @@ class Renderer implements IRenderer {
    * - readonlyState is only valid within this method's scope.
    * - SetCacheableSymbol enables caching of reference resolution in bulk.
    */
-  render(items: IStatePropertyRef[]): void {
+  private _render(items: IStatePropertyRef[]): void {
     this.processedRefs.clear();
     this.updatedBindings.clear();
     this._updatingRefs = [...items];
@@ -246,6 +247,7 @@ class Renderer implements IRenderer {
     this._renderPhase = 'apply';
     try {
       for(let i = 0; i < this._applyPhaseBinidings.length; i++) {
+        if (!this._applyPhaseBinidings[i].bindingNode.renderable) {continue;}
         this._applyPhaseBinidings[i].applyChange(this);
       }
     } finally {
@@ -257,10 +259,29 @@ class Renderer implements IRenderer {
     this._renderPhase = 'applySelect';
     try {
       for(let i = 0; i < this._applySelectPhaseBinidings.length; i++) {
+        if (!this._applySelectPhaseBinidings[i].bindingNode.renderable) {continue;}
         this._applySelectPhaseBinidings[i].applyChange(this);
       }
     } finally {
       this._applySelectPhaseBinidings = [];
+    }
+  }
+
+  render(items: IStatePropertyRef[]): void {
+    const enableReporting = config.debug && config.debugReports.includes("render");
+    const start = performance.now();
+    this._render(items);
+    if (enableReporting) {
+      const end = performance.now();
+      const report: IRenderReport = {
+        renderedRefs: this._updatingRefs,
+        renderedBindings: Array.from(this.updatedBindings),
+        renderType: "update",
+        version: this._updater.version,
+        revision: this._updater.revision,
+        duration: end - start,
+      }
+      console.warn("[DebugReport][Render]", report);
     }
   }
 
@@ -387,11 +408,26 @@ class Renderer implements IRenderer {
   }
 
   initialRender(root: IBindContent): void {
+    const enableReporting = config.debug && config.debugReports.includes("render");
+    const start = performance.now();
     this.createReadonlyState( () => {
       root.applyChange(this);
       this._applyPhaseRender();
       this._applySelectPhaseRender();
     });
+    if (enableReporting) {
+      const end = performance.now();
+      const report: IRenderReport = {
+        renderedRefs: this._updatingRefs,
+        renderedBindings: Array.from(this.updatedBindings),
+        renderType: "update",
+        version: this._updater.version,
+        revision: this._updater.revision,
+        duration: end - start,
+      }
+      console.warn("[DebugReport][Render]", report);
+    }
+
   }
 }
 

@@ -257,3 +257,21 @@ export interface IUpdateActivityTracker {
   createProcessResolver(): PromiseWithResolvers<void>;
 }
 
+export interface IUpdateReport {
+  readonly updatedRefsList: IStatePropertyRef[][];
+  readonly events: Event[];
+  readonly version: number;
+  readonly revision: number;
+  readonly duration: number;
+}
+
+export type RenderType = "update" | "initial";
+
+export interface IRenderReport {
+  readonly renderedRefs: IStatePropertyRef[];
+  readonly renderedBindings: IBinding[];
+  readonly renderType: RenderType;
+  readonly version: number;
+  readonly revision: number;
+  readonly duration: number;
+}

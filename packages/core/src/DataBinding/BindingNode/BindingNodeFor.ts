@@ -31,7 +31,7 @@ type ElementsResult = {
   overwrites: IListIndex[];
 }
 
-const TOO_MANY_BIND_CONTENTS_WARNING_THRESHOLD = 1000;
+const TOO_MANY_BIND_CONTENTS_THRESHOLD = 1000;
 
 /**
  * BindingNode for loop rendering (for binding).
@@ -40,10 +40,10 @@ const TOO_MANY_BIND_CONTENTS_WARNING_THRESHOLD = 1000;
 class BindingNodeFor extends BindingNodeBlock {
   private _bindContents: IBindContent[] = [];
   private _bindContentByListIndex: WeakMap<IListIndex, IBindContent> = new WeakMap();
-  private _bindContentPool: IBindContent[] = [];
-  private _bindContentLastIndex: number = 0;
+  private _bindContentPool: (IBindContent | null)[] = [];
+  private _bindContentPoolSize: number = 0;
+  private _bindContentPoolIndex: number = -1;
   private _cacheLoopInfo: IStructuredPathInfo | undefined = undefined;
-  private _oldList: unknown = undefined;
   private _oldListIndexes: IListIndex[] = [];
   private _oldListIndexSet: Set<IListIndex> = new Set();
 
@@ -54,33 +54,6 @@ class BindingNodeFor extends BindingNodeBlock {
    */
   get bindContents(): IBindContent[] {
     return this._bindContents;
-  }
-
-  /**
-   * Returns current pool size.
-   * 
-   * @returns Number of BindContent instances in pool
-   */
-  private get _poolLength():number {
-    return this._bindContentPool.length;
-  }
-
-  /**
-   * Sets pool size, truncating if smaller than current size.
-   * 
-   * @param length - New pool length
-   * @throws BIND-202 Length is negative
-   */
-  private set _poolLength(length: number) {
-    if (length < 0) {
-      raiseError({
-        code: 'BIND-202',
-        message: 'BindContent pool length is negative',
-        context: { where: 'BindingNodeFor.setPoolLength', bindName: this.name, requestedLength: length },
-        docsUrl: './docs/error-codes.md#bind',
-      });
-    }
-    this._bindContentPool.length = length;
   }
 
   /**
@@ -104,6 +77,16 @@ class BindingNodeFor extends BindingNodeBlock {
     return `${this.binding.bindingState.info.pattern}.*`;
   }
 
+  private _getBindContentFromPool(): IBindContent | null {
+    if (this._bindContentPoolIndex >= 0) {
+      const bindContent = this._bindContentPool[this._bindContentPoolIndex];
+      this._bindContentPool[this._bindContentPoolIndex] = null;
+      this._bindContentPoolIndex--;
+      return bindContent;
+    }
+    return null;
+  }
+
   /**
    * Creates or reuses BindContent from pool for given list index.
    * 
@@ -112,10 +95,8 @@ class BindingNodeFor extends BindingNodeBlock {
    * @returns Created or reused IBindContent instance
    */
   private _createBindContent(listIndex: IListIndex): IBindContent {
-    let bindContent: IBindContent;
-    if (this._bindContentLastIndex >= 0) {
-      bindContent = this._bindContentPool[this._bindContentLastIndex];
-      this._bindContentLastIndex--;
+    let bindContent: IBindContent | null = this._getBindContentFromPool();
+    if (bindContent !== null) {
       bindContent.assignListIndex(listIndex);
     } else {
       const loopRef = getStatePropertyRef(this._loopInfo, listIndex);
@@ -160,35 +141,26 @@ class BindingNodeFor extends BindingNodeBlock {
   /**
    * Removes all BindContents and resets state.
    * 
-   * @param node - Node to remove from
    * @param parentNode - Parent node containing the node
-   * @param bindContents - Array of BindContent instances
-   * @param baseContext - Context for error reporting
+   * @param lastContent - Last BindContent in the current list
    * @returns Boolean indicating if removal was successful
    */
   private _allRemove(
-    node: Node, 
     parentNode: ParentNode, 
-    bindContents: IBindContent[], 
-    baseContext: BindContext
+    lastContent: IBindContent
   ): boolean {
-    const lastContent = bindContents.at(-1) ?? raiseError({
-      code: 'BIND-201',
-      message: 'Last BindContent not found',
-      context: { ...baseContext, bindContentCount: bindContents.length },
-      docsUrl: './docs/error-codes.md#bind',
-    });
-    let firstNode: Node | null = parentNode.firstChild;
-    while(firstNode && firstNode.nodeType === Node.TEXT_NODE && firstNode.textContent?.trim() === "") {
-      firstNode = firstNode.nextSibling;
+    let workFirstNode: Node | null = parentNode.firstChild;
+    while(workFirstNode && workFirstNode.nodeType === Node.TEXT_NODE && workFirstNode.textContent?.trim() === "") {
+      workFirstNode = workFirstNode.nextSibling;
     }
-    let lastNode: Node | null = parentNode.lastChild;
-    while(lastNode && lastNode.nodeType === Node.TEXT_NODE && lastNode.textContent?.trim() === "") {
-      lastNode = lastNode.previousSibling;
+    let workLastNode: Node | null = parentNode.lastChild;
+    while(workLastNode && workLastNode.nodeType === Node.TEXT_NODE && workLastNode.textContent?.trim() === "") {
+      workLastNode = workLastNode.previousSibling;
     }
-    if (firstNode === node && lastNode === lastContent.getLastNode(parentNode)) {
+    if (workFirstNode === this.node && workLastNode === lastContent.getLastNode(parentNode)) {
+      // safe to clear all, needless to unmount each
       parentNode.textContent = "";
-      parentNode.append(node);
+      parentNode.append(this.node);
       return true;
     } else {
       return false;
@@ -235,19 +207,51 @@ class BindingNodeFor extends BindingNodeBlock {
    * @param bindContents - Array of IBindContent instances to pool
    */
   private _poolBindContents(bindContents: IBindContent[]): void {
-    if (this._bindContentPool.length > 0) {
-      if (bindContents.length < TOO_MANY_BIND_CONTENTS_WARNING_THRESHOLD) {
-        this._bindContentPool.push(...bindContents);
-      } else {
+    // exhaust pool first
+    if (this._bindContentPoolIndex === -1) {
+      this._bindContentPool = bindContents;
+      this._bindContentPoolSize = bindContents.length;
+      this._bindContentPoolIndex = this._bindContentPoolSize - 1;
+      return;
+    }
+    // full pool expansion
+    if (this._bindContentPoolSize === (this._bindContentPoolIndex + 1)) {
+      if (bindContents.length > TOO_MANY_BIND_CONTENTS_THRESHOLD) {
+        // large batch, concat for stack overflow safety
         this._bindContentPool = this._bindContentPool.concat(bindContents);
+      } else {
+        this._bindContentPool.push(...bindContents);
+      }
+      this._bindContentPoolSize = this._bindContentPool.length;
+      this._bindContentPoolIndex += bindContents.length;
+      return;
+    }
+    const availableSpace = this._bindContentPoolSize - (this._bindContentPoolIndex + 1);
+    const neededSpace = bindContents.length;
+    if (neededSpace <= availableSpace) {
+      // enough space available
+      for(let i = 0; i < bindContents.length; i++) {
+        this._bindContentPoolIndex++;
+        this._bindContentPool[this._bindContentPoolIndex] = bindContents[i];
       }
     } else {
-      this._bindContentPool = bindContents;
+      // expand pool
+      for(let i = 0; i < bindContents.length; i++) {
+        this._bindContentPoolIndex++;
+        if (this._bindContentPoolIndex >= this._bindContentPoolSize) {
+          this._bindContentPool.push(bindContents[i]);
+        } else {
+          this._bindContentPool[this._bindContentPoolIndex] = bindContents[i];
+        }
+      }
+      this._bindContentPoolSize = this._bindContentPool.length;
     }
   }
 
   /**
    * Clears all active BindContents.
+   * for _allRemove optimization.
+   * needless to unmount each BindContent.
    */
   private _clearBindContents(): void {
     for(let i = 0; i < this._bindContents.length; i++) {
@@ -393,7 +397,7 @@ class BindingNodeFor extends BindingNodeBlock {
     }
     const fragmentParentNode = useAllAppend ? document.createDocumentFragment() : parentNode;
     const fragmentFirstNode = useAllAppend ? null : firstNode;
-    const changeListIndexes = [];
+    const changeListIndexes: IListIndex[] = [];
     for(let i = 0; i < newListIndexes.length; i++) {
       const listIndex = newListIndexes[i];
       const lastNode = lastBindContent?.getLastNode(fragmentParentNode) ?? fragmentFirstNode;
@@ -429,6 +433,7 @@ class BindingNodeFor extends BindingNodeBlock {
     for(const listIndex of changeListIndexes) {
       const bindings = bindingsByListIndex.get(listIndex) ?? [];
       for(const binding of bindings) {
+        if (!binding.bindingNode.renderable) {continue;}
         if (renderer.updatedBindings.has(binding)) {continue;}
         binding.applyChange(renderer);
       }
@@ -439,61 +444,67 @@ class BindingNodeFor extends BindingNodeBlock {
   /**
    *  Reorders BindContents based on detected changes.
    * 
-   * @param renderer - Renderer instance
    * @param parentNode - Parent DOM node
    * @param firstNode - First child node of the parent
-   * @param elementsResult - Result of elements diff detection
+   * @param changes - List of changes detected
    * @param bindContents - Current array of bind contents
    * @param bindContentByListIndex - WeakMap of list indexes to bind contents
    * @param baseContext - Context for error reporting
-   * @returns Array of reordered bind contents
    */
   private _reorder(
-    renderer: IRenderer,
     parentNode: ParentNode,
     firstNode: Node,
-    elementsResult: ElementsResult,
+    changes: IListIndex[],
     bindContents: IBindContent[],
     bindContentByListIndex: WeakMap<IListIndex, IBindContent>,
     baseContext: BindContext
-  ): IBindContent[] {
-    let newBindContents: IBindContent[] = bindContents;
-    if (elementsResult.changes.length > 0) {
-      const workBindContents = bindContents;
-      const changeIndexes = elementsResult.changes;
-      changeIndexes.sort((a, b) => a.index - b.index);
-      for(const listIndex of changeIndexes) {
-        const bindContent = bindContentByListIndex.get(listIndex);
-        if (typeof bindContent === "undefined") {
-          raiseError({
-            code: 'BIND-201',
-            message: 'BindContent not found',
-            context: { ...baseContext, phase: 'reorder', listIndex: listIndex.index },
-            docsUrl: './docs/error-codes.md#bind',
-          });
-        }
-        workBindContents[listIndex.index] = bindContent;
-        const lastNode = workBindContents[listIndex.index - 1]?.getLastNode(parentNode) ?? firstNode;
-        bindContent.mountAfter(parentNode, lastNode);
+  ): void {
+    const changeIndexes = changes;
+    changeIndexes.sort((a, b) => a.index - b.index);
+    for(const listIndex of changeIndexes) {
+      const bindContent = bindContentByListIndex.get(listIndex);
+      if (typeof bindContent === "undefined") {
+        raiseError({
+          code: 'BIND-201',
+          message: 'BindContent not found',
+          context: { ...baseContext, phase: 'reorder', listIndex: listIndex.index },
+          docsUrl: './docs/error-codes.md#bind',
+        });
       }
-      newBindContents = workBindContents;
+      bindContents[listIndex.index] = bindContent;
+      const lastNode = bindContents[listIndex.index - 1]?.getLastNode(parentNode) ?? firstNode;
+      bindContent.mountAfter(parentNode, lastNode);
     }
-    if (elementsResult.overwrites.length > 0) {
-      for(let i = 0; i < elementsResult.overwrites.length; i++) {
-        const listIndex = elementsResult.overwrites[i];
-        const bindContent = bindContentByListIndex.get(listIndex);
-        if (typeof bindContent === "undefined") {
-          raiseError({
-            code: 'BIND-201',
-            message: 'BindContent not found',
-            context: { ...baseContext, phase: 'overwrites', listIndex: listIndex.index },
-            docsUrl: './docs/error-codes.md#bind',
-          });
-        }
-        bindContent.applyChange(renderer);
+  }
+
+  /**
+   *  Applies overwrites to BindContents based on detected changes.
+   * 
+   * @param renderer - Renderer instance
+   * @param overwrites - List of changes detected
+   * @param bindContents - Current array of bind contents
+   * @param bindContentByListIndex - WeakMap of list indexes to bind contents
+   * @param baseContext - Context for error reporting
+   */
+  private _overwrite(
+    renderer: IRenderer,
+    overwrites: IListIndex[],
+    bindContentByListIndex: WeakMap<IListIndex, IBindContent>,
+    baseContext: BindContext
+  ): void {
+    for(let i = 0; i < overwrites.length; i++) {
+      const listIndex = overwrites[i];
+      const bindContent = bindContentByListIndex.get(listIndex);
+      if (typeof bindContent === "undefined") {
+        raiseError({
+          code: 'BIND-201',
+          message: 'BindContent not found',
+          context: { ...baseContext, phase: 'overwrites', listIndex: listIndex.index },
+          docsUrl: './docs/error-codes.md#bind',
+        });
       }
+      bindContent.applyChange(renderer);
     }
-    return newBindContents;
   }
 
   /**
@@ -504,7 +515,6 @@ class BindingNodeFor extends BindingNodeBlock {
    * @throws BIND-201 ListIndex is null, BindContent not found, ParentNode is null, Last content is null
    */
   applyChange(renderer: IRenderer): void {
-    let newBindContents: IBindContent[] = [];
     const baseContext = {
       where: 'BindingNodeFor.applyChange',
       bindName: this.name,
@@ -529,15 +539,6 @@ class BindingNodeFor extends BindingNodeBlock {
         docsUrl: './docs/error-codes.md#bind',
       });
     }
-    const oldList = typeof this._oldList === "undefined" ? [] : this._oldList;
-    if (!Array.isArray(oldList)) {
-      raiseError({
-        code: 'BIND-201',
-        message: 'Previous loop value is not array',
-        context: { ...baseContext, receivedType: oldList === null ? 'null' : typeof oldList },
-        docsUrl: './docs/error-codes.md#bind',
-      });
-    }
     const newListIndexes = renderer.readonlyState[GetListIndexesByRefSymbol](this.binding.bindingState.ref) ?? [];
     const newListIndexesSet = new Set<IListIndex>(newListIndexes);
     
@@ -547,7 +548,14 @@ class BindingNodeFor extends BindingNodeBlock {
     // Optimization: clear all if new list is empty
     let isCleared = false;
     if (listDiff.willRemoveAll) {
-      isCleared = this._allRemove(this.node, parentNode, this._bindContents, baseContext);
+      const lastContent = this.bindContents.at(-1) ?? raiseError({
+        code: 'BIND-201',
+        message: 'Last BindContent not found',
+        context: { ...baseContext, bindContentCount: this.bindContents.length },
+        docsUrl: './docs/error-codes.md#bind',
+      });
+
+      isCleared = this._allRemove(parentNode, lastContent);
       if (isCleared) {
         this._clearBindContents();
       }
@@ -563,10 +571,6 @@ class BindingNodeFor extends BindingNodeBlock {
       }
     }
 
-    // set pool length before creating new BindContents
-    this._poolLength = this._bindContentPool.length;
-    this._bindContentLastIndex = this._poolLength - 1;
-
     // Optimization: reorder-only path when no adds/removes
     const isReorder = !listDiff.hasAdds && !listDiff.hasRemoves &&
       (elementsResult.changes.length > 0 || elementsResult.overwrites.length > 0 );
@@ -575,7 +579,7 @@ class BindingNodeFor extends BindingNodeBlock {
       // Use document fragment only when all are appends and node is connected
       const useAllAppend = listDiff.isAllNew && parentNode.isConnected;
 
-      newBindContents = this._applyChange(
+      this._bindContents = this._applyChange(
         useAllAppend,
         renderer,
         parentNode,
@@ -589,21 +593,27 @@ class BindingNodeFor extends BindingNodeBlock {
       );
     } else {
       // Reorder path: only move DOM nodes without recreating
-      newBindContents = this._reorder(
-        renderer,
-        parentNode,
-        this.node,
-        elementsResult,
-        this._bindContents,
-        this._bindContentByListIndex,
-        baseContext
-      );
+      if (elementsResult.changes.length > 0) {
+        this._reorder(
+          parentNode,
+          this.node,
+          elementsResult.changes,
+          this._bindContents,
+          this._bindContentByListIndex,
+          baseContext
+        );
+      }
+      if (elementsResult.overwrites.length > 0) {
+        this._overwrite(
+          renderer,
+          elementsResult.overwrites,
+          this._bindContentByListIndex,
+          baseContext
+        );
+      }
     }
 
     // Update state for next diff detection
-    this._poolLength = this._bindContentLastIndex + 1;
-    this._bindContents = newBindContents;
-    this._oldList = [...newList as unknown[]];
     this._oldListIndexes = [...newListIndexes];
     this._oldListIndexSet = newListIndexesSet;
   }
@@ -617,11 +627,9 @@ class BindingNodeFor extends BindingNodeBlock {
       bindContent.unmount();
       bindContent.inactivate();
     }
-    this._bindContentPool.push(...this._bindContents);
+    this._poolBindContents(this._bindContents);
     this._bindContents = [];
     this._bindContentByListIndex = new WeakMap();
-    this._bindContentLastIndex = 0;
-    this._oldList = undefined;
     this._oldListIndexes = [];
     this._oldListIndexSet = new Set();
   }

@@ -269,6 +269,9 @@ class BindContent {
         }
         for (let i = 0; i < this.bindings.length; i++) {
             const binding = this.bindings[i];
+            if (!binding.bindingNode.renderable) {
+                continue;
+            }
             if (renderer.updatedBindings.has(binding)) {
                 continue;
             }

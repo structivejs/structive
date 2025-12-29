@@ -16,6 +16,7 @@ const COMMENT_TEMPLATE_MARK_LEN = COMMENT_TEMPLATE_MARK.length;
  */
 export class BindingNodeBlock extends BindingNode {
   private _id: number;
+  readonly buildable: boolean;
   
   /**
    * Returns template ID extracted from comment node.
@@ -24,10 +25,6 @@ export class BindingNodeBlock extends BindingNode {
    */
   get id(): number {
     return this._id;
-  }
-
-  get buildable(): boolean {
-    return true;
   }
 
   /**
@@ -51,6 +48,7 @@ export class BindingNodeBlock extends BindingNode {
     decorates: string[]
   ) {
     super(binding, node, name, subName, filters, decorates);
+    this.buildable = true;
     
     const commentText = this.node.textContent?.slice(COMMENT_TEMPLATE_MARK_LEN) ?? raiseError({
       code: 'BIND-201',

@@ -16,6 +16,7 @@ import { CreateBindingNodeFn } from "./types";
  * @throws BIND-201 Binding value is not a function: When handler is missing
  */
 class BindingNodeEvent extends BindingNode {
+  readonly renderable: boolean;
   /**
    * Registers event listener once at initialization.
    * 
@@ -35,11 +36,12 @@ class BindingNodeEvent extends BindingNode {
     decorates: string[]
   ) {
     super(binding, node, name, subName, filters, decorates);
+    this.renderable = false;
     
     const element = node as HTMLElement;
     element.addEventListener(this.subName, (e:Event) => this.handler(e));
   }
-  
+
   /**
    * Event binding does nothing on state change.
    */

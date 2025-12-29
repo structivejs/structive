@@ -32,60 +32,15 @@ import { raiseError } from "../../utils.js";
  * - Flexible handling of filters, decorators, and bind contents
  */
 export class BindingNode {
-    _binding;
-    _node;
-    _name;
-    _subName;
-    _filters;
-    _decorates;
-    /**
-     * Getter to return target DOM node for binding.
-     *
-     * @returns Target DOM node
-     */
-    get node() {
-        return this._node;
-    }
-    /**
-     * Getter to return property name of binding (e.g., "textContent", "value").
-     *
-     * @returns Property name string
-     */
-    get name() {
-        return this._name;
-    }
-    /**
-     * Getter to return sub-property name (same as name in base class, can be overridden in subclasses).
-     *
-     * @returns Sub-property name string
-     */
-    get subName() {
-        return this._subName;
-    }
-    /**
-     * Getter to return parent binding (IBinding).
-     *
-     * @returns Parent IBinding instance
-     */
-    get binding() {
-        return this._binding;
-    }
-    /**
-     * Getter to return array of decorator strings (e.g., ["prevent", "stop"]).
-     *
-     * @returns Array of decorator strings
-     */
-    get decorates() {
-        return this._decorates;
-    }
-    /**
-     * Getter to return array of filter functions.
-     *
-     * @returns Array of filter functions
-     */
-    get filters() {
-        return this._filters;
-    }
+    isSelectElement;
+    node;
+    name;
+    subName;
+    binding;
+    decorates;
+    filters;
+    renderable = true;
+    buildable = false;
     /**
      * Getter to return array of child BindContent (for structural control bindings).
      *
@@ -115,15 +70,13 @@ export class BindingNode {
      * @param decorates - Array of decorator strings
      */
     constructor(binding, node, name, subName, filters, decorates) {
-        this._binding = binding;
-        this._node = node;
-        this._name = name;
-        this._subName = subName;
-        this._filters = filters;
-        this._decorates = decorates;
-    }
-    get buildable() {
-        return false;
+        this.isSelectElement = node instanceof HTMLSelectElement;
+        this.node = node;
+        this.name = name;
+        this.subName = subName;
+        this.binding = binding;
+        this.filters = filters;
+        this.decorates = decorates;
     }
     /**
      * Method to assign value to DOM (unimplemented in base class, must override in subclasses).
@@ -198,15 +151,6 @@ export class BindingNode {
      */
     inactivate() {
         // Subclasses can implement inactivation processing
-    }
-    /**
-     * Getter to determine if node is HTMLSelectElement.
-     * Used for special handling of select elements in property binding.
-     *
-     * @returns true if node is HTMLSelectElement, false otherwise
-     */
-    get isSelectElement() {
-        return this.node instanceof HTMLSelectElement;
     }
     /**
      * Getter to return current value (null in base class, override in subclasses).

@@ -63,6 +63,8 @@ export interface IBindingNodeBase {
   readonly filteredValue: unknown;
 
   readonly buildable: boolean;
+
+  readonly renderable: boolean;
   
   /**
    * Assigns value to binding node and updates DOM.

@@ -510,7 +510,7 @@ describe("Renderer Real Implementation", () => {
       engine.pathManager.buildables.add("root"); // Add to buildables to avoid direct phase
       
       // Create a binding that registers itself for apply phase
-      const applyPhaseBinding = { applyChange: vi.fn() };
+      const applyPhaseBinding = { applyChange: vi.fn(), bindingNode: { renderable: true } };
       const buildPhaseBinding = {
         applyChange: vi.fn((renderer: IRenderer) => {
           renderer.applyPhaseBinidings.push(applyPhaseBinding as any);
@@ -540,7 +540,8 @@ describe("Renderer Real Implementation", () => {
       const applyPhaseBinding = { 
         applyChange: vi.fn((renderer: IRenderer) => {
           capturedPhase = renderer.renderPhase;
-        }) 
+        }),
+        bindingNode: { renderable: true }
       };
       const buildPhaseBinding = {
         applyChange: vi.fn((renderer: IRenderer) => {
@@ -561,13 +562,44 @@ describe("Renderer Real Implementation", () => {
 
       expect(capturedPhase).toBe("apply");
     });
+
+    it("should skip bindings with renderable=false in apply phase", () => {
+      const engine = makeEngine();
+      engine.pathManager.buildables.add("root"); // Add to buildables to avoid direct phase
+      
+      // Create a binding with renderable=false
+      const nonRenderableBinding = { applyChange: vi.fn(), bindingNode: { renderable: false } };
+      const renderableBinding = { applyChange: vi.fn(), bindingNode: { renderable: true } };
+      const buildPhaseBinding = {
+        applyChange: vi.fn((renderer: IRenderer) => {
+          renderer.applyPhaseBinidings.push(nonRenderableBinding as any);
+          renderer.applyPhaseBinidings.push(renderableBinding as any);
+        }),
+      };
+      engine.getBindings.mockReturnValue([buildPhaseBinding]);
+
+      const topNode = { childNodeByName: new Map(), currentPath: "root" };
+      findPathNodeByPathMock.mockReturnValue(topNode);
+
+      const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
+
+      const { updater } = makeUpdater();
+      const renderer = createRenderer(engine, updater);
+
+      renderer.render([ref]);
+
+      // Non-renderable binding should be skipped
+      expect(nonRenderableBinding.applyChange).not.toHaveBeenCalled();
+      // Renderable binding should be called
+      expect(renderableBinding.applyChange).toHaveBeenCalledTimes(1);
+    });
   });
 
   describe("Phase 6: ApplySelect phase bindings", () => {
     it("should apply bindings in applySelect phase during render", () => {
       const engine = makeEngine();
       
-      const applySelectPhaseBinding = { applyChange: vi.fn() };
+      const applySelectPhaseBinding = { applyChange: vi.fn(), bindingNode: { renderable: true } };
       const buildPhaseBinding = {
         applyChange: vi.fn((renderer: IRenderer) => {
           renderer.applySelectPhaseBinidings.push(applySelectPhaseBinding as any);
@@ -596,7 +628,8 @@ describe("Renderer Real Implementation", () => {
       const applySelectPhaseBinding = { 
         applyChange: vi.fn((renderer: IRenderer) => {
           capturedPhase = renderer.renderPhase;
-        }) 
+        }),
+        bindingNode: { renderable: true }
       };
       const buildPhaseBinding = {
         applyChange: vi.fn((renderer: IRenderer) => {
@@ -616,6 +649,36 @@ describe("Renderer Real Implementation", () => {
       renderer.render([ref]);
 
       expect(capturedPhase).toBe("applySelect");
+    });
+
+    it("should skip bindings with renderable=false in applySelect phase", () => {
+      const engine = makeEngine();
+      
+      // Create a binding with renderable=false
+      const nonRenderableBinding = { applyChange: vi.fn(), bindingNode: { renderable: false } };
+      const renderableBinding = { applyChange: vi.fn(), bindingNode: { renderable: true } };
+      const buildPhaseBinding = {
+        applyChange: vi.fn((renderer: IRenderer) => {
+          renderer.applySelectPhaseBinidings.push(nonRenderableBinding as any);
+          renderer.applySelectPhaseBinidings.push(renderableBinding as any);
+        }),
+      };
+      engine.getBindings.mockReturnValue([buildPhaseBinding]);
+
+      const topNode = { childNodeByName: new Map(), currentPath: "root" };
+      findPathNodeByPathMock.mockReturnValue(topNode);
+
+      const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
+
+      const { updater } = makeUpdater();
+      const renderer = createRenderer(engine, updater);
+
+      renderer.render([ref]);
+
+      // Non-renderable binding should be skipped
+      expect(nonRenderableBinding.applyChange).not.toHaveBeenCalled();
+      // Renderable binding should be called
+      expect(renderableBinding.applyChange).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -1217,7 +1280,7 @@ describe("Renderer Real Implementation", () => {
     it("should apply bindings in apply phase during initialRender", () => {
       const engine = makeEngine();
       
-      const applyPhaseBinding = { applyChange: vi.fn() };
+      const applyPhaseBinding = { applyChange: vi.fn(), bindingNode: { renderable: true } };
       
       // Root that adds binding to applyPhaseBinidings in build phase
       const mockRoot = {
@@ -1238,7 +1301,7 @@ describe("Renderer Real Implementation", () => {
     it("should apply bindings in applySelect phase during initialRender", () => {
       const engine = makeEngine();
       
-      const applySelectPhaseBinding = { applyChange: vi.fn() };
+      const applySelectPhaseBinding = { applyChange: vi.fn(), bindingNode: { renderable: true } };
       
       // Root that adds binding to applySelectPhaseBinidings in build phase
       const mockRoot = {
@@ -1261,10 +1324,12 @@ describe("Renderer Real Implementation", () => {
       
       const callOrder: string[] = [];
       const applyPhaseBinding = { 
-        applyChange: vi.fn(() => callOrder.push("apply")) 
+        applyChange: vi.fn(() => callOrder.push("apply")),
+        bindingNode: { renderable: true }
       };
       const applySelectPhaseBinding = { 
-        applyChange: vi.fn(() => callOrder.push("applySelect")) 
+        applyChange: vi.fn(() => callOrder.push("applySelect")),
+        bindingNode: { renderable: true }
       };
       
       // Root that adds bindings to both phases
@@ -1292,12 +1357,14 @@ describe("Renderer Real Implementation", () => {
       const applyPhaseBinding = { 
         applyChange: vi.fn((renderer: IRenderer) => {
           capturedPhases.push(`apply:${renderer.renderPhase}`);
-        }) 
+        }),
+        bindingNode: { renderable: true }
       };
       const applySelectPhaseBinding = { 
         applyChange: vi.fn((renderer: IRenderer) => {
           capturedPhases.push(`applySelect:${renderer.renderPhase}`);
-        }) 
+        }),
+        bindingNode: { renderable: true }
       };
       
       const mockRoot = {
@@ -1318,6 +1385,156 @@ describe("Renderer Real Implementation", () => {
         "apply:apply",
         "applySelect:applySelect"
       ]);
+    });
+  });
+
+  describe("Debug Reporting", () => {
+    it("render: should output debug report when config.debug is true and debugReports includes 'render'", async () => {
+      // Import config to modify it
+      const { config } = await import("../../src/WebComponents/getGlobalConfig");
+      const originalDebug = config.debug;
+      const originalDebugReports = [...config.debugReports];
+      
+      // Enable debug reporting
+      config.debug = true;
+      config.debugReports = ["render"];
+      
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      
+      try {
+        const engine = makeEngine();
+        findPathNodeByPathMock.mockReturnValue({
+          childNodeByName: new Map(),
+          currentPath: "root",
+        });
+        
+        const { updater } = makeUpdater();
+        const renderer = createRenderer(engine, updater);
+        const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null };
+        
+        renderer.render([ref]);
+        
+        expect(warnSpy).toHaveBeenCalledWith(
+          "[DebugReport][Render]",
+          expect.objectContaining({
+            renderType: "update",
+            version: updater.version,
+            revision: updater.revision,
+          })
+        );
+      } finally {
+        // Restore config
+        config.debug = originalDebug;
+        config.debugReports = originalDebugReports;
+        warnSpy.mockRestore();
+      }
+    });
+
+    it("initialRender: should output debug report when config.debug is true and debugReports includes 'render'", async () => {
+      // Import config to modify it
+      const { config } = await import("../../src/WebComponents/getGlobalConfig");
+      const originalDebug = config.debug;
+      const originalDebugReports = [...config.debugReports];
+      
+      // Enable debug reporting
+      config.debug = true;
+      config.debugReports = ["render"];
+      
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      
+      try {
+        const engine = makeEngine();
+        const mockRoot = {
+          applyChange: vi.fn(),
+        };
+        
+        const { updater } = makeUpdater();
+        const renderer = createRenderer(engine, updater);
+        
+        renderer.initialRender(mockRoot as any);
+        
+        expect(warnSpy).toHaveBeenCalledWith(
+          "[DebugReport][Render]",
+          expect.objectContaining({
+            renderType: "update",
+            version: updater.version,
+            revision: updater.revision,
+          })
+        );
+      } finally {
+        // Restore config
+        config.debug = originalDebug;
+        config.debugReports = originalDebugReports;
+        warnSpy.mockRestore();
+      }
+    });
+
+    it("render: should not output debug report when config.debug is false", async () => {
+      // Import config to modify it
+      const { config } = await import("../../src/WebComponents/getGlobalConfig");
+      const originalDebug = config.debug;
+      const originalDebugReports = [...config.debugReports];
+      
+      // Disable debug reporting
+      config.debug = false;
+      config.debugReports = ["render"];
+      
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      
+      try {
+        const engine = makeEngine();
+        findPathNodeByPathMock.mockReturnValue({
+          childNodeByName: new Map(),
+          currentPath: "root",
+        });
+        
+        const { updater } = makeUpdater();
+        const renderer = createRenderer(engine, updater);
+        const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null };
+        
+        renderer.render([ref]);
+        
+        expect(warnSpy).not.toHaveBeenCalled();
+      } finally {
+        // Restore config
+        config.debug = originalDebug;
+        config.debugReports = originalDebugReports;
+        warnSpy.mockRestore();
+      }
+    });
+
+    it("render: should not output debug report when debugReports does not include 'render'", async () => {
+      // Import config to modify it
+      const { config } = await import("../../src/WebComponents/getGlobalConfig");
+      const originalDebug = config.debug;
+      const originalDebugReports = [...config.debugReports];
+      
+      // Enable debug but not render reports
+      config.debug = true;
+      config.debugReports = ["update"];
+      
+      const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+      
+      try {
+        const engine = makeEngine();
+        findPathNodeByPathMock.mockReturnValue({
+          childNodeByName: new Map(),
+          currentPath: "root",
+        });
+        
+        const { updater } = makeUpdater();
+        const renderer = createRenderer(engine, updater);
+        const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null };
+        
+        renderer.render([ref]);
+        
+        expect(warnSpy).not.toHaveBeenCalled();
+      } finally {
+        // Restore config
+        config.debug = originalDebug;
+        config.debugReports = originalDebugReports;
+        warnSpy.mockRestore();
+      }
     });
   });
 });

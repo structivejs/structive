@@ -13,6 +13,7 @@ describe("Binding", () => {
     notifyRedraw: vi.fn(),
     applyChange: vi.fn(),
     isBlock: false,
+    renderable: true,
   };
 
   const mockBindingState = {
@@ -44,6 +45,7 @@ describe("Binding", () => {
     mockBindingNode.inactivate.mockClear();
     mockBindingNode.notifyRedraw.mockClear();
     mockBindingNode.applyChange.mockClear();
+    mockBindingNode.renderable = true;
     mockBindingState.activate.mockClear();
     mockBindingState.assignValue.mockClear();
     mockBindingState.inactivate.mockClear();
@@ -126,6 +128,20 @@ describe("Binding", () => {
     expect((binding as any).isActive).toBe(false);
     expect(mockBindingNode.inactivate).toHaveBeenCalledTimes(1);
     expect(mockBindingState.inactivate).toHaveBeenCalledTimes(1);
+  });
+
+  it("applyChange: renderable が false の場合は何もしない", () => {
+    (mockBindingNode as any).renderable = false;
+    const binding = createBinding(parentBindContent, node, engine, createBindingNode as any, createBindingState as any);
+    
+    const renderer: any = {
+      updatedBindings: new Set(),
+      processedRefs: new Set(),
+    };
+    
+    binding.applyChange(renderer);
+    expect(mockBindingNode.applyChange).not.toHaveBeenCalled();
+    expect(renderer.updatedBindings.has(binding)).toBe(false);
   });
 
   it("applyChange: isLoopIndex が true の場合は processedRefs に追加されない", () => {

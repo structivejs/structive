@@ -54,7 +54,7 @@ describe("BindContent", () => {
       node: span,
       bindContents: [],
       applyChange: vi.fn(),
-      bindingNode: { isBlock: false },
+      bindingNode: { isBlock: false, renderable: true },
     } as any;
     vi.spyOn(bindingMod, "createBinding").mockReturnValue(mockBinding);
 
@@ -313,12 +313,27 @@ describe("BindContent", () => {
   const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t1", "t2"], creatorByText: new Map([["t1", {}], ["t2", {}]]) }];
     vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValue(attrs as any);
     vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValue(template.content.firstElementChild!);
-  const b1 = { activate: vi.fn(), applyChange: vi.fn(), node: template.content.firstElementChild!, bindContents: [], bindingNode: { isBlock: false } } as any;
-  const b2 = { activate: vi.fn(), applyChange: vi.fn(), node: template.content.firstElementChild!, bindContents: [], bindingNode: { isBlock: false } } as any;
+  const b1 = { activate: vi.fn(), applyChange: vi.fn(), node: template.content.firstElementChild!, bindContents: [], bindingNode: { isBlock: false, renderable: true } } as any;
+  const b2 = { activate: vi.fn(), applyChange: vi.fn(), node: template.content.firstElementChild!, bindContents: [], bindingNode: { isBlock: false, renderable: true } } as any;
     vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce(b1).mockReturnValueOnce(b2);
 
     const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
     const renderer: any = { updatedBindings: new Set([b1]) };
+    bc.applyChange(renderer);
+    expect(b1.applyChange).not.toHaveBeenCalled();
+    expect(b2.applyChange).toHaveBeenCalled();
+  });
+
+  it("applyChange: renderable が false のバインディングは skip", () => {
+    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t1", "t2"], creatorByText: new Map([["t1", {}], ["t2", {}]]) }];
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValue(attrs as any);
+    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValue(template.content.firstElementChild!);
+    const b1 = { activate: vi.fn(), applyChange: vi.fn(), node: template.content.firstElementChild!, bindContents: [], bindingNode: { isBlock: false, renderable: false } } as any;
+    const b2 = { activate: vi.fn(), applyChange: vi.fn(), node: template.content.firstElementChild!, bindContents: [], bindingNode: { isBlock: false, renderable: true } } as any;
+    vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce(b1).mockReturnValueOnce(b2);
+
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    const renderer: any = { updatedBindings: new Set() };
     bc.applyChange(renderer);
     expect(b1.applyChange).not.toHaveBeenCalled();
     expect(b2.applyChange).toHaveBeenCalled();

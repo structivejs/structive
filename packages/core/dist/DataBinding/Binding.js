@@ -73,6 +73,9 @@ class Binding {
      * @param renderer - Renderer instance managing update cycle
      */
     applyChange(renderer) {
+        if (!this.bindingNode.renderable) {
+            return;
+        }
         if (renderer.updatedBindings.has(this)) {
             return;
         }

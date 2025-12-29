@@ -39,66 +39,15 @@ import { IBindingNode } from "./types";
  * - Flexible handling of filters, decorators, and bind contents
  */
 export class BindingNode implements IBindingNode {
-  private _binding: IBinding;
-  private _node: Node;
-  private _name: string;
-  private _subName: string;
-  private _filters: Filters;
-  private _decorates: string[];
-  
-  /**
-   * Getter to return target DOM node for binding.
-   * 
-   * @returns Target DOM node
-   */
-  get node(): Node {
-    return this._node;
-  }
-  
-  /**
-   * Getter to return property name of binding (e.g., "textContent", "value").
-   * 
-   * @returns Property name string
-   */
-  get name(): string {
-    return this._name;
-  }
-  
-  /**
-   * Getter to return sub-property name (same as name in base class, can be overridden in subclasses).
-   * 
-   * @returns Sub-property name string
-   */
-  get subName(): string {
-    return this._subName;
-  }
-  
-  /**
-   * Getter to return parent binding (IBinding).
-   * 
-   * @returns Parent IBinding instance
-   */
-  get binding(): IBinding {
-    return this._binding;
-  }
-  
-  /**
-   * Getter to return array of decorator strings (e.g., ["prevent", "stop"]).
-   * 
-   * @returns Array of decorator strings
-   */
-  get decorates(): string[] {
-    return this._decorates;
-  }
-  
-  /**
-   * Getter to return array of filter functions.
-   * 
-   * @returns Array of filter functions
-   */
-  get filters(): Filters {
-    return this._filters;
-  }
+  readonly isSelectElement: boolean;
+  readonly node: Node;
+  readonly name: string;
+  readonly subName: string;
+  readonly binding: IBinding;
+  readonly decorates: string[];
+  readonly filters: Filters;
+  readonly renderable: boolean = true;
+  readonly buildable: boolean = false;
   
   /**
    * Getter to return array of child BindContent (for structural control bindings).
@@ -137,17 +86,15 @@ export class BindingNode implements IBindingNode {
     filters: Filters,
     decorates: string[]
   ) {
-    this._binding = binding;
-    this._node = node;
-    this._name = name;
-    this._subName = subName;
-    this._filters = filters;
-    this._decorates = decorates;
+    this.isSelectElement = node instanceof HTMLSelectElement;
+    this.node = node;
+    this.name = name;
+    this.subName = subName;
+    this.binding = binding;
+    this.filters = filters;
+    this.decorates = decorates;
   }
   
-  get buildable(): boolean {
-    return false;
-  }
   /**
    * Method to assign value to DOM (unimplemented in base class, must override in subclasses).
    * - Attribute binding: Set attribute value
@@ -228,16 +175,6 @@ export class BindingNode implements IBindingNode {
     // Subclasses can implement inactivation processing
   }
 
-  /**
-   * Getter to determine if node is HTMLSelectElement.
-   * Used for special handling of select elements in property binding.
-   * 
-   * @returns true if node is HTMLSelectElement, false otherwise
-   */
-  get isSelectElement(): boolean {
-    return this.node instanceof HTMLSelectElement;
-  }
-  
   /**
    * Getter to return current value (null in base class, override in subclasses).
    * Used to get current DOM value in bidirectional binding.

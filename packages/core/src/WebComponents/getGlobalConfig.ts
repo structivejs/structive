@@ -21,6 +21,8 @@ import { IConfig } from "./types";
 const globalConfig: IConfig = {
   /** Enable debug mode for verbose logging */
   "debug"                : false,
+  /** Types of debug reports to enable */
+  "debugReports"         : [],
   /** Locale for internationalization (e.g., "en-US", "ja-JP") */
   "locale"               : "en-US",
   /** Shadow DOM mode: "auto" (default) uses Shadow DOM when supported, "none" disables it, "force" requires it */

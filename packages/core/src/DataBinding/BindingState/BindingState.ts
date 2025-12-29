@@ -174,7 +174,9 @@ class BindingState implements IBindingState {
           docsUrl: './docs/error-codes.md#bind',
         });
     }
-    this._binding.engine.saveBinding(this.ref, this._binding);
+    if (this._binding.bindingNode.renderable) {
+      this._binding.engine.saveBinding(this.ref, this._binding);
+    }
   }
 
   /**

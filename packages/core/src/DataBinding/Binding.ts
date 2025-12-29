@@ -95,6 +95,7 @@ class Binding implements IBinding {
    * @param renderer - Renderer instance managing update cycle
    */
   applyChange(renderer: IRenderer): void {
+    if (!this.bindingNode.renderable) {return;}
     if (renderer.updatedBindings.has(this)) {return;}
     if (renderer.renderPhase === 'build' && !this.bindingNode.buildable) {
       if (this.bindingNode.isSelectElement) {

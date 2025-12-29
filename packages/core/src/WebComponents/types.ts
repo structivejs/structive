@@ -65,8 +65,11 @@ export type StructiveComponentClass = Constructor<StructiveComponent> & ICompone
  */
 export type ShadowDomMode = "auto" | "none" | "force";
 
+export type DebugReportType = "render" | "update";
+
 export interface IConfig {
   debug                : boolean;
+  debugReports         : DebugReportType[];
   locale               : string; // The locale of the component, ex. "en-US", default is "en-US"
   shadowDomMode        : ShadowDomMode; // Shadow DOM mode: "auto" (default) | "none" | "force"
   enableMainWrapper    : boolean; // Whether to use the main wrapper or not

@@ -12,6 +12,7 @@ const COMMENT_TEMPLATE_MARK_LEN = COMMENT_TEMPLATE_MARK.length;
  */
 export class BindingNodeBlock extends BindingNode {
     _id;
+    buildable;
     /**
      * Returns template ID extracted from comment node.
      *
@@ -19,9 +20,6 @@ export class BindingNodeBlock extends BindingNode {
      */
     get id() {
         return this._id;
-    }
-    get buildable() {
-        return true;
     }
     /**
      * Extracts and validates template ID from comment node.
@@ -37,6 +35,7 @@ export class BindingNodeBlock extends BindingNode {
      */
     constructor(binding, node, name, subName, filters, decorates) {
         super(binding, node, name, subName, filters, decorates);
+        this.buildable = true;
         const commentText = this.node.textContent?.slice(COMMENT_TEMPLATE_MARK_LEN) ?? raiseError({
             code: 'BIND-201',
             message: 'Invalid node',

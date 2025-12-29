@@ -10,6 +10,7 @@ import { BindingNode } from "./BindingNode.js";
  * @throws BIND-201 Binding value is not a function: When handler is missing
  */
 class BindingNodeEvent extends BindingNode {
+    renderable;
     /**
      * Registers event listener once at initialization.
      *
@@ -22,6 +23,7 @@ class BindingNodeEvent extends BindingNode {
      */
     constructor(binding, node, name, subName, filters, decorates) {
         super(binding, node, name, subName, filters, decorates);
+        this.renderable = false;
         const element = node;
         element.addEventListener(this.subName, (e) => this.handler(e));
     }
