@@ -1,7 +1,7 @@
 # Version Management
 
 ## Current Version
-**1.6.3**
+**1.6.4**
 
 ## Quick Version Update (Recommended)
 
