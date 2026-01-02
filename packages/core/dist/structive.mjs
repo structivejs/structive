@@ -3734,6 +3734,7 @@ function useWritableStateProxy(engine, updater, state, loopContext, callback) {
     });
 }
 
+const EMPTY_LIST_INDEX_SET = new Set();
 /**
  * Renderer is a coordinator that responds to State changes (a set of IStatePropertyRef references)
  * by traversing the PathTree and delegating applyChange to each Binding (IBinding).
@@ -3761,7 +3762,6 @@ class Renderer {
     lastListInfoByRef = new Map();
     _engine;
     _updater;
-    _updatingRefs = [];
     _updatingRefSet = new Set();
     _readonlyState = null;
     _readonlyHandler = null;
@@ -3777,9 +3777,6 @@ class Renderer {
     constructor(engine, updater) {
         this._engine = engine;
         this._updater = updater;
-    }
-    get updatingRefs() {
-        return this._updatingRefs;
     }
     get updatingRefSet() {
         return this._updatingRefSet;
@@ -3848,7 +3845,6 @@ class Renderer {
     _render(items) {
         this.processedRefs.clear();
         this.updatedBindings.clear();
-        this._updatingRefs = [...items];
         this._updatingRefSet = new Set(items);
         // Implement actual rendering logic
         this.createReadonlyState(() => {
@@ -3944,40 +3940,34 @@ class Renderer {
     }
     _applyPhaseRender() {
         this._renderPhase = 'apply';
-        try {
-            for (let i = 0; i < this._applyPhaseBinidings.length; i++) {
-                if (!this._applyPhaseBinidings[i].bindingNode.renderable) {
-                    continue;
-                }
-                this._applyPhaseBinidings[i].applyChange(this);
+        for (let i = 0; i < this._applyPhaseBinidings.length; i++) {
+            if (!this._applyPhaseBinidings[i].bindingNode.renderable) {
+                continue;
             }
-        }
-        finally {
-            this._applyPhaseBinidings = [];
+            this._applyPhaseBinidings[i].applyChange(this);
         }
     }
     _applySelectPhaseRender() {
         this._renderPhase = 'applySelect';
-        try {
-            for (let i = 0; i < this._applySelectPhaseBinidings.length; i++) {
-                if (!this._applySelectPhaseBinidings[i].bindingNode.renderable) {
-                    continue;
-                }
-                this._applySelectPhaseBinidings[i].applyChange(this);
+        for (let i = 0; i < this._applySelectPhaseBinidings.length; i++) {
+            if (!this._applySelectPhaseBinidings[i].bindingNode.renderable) {
+                continue;
             }
-        }
-        finally {
-            this._applySelectPhaseBinidings = [];
+            this._applySelectPhaseBinidings[i].applyChange(this);
         }
     }
+    /**
+     *
+     * @param items - Array of state property references to render
+     */
     render(items) {
         const enableReporting = config$2.debug && config$2.debugReports.includes("render");
-        const start = performance.now();
+        const start = enableReporting ? performance.now() : 0;
         this._render(items);
         if (enableReporting) {
             const end = performance.now();
             const report = {
-                renderedRefs: this._updatingRefs,
+                renderedRefs: Array.from(this._updatingRefSet),
                 renderedBindings: Array.from(this.updatedBindings),
                 renderType: "update",
                 version: this._updater.version,
@@ -4016,7 +4006,7 @@ class Renderer {
         }
         // Calculate which list indexes are new (added) since last render
         // This optimization ensures we only traverse new list elements
-        let diffListIndexes = new Set();
+        let diffListIndexes = EMPTY_LIST_INDEX_SET;
         if (this._engine.pathManager.lists.has(ref.info.pattern)) {
             // Get current list indexes for this ref
             const currentListIndexes = new Set(this.readonlyState[GetListIndexesByRefSymbol](ref) ?? []);
@@ -4101,7 +4091,7 @@ class Renderer {
     }
     initialRender(root) {
         const enableReporting = config$2.debug && config$2.debugReports.includes("render");
-        const start = performance.now();
+        const start = enableReporting ? performance.now() : 0;
         this.createReadonlyState(() => {
             root.applyChange(this);
             this._applyPhaseRender();
@@ -4110,9 +4100,9 @@ class Renderer {
         if (enableReporting) {
             const end = performance.now();
             const report = {
-                renderedRefs: this._updatingRefs,
+                renderedRefs: Array.from(this._updatingRefSet),
                 renderedBindings: Array.from(this.updatedBindings),
-                renderType: "update",
+                renderType: "initial",
                 version: this._updater.version,
                 revision: this._updater.revision,
                 duration: end - start,
@@ -4434,8 +4424,7 @@ class Updater {
      *   state.count = 42;
      * });
      */
-    update(loopContext, callback) {
-        const resolvers = this._tracker.createProcessResolver();
+    _update(loopContext, callback, processResolvers) {
         // Create writable state proxy and execute update callback
         const resultPromise = useWritableStateProxy(this._engine, this, this._engine.state, loopContext, (state, handler) => {
             // Execute user's state modification callback
@@ -4466,7 +4455,7 @@ class Updater {
                 });
             }
             else {
-                resolvers.resolve();
+                processResolvers.resolve();
             }
         };
         // Handle both Promise and non-Promise results
@@ -4481,6 +4470,23 @@ class Updater {
             updatedCallbackHandler();
         }
         return resultPromise;
+    }
+    update(loopContext, callback) {
+        const enableReporting = config$2.debug && config$2.debugReports.includes("update");
+        const start = enableReporting ? performance.now() : 0;
+        const processResolvers = this._tracker.createProcessResolver();
+        if (enableReporting) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            processResolvers.promise.finally(() => {
+                const report = {
+                    duration: performance.now() - start,
+                    version: this._version,
+                    revision: this._revision,
+                };
+                console.warn("[DebugReport][update]", report);
+            });
+        }
+        return this._update(loopContext, callback, processResolvers);
     }
     /**
      * Retrieves and clears the queue of state property references pending update.
@@ -4500,7 +4506,20 @@ class Updater {
      * @returns {void}
      */
     initialRender(root) {
+        const enableReporting = config$2.debug && config$2.debugReports.includes("update");
+        const start = enableReporting ? performance.now() : 0;
         const processResolvers = this._tracker.createProcessResolver();
+        if (enableReporting) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            processResolvers.promise.finally(() => {
+                const report = {
+                    duration: performance.now() - start,
+                    version: this._version,
+                    revision: this._revision,
+                };
+                console.warn("[DebugReport][update]", report);
+            });
+        }
         const renderer = createRenderer(this._engine, this);
         try {
             renderer.initialRender(root);
@@ -5132,6 +5151,8 @@ const createBindingNodeIf = (name, filterTexts, decorates) => (binding, node, fi
 };
 
 const TOO_MANY_BIND_CONTENTS_THRESHOLD = 1000;
+// Reusable DocumentFragment for DOM operations, minimizes GC overhead
+const workFragment$1 = document.createDocumentFragment();
 /**
  * BindingNode for loop rendering (for binding).
  * Manages BindContent instances for each list element with efficient diff detection and pooling.
@@ -5241,7 +5262,7 @@ class BindingNodeFor extends BindingNodeBlock {
         while (workLastNode && workLastNode.nodeType === Node.TEXT_NODE && workLastNode.textContent?.trim() === "") {
             workLastNode = workLastNode.previousSibling;
         }
-        if (workFirstNode === this.node && workLastNode === lastContent.getLastNode(parentNode)) {
+        if (workFirstNode === this.node && workLastNode === lastContent.lastNode) {
             // safe to clear all, needless to unmount each
             parentNode.textContent = "";
             parentNode.append(this.node);
@@ -5401,14 +5422,15 @@ class BindingNodeFor extends BindingNodeBlock {
     _getElementsResult(renderer, elementsPath, oldListIndexSet, baseContext) {
         const changes = [];
         const overwrites = [];
-        for (let i = 0; i < renderer.updatingRefs.length; i++) {
-            const updatingRef = renderer.updatingRefs[i];
+        for (const updatingRef of renderer.updatingRefSet) {
             if (updatingRef.info.pattern !== elementsPath) {
                 continue;
             }
+            /* v8 ignore start -- branch covered by tests but v8 reports partial coverage */
             if (renderer.processedRefs.has(updatingRef)) {
                 continue;
             }
+            /* v8 ignore stop */
             const listIndex = updatingRef.listIndex;
             if (listIndex === null) {
                 raiseError({
@@ -5431,7 +5453,6 @@ class BindingNodeFor extends BindingNodeBlock {
     /**
      * Applies changes using document fragment for efficient DOM updates.
      *
-     * @param useAllAppend - Whether to use document fragment for all appends
      * @param renderer - Renderer instance
      * @param parentNode - Parent DOM node
      * @param firstNode - First child node of the parent
@@ -5443,7 +5464,7 @@ class BindingNodeFor extends BindingNodeBlock {
      * @param baseContext - Context for error reporting
      * @returns Array of new bind contents
      */
-    _applyChange(useAllAppend, renderer, parentNode, firstNode, oldListIndexes, oldListIndexSet, newListIndexes, bindContentByListIndex, bindingsByListIndex, baseContext) {
+    _applyChange(renderer, parentNode, firstNode, oldListIndexes, oldListIndexSet, newListIndexes, bindContentByListIndex, bindingsByListIndex, baseContext) {
         const newBindContents = [];
         let lastBindContent = null;
         // Rebuild path: create/reuse BindContents in new order
@@ -5451,16 +5472,14 @@ class BindingNodeFor extends BindingNodeBlock {
         for (let i = 0; i < oldListIndexes.length; i++) {
             oldIndexByListIndex.set(oldListIndexes[i], i);
         }
-        const fragmentParentNode = useAllAppend ? document.createDocumentFragment() : parentNode;
-        const fragmentFirstNode = useAllAppend ? null : firstNode;
         const changeListIndexes = [];
         for (let i = 0; i < newListIndexes.length; i++) {
             const listIndex = newListIndexes[i];
-            const lastNode = lastBindContent?.getLastNode(fragmentParentNode) ?? fragmentFirstNode;
+            const lastNode = lastBindContent?.lastNode ?? firstNode;
             let bindContent;
             if (!oldListIndexSet.has(listIndex)) {
                 bindContent = this._createBindContent(listIndex);
-                bindContent.mountAfter(fragmentParentNode, lastNode);
+                bindContent.mountAfter(parentNode, lastNode);
                 bindContent.applyChange(renderer);
             }
             else {
@@ -5474,7 +5493,7 @@ class BindingNodeFor extends BindingNodeBlock {
                     });
                 }
                 if (lastNode?.nextSibling !== bindContent.firstChildNode) {
-                    bindContent.mountAfter(fragmentParentNode, lastNode);
+                    bindContent.mountAfter(parentNode, lastNode);
                 }
                 const oldIndex = oldIndexByListIndex.get(listIndex);
                 if (typeof oldIndex !== "undefined" && oldIndex !== i) {
@@ -5483,9 +5502,6 @@ class BindingNodeFor extends BindingNodeBlock {
             }
             newBindContents.push(bindContent);
             lastBindContent = bindContent;
-        }
-        if (useAllAppend) {
-            parentNode.insertBefore(fragmentParentNode, firstNode.nextSibling);
         }
         for (const listIndex of changeListIndexes) {
             const bindings = bindingsByListIndex.get(listIndex) ?? [];
@@ -5525,7 +5541,7 @@ class BindingNodeFor extends BindingNodeBlock {
                 });
             }
             bindContents[listIndex.index] = bindContent;
-            const lastNode = bindContents[listIndex.index - 1]?.getLastNode(parentNode) ?? firstNode;
+            const lastNode = bindContents[listIndex.index - 1]?.lastNode ?? firstNode;
             bindContent.mountAfter(parentNode, lastNode);
         }
     }
@@ -5542,6 +5558,7 @@ class BindingNodeFor extends BindingNodeBlock {
         for (let i = 0; i < overwrites.length; i++) {
             const listIndex = overwrites[i];
             const bindContent = bindContentByListIndex.get(listIndex);
+            /* v8 ignore start -- defensive: unreachable when isReorder=true requires hasAdds=false */
             if (typeof bindContent === "undefined") {
                 raiseError({
                     code: 'BIND-201',
@@ -5550,8 +5567,76 @@ class BindingNodeFor extends BindingNodeBlock {
                     docsUrl: './docs/error-codes.md#bind',
                 });
             }
+            /* v8 ignore stop */
             bindContent.applyChange(renderer);
         }
+    }
+    /**
+     * replaces BindContents optimally when all items are new.
+     *
+     * @param parentNode - Parent DOM node
+     * @param firstNode - First child node of the parent
+     * @param renderer - Renderer instance
+     * @param oldListIndexes - Previous list indexes
+     * @param newListIndexes - New list indexes
+     * @param bindContentByListIndex - WeakMap of list indexes to bind contents
+     * @param bindContents - Current array of bind contents
+     * @param baseContext - Context for error reporting
+     * @returns removed IBindContent instances
+     */
+    _optimizedReplace(parentNode, firstNode, renderer, oldListIndexes, newListIndexes, bindContentByListIndex, bindContents, baseContext) {
+        const removeBindContents = [];
+        // Note: isAllNew is only true when newListIndexes.length > 0
+        // so oldListIndexes.length === 0 && newListIndexes.length === 0 case is unreachable
+        if (oldListIndexes.length > newListIndexes.length) {
+            for (let i = newListIndexes.length; i < oldListIndexes.length; i++) {
+                const listIndex = oldListIndexes[i];
+                const bindContent = bindContentByListIndex.get(listIndex);
+                if (typeof bindContent === "undefined") {
+                    raiseError({
+                        code: 'BIND-201',
+                        message: 'BindContent not found',
+                        context: { ...baseContext, phase: 'optimized replace', listIndex: listIndex.index },
+                        docsUrl: './docs/error-codes.md#bind',
+                    });
+                }
+                this._deleteBindContent(bindContent);
+                removeBindContents.push(bindContent);
+            }
+            bindContents.length = newListIndexes.length;
+        }
+        const minBindContentsLength = Math.min(oldListIndexes.length, newListIndexes.length);
+        for (let i = 0; i < minBindContentsLength; i++) {
+            const listIndex = newListIndexes[i];
+            const bindContent = bindContents[i];
+            bindContent.assignListIndex(listIndex);
+            bindContent.activate();
+            bindContent.applyChange(renderer);
+            bindContentByListIndex.set(listIndex, bindContent);
+        }
+        if (oldListIndexes.length < newListIndexes.length) {
+            let replaceParentNode = parentNode;
+            const useFragement = oldListIndexes.length === 0 && parentNode.isConnected;
+            if (useFragement) {
+                workFragment$1.textContent = "";
+                replaceParentNode = workFragment$1;
+                replaceParentNode.append(firstNode);
+            }
+            let lastBindContent = null;
+            for (let i = oldListIndexes.length; i < newListIndexes.length; i++) {
+                const listIndex = newListIndexes[i];
+                const lastNode = lastBindContent?.lastNode ?? firstNode;
+                const bindContent = this._createBindContent(listIndex);
+                bindContent.mountAfter(replaceParentNode, lastNode);
+                bindContent.applyChange(renderer);
+                bindContents.push(bindContent);
+                lastBindContent = bindContent;
+            }
+            if (useFragement) {
+                parentNode.append(replaceParentNode);
+            }
+        }
+        return removeBindContents;
     }
     /**
      * Applies list changes using diff detection algorithm.
@@ -5587,36 +5672,50 @@ class BindingNodeFor extends BindingNodeBlock {
         const newListIndexesSet = new Set(newListIndexes);
         const listDiff = this._getListDiffResult(newListIndexesSet, this._oldListIndexSet);
         const elementsResult = this._getElementsResult(renderer, this._elementsPath, this._oldListIndexSet, baseContext);
+        let optimizedReplaceDone = false;
+        if (listDiff.isAllNew) {
+            const removeBindContents = this._optimizedReplace(parentNode, this.node, renderer, this._oldListIndexes, newListIndexes, this._bindContentByListIndex, this._bindContents, baseContext);
+            if (removeBindContents.length > 0) {
+                this._poolBindContents(removeBindContents);
+            }
+            optimizedReplaceDone = true;
+        }
         // Optimization: clear all if new list is empty
         let isCleared = false;
-        if (listDiff.willRemoveAll) {
-            const lastContent = this.bindContents.at(-1) ?? raiseError({
+        if (!optimizedReplaceDone && listDiff.willRemoveAll) {
+            /* v8 ignore start -- defensive: willRemoveAll requires oldSize>0, so bindContents is never empty here */
+            const lastContent = this.bindContents[this.bindContents.length - 1] ?? raiseError({
                 code: 'BIND-201',
                 message: 'Last BindContent not found',
                 context: { ...baseContext, bindContentCount: this.bindContents.length },
                 docsUrl: './docs/error-codes.md#bind',
             });
+            /* v8 ignore stop */
             isCleared = this._allRemove(parentNode, lastContent);
             if (isCleared) {
                 this._clearBindContents();
             }
         }
         // Handle removes: unmount and pool BindContents
-        if (!isCleared && listDiff.hasRemoves) {
+        if (!optimizedReplaceDone && !isCleared && listDiff.hasRemoves) {
             const removeBindContents = this._partialRemove(newListIndexesSet, this._oldListIndexSet, this._bindContentByListIndex, baseContext);
             if (removeBindContents.length > 0) {
                 this._poolBindContents(removeBindContents);
+                // Update _bindContents to remove deleted entries
+                if (!listDiff.hasAdds) {
+                    const removeSet = new Set(removeBindContents);
+                    this._bindContents = this._bindContents.filter(bc => !removeSet.has(bc));
+                }
             }
         }
         // Optimization: reorder-only path when no adds/removes
         const isReorder = !listDiff.hasAdds && !listDiff.hasRemoves &&
             (elementsResult.changes.length > 0 || elementsResult.overwrites.length > 0);
-        if (!isReorder) {
-            // Use document fragment only when all are appends and node is connected
-            const useAllAppend = listDiff.isAllNew && parentNode.isConnected;
-            this._bindContents = this._applyChange(useAllAppend, renderer, parentNode, this.node, this._oldListIndexes, this._oldListIndexSet, newListIndexes, this._bindContentByListIndex, this.binding.bindingsByListIndex, baseContext);
+        if (!optimizedReplaceDone && listDiff.hasAdds) {
+            // Rebuild path: create/reuse BindContents in new order
+            this._bindContents = this._applyChange(renderer, parentNode, this.node, this._oldListIndexes, this._oldListIndexSet, newListIndexes, this._bindContentByListIndex, this.binding.bindingsByListIndex, baseContext);
         }
-        else {
+        else if (!optimizedReplaceDone && isReorder) {
             // Reorder path: only move DOM nodes without recreating
             if (elementsResult.changes.length > 0) {
                 this._reorder(parentNode, this.node, elementsResult.changes, this._bindContents, this._bindContentByListIndex, baseContext);
@@ -5721,6 +5820,19 @@ class BindingNodeProperty extends BindingNode {
      */
     constructor(binding, node, name, subName, filters, decorates) {
         super(binding, node, name, subName, filters, decorates);
+        if (!(name in node)) {
+            raiseError({
+                code: 'BIND-201',
+                message: `Property not found on node: ${name}`,
+                context: {
+                    where: 'BindingNodeProperty.assignValue',
+                    bindName: name,
+                    nodeType: node.nodeType,
+                },
+                docsUrl: './docs/error-codes.md#bind',
+            });
+            return;
+        }
         const isElement = this.node instanceof HTMLElement;
         if (!isElement) {
             return;
@@ -5796,23 +5908,9 @@ class BindingNodeProperty extends BindingNode {
             // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
             anyValue = value;
         }
-        if (this.name in this.node) {
-            // @ts-expect-error TS doesn't recognize dynamic property names
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-            this.node[this.name] = anyValue;
-        }
-        else {
-            raiseError({
-                code: 'BIND-201',
-                message: `Property not found on node: ${this.name}`,
-                context: {
-                    where: 'BindingNodeProperty.assignValue',
-                    bindName: this.name,
-                    nodeType: this.node.nodeType,
-                },
-                docsUrl: './docs/error-codes.md#bind',
-            });
-        }
+        // @ts-expect-error TS doesn't recognize dynamic property names
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+        this.node[this.name] = anyValue;
     }
 }
 /**
@@ -6418,6 +6516,8 @@ const bindingStateInternalByPattern = {};
 class BindingState {
     filters;
     isLoopIndex = false;
+    pattern;
+    info;
     _internal;
     _binding;
     _ref = null;
@@ -6434,12 +6534,9 @@ class BindingState {
             (bindingStateInternalByPattern[pattern] = new BindingStateInternal(pattern));
         this._binding = binding;
         this.filters = filters;
-    }
-    get pattern() {
-        return this._internal.pattern;
-    }
-    get info() {
-        return this._internal.info;
+        this.pattern = pattern;
+        this.info = this._internal.info;
+        this._ref = this._internal.nullRef;
     }
     /**
      * Returns list index from state property reference.
@@ -6456,27 +6553,19 @@ class BindingState {
      * @throws BIND-201 LoopContext is null or ref is null
      */
     get ref() {
-        if (this._internal.nullRef === null) {
-            if (this._loopContext === null) {
-                raiseError({
-                    code: 'BIND-201',
-                    message: 'LoopContext is null',
-                    context: {
-                        where: 'BindingState.ref',
-                        pattern: this.pattern,
-                        wildcardCount: this.info.wildcardCount,
-                    },
-                    docsUrl: './docs/error-codes.md#bind',
-                });
-            }
-            if (this._ref === null) {
-                this._ref = getStatePropertyRef(this.info, this._loopContext.listIndex);
-            }
-            return this._ref;
+        if (this._ref === null) {
+            raiseError({
+                code: 'BIND-201',
+                message: 'ref is null',
+                context: {
+                    where: 'BindingState.ref',
+                    pattern: this.pattern,
+                    wildcardCount: this.info.wildcardCount,
+                },
+                docsUrl: './docs/error-codes.md#bind',
+            });
         }
-        else {
-            return this._internal.nullRef;
-        }
+        return this._ref;
     }
     /**
      * Retrieves raw value from state without applying filters.
@@ -6540,6 +6629,7 @@ class BindingState {
                     },
                     docsUrl: './docs/error-codes.md#bind',
                 });
+            this._ref = getStatePropertyRef(this.info, this._loopContext.listIndex);
         }
         if (this._binding.bindingNode.renderable) {
             this._binding.engine.saveBinding(this.ref, this._binding);
@@ -6550,7 +6640,7 @@ class BindingState {
      */
     inactivate() {
         this._binding.engine.removeBinding(this.ref, this._binding);
-        this._ref = null;
+        this._ref = this._internal.nullRef;
         this._loopContext = null;
     }
 }
@@ -8325,6 +8415,8 @@ function createLoopContext(ref, bindContent) {
     return new LoopContext(ref, bindContent);
 }
 
+// Reusable DocumentFragment for mount operations, GC overhead minimized
+const workFragment = document.createDocumentFragment();
 /**
  * Internal helper function to generate DocumentFragment from template ID.
  * Automatically loads lazy-load components if present.
@@ -8419,38 +8511,40 @@ class BindContent {
     fragment;
     childNodes;
     bindings = [];
-    _engine;
+    lastBinding = null;
     _isActive = false;
     _currentLoopContext;
     /**
-     * Recursively retrieves the last node, including those under trailing bindings.
-     * Used for determining DOM insertion position in BindingNodeFor.
+     * Constructor initializes BindContent from template ID.
+     * Generates LoopContext if loopRef has listIndex.
+     * Call activate() after construction to enable bindings.
      *
-     * @param parentNode - Parent node for validation
-     * @returns Last node or null if parent-child relationship broken
-     * @throws BIND-104 Child bindContent not found
+     * @param parentBinding - Parent IBinding (null if root)
+     * @param id - Template ID
+     * @param engine - Component engine instance
+     * @param loopRef - StatePropertyRef for loop context
+    * @throws TMP-001 Template not found or BIND-101 data-bind not set
+     * @throws BIND-102 Node not found in template
+     * @throws BIND-103 Creator not found for bindText
      */
-    getLastNode(parentNode) {
-        const lastBinding = this.bindings[this.bindings.length - 1];
-        const lastChildNode = this.lastChildNode;
-        if (typeof lastBinding !== "undefined" && lastBinding.node === lastChildNode) {
-            if (lastBinding.bindContents.length > 0) {
-                const childBindContent = lastBinding.bindContents.at(-1) ?? raiseError({
-                    code: "BIND-104",
-                    message: "Child bindContent not found",
-                    context: { where: 'BindContent.getLastNode', templateId: this.id },
-                    docsUrl: "./docs/error-codes.md#bind",
-                });
-                const lastNode = childBindContent.getLastNode(parentNode);
-                if (lastNode !== null) {
-                    return lastNode;
-                }
-            }
-        }
-        if (parentNode !== lastChildNode?.parentNode) {
-            return null;
-        }
-        return lastChildNode;
+    constructor(parentBinding, id, engine, loopRef) {
+        this.parentBinding = parentBinding;
+        this.id = id;
+        this.fragment = createContent(id);
+        this.childNodes = Array.from(this.fragment.childNodes);
+        this.firstChildNode = this.childNodes[0] ?? null;
+        this.lastChildNode = this.childNodes[this.childNodes.length - 1] ?? null;
+        this.loopContext = (loopRef.listIndex !== null) ? createLoopContext(loopRef, this) : null;
+        this.bindings = createBindings(this, id, engine, this.fragment);
+        this.lastBinding = this.bindings.length > 0 ? this.bindings[this.bindings.length - 1] : null;
+    }
+    /**
+     * Returns whether BindContent is currently active.
+     *
+     * @returns true if active, false otherwise
+     */
+    get isActive() {
+        return this._isActive;
     }
     /**
      * Getter to retrieve current loop context with caching.
@@ -8476,37 +8570,24 @@ class BindContent {
         return this._currentLoopContext;
     }
     /**
-     * Constructor initializes BindContent from template ID.
-     * Generates LoopContext if loopRef has listIndex.
-     * Call activate() after construction to enable bindings.
+     * Recursively retrieves the last node, including those under trailing bindings.
+     * Used for determining DOM insertion position in BindingNodeFor.
      *
-     * @param parentBinding - Parent IBinding (null if root)
-     * @param id - Template ID
-     * @param engine - Component engine instance
-     * @param loopRef - StatePropertyRef for loop context
-    * @throws TMP-001 Template not found or BIND-101 data-bind not set
-     * @throws BIND-102 Node not found in template
-     * @throws BIND-103 Creator not found for bindText
+     * @param parentNode - Parent node for validation
+     * @returns Last node or null if parent-child relationship broken
+     * @throws BIND-104 Child bindContent not found
      */
-    constructor(parentBinding, id, engine, loopRef) {
-        this.parentBinding = parentBinding;
-        this.id = id;
-        this.fragment = createContent(id);
-        this.childNodes = Array.from(this.fragment.childNodes);
-        this.firstChildNode = this.childNodes[0] ?? null;
-        this.lastChildNode = this.childNodes[this.childNodes.length - 1] ?? null;
-        this._engine = engine;
-        this.loopContext = (loopRef.listIndex !== null) ? createLoopContext(loopRef, this) : null;
-        const bindings = createBindings(this, id, engine, this.fragment);
-        this.bindings = bindings;
-    }
-    /**
-     * Returns whether BindContent is currently active.
-     *
-     * @returns true if active, false otherwise
-     */
-    get isActive() {
-        return this._isActive;
+    get lastNode() {
+        if (this.lastBinding !== null
+            && this.lastBinding.node === this.lastChildNode
+            && this.lastBinding.bindContents.length > 0) {
+            const lastBindContent = this.lastBinding.bindContents[this.lastBinding.bindContents.length - 1];
+            const lastNode = lastBindContent.lastNode;
+            if (lastNode !== null) {
+                return lastNode;
+            }
+        }
+        return this.lastChildNode;
     }
     /**
      * Mounts childNodes to end of parent node (appendChild).
@@ -8515,8 +8596,17 @@ class BindContent {
      * @param parentNode - Parent node for mount destination
      */
     mount(parentNode) {
+        let workParentNode = parentNode;
+        const useFragment = parentNode.isConnected && this.childNodes.length > 1;
+        if (useFragment) {
+            workFragment.textContent = "";
+            workParentNode = workFragment;
+        }
         for (let i = 0; i < this.childNodes.length; i++) {
-            parentNode.appendChild(this.childNodes[i]);
+            workParentNode.appendChild(this.childNodes[i]);
+        }
+        if (useFragment) {
+            parentNode.appendChild(workParentNode);
         }
     }
     /**
@@ -8527,8 +8617,20 @@ class BindContent {
      * @param beforeNode - Reference node for insertion position (null = append to end)
      */
     mountBefore(parentNode, beforeNode) {
-        for (let i = 0; i < this.childNodes.length; i++) {
-            parentNode.insertBefore(this.childNodes[i], beforeNode);
+        const useFragment = parentNode.isConnected && this.childNodes.length > 1;
+        if (useFragment) {
+            // Optimization: use DocumentFragment for connected DOM
+            workFragment.textContent = "";
+            for (let i = 0; i < this.childNodes.length; i++) {
+                workFragment.appendChild(this.childNodes[i]);
+            }
+            parentNode.insertBefore(workFragment, beforeNode);
+        }
+        else {
+            // For disconnected nodes, insert directly
+            for (let i = 0; i < this.childNodes.length; i++) {
+                parentNode.insertBefore(this.childNodes[i], beforeNode);
+            }
         }
     }
     /**
@@ -8538,9 +8640,18 @@ class BindContent {
      * @param afterNode - Reference node for insertion position (null = prepend to start)
      */
     mountAfter(parentNode, afterNode) {
+        const useFragment = parentNode.isConnected && this.childNodes.length > 1;
         const beforeNode = afterNode?.nextSibling ?? null;
+        let workParentNode = parentNode;
+        if (useFragment) {
+            workFragment.textContent = "";
+            workParentNode = workFragment;
+        }
         for (let i = 0; i < this.childNodes.length; i++) {
-            parentNode.insertBefore(this.childNodes[i], beforeNode);
+            workParentNode.appendChild(this.childNodes[i]);
+        }
+        if (useFragment) {
+            parentNode.insertBefore(workParentNode, beforeNode);
         }
     }
     /**
@@ -8633,8 +8744,7 @@ class BindContent {
  * @throws BIND-103 Creator not found for bindText
  */
 function createBindContent(parentBinding, id, engine, loopRef) {
-    const bindContent = new BindContent(parentBinding, id, engine, loopRef);
-    return bindContent;
+    return new BindContent(parentBinding, id, engine, loopRef);
 }
 
 /**

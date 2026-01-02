@@ -160,7 +160,7 @@ describe("Updater/Renderer (real implementation)", () => {
       applyChange: vi.fn((renderer: any) => {
         capturedRenderer = renderer;
         bindCallLog.push("list");
-        expect(renderer.updatingRefs).toEqual(expect.arrayContaining([listRef, itemRef]));
+        expect(renderer.updatingRefSet.has(listRef)).toBe(true);
         expect(renderer.updatingRefSet.has(itemRef)).toBe(true);
         expect(renderer.updatedBindings.size).toBeGreaterThanOrEqual(0);
         expect(renderer.processedRefs.size).toBeGreaterThanOrEqual(0);

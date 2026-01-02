@@ -42,7 +42,7 @@ export interface IBindContentBase {
   mountAfter(parentNode:Node, afterNode:Node | null):void;
   unmount():void;
   assignListIndex(listIndex: IListIndex): void;
-  getLastNode(parentNode: Node): Node | null;
+  readonly lastNode: Node | null;
 }
 
 /**

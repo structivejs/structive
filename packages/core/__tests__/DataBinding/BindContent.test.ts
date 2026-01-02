@@ -70,24 +70,16 @@ describe("BindContent", () => {
     bindContent.mount(host);
     expect(host.childNodes.length).toBe(bindContent.childNodes.length);
 
-  // getLastNode はマウント中は最後の child を返す（ここでは孫 BindContent はなし）
-  const lastMounted = bindContent.getLastNode(host);
-  expect(lastMounted).toBe(bindContent.lastChildNode);
+    // applyChange は各 binding に委譲（マウント中に実行）
+    const renderer: any = { updatedBindings: new Set() };
+    bindContent.applyChange(renderer);
+    expect(mockBinding.applyChange).toHaveBeenCalledWith(renderer);
 
-  // applyChange は各 binding に委譲（マウント中に実行）
-  const renderer: any = { updatedBindings: new Set() };
-  bindContent.applyChange(renderer);
-  expect(mockBinding.applyChange).toHaveBeenCalledWith(renderer);
+    bindContent.unmount();
+    expect(host.childNodes.length).toBe(0);
 
-  bindContent.unmount();
-  expect(host.childNodes.length).toBe(0);
-
-  // 2度目の unmount は parentNode が null でも例外なし
-  expect(() => bindContent.unmount()).not.toThrow();
-
-  // アンマウント後は親が一致しないため null
-  const lastUnmounted = bindContent.getLastNode(host);
-  expect(lastUnmounted).toBeNull();
+    // 2度目の unmount は parentNode が null でも例外なし
+    expect(() => bindContent.unmount()).not.toThrow();
   });
 
   it("id getter はテンプレートIDを返す", () => {
@@ -382,93 +374,106 @@ describe("BindContent", () => {
   expect(() => createBindContent(null, templateId, engine, { listIndex: null } as any)).toThrow("Creator not found for bindText: no-creator");
   });
 
-  it("getLastNode: 子 BindContent の最後のノードを再帰的に返す（子が null なら親の lastChildNode）", () => {
-    // 親テンプレート
-    template.innerHTML = `<div id="root"><section id="child"></section></div>`;
-    vi.spyOn(registerTemplateMod, "getTemplateById").mockReturnValueOnce(template);
-    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t"], creatorByText: new Map([ ["t", {}] ]) }];
-    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(attrs as any);
-    const rootEl = template.content.firstElementChild!;
-    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValueOnce(rootEl);
+  it("lastNode: lastBinding が null の場合は lastChildNode を返す", () => {
+    const attrs: any[] = [];
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(attrs);
 
-    // 親バインディングと子 BindContent を持つ構造を作る
-    const childBindContent: any = { getLastNode: vi.fn(() => null) };
-    const mockBinding: any = { 
-      activate: vi.fn(), 
-      node: rootEl, 
-      bindContents: [childBindContent],
-      applyChange: vi.fn(),
-      bindingNode: { isBlock: false },
-    };
-    vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce(mockBinding);
-
-    const loopRef: any = { listIndex: null };
-    const bc = createBindContent(null, templateId, engine, loopRef);
-
-    const host = document.createElement("div");
-    bc.mount(host);
-    // 子の getLastNode が null を返す場合は親の lastChildNode を返す
-    const last = bc.getLastNode(host);
-    expect(last).toBe(bc.lastChildNode);
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    
+    // bindings が空なので lastBinding は null
+    expect(bc.lastNode).toBe(bc.lastChildNode);
   });
 
-  it("getLastNode: 子 BindContent がノードを返す場合はそのノードを返す", () => {
+  it("lastNode: lastBinding.node が lastChildNode と異なる場合は lastChildNode を返す", () => {
     const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t"], creatorByText: new Map([["t", {}]]) }];
     vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(attrs as any);
+    
+    const differentNode = document.createElement("span");
+    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValueOnce(differentNode);
+    
+    const mockBinding = {
+      activate: vi.fn(),
+      node: differentNode,
+      bindContents: [],
+      bindingNode: { isBlock: false },
+    } as any;
+    vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce(mockBinding);
+
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    
+    // lastBinding.node は differentNode だが、lastChildNode はテンプレートの最後のノード
+    expect(bc.lastNode).toBe(bc.lastChildNode);
+  });
+
+  it("lastNode: lastBinding.bindContents が空の場合は lastChildNode を返す", () => {
+    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t"], creatorByText: new Map([["t", {}]]) }];
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(attrs as any);
+    
     const rootEl = template.content.firstElementChild!;
     vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValueOnce(rootEl);
-    vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce({
+    
+    const mockBinding = {
       activate: vi.fn(),
       node: rootEl,
       bindContents: [],
-      applyChange: vi.fn(),
-      bindingNode: { isBlock: false },
-    } as any);
-
-    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
-    const host = document.createElement("div");
-    const sentinel = document.createElement("section");
-    host.appendChild(sentinel);
-    const childTail = document.createElement("span");
-    host.appendChild(childTail);
-    const childBindContent = { getLastNode: vi.fn(() => childTail) } as any;
-
-    // lastChildNode もマニュアルで設定する必要がある（コンストラクタで設定されるため）
-    (bc as any).childNodes = [sentinel];
-    (bc as any).lastChildNode = sentinel;
-    (bc as any).bindings = [{ node: sentinel, bindContents: [childBindContent] }];
-
-    const last = bc.getLastNode(host);
-    expect(childBindContent.getLastNode).toHaveBeenCalledWith(host);
-    expect(last).toBe(childTail);
-  });
-
-  it("getLastNode: 子 BindContent の解決に失敗した場合は BIND-104", () => {
-    template.innerHTML = `<span id="tail"></span>`;
-    templateSpy.mockReturnValueOnce(template);
-    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t"], creatorByText: new Map([["t", {}]]) }];
-    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(attrs as any);
-    const rootEl = template.content.firstElementChild!;
-    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValueOnce(rootEl);
-    const binding = {
-      activate: vi.fn(),
-      node: rootEl,
-      bindContents: [undefined],
-      applyChange: vi.fn(),
       bindingNode: { isBlock: false },
     } as any;
-    vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce(binding);
+    vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce(mockBinding);
 
     const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
-    const host = document.createElement("div");
-    bc.mount(host);
+    
+    // lastBinding.node === lastChildNode だが bindContents が空
+    expect(bc.lastNode).toBe(bc.lastChildNode);
+  });
 
-    // lastChildNodeを手動で設定する
-    (bc as any).bindings = [binding];
-    (bc as any).childNodes = [binding.node];
-    (bc as any).lastChildNode = binding.node;
-    expect(binding.node).toBe(bc.lastChildNode);
-    expect(() => bc.getLastNode(host)).toThrow("Child bindContent not found");
+  it("lastNode: lastBindContent.lastNode が有効な場合はその値を返す", () => {
+    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t"], creatorByText: new Map([["t", {}]]) }];
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(attrs as any);
+    
+    const rootEl = template.content.firstElementChild!;
+    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValueOnce(rootEl);
+    
+    const childLastNode = document.createElement("div");
+    const childBindContent = { lastNode: childLastNode } as any;
+    const mockBinding = {
+      activate: vi.fn(),
+      node: rootEl,
+      bindContents: [childBindContent],
+      bindingNode: { isBlock: false },
+    } as any;
+    vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce(mockBinding);
+
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    
+    // lastBinding.node === lastChildNode かつ bindContents に子があり、その lastNode が有効
+    (bc as any).lastChildNode = rootEl;
+    
+    expect(bc.lastNode).toBe(childLastNode);
+  });
+
+  it("lastNode: lastBindContent.lastNode が null の場合は lastChildNode を返す", () => {
+    const attrs = [{ nodeType: "HTMLElement", nodePath: [0], bindTexts: ["t"], creatorByText: new Map([["t", {}]]) }];
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce(attrs as any);
+    
+    const rootEl = template.content.firstElementChild!;
+    vi.spyOn(resolveNodeFromPathMod, "resolveNodeFromPath").mockReturnValueOnce(rootEl);
+    
+    const childBindContent = { lastNode: null } as any;
+    const mockBinding = {
+      activate: vi.fn(),
+      node: rootEl,
+      bindContents: [childBindContent],
+      bindingNode: { isBlock: false },
+    } as any;
+    vi.spyOn(bindingMod, "createBinding").mockReturnValueOnce(mockBinding);
+
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    
+    // lastBinding.node === lastChildNode かつ bindContents に子があるが、その lastNode が null
+    // lastNode が null の場合は lastChildNode にフォールバック
+    (bc as any).lastChildNode = rootEl;
+    
+    expect(bc.lastNode).toBe(rootEl);
   });
 
   it("inactivate: 全ての bindings の inactivate() を呼び出す", () => {
@@ -703,5 +708,78 @@ describe("BindContent", () => {
     expect(clearListIndexSpy).toHaveBeenCalledOnce();
     expect(mockBinding.inactivate).toHaveBeenCalledOnce();
     expect((bc as any).isActive).toBe(false);
+  });
+
+  it("mount: isConnected かつ childNodes.length > 1 の場合、DocumentFragment を使用", () => {
+    // 複数の子ノードを持つテンプレートを設定
+    template.innerHTML = `<div id="a"></div><span id="b"></span>`;
+    templateSpy.mockReturnValueOnce(template);
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce([] as any);
+
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    expect(bc.childNodes.length).toBeGreaterThan(1);
+
+    const host = document.createElement("div");
+    document.body.appendChild(host); // isConnected = true
+
+    try {
+      bc.mount(host);
+      // 子ノードが正しくマウントされていることを確認
+      expect(host.childNodes.length).toBe(2);
+      expect(host.querySelector("#a")).toBeTruthy();
+      expect(host.querySelector("#b")).toBeTruthy();
+    } finally {
+      document.body.removeChild(host);
+    }
+  });
+
+  it("mountBefore: isConnected かつ childNodes.length > 1 の場合、DocumentFragment を使用", () => {
+    // 複数の子ノードを持つテンプレートを設定
+    template.innerHTML = `<div id="c"></div><span id="d"></span>`;
+    templateSpy.mockReturnValueOnce(template);
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce([] as any);
+
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    expect(bc.childNodes.length).toBeGreaterThan(1);
+
+    const host = document.createElement("div");
+    const anchor = document.createElement("hr");
+    host.appendChild(anchor);
+    document.body.appendChild(host); // isConnected = true
+
+    try {
+      bc.mountBefore(host, anchor);
+      // 子ノードがanchorの前に挿入されていることを確認
+      expect(host.childNodes.length).toBe(3); // c, d, hr
+      expect(host.firstChild).toBe(bc.firstChildNode);
+      expect(host.lastChild).toBe(anchor);
+    } finally {
+      document.body.removeChild(host);
+    }
+  });
+
+  it("mountAfter: isConnected かつ childNodes.length > 1 の場合、DocumentFragment を使用", () => {
+    // 複数の子ノードを持つテンプレートを設定
+    template.innerHTML = `<div id="e"></div><span id="f"></span>`;
+    templateSpy.mockReturnValueOnce(template);
+    vi.spyOn(registerAttrMod, "getDataBindAttributesById").mockReturnValueOnce([] as any);
+
+    const bc = createBindContent(null, templateId, engine, { listIndex: null } as any);
+    expect(bc.childNodes.length).toBeGreaterThan(1);
+
+    const host = document.createElement("div");
+    const anchor = document.createElement("hr");
+    host.appendChild(anchor);
+    document.body.appendChild(host); // isConnected = true
+
+    try {
+      bc.mountAfter(host, anchor);
+      // 子ノードがanchorの後ろに挿入されていることを確認
+      expect(host.childNodes.length).toBe(3); // hr, e, f
+      expect(host.firstChild).toBe(anchor);
+      expect(host.lastChild).toBe(bc.lastChildNode);
+    } finally {
+      document.body.removeChild(host);
+    }
   });
 });

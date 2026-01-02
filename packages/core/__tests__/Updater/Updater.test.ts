@@ -362,6 +362,39 @@ describe("Updater その他のAPI", () => {
     }
   });
 
+  it("updateComplete ゲッターが Promise を返す", () => {
+    const engine = createEngineStub();
+    
+    createUpdater<void>(engine, (updater) => {
+      const updateComplete = updater.updateComplete;
+      expect(updateComplete).toBeInstanceOf(Promise);
+    });
+  });
+
+  it("同期的な update でも正しく動作する", async () => {
+    const { useWritableStateProxy: originalMock } = await import("../../src/StateClass/useWritableStateProxy");
+    
+    // 同期的な戻り値を返すようにモックを変更
+    vi.mocked(originalMock).mockImplementationOnce((engine: any, updater: any, _rawState: any, _loopContext: any, cb: (state: any, handler: any) => any) => {
+      capturedUpdater = updater;
+      const dummyHandler = {} as any;
+      const mockState = {};
+      
+      // 同期的に呼び出し、同期的な値を返す
+      return cb(mockState, dummyHandler);
+    });
+
+    const engine = createEngineStub();
+    engine.pathManager.hasUpdatedCallback = false;
+
+    createUpdater<void>(engine, (updater: any) => {
+      const result = updater.update(null, (state: any, handler: any) => {
+        return "sync-result";
+      });
+      expect(result).toBe("sync-result");
+    });
+  });
+
   it("swapInfoByRef が Map インスタンスを返す", () => {
     const engine = createEngineStub();
     const ref = createRef("cache");
@@ -675,5 +708,101 @@ describe("Updater.invoke", () => {
     });
     
     expect(invokeWasCalled).toBe(true);
+  });
+});
+
+describe("Updater debug reporting", () => {
+  beforeEach(() => {
+    renderMock.mockReset();
+    calcListDiffMock.mockReset();
+    findPathNodeByPathMock.mockReset();
+    createReadonlyStateHandlerMock.mockReset();
+    createReadonlyStateProxyMock.mockReset();
+    createRendererMock.mockReset();
+    createRendererMock.mockReturnValue({ render: vi.fn(), initialRender: vi.fn() });
+    createReadonlyStateHandlerMock.mockImplementation((engine: any, updater: any, renderer: any) => ({ engine, updater, renderer }));
+    createReadonlyStateProxyMock.mockImplementation(() => ({}));
+    findPathNodeByPathMock.mockImplementation((_root: any, pattern: string) => ({
+      childNodeByName: new Map<string, any>(),
+      currentPath: pattern,
+    }));
+  });
+
+  it("update outputs debug report when config.debug is true and debugReports includes 'update'", async () => {
+    const { config } = await import("../../src/WebComponents/getGlobalConfig");
+    const originalDebug = config.debug;
+    const originalDebugReports = config.debugReports;
+    
+    // Enable debug reporting
+    config.debug = true;
+    config.debugReports = ["update"];
+    
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    
+    try {
+      const engine = createEngineStub();
+      
+      await withUpdater(engine, null, async (_updater) => {
+        // Just execute update to trigger debug report
+      });
+      
+      // Wait for processResolvers.promise.finally to be called
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
+      expect(warnSpy).toHaveBeenCalledWith(
+        "[DebugReport][update]",
+        expect.objectContaining({
+          duration: expect.any(Number),
+          version: expect.any(Number),
+          revision: expect.any(Number),
+        })
+      );
+    } finally {
+      // Restore original config
+      config.debug = originalDebug;
+      config.debugReports = originalDebugReports;
+      warnSpy.mockRestore();
+    }
+  });
+
+  it("initialRender outputs debug report when config.debug is true and debugReports includes 'update'", async () => {
+    const { config } = await import("../../src/WebComponents/getGlobalConfig");
+    const originalDebug = config.debug;
+    const originalDebugReports = config.debugReports;
+    
+    // Enable debug reporting
+    config.debug = true;
+    config.debugReports = ["update"];
+    
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    
+    try {
+      const engine = createEngineStub();
+      
+      let capturedUpdater: any;
+      createUpdater<void>(engine, (updater: any) => {
+        capturedUpdater = updater;
+      });
+      
+      const mockRoot = { applyChange: vi.fn() };
+      capturedUpdater.initialRender(mockRoot);
+      
+      // Wait for processResolvers.promise.finally to be called
+      await new Promise(resolve => setTimeout(resolve, 10));
+      
+      expect(warnSpy).toHaveBeenCalledWith(
+        "[DebugReport][update]",
+        expect.objectContaining({
+          duration: expect.any(Number),
+          version: expect.any(Number),
+          revision: expect.any(Number),
+        })
+      );
+    } finally {
+      // Restore original config
+      config.debug = originalDebug;
+      config.debugReports = originalDebugReports;
+      warnSpy.mockRestore();
+    }
   });
 });

@@ -155,8 +155,8 @@ describe("BindingState", () => {
   });
 
   it("エラー: ワイルドカード・未activate で ref が null", () => {
-    // ワイルドカードの場合、コンストラクタで #nullRef は null になる
-    // activate() を呼ばずに getValue すると、loopContext === null かつ nullRef === null で 'LoopContext is null'
+    // ワイルドカードの場合、コンストラクタで _ref は null になる
+    // activate() を呼ばずに getValue すると、_ref === null で 'ref is null'
     const binding = { parentBindContent: { currentLoopContext: null }, engine } as any;
     const factory = createBindingState("items.*.name", []);
     const bindingState = factory(binding, engine.outputFilters);
@@ -165,7 +165,7 @@ describe("BindingState", () => {
       bindingState.getValue({} as any, {} as any);
     } catch (error) {
       const typedError = error as Error & { context?: Record<string, unknown>; docsUrl?: string };
-      expect(typedError.message).toMatch(/LoopContext is null/i);
+      expect(typedError.message).toMatch(/ref is null/i);
       expect(typedError.context).toEqual(expect.objectContaining({
         where: "BindingState.ref",
         pattern: "items.*.name",

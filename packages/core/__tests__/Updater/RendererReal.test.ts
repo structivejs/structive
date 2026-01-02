@@ -122,8 +122,8 @@ describe("Renderer Real Implementation", () => {
       expect(renderer.updatedBindings).toBeInstanceOf(Set);
       expect(renderer.processedRefs).toBeInstanceOf(Set);
       expect(renderer.lastListInfoByRef).toBeInstanceOf(Map);
-      expect(renderer.updatingRefs).toEqual([]);
       expect(renderer.updatingRefSet).toBeInstanceOf(Set);
+      expect(renderer.updatingRefSet.size).toBe(0);
       expect(Array.isArray(renderer.applyPhaseBinidings)).toBe(true);
       expect(renderer.renderPhase).toBe("build");
     });
@@ -179,11 +179,11 @@ describe("Renderer Real Implementation", () => {
       renderer.render([ref]);
 
       // Previous processedRefs/updatedBindings should be cleared before new render
-      expect(renderer.updatingRefs).toEqual([ref]);
       expect(renderer.updatingRefSet.has(ref)).toBe(true);
+      expect(renderer.updatingRefSet.size).toBe(1);
     });
 
-    it("should set updatingRefs and updatingRefSet", () => {
+    it("should set updatingRefSet", () => {
       const engine = makeEngine();
       const { updater } = makeUpdater();
       const renderer = createRenderer(engine, updater);
@@ -196,7 +196,6 @@ describe("Renderer Real Implementation", () => {
       
       renderer.render([ref1, ref2]);
 
-      expect(renderer.updatingRefs).toEqual([ref1, ref2]);
       expect(renderer.updatingRefSet.has(ref1)).toBe(true);
       expect(renderer.updatingRefSet.has(ref2)).toBe(true);
     });
@@ -1456,7 +1455,7 @@ describe("Renderer Real Implementation", () => {
         expect(warnSpy).toHaveBeenCalledWith(
           "[DebugReport][Render]",
           expect.objectContaining({
-            renderType: "update",
+            renderType: "initial",
             version: updater.version,
             revision: updater.revision,
           })

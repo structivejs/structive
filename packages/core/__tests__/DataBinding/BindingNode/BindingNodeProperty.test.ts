@@ -10,7 +10,7 @@ describe("BindingNodeProperty", () => {
     const addSpy = vi.spyOn(div, "addEventListener");
     const binding = createBindingStub(engine, div);
 
-    createBindingNodeProperty("value", [], [])(binding, div, engine.inputFilters);
+    createBindingNodeProperty("textContent", [], [])(binding, div, engine.inputFilters);
 
     expect(addSpy).not.toHaveBeenCalled();
   });
@@ -144,11 +144,16 @@ describe("BindingNodeProperty", () => {
 
   it("HTMLElement 以外は双方向登録せずに終了", () => {
     const engine = createEngineStub();
-    const comment = document.createComment("prop");
-    const binding = createBindingStub(engine, comment);
-    expect(() => {
-      createBindingNodeProperty("value", [], [])(binding, comment, engine.inputFilters);
-    }).not.toThrow();
+    // TextNodeはtextContentプロパティを持つが、HTMLElementではない
+    const textNode = document.createTextNode("test");
+    const addSpy = vi.spyOn(textNode, "addEventListener");
+    const binding = createBindingStub(engine, textNode);
+
+    // textContentはTextNodeに存在するので、プロパティチェックは通過する
+    // しかしHTMLElementではないので、双方向バインディングは登録されない
+    createBindingNodeProperty("textContent", [], [])(binding, textNode, engine.inputFilters);
+
+    expect(addSpy).not.toHaveBeenCalled();
   });
 
   it("decorator 'ro' はリスナーを設定しない", () => {
@@ -173,6 +178,7 @@ describe("BindingNodeProperty", () => {
 
     class MockHTMLElement {
       addEventListener = vi.fn();
+      value: any = ""; // Add value property to pass name in node check
     }
 
     class MockHTMLInputElement extends MockHTMLElement {
@@ -240,6 +246,7 @@ describe("BindingNodeProperty", () => {
 
     class MockHTMLElement {
       addEventListener = vi.fn();
+      customProp: any = ""; // Add customProp property to pass name in node check
     }
 
     class MockHTMLInputElement extends MockHTMLElement {
@@ -352,15 +359,13 @@ describe("BindingNodeProperty", () => {
     expect(input.valueAsNumber).toBe(12.5);
   });
 
-  it("存在しないプロパティへの assignValue は BIND-201 エラーを投げる", () => {
+  it("存在しないプロパティへの生成は BIND-201 エラーを投げる", () => {
     const engine = createEngineStub();
     const div = document.createElement("div");
     const binding = createBindingStub(engine, div);
 
-    const node = createBindingNodeProperty("nonExistentProperty", [], [])(binding, div, engine.inputFilters);
-
     try {
-      node.assignValue("some value");
+      createBindingNodeProperty("nonExistentProperty", [], [])(binding, div, engine.inputFilters);
       expect.fail("エラーが投げられるべき");
     } catch (err: any) {
       expect(err.message).toContain('Property not found on node: nonExistentProperty');

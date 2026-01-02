@@ -12,6 +12,9 @@ import { IListIndex } from "../ListIndex/types.js";
 import { IRenderer } from "../Updater/types.js";
 import { IStatePropertyRef } from "../StatePropertyRef/types.js";
 
+// Reusable DocumentFragment for mount operations, GC overhead minimized
+const workFragment = document.createDocumentFragment();
+
 /**
  * Internal helper function to generate DocumentFragment from template ID.
  * Automatically loads lazy-load components if present.
@@ -94,7 +97,6 @@ function createBindings(
           docsUrl: "./docs/error-codes.md#bind",
         });
       
-      
       // Generate Binding instance (includes BindingNode and BindingState)
       const binding = createBinding(
         bindContent, 
@@ -104,12 +106,10 @@ function createBindings(
         creator.createBindingState
       );
       
-      
       // Add to array
       bindings.push(binding);
     }
   }
-  
   
   // Step 4: Return generated IBinding array
   return bindings;
@@ -133,63 +133,11 @@ class BindContent implements IBindContent {
   readonly fragment: DocumentFragment;
   readonly childNodes: Node[];
   readonly bindings: IBinding[] = [];
+  readonly lastBinding: IBinding | null = null;
 
-  private _engine: IComponentEngine | undefined;
   private _isActive: boolean = false;
   private _currentLoopContext: ILoopContext | null | undefined;
   
-  /**
-   * Recursively retrieves the last node, including those under trailing bindings.
-   * Used for determining DOM insertion position in BindingNodeFor.
-   *
-   * @param parentNode - Parent node for validation
-   * @returns Last node or null if parent-child relationship broken
-   * @throws BIND-104 Child bindContent not found
-   */
-  getLastNode(parentNode: Node): Node | null {
-    const lastBinding = this.bindings[this.bindings.length - 1];
-    const lastChildNode = this.lastChildNode;
-    if (typeof lastBinding !== "undefined" && lastBinding.node === lastChildNode) {
-      if (lastBinding.bindContents.length > 0) {
-        const childBindContent = lastBinding.bindContents.at(-1) ?? raiseError({
-          code: "BIND-104",
-          message: "Child bindContent not found",
-          context: { where: 'BindContent.getLastNode', templateId: this.id },
-          docsUrl: "./docs/error-codes.md#bind",
-        });
-        const lastNode = childBindContent.getLastNode(parentNode);
-        if (lastNode !== null) {
-          return lastNode;
-        }
-      }
-    }
-    if (parentNode !== lastChildNode?.parentNode) {
-      return null;
-    }
-    return lastChildNode;
-  }
-
-  /**
-   * Getter to retrieve current loop context with caching.
-   * Traverses parent direction on first access, cached thereafter.
-   * 
-   * @returns Current ILoopContext or null if not in loop
-   */
-  get currentLoopContext(): ILoopContext | null {
-    if (typeof this._currentLoopContext === "undefined") {
-      if (this.loopContext !== null) {
-        this._currentLoopContext = this.loopContext;
-        return this._currentLoopContext;
-      }
-      let bindContent: IBindContent | null = this.parentBinding?.parentBindContent ?? null;
-      while(bindContent !== null) {
-        if (bindContent.loopContext !== null) {break;} ;
-        bindContent = bindContent.parentBinding?.parentBindContent ?? null;
-      }
-      this._currentLoopContext = bindContent?.loopContext ?? null;
-    }
-    return this._currentLoopContext;
-  }
   /**
    * Constructor initializes BindContent from template ID.
    * Generates LoopContext if loopRef has listIndex.
@@ -215,15 +163,14 @@ class BindContent implements IBindContent {
     this.childNodes = Array.from(this.fragment.childNodes);
     this.firstChildNode = this.childNodes[0] ?? null;
     this.lastChildNode = this.childNodes[this.childNodes.length - 1] ?? null;
-    this._engine = engine;
     this.loopContext = (loopRef.listIndex !== null) ? createLoopContext(loopRef, this) : null;
-    const bindings = createBindings(
+    this.bindings = createBindings(
       this, 
       id, 
       engine, 
       this.fragment
     );
-    this.bindings = bindings;
+    this.lastBinding = this.bindings.length > 0 ? this.bindings[this.bindings.length - 1] : null;
   }
 
   /**
@@ -236,14 +183,66 @@ class BindContent implements IBindContent {
   }
 
   /**
+   * Getter to retrieve current loop context with caching.
+   * Traverses parent direction on first access, cached thereafter.
+   * 
+   * @returns Current ILoopContext or null if not in loop
+   */
+  get currentLoopContext(): ILoopContext | null {
+    if (typeof this._currentLoopContext === "undefined") {
+      if (this.loopContext !== null) {
+        this._currentLoopContext = this.loopContext;
+        return this._currentLoopContext;
+      }
+      let bindContent: IBindContent | null = this.parentBinding?.parentBindContent ?? null;
+      while(bindContent !== null) {
+        if (bindContent.loopContext !== null) {break;} ;
+        bindContent = bindContent.parentBinding?.parentBindContent ?? null;
+      }
+      this._currentLoopContext = bindContent?.loopContext ?? null;
+    }
+    return this._currentLoopContext;
+  }
+
+  /**
+   * Recursively retrieves the last node, including those under trailing bindings.
+   * Used for determining DOM insertion position in BindingNodeFor.
+   *
+   * @param parentNode - Parent node for validation
+   * @returns Last node or null if parent-child relationship broken
+   * @throws BIND-104 Child bindContent not found
+   */
+  get lastNode(): Node | null {
+    if (this.lastBinding !== null 
+      && this.lastBinding.node === this.lastChildNode 
+      && this.lastBinding.bindContents.length > 0) {
+      const lastBindContent = this.lastBinding.bindContents[this.lastBinding.bindContents.length - 1];
+      const lastNode = lastBindContent.lastNode;
+      if (lastNode !== null) {
+        return lastNode;
+      }
+    }
+    return this.lastChildNode;
+  }
+
+  /**
    * Mounts childNodes to end of parent node (appendChild).
    * Not idempotent - caller must avoid duplicate mounts.
    * 
    * @param parentNode - Parent node for mount destination
    */
   mount(parentNode: Node) {
+    let workParentNode: Node = parentNode;
+    const useFragment = parentNode.isConnected && this.childNodes.length > 1;
+    if (useFragment) {
+      workFragment.textContent = "";
+      workParentNode = workFragment;
+    }
     for(let i = 0; i < this.childNodes.length; i++) {
-      parentNode.appendChild(this.childNodes[i]);
+      workParentNode.appendChild(this.childNodes[i]);
+    }
+    if (useFragment) {
+      parentNode.appendChild(workParentNode);
     }
   }
 
@@ -255,8 +254,19 @@ class BindContent implements IBindContent {
    * @param beforeNode - Reference node for insertion position (null = append to end)
    */
   mountBefore(parentNode: Node, beforeNode: Node | null) {
-    for(let i = 0; i < this.childNodes.length; i++) {
-      parentNode.insertBefore(this.childNodes[i], beforeNode);
+    const useFragment = parentNode.isConnected && this.childNodes.length > 1;
+    if (useFragment) {
+      // Optimization: use DocumentFragment for connected DOM
+      workFragment.textContent = "";
+      for(let i = 0; i < this.childNodes.length; i++) {
+        workFragment.appendChild(this.childNodes[i]);
+      }
+      parentNode.insertBefore(workFragment, beforeNode);
+    } else {
+      // For disconnected nodes, insert directly
+      for(let i = 0; i < this.childNodes.length; i++) {
+        parentNode.insertBefore(this.childNodes[i], beforeNode);
+      }
     }
   }
 
@@ -267,9 +277,18 @@ class BindContent implements IBindContent {
    * @param afterNode - Reference node for insertion position (null = prepend to start)
    */
   mountAfter(parentNode: Node, afterNode: Node | null) {
+    const useFragment = parentNode.isConnected && this.childNodes.length > 1;
     const beforeNode = afterNode?.nextSibling ?? null;
+    let workParentNode: Node = parentNode;
+    if (useFragment) {
+      workFragment.textContent = "";
+      workParentNode = workFragment;
+    }
     for(let i = 0; i < this.childNodes.length; i++) {
-      parentNode.insertBefore(this.childNodes[i], beforeNode);
+      workParentNode.appendChild(this.childNodes[i]);
+    }
+    if (useFragment) {
+      parentNode.insertBefore(workParentNode, beforeNode);
     }
   }
 
@@ -370,11 +389,10 @@ export function createBindContent(
   engine: IComponentEngine, 
   loopRef: IStatePropertyRef,
 ):IBindContent {
-  const bindContent = new BindContent(
+  return new BindContent(
     parentBinding, 
     id, 
     engine, 
     loopRef,
   );
-  return bindContent;
 }

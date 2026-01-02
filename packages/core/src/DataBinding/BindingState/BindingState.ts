@@ -40,9 +40,11 @@ const bindingStateInternalByPattern: Record<string, IBindingStateInternal> = {};
 class BindingState implements IBindingState {
   readonly filters: Filters;
   readonly isLoopIndex: boolean = false;
+  readonly pattern: string;
+  readonly info: IStructuredPathInfo;
 
-  private _internal: IBindingStateInternal;
-  private _binding: IBinding;
+  private readonly _internal: IBindingStateInternal;
+  private readonly _binding: IBinding;
   private _ref: IStatePropertyRef | null = null;
   private _loopContext: ILoopContext | null = null;
 
@@ -62,14 +64,11 @@ class BindingState implements IBindingState {
       (bindingStateInternalByPattern[pattern] = new BindingStateInternal(pattern));
     this._binding = binding;
     this.filters = filters;
+    this.pattern = pattern;
+    this.info = this._internal.info;
+    this._ref = this._internal.nullRef;
   }
 
-  get pattern(): string {
-    return this._internal.pattern;
-  }
-  get info(): IStructuredPathInfo {
-    return this._internal.info;
-  }
   /**
    * Returns list index from state property reference.
    * 
@@ -85,27 +84,20 @@ class BindingState implements IBindingState {
    * @returns IStatePropertyRef instance
    * @throws BIND-201 LoopContext is null or ref is null
    */
-  get ref() {
-    if (this._internal.nullRef === null) {
-      if (this._loopContext === null) {
-        raiseError({
-          code: 'BIND-201',
-          message: 'LoopContext is null',
-          context: {
-            where: 'BindingState.ref',
-            pattern: this.pattern,
-            wildcardCount: this.info.wildcardCount,
-          },
-          docsUrl: './docs/error-codes.md#bind',
-        });
-      }
-      if (this._ref === null) {
-        this._ref = getStatePropertyRef(this.info, this._loopContext.listIndex);
-      }
-      return this._ref;
-    } else {
-      return this._internal.nullRef;
+  get ref(): IStatePropertyRef {
+    if (this._ref === null) {
+      raiseError({
+        code: 'BIND-201',
+        message: 'ref is null',
+        context: {
+          where: 'BindingState.ref',
+          pattern: this.pattern,
+          wildcardCount: this.info.wildcardCount,
+        },
+        docsUrl: './docs/error-codes.md#bind',
+      });
     }
+    return this._ref;
   }
 
   /**
@@ -173,6 +165,7 @@ class BindingState implements IBindingState {
           },
           docsUrl: './docs/error-codes.md#bind',
         });
+      this._ref = getStatePropertyRef(this.info, this._loopContext.listIndex);
     }
     if (this._binding.bindingNode.renderable) {
       this._binding.engine.saveBinding(this.ref, this._binding);
@@ -184,7 +177,7 @@ class BindingState implements IBindingState {
    */
   inactivate() {
     this._binding.engine.removeBinding(this.ref, this._binding);
-    this._ref = null;
+    this._ref = this._internal.nullRef;
     this._loopContext = null;
   }
 }

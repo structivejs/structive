@@ -90,6 +90,20 @@ class BindingNodeProperty extends BindingNode {
   ) {
     super(binding, node, name, subName, filters, decorates);
 
+    if (!(name in node)) {
+      raiseError({
+        code: 'BIND-201',
+        message: `Property not found on node: ${name}`,
+        context: {
+          where: 'BindingNodeProperty.assignValue',
+          bindName: name,
+          nodeType: node.nodeType,
+        },
+        docsUrl: './docs/error-codes.md#bind',
+      });
+      return;
+    }
+
     const isElement = this.node instanceof HTMLElement;
     if (!isElement) {return;}
     
@@ -165,22 +179,9 @@ class BindingNodeProperty extends BindingNode {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       anyValue = value;
     }
-    if (this.name in this.node) {
-      // @ts-expect-error TS doesn't recognize dynamic property names
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      this.node[this.name] = anyValue;
-    } else {
-      raiseError({
-        code: 'BIND-201',
-        message: `Property not found on node: ${this.name}`,
-        context: {
-          where: 'BindingNodeProperty.assignValue',
-          bindName: this.name,
-          nodeType: this.node.nodeType,
-        },
-        docsUrl: './docs/error-codes.md#bind',
-      });
-    }
+    // @ts-expect-error TS doesn't recognize dynamic property names
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    this.node[this.name] = anyValue;
   }
 }
 

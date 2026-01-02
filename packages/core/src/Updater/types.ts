@@ -197,12 +197,7 @@ export interface IRenderer {
   readonly readonlyHandler: IReadonlyStateHandler;
 
   /**
-   * Array of references currently being updated in this render cycle.
-   */
-  readonly updatingRefs: IStatePropertyRef[];
-  
-  /**
-   * Set version of updatingRefs for fast lookup.
+   * Set of references currently being updated in this render cycle.
    */
   readonly updatingRefSet: Set<IStatePropertyRef>;
 
@@ -258,8 +253,8 @@ export interface IUpdateActivityTracker {
 }
 
 export interface IUpdateReport {
-  readonly updatedRefsList: IStatePropertyRef[][];
-  readonly events: Event[];
+//  readonly updatedRefsList: IStatePropertyRef[][];
+//  readonly events: Event[];
   readonly version: number;
   readonly revision: number;
   readonly duration: number;

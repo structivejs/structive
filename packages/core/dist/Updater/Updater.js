@@ -3,6 +3,7 @@ import { createReadonlyStateHandler, createReadonlyStateProxy } from "../StateCl
 import { UpdatedCallbackSymbol } from "../StateClass/symbols";
 import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { raiseError } from "../utils";
+import { config } from "../WebComponents/getGlobalConfig";
 import { createRenderer } from "./Renderer";
 import { createRenderMain } from "./RenderMain";
 import { createUpdateActivityTracker } from "./UpdateActivityTracker";
@@ -141,8 +142,7 @@ class Updater {
      *   state.count = 42;
      * });
      */
-    update(loopContext, callback) {
-        const resolvers = this._tracker.createProcessResolver();
+    _update(loopContext, callback, processResolvers) {
         // Create writable state proxy and execute update callback
         const resultPromise = useWritableStateProxy(this._engine, this, this._engine.state, loopContext, (state, handler) => {
             // Execute user's state modification callback
@@ -173,7 +173,7 @@ class Updater {
                 });
             }
             else {
-                resolvers.resolve();
+                processResolvers.resolve();
             }
         };
         // Handle both Promise and non-Promise results
@@ -188,6 +188,23 @@ class Updater {
             updatedCallbackHandler();
         }
         return resultPromise;
+    }
+    update(loopContext, callback) {
+        const enableReporting = config.debug && config.debugReports.includes("update");
+        const start = enableReporting ? performance.now() : 0;
+        const processResolvers = this._tracker.createProcessResolver();
+        if (enableReporting) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            processResolvers.promise.finally(() => {
+                const report = {
+                    duration: performance.now() - start,
+                    version: this._version,
+                    revision: this._revision,
+                };
+                console.warn("[DebugReport][update]", report);
+            });
+        }
+        return this._update(loopContext, callback, processResolvers);
     }
     /**
      * Retrieves and clears the queue of state property references pending update.
@@ -207,7 +224,20 @@ class Updater {
      * @returns {void}
      */
     initialRender(root) {
+        const enableReporting = config.debug && config.debugReports.includes("update");
+        const start = enableReporting ? performance.now() : 0;
         const processResolvers = this._tracker.createProcessResolver();
+        if (enableReporting) {
+            // eslint-disable-next-line @typescript-eslint/no-floating-promises
+            processResolvers.promise.finally(() => {
+                const report = {
+                    duration: performance.now() - start,
+                    version: this._version,
+                    revision: this._revision,
+                };
+                console.warn("[DebugReport][update]", report);
+            });
+        }
         const renderer = createRenderer(this._engine, this);
         try {
             renderer.initialRender(root);

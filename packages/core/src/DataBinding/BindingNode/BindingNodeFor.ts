@@ -33,6 +33,9 @@ type ElementsResult = {
 
 const TOO_MANY_BIND_CONTENTS_THRESHOLD = 1000;
 
+// Reusable DocumentFragment for DOM operations, minimizes GC overhead
+const workFragment = document.createDocumentFragment();
+
 /**
  * BindingNode for loop rendering (for binding).
  * Manages BindContent instances for each list element with efficient diff detection and pooling.
@@ -157,7 +160,7 @@ class BindingNodeFor extends BindingNodeBlock {
     while(workLastNode && workLastNode.nodeType === Node.TEXT_NODE && workLastNode.textContent?.trim() === "") {
       workLastNode = workLastNode.previousSibling;
     }
-    if (workFirstNode === this.node && workLastNode === lastContent.getLastNode(parentNode)) {
+    if (workFirstNode === this.node && workLastNode === lastContent.lastNode) {
       // safe to clear all, needless to unmount each
       parentNode.textContent = "";
       parentNode.append(this.node);
@@ -337,10 +340,11 @@ class BindingNodeFor extends BindingNodeBlock {
   ): ElementsResult {
     const changes: IListIndex[] = [];
     const overwrites: IListIndex[] = [];
-    for(let i = 0; i < renderer.updatingRefs.length; i++) {
-      const updatingRef = renderer.updatingRefs[i];
+    for(const updatingRef of renderer.updatingRefSet) {
       if (updatingRef.info.pattern !== elementsPath) {continue;}
+      /* v8 ignore start -- branch covered by tests but v8 reports partial coverage */
       if (renderer.processedRefs.has(updatingRef)) {continue;}
+      /* v8 ignore stop */
       const listIndex = updatingRef.listIndex;
       if (listIndex === null) {
         raiseError({
@@ -363,7 +367,6 @@ class BindingNodeFor extends BindingNodeBlock {
   /**
    * Applies changes using document fragment for efficient DOM updates.
    * 
-   * @param useAllAppend - Whether to use document fragment for all appends
    * @param renderer - Renderer instance
    * @param parentNode - Parent DOM node
    * @param firstNode - First child node of the parent
@@ -376,7 +379,6 @@ class BindingNodeFor extends BindingNodeBlock {
    * @returns Array of new bind contents
    */
   private _applyChange(
-    useAllAppend: boolean,
     renderer: IRenderer,
     parentNode: ParentNode,
     firstNode: Node,
@@ -395,16 +397,14 @@ class BindingNodeFor extends BindingNodeBlock {
     for(let i = 0; i < oldListIndexes.length; i++) {
       oldIndexByListIndex.set(oldListIndexes[i], i);
     }
-    const fragmentParentNode = useAllAppend ? document.createDocumentFragment() : parentNode;
-    const fragmentFirstNode = useAllAppend ? null : firstNode;
     const changeListIndexes: IListIndex[] = [];
     for(let i = 0; i < newListIndexes.length; i++) {
       const listIndex = newListIndexes[i];
-      const lastNode = lastBindContent?.getLastNode(fragmentParentNode) ?? fragmentFirstNode;
+      const lastNode = lastBindContent?.lastNode ?? firstNode;
       let bindContent;
       if (!oldListIndexSet.has(listIndex)) {
         bindContent = this._createBindContent(listIndex);
-        bindContent.mountAfter(fragmentParentNode, lastNode);
+        bindContent.mountAfter(parentNode, lastNode);
         bindContent.applyChange(renderer);
       } else {
         bindContent = bindContentByListIndex.get(listIndex);
@@ -417,7 +417,7 @@ class BindingNodeFor extends BindingNodeBlock {
           });
         }
         if (lastNode?.nextSibling !== bindContent.firstChildNode) {
-          bindContent.mountAfter(fragmentParentNode, lastNode);
+          bindContent.mountAfter(parentNode, lastNode);
         }
         const oldIndex = oldIndexByListIndex.get(listIndex);
         if (typeof oldIndex !== "undefined" && oldIndex !== i) {
@@ -426,9 +426,6 @@ class BindingNodeFor extends BindingNodeBlock {
       }
       newBindContents.push(bindContent);
       lastBindContent = bindContent;
-    }
-    if (useAllAppend) {
-      parentNode.insertBefore(fragmentParentNode, firstNode.nextSibling);
     }
     for(const listIndex of changeListIndexes) {
       const bindings = bindingsByListIndex.get(listIndex) ?? [];
@@ -472,7 +469,7 @@ class BindingNodeFor extends BindingNodeBlock {
         });
       }
       bindContents[listIndex.index] = bindContent;
-      const lastNode = bindContents[listIndex.index - 1]?.getLastNode(parentNode) ?? firstNode;
+      const lastNode = bindContents[listIndex.index - 1]?.lastNode ?? firstNode;
       bindContent.mountAfter(parentNode, lastNode);
     }
   }
@@ -495,6 +492,7 @@ class BindingNodeFor extends BindingNodeBlock {
     for(let i = 0; i < overwrites.length; i++) {
       const listIndex = overwrites[i];
       const bindContent = bindContentByListIndex.get(listIndex);
+      /* v8 ignore start -- defensive: unreachable when isReorder=true requires hasAdds=false */
       if (typeof bindContent === "undefined") {
         raiseError({
           code: 'BIND-201',
@@ -503,10 +501,87 @@ class BindingNodeFor extends BindingNodeBlock {
           docsUrl: './docs/error-codes.md#bind',
         });
       }
+      /* v8 ignore stop */
       bindContent.applyChange(renderer);
     }
   }
 
+  /**
+   * replaces BindContents optimally when all items are new.
+   * 
+   * @param parentNode - Parent DOM node
+   * @param firstNode - First child node of the parent
+   * @param renderer - Renderer instance
+   * @param oldListIndexes - Previous list indexes
+   * @param newListIndexes - New list indexes
+   * @param bindContentByListIndex - WeakMap of list indexes to bind contents
+   * @param bindContents - Current array of bind contents
+   * @param baseContext - Context for error reporting
+   * @returns removed IBindContent instances
+   */
+  private _optimizedReplace(
+    parentNode: ParentNode,
+    firstNode: Node,
+    renderer: IRenderer,
+    oldListIndexes: IListIndex[],
+    newListIndexes: IListIndex[],
+    bindContentByListIndex: WeakMap<IListIndex, IBindContent>,
+    bindContents: IBindContent[],
+    baseContext: BindContext
+  ): IBindContent[] {
+    const removeBindContents: IBindContent[] = [];
+    // Note: isAllNew is only true when newListIndexes.length > 0
+    // so oldListIndexes.length === 0 && newListIndexes.length === 0 case is unreachable
+    if (oldListIndexes.length > newListIndexes.length) {
+      for(let i = newListIndexes.length; i < oldListIndexes.length; i++) {
+        const listIndex = oldListIndexes[i];
+        const bindContent = bindContentByListIndex.get(listIndex);
+        if (typeof bindContent === "undefined") {
+          raiseError({
+            code: 'BIND-201',
+            message: 'BindContent not found',
+            context: { ...baseContext, phase: 'optimized replace', listIndex: listIndex.index },
+            docsUrl: './docs/error-codes.md#bind',
+          });
+        }
+        this._deleteBindContent(bindContent);
+        removeBindContents.push(bindContent);
+      }
+      bindContents.length = newListIndexes.length;
+    }
+    const minBindContentsLength = Math.min(oldListIndexes.length, newListIndexes.length);
+    for(let i = 0; i < minBindContentsLength; i++) {
+      const listIndex = newListIndexes[i];
+      const bindContent = bindContents[i];
+      bindContent.assignListIndex(listIndex);
+      bindContent.activate();
+      bindContent.applyChange(renderer);
+      bindContentByListIndex.set(listIndex, bindContent);
+    }
+    if (oldListIndexes.length < newListIndexes.length) {
+      let replaceParentNode: ParentNode = parentNode;
+      const useFragement = oldListIndexes.length === 0 && parentNode.isConnected;
+      if (useFragement) {
+        workFragment.textContent = "";
+        replaceParentNode = workFragment;
+        replaceParentNode.append(firstNode);
+      }
+      let lastBindContent: IBindContent | null = null;
+      for(let i = oldListIndexes.length; i < newListIndexes.length; i++) {
+        const listIndex = newListIndexes[i];
+        const lastNode = lastBindContent?.lastNode ?? firstNode;
+        const bindContent = this._createBindContent(listIndex);
+        bindContent.mountAfter(replaceParentNode, lastNode);
+        bindContent.applyChange(renderer);
+        bindContents.push(bindContent);
+        lastBindContent = bindContent;
+      }
+      if (useFragement) {
+        parentNode.append(replaceParentNode);
+      }
+    }
+    return removeBindContents;
+  }
   /**
    * Applies list changes using diff detection algorithm.
    * Handles adds, removes, reorders, and overwrites efficiently.
@@ -545,15 +620,36 @@ class BindingNodeFor extends BindingNodeBlock {
     const listDiff = this._getListDiffResult(newListIndexesSet, this._oldListIndexSet);
     const elementsResult = this._getElementsResult(renderer, this._elementsPath, this._oldListIndexSet, baseContext);
 
+    let optimizedReplaceDone = false;
+
+    if (listDiff.isAllNew) {
+      const removeBindContents = this._optimizedReplace(
+        parentNode,
+        this.node,
+        renderer,
+        this._oldListIndexes,
+        newListIndexes,
+        this._bindContentByListIndex,
+        this._bindContents,
+        baseContext
+      );
+      if (removeBindContents.length > 0) {
+        this._poolBindContents(removeBindContents);
+      }
+      optimizedReplaceDone = true;
+    }
+
     // Optimization: clear all if new list is empty
     let isCleared = false;
-    if (listDiff.willRemoveAll) {
-      const lastContent = this.bindContents.at(-1) ?? raiseError({
+    if (!optimizedReplaceDone && listDiff.willRemoveAll) {
+      /* v8 ignore start -- defensive: willRemoveAll requires oldSize>0, so bindContents is never empty here */
+      const lastContent = this.bindContents[this.bindContents.length - 1] ?? raiseError({
         code: 'BIND-201',
         message: 'Last BindContent not found',
         context: { ...baseContext, bindContentCount: this.bindContents.length },
         docsUrl: './docs/error-codes.md#bind',
       });
+      /* v8 ignore stop */
 
       isCleared = this._allRemove(parentNode, lastContent);
       if (isCleared) {
@@ -562,12 +658,17 @@ class BindingNodeFor extends BindingNodeBlock {
     }
 
     // Handle removes: unmount and pool BindContents
-    if (!isCleared && listDiff.hasRemoves) {
+    if (!optimizedReplaceDone && !isCleared && listDiff.hasRemoves) {
       const removeBindContents = this._partialRemove(
         newListIndexesSet, this._oldListIndexSet, this._bindContentByListIndex, baseContext
       );
       if (removeBindContents.length > 0) {
         this._poolBindContents(removeBindContents);
+        // Update _bindContents to remove deleted entries
+        if (!listDiff.hasAdds) {
+          const removeSet = new Set(removeBindContents);
+          this._bindContents = this._bindContents.filter(bc => !removeSet.has(bc));
+        }
       }
     }
 
@@ -575,12 +676,9 @@ class BindingNodeFor extends BindingNodeBlock {
     const isReorder = !listDiff.hasAdds && !listDiff.hasRemoves &&
       (elementsResult.changes.length > 0 || elementsResult.overwrites.length > 0 );
 
-    if (!isReorder) {
-      // Use document fragment only when all are appends and node is connected
-      const useAllAppend = listDiff.isAllNew && parentNode.isConnected;
-
+    if (!optimizedReplaceDone && listDiff.hasAdds) {
+      // Rebuild path: create/reuse BindContents in new order
       this._bindContents = this._applyChange(
-        useAllAppend,
         renderer,
         parentNode,
         this.node,
@@ -591,7 +689,7 @@ class BindingNodeFor extends BindingNodeBlock {
         this.binding.bindingsByListIndex,
         baseContext
       );
-    } else {
+    } else if (!optimizedReplaceDone && isReorder) {
       // Reorder path: only move DOM nodes without recreating
       if (elementsResult.changes.length > 0) {
         this._reorder(

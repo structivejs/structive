@@ -9,9 +9,10 @@ import { IReadonlyStateHandler, IReadonlyStateProxy, IWritableStateHandler, IWri
 import { useWritableStateProxy } from "../StateClass/useWritableStateProxy";
 import { IStatePropertyRef } from "../StatePropertyRef/types";
 import { raiseError } from "../utils";
+import { config } from "../WebComponents/getGlobalConfig";
 import { createRenderer } from "./Renderer";
 import { createRenderMain } from "./RenderMain";
-import { IListSnapshot, IRenderMain, IUpdater, IUpdateActivityTracker, UpdateCallback, UpdateComplete } from "./types";
+import { IListSnapshot, IRenderMain, IUpdater, IUpdateActivityTracker, UpdateCallback, UpdateComplete, IUpdateReport } from "./types";
 import { createUpdateActivityTracker } from "./UpdateActivityTracker";
 
 
@@ -169,11 +170,11 @@ class Updater implements IUpdater {
    *   state.count = 42;
    * });
    */
-  update<R>(
+  private _update<R>(
     loopContext: ILoopContext | null, 
-    callback: UpdateCallback<R>
+    callback: UpdateCallback<R>,
+    processResolvers: PromiseWithResolvers<void>
   ): R {
-    const resolvers = this._tracker.createProcessResolver();
     // Create writable state proxy and execute update callback
     const resultPromise: R = useWritableStateProxy<R>(this._engine, this, this._engine.state, loopContext, 
       (state:IWritableStateProxy, handler:IWritableStateHandler): R => {
@@ -207,7 +208,7 @@ class Updater implements IUpdater {
           }
         });
       } else {
-        resolvers.resolve();
+        processResolvers.resolve();
       }
     };
     
@@ -222,6 +223,28 @@ class Updater implements IUpdater {
       updatedCallbackHandler();
     }
     return resultPromise;
+  }
+
+  update<R>(
+    loopContext: ILoopContext | null,
+    callback: UpdateCallback<R>
+  ): R {
+    const enableReporting = config.debug && config.debugReports.includes("update");
+    const start = enableReporting ? performance.now() : 0;
+    const processResolvers = this._tracker.createProcessResolver();
+    if (enableReporting) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      processResolvers.promise.finally(() => {
+        const report: IUpdateReport = {
+          duration: performance.now() - start,
+          version: this._version,
+          revision: this._revision,
+        }
+        console.warn("[DebugReport][update]", report);
+      });
+    }
+
+    return this._update<R>(loopContext, callback, processResolvers);
   }
 
   /**
@@ -243,7 +266,20 @@ class Updater implements IUpdater {
    * @returns {void}
    */
   initialRender(root: IBindContent): void {
+    const enableReporting = config.debug && config.debugReports.includes("update");
+    const start = enableReporting ? performance.now() : 0;
     const processResolvers = this._tracker.createProcessResolver();
+    if (enableReporting) {
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+      processResolvers.promise.finally(() => {
+        const report: IUpdateReport = {
+          duration: performance.now() - start,
+          version: this._version,
+          revision: this._revision,
+        }
+        console.warn("[DebugReport][update]", report);
+      });
+    }
     const renderer = createRenderer(this._engine, this);
     try {
       renderer.initialRender(root);

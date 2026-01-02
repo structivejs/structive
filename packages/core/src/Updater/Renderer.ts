@@ -15,6 +15,8 @@ import { raiseError } from "../utils";
 import { config } from "../WebComponents/getGlobalConfig";
 import { IListSnapshot, IRenderer, IRenderReport, IUpdater, ReadonlyStateCallback, RenderPhase } from "./types";
 
+const EMPTY_LIST_INDEX_SET = new Set<IListIndex>();
+
 /**
  * Renderer is a coordinator that responds to State changes (a set of IStatePropertyRef references)
  * by traversing the PathTree and delegating applyChange to each Binding (IBinding).
@@ -43,7 +45,6 @@ class Renderer implements IRenderer {
 
   private _engine: IComponentEngine;
   private _updater: IUpdater;
-  private _updatingRefs: IStatePropertyRef[] = [];
   private _updatingRefSet: Set<IStatePropertyRef> = new Set();
   private _readonlyState: IReadonlyStateProxy | null = null;
   private _readonlyHandler : IReadonlyStateHandler | null = null;
@@ -60,10 +61,6 @@ class Renderer implements IRenderer {
   constructor(engine: IComponentEngine, updater: IUpdater) {
     this._engine = engine;
     this._updater = updater;
-  }
-
-  get updatingRefs(): IStatePropertyRef[] {
-    return this._updatingRefs;
   }
 
   get updatingRefSet(): Set<IStatePropertyRef> {
@@ -138,7 +135,6 @@ class Renderer implements IRenderer {
   private _render(items: IStatePropertyRef[]): void {
     this.processedRefs.clear();
     this.updatedBindings.clear();
-    this._updatingRefs = [...items];
     this._updatingRefSet = new Set(items);
 
     // Implement actual rendering logic
@@ -245,36 +241,32 @@ class Renderer implements IRenderer {
 
   private _applyPhaseRender(): void {
     this._renderPhase = 'apply';
-    try {
-      for(let i = 0; i < this._applyPhaseBinidings.length; i++) {
-        if (!this._applyPhaseBinidings[i].bindingNode.renderable) {continue;}
-        this._applyPhaseBinidings[i].applyChange(this);
-      }
-    } finally {
-      this._applyPhaseBinidings = [];
+    for(let i = 0; i < this._applyPhaseBinidings.length; i++) {
+      if (!this._applyPhaseBinidings[i].bindingNode.renderable) {continue;}
+      this._applyPhaseBinidings[i].applyChange(this);
     }
   }
 
   private _applySelectPhaseRender(): void {
     this._renderPhase = 'applySelect';
-    try {
-      for(let i = 0; i < this._applySelectPhaseBinidings.length; i++) {
-        if (!this._applySelectPhaseBinidings[i].bindingNode.renderable) {continue;}
-        this._applySelectPhaseBinidings[i].applyChange(this);
-      }
-    } finally {
-      this._applySelectPhaseBinidings = [];
+    for(let i = 0; i < this._applySelectPhaseBinidings.length; i++) {
+      if (!this._applySelectPhaseBinidings[i].bindingNode.renderable) {continue;}
+      this._applySelectPhaseBinidings[i].applyChange(this);
     }
   }
 
+  /**
+   * 
+   * @param items - Array of state property references to render
+   */
   render(items: IStatePropertyRef[]): void {
     const enableReporting = config.debug && config.debugReports.includes("render");
-    const start = performance.now();
+    const start = enableReporting ? performance.now() : 0;
     this._render(items);
     if (enableReporting) {
       const end = performance.now();
       const report: IRenderReport = {
-        renderedRefs: this._updatingRefs,
+        renderedRefs: Array.from(this._updatingRefSet),
         renderedBindings: Array.from(this.updatedBindings),
         renderType: "update",
         version: this._updater.version,
@@ -317,7 +309,7 @@ class Renderer implements IRenderer {
 
     // Calculate which list indexes are new (added) since last render
     // This optimization ensures we only traverse new list elements
-    let diffListIndexes: Set<IListIndex> = new Set();
+    let diffListIndexes: Set<IListIndex> = EMPTY_LIST_INDEX_SET;
     if (this._engine.pathManager.lists.has(ref.info.pattern)) {
       // Get current list indexes for this ref
       const currentListIndexes = new Set(this.readonlyState[GetListIndexesByRefSymbol](ref) ?? []);
@@ -409,7 +401,7 @@ class Renderer implements IRenderer {
 
   initialRender(root: IBindContent): void {
     const enableReporting = config.debug && config.debugReports.includes("render");
-    const start = performance.now();
+    const start = enableReporting ? performance.now() : 0;
     this.createReadonlyState( () => {
       root.applyChange(this);
       this._applyPhaseRender();
@@ -418,9 +410,9 @@ class Renderer implements IRenderer {
     if (enableReporting) {
       const end = performance.now();
       const report: IRenderReport = {
-        renderedRefs: this._updatingRefs,
+        renderedRefs: Array.from(this._updatingRefSet),
         renderedBindings: Array.from(this.updatedBindings),
-        renderType: "update",
+        renderType: "initial",
         version: this._updater.version,
         revision: this._updater.revision,
         duration: end - start,

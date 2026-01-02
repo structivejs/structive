@@ -23,6 +23,8 @@ const bindingStateInternalByPattern = {};
 class BindingState {
     filters;
     isLoopIndex = false;
+    pattern;
+    info;
     _internal;
     _binding;
     _ref = null;
@@ -39,12 +41,9 @@ class BindingState {
             (bindingStateInternalByPattern[pattern] = new BindingStateInternal(pattern));
         this._binding = binding;
         this.filters = filters;
-    }
-    get pattern() {
-        return this._internal.pattern;
-    }
-    get info() {
-        return this._internal.info;
+        this.pattern = pattern;
+        this.info = this._internal.info;
+        this._ref = this._internal.nullRef;
     }
     /**
      * Returns list index from state property reference.
@@ -61,27 +60,19 @@ class BindingState {
      * @throws BIND-201 LoopContext is null or ref is null
      */
     get ref() {
-        if (this._internal.nullRef === null) {
-            if (this._loopContext === null) {
-                raiseError({
-                    code: 'BIND-201',
-                    message: 'LoopContext is null',
-                    context: {
-                        where: 'BindingState.ref',
-                        pattern: this.pattern,
-                        wildcardCount: this.info.wildcardCount,
-                    },
-                    docsUrl: './docs/error-codes.md#bind',
-                });
-            }
-            if (this._ref === null) {
-                this._ref = getStatePropertyRef(this.info, this._loopContext.listIndex);
-            }
-            return this._ref;
+        if (this._ref === null) {
+            raiseError({
+                code: 'BIND-201',
+                message: 'ref is null',
+                context: {
+                    where: 'BindingState.ref',
+                    pattern: this.pattern,
+                    wildcardCount: this.info.wildcardCount,
+                },
+                docsUrl: './docs/error-codes.md#bind',
+            });
         }
-        else {
-            return this._internal.nullRef;
-        }
+        return this._ref;
     }
     /**
      * Retrieves raw value from state without applying filters.
@@ -145,6 +136,7 @@ class BindingState {
                     },
                     docsUrl: './docs/error-codes.md#bind',
                 });
+            this._ref = getStatePropertyRef(this.info, this._loopContext.listIndex);
         }
         if (this._binding.bindingNode.renderable) {
             this._binding.engine.saveBinding(this.ref, this._binding);
@@ -155,7 +147,7 @@ class BindingState {
      */
     inactivate() {
         this._binding.engine.removeBinding(this.ref, this._binding);
-        this._ref = null;
+        this._ref = this._internal.nullRef;
         this._loopContext = null;
     }
 }
