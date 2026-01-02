@@ -233,16 +233,19 @@ class BindContent {
     mountAfter(parentNode, afterNode) {
         const useFragment = parentNode.isConnected && this.childNodes.length > 1;
         const beforeNode = afterNode?.nextSibling ?? null;
-        let workParentNode = parentNode;
         if (useFragment) {
+            // Optimization: use DocumentFragment for connected DOM
             workFragment.textContent = "";
-            workParentNode = workFragment;
+            for (let i = 0; i < this.childNodes.length; i++) {
+                workFragment.appendChild(this.childNodes[i]);
+            }
+            parentNode.insertBefore(workFragment, beforeNode);
         }
-        for (let i = 0; i < this.childNodes.length; i++) {
-            workParentNode.appendChild(this.childNodes[i]);
-        }
-        if (useFragment) {
-            parentNode.insertBefore(workParentNode, beforeNode);
+        else {
+            // For disconnected nodes, insert directly
+            for (let i = 0; i < this.childNodes.length; i++) {
+                parentNode.insertBefore(this.childNodes[i], beforeNode);
+            }
         }
     }
     /**
