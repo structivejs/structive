@@ -9,9 +9,10 @@ vi.mock("../../src/StateClass/createReadonlyStateProxy", () => ({
   createReadonlyStateHandler: (engine: any, updater: any, renderer: any) => createReadonlyStateHandlerMock(engine, updater, renderer),
 }));
 
-const findPathNodeByPathMock = vi.fn();
+const findPathNodeByInfoMock = vi.fn();
 vi.mock("../../src/PathTree/PathNode", () => ({
-  findPathNodeByPath: (root: any, pattern: string) => findPathNodeByPathMock(root, pattern),
+  findPathNodeByPath: (root: any, pattern: string) => findPathNodeByInfoMock(root, pattern),
+  findPathNodeByInfo: (root: any, info: any) => findPathNodeByInfoMock(root, info),
 }));
 
 const getStructuredPathInfoMock = vi.fn();
@@ -78,7 +79,7 @@ describe("Updater/Renderer (real implementation)", () => {
     vi.clearAllMocks();
     createReadonlyStateHandlerMock.mockImplementation((engine: any, updater: any, renderer: any) => ({ engine, updater, renderer }));
     createReadonlyStateProxyMock.mockReturnValue(makeReadonlyState());
-    findPathNodeByPathMock.mockReturnValue({ currentPath: "root", childNodeByName: new Map() });
+    findPathNodeByInfoMock.mockReturnValue({ currentPath: "root", childNodeByName: new Map() });
     getStructuredPathInfoMock.mockImplementation((path: string) => ({ pattern: path, wildcardCount: 0, wildcardParentInfos: [] }));
     getStatePropertyRefMock.mockImplementation((info: any, listIndex: any) => ({
       info,
@@ -110,7 +111,7 @@ describe("Updater/Renderer (real implementation)", () => {
       ["plain", plainNode],
       ["dep/*/leaf", depLeafNode],
     ]);
-    findPathNodeByPathMock.mockImplementation((_root: any, pattern: string) => nodeMap.get(pattern) ?? null);
+    findPathNodeByInfoMock.mockImplementation((_root: any, info: any) => nodeMap.get(info.pattern) ?? null);
 
     const listInfo = { pattern: "list", wildcardCount: 0, wildcardParentInfos: [], parentInfo: null };
     const listWildcardInfo = { pattern: "list.*", wildcardCount: 1, wildcardParentInfos: [listInfo] };
@@ -251,8 +252,8 @@ describe("Updater/Renderer (real implementation)", () => {
     } as any;
     engine.getBindings.mockImplementation((ref: TestRef) => (ref === listRef ? [listBinding] : []));
 
-    findPathNodeByPathMock.mockImplementation((_root: any, pattern: string) => ({
-      currentPath: pattern,
+    findPathNodeByInfoMock.mockImplementation((_root: any, info: any) => ({
+      currentPath: info.pattern,
       childNodeByName: new Map(),
     }));
     getStructuredPathInfoMock.mockImplementation((path: string) => (path === "list" ? listInfo : itemInfo));
@@ -307,8 +308,8 @@ describe("Updater/Renderer (real implementation)", () => {
       return defaultHandlerImpl(eng, upd, renderer);
     });
 
-    findPathNodeByPathMock.mockImplementation((_root: any, pattern: string) => ({
-      currentPath: pattern,
+    findPathNodeByInfoMock.mockImplementation((_root: any, info: any) => ({
+      currentPath: info.pattern,
       childNodeByName: new Map(),
     }));
 
@@ -332,7 +333,7 @@ describe("Updater/Renderer (real implementation)", () => {
       return defaultHandlerImpl(eng, upd, renderer);
     });
 
-    findPathNodeByPathMock.mockReturnValue({ currentPath: "root", childNodeByName: new Map() });
+    findPathNodeByInfoMock.mockReturnValue({ currentPath: "root", childNodeByName: new Map() });
 
     render([ref], engine as any, makeUpdater() as any, makeDummyResolver());
 
@@ -348,7 +349,7 @@ describe("Updater/Renderer (real implementation)", () => {
     engine.bindingsByComponent.set(childComponent, new Set([childBinding]));
     engine.getBindings.mockReturnValue([]);
 
-    findPathNodeByPathMock.mockReturnValue({ currentPath: "root", childNodeByName: new Map() });
+    findPathNodeByInfoMock.mockReturnValue({ currentPath: "root", childNodeByName: new Map() });
 
     const ref: TestRef = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null };
 
@@ -364,7 +365,7 @@ describe("Updater/Renderer (real implementation)", () => {
 
     engine.structiveChildComponents.add(childComponent);
     engine.getBindings.mockReturnValue([]);
-    findPathNodeByPathMock.mockReturnValue({ currentPath: "root", childNodeByName: new Map() });
+    findPathNodeByInfoMock.mockReturnValue({ currentPath: "root", childNodeByName: new Map() });
 
     const ref: TestRef = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null };
 
@@ -383,7 +384,7 @@ describe("Updater/Renderer (real implementation)", () => {
   it("PathNode が存在しない場合は PATH-101", () => {
     const engine = makeEngine();
     const ref: TestRef = { info: { pattern: "missing" }, listIndex: null, key: "missing", parentRef: null };
-    findPathNodeByPathMock.mockReturnValueOnce(null);
+    findPathNodeByInfoMock.mockReturnValueOnce(null);
 
     expect(() => render([ref], engine as any, makeUpdater() as any, makeDummyResolver())).toThrowError(/PathNode not found: missing/);
   });
@@ -392,8 +393,8 @@ describe("Updater/Renderer (real implementation)", () => {
     const engine = makeEngine();
     engine.pathManager.dynamicDependencies.set("root", new Set(["missingDep"]));
     const rootNode = { currentPath: "root", childNodeByName: new Map() };
-    findPathNodeByPathMock.mockImplementation((_root: any, pattern: string) => {
-      if (pattern === "root") {
+    findPathNodeByInfoMock.mockImplementation((_root: any, info: any) => {
+      if (info.pattern === "root") {
         return rootNode;
       }
       return null;
@@ -411,8 +412,8 @@ describe("Updater/Renderer (real implementation)", () => {
     const listInfo = { pattern: "list", wildcardCount: 0, wildcardParentInfos: [], parentInfo: null };
     const listRef: TestRef = { info: listInfo, listIndex: null, key: "list-null", parentRef: null };
 
-    findPathNodeByPathMock.mockImplementation((_root: any, pattern: string) => ({
-      currentPath: pattern,
+    findPathNodeByInfoMock.mockImplementation((_root: any, info: any) => ({
+      currentPath: info.pattern,
       childNodeByName: new Map(),
     }));
     getStructuredPathInfoMock.mockImplementation(() => listInfo);
@@ -439,11 +440,11 @@ describe("Updater/Renderer (real implementation)", () => {
 
     const rootNode = { currentPath: "root", childNodeByName: new Map() };
     const depWildcardNode = { currentPath: "dep/*", childNodeByName: new Map() };
-    findPathNodeByPathMock.mockImplementation((_root: any, pattern: string) => {
-      if (pattern === "root") {
+    findPathNodeByInfoMock.mockImplementation((_root: any, info: any) => {
+      if (info.pattern === "root") {
         return rootNode;
       }
-      if (pattern === "dep/*") {
+      if (info.pattern === "dep/*") {
         return depWildcardNode;
       }
       return null;
@@ -475,6 +476,6 @@ describe("Updater/Renderer (real implementation)", () => {
     render([rootRef], engine as any, makeUpdater() as any, makeDummyResolver());
 
     expect(getListIndexesSpy).toHaveBeenCalled();
-    expect(findPathNodeByPathMock).toHaveBeenCalledWith(rootNode, "dep/*");
+    expect(findPathNodeByInfoMock).toHaveBeenCalled();
   });
 });

@@ -20,9 +20,10 @@ vi.mock("../../src/StateClass/createReadonlyStateProxy", () => ({
   createReadonlyStateHandler: (engine: any, updater: any, renderer: any) => createReadonlyStateHandlerMock(engine, updater, renderer),
 }));
 
-const findPathNodeByPathMock = vi.fn();
+const findPathNodeByInfoMock = vi.fn();
 vi.mock("../../src/PathTree/PathNode", () => ({
-  findPathNodeByPath: (root: any, pattern: string) => findPathNodeByPathMock(root, pattern),
+  findPathNodeByPath: (root: any, pattern: string) => findPathNodeByInfoMock(root, pattern),
+  findPathNodeByInfo: (root: any, info: any) => findPathNodeByInfoMock(root, info),
 }));
 
 const getStructuredPathInfoMock = vi.fn();
@@ -94,7 +95,7 @@ describe("Renderer Real Implementation", () => {
       engine, updater, renderer 
     }));
     createReadonlyStateProxyMock.mockReturnValue(makeReadonlyState());
-    findPathNodeByPathMock.mockImplementation((_root: any, pattern: string) => ({
+    findPathNodeByInfoMock.mockImplementation((_root: any, pattern: string) => ({
       childNodeByName: new Map<string, any>(),
       currentPath: pattern,
     }));
@@ -137,7 +138,7 @@ describe("Renderer Real Implementation", () => {
       const resolveSpy = vi.spyOn(resolver, "resolve");
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
       
@@ -153,7 +154,7 @@ describe("Renderer Real Implementation", () => {
       const resolveSpy = vi.spyOn(resolver, "resolve");
 
       // Make render throw by returning null for PathNode
-      findPathNodeByPathMock.mockReturnValue(null);
+      findPathNodeByInfoMock.mockReturnValue(null);
 
       const ref = { info: { pattern: "missing" }, listIndex: null, key: "missing-null", parentRef: null } as any;
       
@@ -173,7 +174,7 @@ describe("Renderer Real Implementation", () => {
       renderer.updatedBindings.add({ key: "old-binding" } as any);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
       renderer.render([ref]);
@@ -189,7 +190,7 @@ describe("Renderer Real Implementation", () => {
       const renderer = createRenderer(engine, updater);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref1 = { info: { pattern: "a" }, listIndex: null, key: "a-null", parentRef: null } as any;
       const ref2 = { info: { pattern: "b" }, listIndex: null, key: "b-null", parentRef: null } as any;
@@ -320,7 +321,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([binding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       getStatePropertyRefMock.mockImplementation((info: any, listIndex: any) => {
         if (info === parentInfo && listIndex === null) return listRef;
@@ -357,7 +358,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([binding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       getStatePropertyRefMock.mockImplementation((info: any, listIndex: any) => {
         if (info === parentInfo && listIndex === null) return listRef;
@@ -402,7 +403,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([binding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -416,7 +417,7 @@ describe("Renderer Real Implementation", () => {
 
     it("should throw PATH-101 if PathNode not found in phase 3", () => {
       const engine = makeEngine();
-      findPathNodeByPathMock.mockReturnValue(null);
+      findPathNodeByInfoMock.mockReturnValue(null);
 
       const ref = { info: { pattern: "missing" }, listIndex: null, key: "missing-null", parentRef: null } as any;
 
@@ -432,7 +433,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([binding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -456,7 +457,7 @@ describe("Renderer Real Implementation", () => {
       engine.bindingsByComponent.set(mockComponent, new Set([componentBinding]));
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -473,7 +474,7 @@ describe("Renderer Real Implementation", () => {
       // structiveChildComponents is empty by default
       
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -491,7 +492,7 @@ describe("Renderer Real Implementation", () => {
       // No bindings set for component
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -518,7 +519,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([buildPhaseBinding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -550,7 +551,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([buildPhaseBinding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -578,7 +579,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([buildPhaseBinding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -607,7 +608,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([buildPhaseBinding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -638,7 +639,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([buildPhaseBinding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -665,7 +666,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([buildPhaseBinding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -694,7 +695,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([binding, binding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       const ref = { info: { pattern: "root" }, listIndex: null, key: "root-null", parentRef: null } as any;
 
@@ -723,7 +724,7 @@ describe("Renderer Real Implementation", () => {
         childNodeByName: new Map([[WILDCARD, childNode]]), 
         currentPath: "root" 
       };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       getStructuredPathInfoMock.mockImplementation((path: string) => ({
         pattern: path,
@@ -763,7 +764,7 @@ describe("Renderer Real Implementation", () => {
         childNodeByName: new Map([[WILDCARD, childNode]]), 
         currentPath: "root" 
       };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       getStructuredPathInfoMock.mockImplementation((path: string) => ({
         pattern: path,
@@ -800,9 +801,9 @@ describe("Renderer Real Implementation", () => {
         childNodeByName: new Map([["child", childNode]]), 
         currentPath: "root" 
       };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
-        if (pattern === "root.child") return childNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
+        if (info.pattern === "root.child") return childNode;
         return null;
       });
 
@@ -836,9 +837,9 @@ describe("Renderer Real Implementation", () => {
         childNodeByName: new Map([["child", childNode]]), 
         currentPath: "root" 
       };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
-        if (pattern === "root.child") return childNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
+        if (info.pattern === "root.child") return childNode;
         return null;
       });
 
@@ -874,9 +875,9 @@ describe("Renderer Real Implementation", () => {
 
       const depNode = { childNodeByName: new Map(), currentPath: "dep" };
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
-        if (pattern === "dep") return depNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
+        if (info.pattern === "dep") return depNode;
         return null;
       });
 
@@ -906,8 +907,8 @@ describe("Renderer Real Implementation", () => {
       engine.pathManager.dynamicDependencies.set("root", new Set(["missingDep"]));
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
         return null;
       });
 
@@ -938,9 +939,9 @@ describe("Renderer Real Implementation", () => {
 
       const depNode = { childNodeByName: new Map(), currentPath: "dep.*" };
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
-        if (pattern === "dep.*") return depNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
+        if (info.pattern === "dep.*") return depNode;
         return null;
       });
 
@@ -990,9 +991,9 @@ describe("Renderer Real Implementation", () => {
 
       const depNode = { childNodeByName: new Map(), currentPath: "dep.*.sub.*" };
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
-        if (pattern === "dep.*.sub.*") return depNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
+        if (info.pattern === "dep.*.sub.*") return depNode;
         return null;
       });
 
@@ -1030,9 +1031,9 @@ describe("Renderer Real Implementation", () => {
 
       const depNode = { childNodeByName: new Map(), currentPath: "dep" };
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
-        if (pattern === "dep") return depNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
+        if (info.pattern === "dep") return depNode;
         return null;
       });
 
@@ -1074,9 +1075,9 @@ describe("Renderer Real Implementation", () => {
 
       const depNode = { childNodeByName: new Map(), currentPath: "dep.*" };
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
-        if (pattern === "dep.*") return depNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
+        if (info.pattern === "dep.*") return depNode;
         return null;
       });
 
@@ -1122,9 +1123,9 @@ describe("Renderer Real Implementation", () => {
 
       const depNode = { childNodeByName: new Map(), currentPath: "dep.*.sub.*" };
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
-        if (pattern === "dep.*.sub.*") return depNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
+        if (info.pattern === "dep.*.sub.*") return depNode;
         return null;
       });
 
@@ -1168,9 +1169,9 @@ describe("Renderer Real Implementation", () => {
 
       const depNode = { childNodeByName: new Map(), currentPath: "dep.*" };
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
-        if (pattern === "dep.*") return depNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
+        if (info.pattern === "dep.*") return depNode;
         return null;
       });
 
@@ -1205,9 +1206,9 @@ describe("Renderer Real Implementation", () => {
 
       const depNode = { childNodeByName: new Map(), currentPath: "dep.*" };
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockImplementation((_, pattern) => {
-        if (pattern === "root") return topNode;
-        if (pattern === "dep.*") return depNode;
+      findPathNodeByInfoMock.mockImplementation((_, info) => {
+        if (info.pattern === "root") return topNode;
+        if (info.pattern === "dep.*") return depNode;
         return null;
       });
 
@@ -1258,7 +1259,7 @@ describe("Renderer Real Implementation", () => {
       engine.getBindings.mockReturnValue([binding, binding]);
 
       const topNode = { childNodeByName: new Map(), currentPath: "root" };
-      findPathNodeByPathMock.mockReturnValue(topNode);
+      findPathNodeByInfoMock.mockReturnValue(topNode);
 
       getStatePropertyRefMock.mockImplementation((info: any, listIndex: any) => {
         if (info === parentInfo && listIndex === null) return listRef;
@@ -1402,7 +1403,7 @@ describe("Renderer Real Implementation", () => {
       
       try {
         const engine = makeEngine();
-        findPathNodeByPathMock.mockReturnValue({
+        findPathNodeByInfoMock.mockReturnValue({
           childNodeByName: new Map(),
           currentPath: "root",
         });
@@ -1482,7 +1483,7 @@ describe("Renderer Real Implementation", () => {
       
       try {
         const engine = makeEngine();
-        findPathNodeByPathMock.mockReturnValue({
+        findPathNodeByInfoMock.mockReturnValue({
           childNodeByName: new Map(),
           currentPath: "root",
         });
@@ -1516,7 +1517,7 @@ describe("Renderer Real Implementation", () => {
       
       try {
         const engine = makeEngine();
-        findPathNodeByPathMock.mockReturnValue({
+        findPathNodeByInfoMock.mockReturnValue({
           childNodeByName: new Map(),
           currentPath: "root",
         });

@@ -1,5 +1,5 @@
 import { WILDCARD } from "../constants";
-import { findPathNodeByPath } from "../PathTree/PathNode";
+import { findPathNodeByInfo } from "../PathTree/PathNode";
 import { createReadonlyStateHandler, createReadonlyStateProxy } from "../StateClass/createReadonlyStateProxy";
 import { GetListIndexesByRefSymbol } from "../StateClass/symbols";
 import { getStructuredPathInfo } from "../StateProperty/getStructuredPathInfo";
@@ -180,7 +180,7 @@ class Renderer {
             for (let i = 0; i < remainItems.length; i++) {
                 const ref = remainItems[i];
                 // Find the PathNode for this ref pattern
-                const node = findPathNodeByPath(this._engine.pathManager.rootNode, ref.info.pattern);
+                const node = findPathNodeByInfo(this._engine.pathManager.rootNode, ref.info);
                 if (node === null) {
                     raiseError({
                         code: "PATH-101",
@@ -313,7 +313,7 @@ class Renderer {
         if (deps) {
             for (const depPath of deps) {
                 const depInfo = getStructuredPathInfo(depPath);
-                const depNode = findPathNodeByPath(this._engine.pathManager.rootNode, depInfo.pattern);
+                const depNode = findPathNodeByInfo(this._engine.pathManager.rootNode, depInfo);
                 if (depNode === null) {
                     raiseError({
                         code: "PATH-101",

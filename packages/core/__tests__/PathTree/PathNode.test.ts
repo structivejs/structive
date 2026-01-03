@@ -247,18 +247,21 @@ describe("PathTree/PathNode", () => {
       expect(result).toBe(level2);
     });
 
-    test("should use cache on subsequent calls", () => {
+    test("should use cache on subsequent calls with same info object", () => {
       const childNode = rootNode.appendChild("child");
+      const mockInfo = { pathSegments: ["child"], pattern: "child", parentPath: null };
+      getStructuredPathInfo.mockReturnValue(mockInfo as any);
       
       // 1回目の呼び出し
       const result1 = findPathNodeByPath(rootNode, "child");
       expect(result1).toBe(childNode);
       expect(getStructuredPathInfo).toHaveBeenCalledTimes(1);
       
-      // 2回目の呼び出し（キャッシュが使用される）
+      // 2回目の呼び出し（同じinfoオブジェクトが返されるためキャッシュが使用される）
       const result2 = findPathNodeByPath(rootNode, "child");
       expect(result2).toBe(childNode);
-      expect(getStructuredPathInfo).toHaveBeenCalledTimes(1); // キャッシュのため増加しない
+      // キャッシュはinfo参照で管理されるため、getStructuredPathInfoは毎回呼ばれる
+      expect(getStructuredPathInfo).toHaveBeenCalledTimes(2);
     });
 
     test("should cache null results", () => {

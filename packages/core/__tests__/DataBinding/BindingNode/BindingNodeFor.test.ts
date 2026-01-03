@@ -1,4 +1,4 @@
-ï»¿import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createBindingNodeFor } from "../../../src/DataBinding/BindingNode/BindingNodeFor";
 import { createBindingStub, createEngineStub, createRendererStub } from "../helpers/bindingNodeHarness";
 import * as registerTemplateMod from "../../../src/Template/registerTemplate";
@@ -56,7 +56,7 @@ describe("BindingNodeFor coverage", () => {
     };
   }
 
-  it("assignValue ã¯æœªå®Ÿè£…ã‚¨ãƒ©ãƒ¼", () => {
+  it("assignValue ‚Í–¢À‘•ƒGƒ‰[", () => {
     const engine = createEngineStub();
     const comment = document.createComment("@@|310");
     const binding = createBindingStub(engine, comment);
@@ -66,7 +66,7 @@ describe("BindingNodeFor coverage", () => {
     expect(err.message).toMatch(/Binding assignValue not implemented/);
   });
 
-  it("newIndexes ã«å¿œã˜ãŸ BindContent ã®ãƒã‚¦ãƒ³ãƒˆï¼ˆæœ€å°é™ï¼‰", () => {
+  it("newIndexes ‚É‰‚¶‚½ BindContent ‚Ìƒ}ƒEƒ“ƒgiÅ¬ŒÀj", () => {
     const engine = createEngineStub();
     const comment = document.createComment("@@|200");
     const binding = createBindingStub(engine, comment);
@@ -99,7 +99,7 @@ describe("BindingNodeFor coverage", () => {
     expect(container.childNodes.length).toBeGreaterThan(1);
   });
 
-  it("updatedBindings ã®ç®¡ç†ã¯ Binding å´ã§è¡Œã‚ã‚Œã‚‹", () => {
+  it("updatedBindings ‚ÌŠÇ—‚Í Binding ‘¤‚Ås‚í‚ê‚é", () => {
     const engine = createEngineStub();
     const comment = document.createComment("@@|300");
     const binding = createBindingStub(engine, comment);
@@ -114,10 +114,10 @@ describe("BindingNodeFor coverage", () => {
     });
     node.applyChange(renderer);
     expect(renderer.calcListDiff).toHaveBeenCalledTimes(1);
-    expect(container.childNodes.length).toBe(1); // ã‚³ãƒ¡ãƒ³ãƒˆã®ã¿
+    expect(container.childNodes.length).toBe(1); // ƒRƒƒ“ƒg‚Ì‚İ
   });
 
-  it("å…¨è¿½åŠ  -> å…¨å‰Šé™¤æœ€é©åŒ– -> ãƒ—ãƒ¼ãƒ«å†åˆ©ç”¨ï¼ˆcreateBindContent ãŒå¢—ãˆãªã„ï¼‰", () => {
+  it("‘S’Ç‰Á -> ‘SíœÅ“K‰» -> ƒv[ƒ‹Ä—˜—picreateBindContent ‚ª‘‚¦‚È‚¢j", () => {
     setupTemplate();
     const spyCreate = vi.spyOn(BindContentMod, "createBindContent");
 
@@ -129,7 +129,7 @@ describe("BindingNodeFor coverage", () => {
 
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-    // 1) å…¨è¿½åŠ ï¼ˆ2ä»¶ï¼‰: DocumentFragment çµŒç”±
+    // 1) ‘S’Ç‰Ái2Œj: DocumentFragment Œo—R
     const idxA = createIndexes(2);
     const listDiff1 = {
       oldListValue: [],
@@ -143,22 +143,22 @@ describe("BindingNodeFor coverage", () => {
     expect(container.childNodes.length).toBeGreaterThan(1);
     expect(spyCreate).toHaveBeenCalledTimes(2);
 
-    // 2) å…¨å‰Šé™¤æœ€é©åŒ–ï¼ˆold ã®ä»¶æ•° == removes ã‚µã‚¤ã‚ºï¼‰
+    // 2) ‘SíœÅ“K‰»iold ‚ÌŒ” == removes ƒTƒCƒYj
     const listDiff2 = {
       oldListValue: [{}, {}],
       newListValue: [],
       newIndexes: [],
       adds: new Set(),
-      removes: new Set(idxA), // 2ä»¶ã¨ã‚‚å‰Šé™¤
+      removes: new Set(idxA), // 2Œ‚Æ‚àíœ
     } as any;
     const renderer2 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => listDiff2) });
     node.applyChange(renderer2);
-    // ã‚³ãƒ¡ãƒ³ãƒˆã®ã¿æ®‹ã‚‹
+    // ƒRƒƒ“ƒg‚Ì‚İc‚é
     expect(container.childNodes.length).toBe(1);
-    // ãƒ—ãƒ¼ãƒ«ã¸ç§»å‹•ã™ã‚‹ã ã‘ã§æ–°è¦ä½œæˆã¯ãªã—
+    // ƒv[ƒ‹‚ÖˆÚ“®‚·‚é‚¾‚¯‚ÅV‹Kì¬‚Í‚È‚µ
     expect(spyCreate).toHaveBeenCalledTimes(2);
 
-    // 3) å†åº¦ 2 ä»¶è¿½åŠ ï¼ˆãƒ—ãƒ¼ãƒ«å†åˆ©ç”¨ã§ createBindContent ã¯å¢—ãˆãªã„ï¼‰
+    // 3) Ä“x 2 Œ’Ç‰Áiƒv[ƒ‹Ä—˜—p‚Å createBindContent ‚Í‘‚¦‚È‚¢j
     const idxB = createIndexes(2).map((x) => ({ index: x.index }) as any);
     const listDiff3 = {
       oldListValue: [],
@@ -170,10 +170,10 @@ describe("BindingNodeFor coverage", () => {
     const renderer3 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => listDiff3) });
     node.applyChange(renderer3);
     expect(container.childNodes.length).toBeGreaterThan(1);
-    expect(spyCreate).toHaveBeenCalledTimes(2); // å¢—ãˆãªã„ -> ãƒ—ãƒ¼ãƒ«å†åˆ©ç”¨
+    expect(spyCreate).toHaveBeenCalledTimes(2); // ‘‚¦‚È‚¢ -> ƒv[ƒ‹Ä—˜—p
   });
 
-  it("éƒ¨åˆ†å‰Šé™¤ï¼ˆ1ä»¶ï¼‰ã¨ éå…¨è¿½åŠ ï¼ˆ1ä»¶ï¼‰", () => {
+  it("•”•ªíœi1Œj‚Æ ”ñ‘S’Ç‰Ái1Œj", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|302");
@@ -182,7 +182,7 @@ describe("BindingNodeFor coverage", () => {
     container.appendChild(comment);
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-    // åˆæœŸ 3ä»¶è¿½åŠ 
+    // ‰Šú 3Œ’Ç‰Á
     const idx0 = createIndexes(3);
     const diffAdd3 = {
       oldListValue: [],
@@ -196,7 +196,7 @@ describe("BindingNodeFor coverage", () => {
     const childCountAfter3 = container.childNodes.length;
     expect(childCountAfter3).toBeGreaterThan(1);
 
-    // ä¸­å¤®ã®1ä»¶ã‚’å‰Šé™¤ï¼ˆéƒ¨åˆ†å‰Šé™¤ï¼‰
+    // ’†‰›‚Ì1Œ‚ğíœi•”•ªíœj
     const idxRemain = [idx0[0], idx0[2]];
     const diffRemove1 = {
       oldListValue: [{}, {}, {}],
@@ -209,7 +209,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(r2);
     expect(container.childNodes.length).toBeLessThan(childCountAfter3);
 
-    // æ–°ã—ã„1ä»¶ã‚’è¿½åŠ ï¼ˆéå…¨è¿½åŠ ï¼‰
+    // V‚µ‚¢1Œ‚ğ’Ç‰Ái”ñ‘S’Ç‰Áj
     const idxNew = [...idxRemain, { index: 2 } as any];
     const diffAdd1 = {
       oldListValue: [{}, {}],
@@ -220,10 +220,10 @@ describe("BindingNodeFor coverage", () => {
     } as any;
     const r3 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diffAdd1) });
     node.applyChange(r3);
-    expect(container.childNodes.length).toBe(childCountAfter3); // 3ä»¶ã«æˆ»ã‚‹æƒ³å®š
+    expect(container.childNodes.length).toBe(childCountAfter3); // 3Œ‚É–ß‚é‘z’è
   });
 
-  it("parentNode ãŒ null ã ã¨ã‚¨ãƒ©ãƒ¼", () => {
+  it("parentNode ‚ª null ‚¾‚ÆƒGƒ‰[", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|303");
@@ -242,7 +242,7 @@ describe("BindingNodeFor coverage", () => {
   expect(() => node.applyChange(renderer)).toThrowError(/Parent node not found/i);
   });
 
-  it("removes ãŒ undefined ã§ã‚‚ä¾‹å¤–ãªã—ï¼ˆç©ºæ›´æ–°ï¼‰", () => {
+  it("removes ‚ª undefined ‚Å‚à—áŠO‚È‚µi‹óXVj", () => {
     const engine = createEngineStub();
     const comment = document.createComment("@@|306");
     const binding = createBindingStub(engine, comment);
@@ -262,7 +262,7 @@ describe("BindingNodeFor coverage", () => {
     expect(container.childNodes.length).toBe(1);
   });
 
-  it("readonlyState ãŒ undefined/null ã‚’è¿”ã—ã¦ã‚‚ç©ºæ‰±ã„", () => {
+  it("readonlyState ‚ª undefined/null ‚ğ•Ô‚µ‚Ä‚à‹óˆµ‚¢", () => {
     const engine = createEngineStub();
     const comment = document.createComment("@@|306");
     const binding = createBindingStub(engine, comment);
@@ -293,11 +293,11 @@ describe("BindingNodeFor coverage", () => {
       calcListDiff: vi.fn(() => diff),
     });
 
-    // ç¾åœ¨ã®å®Ÿè£…ã§ã¯ undefined ã®å ´åˆã¯é…åˆ—ãƒã‚§ãƒƒã‚¯ã§ã‚¨ãƒ©ãƒ¼ã«ãªã‚‹
+    // Œ»İ‚ÌÀ‘•‚Å‚Í undefined ‚Ìê‡‚Í”z—ñƒ`ƒFƒbƒN‚ÅƒGƒ‰[‚É‚È‚é
     expect(() => node.applyChange(renderer)).toThrow(/Loop value is not array/);
   });
 
-  it("Loop value ãŒ null ã®å ´åˆã€receivedType ã« null ã‚’è¨­å®šã™ã‚‹", () => {
+  it("Loop value ‚ª null ‚Ìê‡AreceivedType ‚É null ‚ğİ’è‚·‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|406");
@@ -318,7 +318,7 @@ describe("BindingNodeFor coverage", () => {
     expect(err.context?.receivedType).toBe("null");
   });
 
-  it("removes: æœªç™»éŒ²ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã§ BindContent not found", () => {
+  it("removes: –¢“o˜^ƒCƒ“ƒfƒbƒNƒX‚Å BindContent not found", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|307");
@@ -354,7 +354,7 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(rendererRemove)).toThrow(/BindContent not found/);
   });
 
-  it("reuse: æœªç™»éŒ²ã ã¨ BindContent not found", () => {
+  it("reuse: –¢“o˜^‚¾‚Æ BindContent not found", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|308");
@@ -377,10 +377,10 @@ describe("BindingNodeFor coverage", () => {
     const bindContentMap = capture.getMap();
     capture.restore();
 
-    // WeakMapã‹ã‚‰å‰Šé™¤ã—ã¦ã‚¨ãƒ©ãƒ¼ã‚’ç™ºç”Ÿã•ã›ã‚‹
+    // WeakMap‚©‚çíœ‚µ‚ÄƒGƒ‰[‚ğ”­¶‚³‚¹‚é
     bindContentMap.delete(idx[1]);
 
-    // æ–°ã—ã„Indexã‚’è¿½åŠ ã—ã¦hasAdds=trueã«ã—ã€æ—¢å­˜ã®Indexã‚’å†åˆ©ç”¨ã—ã‚ˆã†ã¨ã™ã‚‹
+    // V‚µ‚¢Index‚ğ’Ç‰Á‚µ‚ÄhasAdds=true‚É‚µAŠù‘¶‚ÌIndex‚ğÄ—˜—p‚µ‚æ‚¤‚Æ‚·‚é
     const newIdx = createIndexes(1);
     const reuseDiff = {
       oldListValue: [{}, {}],
@@ -393,7 +393,7 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(rendererReuse)).toThrow(/BindContent not found/);
   });
 
-  it("reuse: ä¸¦ã³ãŒæ­£ã—ã‘ã‚Œã°å†ãƒã‚¦ãƒ³ãƒˆã—ãªã„ï¼ˆinsertBefore ãŒå‘¼ã°ã‚Œãªã„ï¼‰", () => {
+  it("reuse: •À‚Ñ‚ª³‚µ‚¯‚ê‚ÎÄƒ}ƒEƒ“ƒg‚µ‚È‚¢iinsertBefore ‚ªŒÄ‚Î‚ê‚È‚¢j", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|309");
@@ -402,7 +402,7 @@ describe("BindingNodeFor coverage", () => {
     container.appendChild(comment);
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-    // åˆå›: å…¨è¿½åŠ ã§2ä»¶
+    // ‰‰ñ: ‘S’Ç‰Á‚Å2Œ
     const idx2 = createIndexes(2);
     const diff1 = {
       oldListValue: [],
@@ -414,7 +414,7 @@ describe("BindingNodeFor coverage", () => {
     const r1 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff1) });
     node.applyChange(r1);
 
-    // 2å›ç›®: é †åºãã®ã¾ã¾ã€è¿½åŠ ãªã—ï¼ˆå†åˆ©ç”¨ã®ã¿ï¼‰
+    // 2‰ñ–Ú: ‡˜‚»‚Ì‚Ü‚ÜA’Ç‰Á‚È‚µiÄ—˜—p‚Ì‚İj
     const diff2 = {
       oldListValue: [{}, {}],
       newListValue: [{}, {}],
@@ -428,7 +428,7 @@ describe("BindingNodeFor coverage", () => {
     expect(spyInsert).not.toHaveBeenCalled();
   });
 
-  it("ãƒ—ãƒ¼ãƒ«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã¯åˆæœŸå€¤ -1", () => {
+  it("ƒv[ƒ‹ƒCƒ“ƒfƒbƒNƒX‚Í‰Šú’l -1", () => {
     const engine = createEngineStub();
     const comment = document.createComment("@@|304");
     const binding = createBindingStub(engine, comment);
@@ -436,20 +436,20 @@ describe("BindingNodeFor coverage", () => {
     expect(node._bindContentPoolIndex).toBe(-1);
   });
 
-  it("_loopInfo ã¯ã‚­ãƒ£ãƒƒã‚·ãƒ¥ã•ã‚Œã€getStructuredPathInfo ã¯1å›ã®ã¿", () => {
+  it("_loopInfo ‚ÍƒLƒƒƒbƒVƒ…‚³‚êAgetStructuredPathInfo ‚Í1‰ñ‚Ì‚İ", () => {
     const spy = vi.spyOn(GetStructuredPathInfoMod, "getStructuredPathInfo");
     const engine = createEngineStub();
     const comment = document.createComment("@@|305");
     const binding = createBindingStub(engine, comment);
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
-    // 2å›ã‚¢ã‚¯ã‚»ã‚¹
+    // 2‰ñƒAƒNƒZƒX
     const a = node._loopInfo;
     const b = node._loopInfo;
     expect(a).toBe(b);
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  it("å…¨å‰Šé™¤æœ€é©åŒ–: è¦ªãƒãƒ¼ãƒ‰ãŒã“ã®ãƒãƒ¼ãƒ‰ã®ã¿ã‚’å«ã‚€å ´åˆã®æœ€é©åŒ–", () => {
+  it("‘SíœÅ“K‰»: eƒm[ƒh‚ª‚±‚Ìƒm[ƒh‚Ì‚İ‚ğŠÜ‚Şê‡‚ÌÅ“K‰»", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|310");
@@ -458,7 +458,7 @@ describe("BindingNodeFor coverage", () => {
     container.appendChild(comment);
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-    // åˆæœŸ: 2ä»¶è¿½åŠ 
+    // ‰Šú: 2Œ’Ç‰Á
     const idx2 = createIndexes(2);
     const diff1 = {
       oldListValue: [],
@@ -471,12 +471,12 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(r1);
     expect(container.childNodes.length).toBeGreaterThan(1);
 
-    // è¦ªãƒãƒ¼ãƒ‰ã«ãƒ†ã‚­ã‚¹ãƒˆãƒãƒ¼ãƒ‰ï¼ˆç©ºç™½ï¼‰ã‚’è¿½åŠ ã—ã¦ãƒ–ãƒ©ãƒ³ã‚¯ãƒãƒ¼ãƒ‰å‡¦ç†ã‚’ãƒ†ã‚¹ãƒˆ
+    // eƒm[ƒh‚ÉƒeƒLƒXƒgƒm[ƒhi‹ó”’j‚ğ’Ç‰Á‚µ‚Äƒuƒ‰ƒ“ƒNƒm[ƒhˆ—‚ğƒeƒXƒg
     const blankTextNode = document.createTextNode("   ");
     container.appendChild(blankTextNode);
     const initialLength = container.childNodes.length;
     
-    // å…¨å‰Šé™¤: è¦ªãƒãƒ¼ãƒ‰ãŒã“ã®ãƒãƒ¼ãƒ‰ã®ã¿ã‚’å«ã‚€å ´åˆï¼ˆãƒ–ãƒ©ãƒ³ã‚¯ãƒãƒ¼ãƒ‰ã¯ç„¡è¦–ï¼‰
+    // ‘Síœ: eƒm[ƒh‚ª‚±‚Ìƒm[ƒh‚Ì‚İ‚ğŠÜ‚Şê‡iƒuƒ‰ƒ“ƒNƒm[ƒh‚Í–³‹j
     const diff2 = {
       oldListValue: [{}, {}],
       newListValue: [],
@@ -486,25 +486,25 @@ describe("BindingNodeFor coverage", () => {
     } as any;
     const r2 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff2) });
     node.applyChange(r2);
-    // å…¨å‰Šé™¤æœ€é©åŒ–ã§innerHTML = '' ãŒå®Ÿè¡Œã•ã‚Œã‚‹ãŸã‚ã€ã‚³ãƒ¡ãƒ³ãƒˆã®ã¿æ®‹ã‚‹ï¼ˆãƒ–ãƒ©ãƒ³ã‚¯ãƒ†ã‚­ã‚¹ãƒˆã‚‚å‰Šé™¤ã•ã‚Œã‚‹ï¼‰
+    // ‘SíœÅ“K‰»‚ÅinnerHTML = '' ‚ªÀs‚³‚ê‚é‚½‚ßAƒRƒƒ“ƒg‚Ì‚İc‚éiƒuƒ‰ƒ“ƒNƒeƒLƒXƒg‚àíœ‚³‚ê‚éj
     expect(container.childNodes.length).toBe(1);
     expect(container.firstChild).toBe(comment);
   });
 
-  it("å…¨è¿½åŠ æœ€é©åŒ–: DocumentFragment ã‚’ä½¿ç”¨ã—ãŸä¸€æ‹¬è¿½åŠ ", () => {
+  it("‘S’Ç‰ÁÅ“K‰»: DocumentFragment ‚ğg—p‚µ‚½ˆêŠ‡’Ç‰Á", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|311");
     const binding = createBindingStub(engine, comment);
     const container = document.createElement("div");
     container.appendChild(comment);
-    // DOMã«æ¥ç¶šã—ã¦isConnectedã‚’trueã«ã™ã‚‹
+    // DOM‚ÉÚ‘±‚µ‚ÄisConnected‚ğtrue‚É‚·‚é
     document.body.appendChild(container);
     
     try {
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // ä¸€åº¦å‰Šé™¤ã—ã¦ãƒ—ãƒ¼ãƒ«ã«è¦ç´ ã‚’æºœã‚ã‚‹
+      // ˆê“xíœ‚µ‚Äƒv[ƒ‹‚É—v‘f‚ğ—­‚ß‚é
       const idx3 = createIndexes(3);
       const diff1 = {
         oldListValue: [],
@@ -526,7 +526,7 @@ describe("BindingNodeFor coverage", () => {
       const r2 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff2) });
       node.applyChange(r2);
 
-      // å…¨è¿½åŠ æœ€é©åŒ–: DocumentFragment çµŒç”±ã§ã®ä¸€æ‹¬è¿½åŠ 
+      // ‘S’Ç‰ÁÅ“K‰»: DocumentFragment Œo—R‚Å‚ÌˆêŠ‡’Ç‰Á
       const idxNew = createIndexes(2);
       const diff3 = {
         oldListValue: [],
@@ -536,11 +536,11 @@ describe("BindingNodeFor coverage", () => {
         removes: new Set(),
       } as any;
       const r3 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff3) });
-      // æ–°ã—ã„ã‚³ãƒ¼ãƒ‰ã§ã¯ parentNode.append(workFragment) ã‚’ä½¿ç”¨ã™ã‚‹
+      // V‚µ‚¢ƒR[ƒh‚Å‚Í parentNode.append(workFragment) ‚ğg—p‚·‚é
       const spyAppend = vi.spyOn(container, "append");
       node.applyChange(r3);
       expect(container.childNodes.length).toBeGreaterThan(1);
-      // DocumentFragment ã«ã‚ˆã‚‹ä¸€æ‹¬è¿½åŠ ãŒè¡Œã‚ã‚Œã‚‹
+      // DocumentFragment ‚É‚æ‚éˆêŠ‡’Ç‰Á‚ªs‚í‚ê‚é
       expect(spyAppend).toHaveBeenCalled();
       expect(spyAppend.mock.calls[0][0]).toBeInstanceOf(DocumentFragment);
     } finally {
@@ -548,7 +548,7 @@ describe("BindingNodeFor coverage", () => {
     }
   });
 
-  it("ä¸¦ã³æ›¿ãˆå‡¦ç†: changeIndexes ã«ã‚ˆã‚‹ DOM ä½ç½®èª¿æ•´", () => {
+  it("•À‚Ñ‘Ö‚¦ˆ—: changeIndexes ‚É‚æ‚é DOM ˆÊ’u’²®", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|312");
@@ -557,7 +557,7 @@ describe("BindingNodeFor coverage", () => {
     container.appendChild(comment);
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-    // åˆæœŸ: 3ä»¶è¿½åŠ 
+    // ‰Šú: 3Œ’Ç‰Á
     const idx3 = createIndexes(3);
     const diff1 = {
       oldListValue: [],
@@ -569,7 +569,7 @@ describe("BindingNodeFor coverage", () => {
     const r1 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff1) });
     node.applyChange(r1);
 
-    // ä¸¦ã³æ›¿ãˆ: changeIndexes ã‚’ä½¿ç”¨ï¼ˆæ—¢å­˜ã®ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’åˆ©ç”¨ï¼‰
+    // •À‚Ñ‘Ö‚¦: changeIndexes ‚ğg—piŠù‘¶‚ÌƒCƒ“ƒfƒbƒNƒX‚ğ—˜—pj
     const changeIndexes = new Set([idx3[1], idx3[2]]);
     const diff2 = {
       oldListValue: [{}, {}, {}],
@@ -584,7 +584,7 @@ describe("BindingNodeFor coverage", () => {
     expect(container.childNodes.length).toBeGreaterThan(1);
   });
 
-  it("ä¸¦ã³æ›¿ãˆå‡¦ç†: changeIndexes ã§æœªç™»éŒ²ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã¯ã‚¨ãƒ©ãƒ¼", () => {
+  it("•À‚Ñ‘Ö‚¦ˆ—: changeIndexes ‚Å–¢“o˜^ƒCƒ“ƒfƒbƒNƒX‚ÍƒGƒ‰[", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|313");
@@ -629,7 +629,7 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(renderer)).toThrow(/BindContent not found/);
   });
 
-  it("changeIndexesSet ãŒã‚ã‚‹å ´åˆã«ãƒªã‚ªãƒ¼ãƒ€ãƒ¼å‡¦ç†ã‚’å®Ÿè¡Œã™ã‚‹", () => {
+  it("changeIndexesSet ‚ª‚ ‚éê‡‚ÉƒŠƒI[ƒ_[ˆ—‚ğÀs‚·‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|313");
@@ -674,7 +674,7 @@ describe("BindingNodeFor coverage", () => {
     expect(node.bindContents[1]).toBe(beforeOrder[0]);
   });
 
-  it("updatingRefSet ã® listIndex ãŒ null ã ã¨ã‚¨ãƒ©ãƒ¼", () => {
+  it("updatingRefSet ‚Ì listIndex ‚ª null ‚¾‚ÆƒGƒ‰[", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|314");
@@ -683,7 +683,7 @@ describe("BindingNodeFor coverage", () => {
     container.appendChild(comment);
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-    // ã¾ãšè¦ç´ ã‚’è¿½åŠ ã—ã¦ã‹ã‚‰ã€æ›´æ–°ãƒ†ã‚¹ãƒˆã‚’è¡Œã†
+    // ‚Ü‚¸—v‘f‚ğ’Ç‰Á‚µ‚Ä‚©‚çAXVƒeƒXƒg‚ğs‚¤
     const idx = createIndexes(2);
     const diffAdd = {
       oldListValue: [],
@@ -695,7 +695,7 @@ describe("BindingNodeFor coverage", () => {
     const rendererAdd = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diffAdd) });
     node.applyChange(rendererAdd);
 
-    // åŒã˜ListIndexã§æ›´æ–°ï¼ˆisAllNew=falseï¼‰ã®å ´åˆã€_getElementsResultãŒå‘¼ã°ã‚Œã‚‹
+    // “¯‚¶ListIndex‚ÅXViisAllNew=falsej‚Ìê‡A_getElementsResult‚ªŒÄ‚Î‚ê‚é
     const diff = {
       oldListValue: [{}, {}],
       newListValue: [{}, {}],
@@ -713,7 +713,7 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(renderer)).toThrow(/ListIndex is null/);
   });
 
-  it("changeListIndexes ã«ç´ä»˜ã„ãŸãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãŒå†è©•ä¾¡ã•ã‚Œã‚‹", () => {
+  it("changeListIndexes ‚É•R•t‚¢‚½ƒoƒCƒ“ƒfƒBƒ“ƒO‚ªÄ•]‰¿‚³‚ê‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|315");
@@ -756,7 +756,7 @@ describe("BindingNodeFor coverage", () => {
     expect(dependentBinding.applyChange).toHaveBeenCalled();
   });
 
-  it("changeListIndexes ã®ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãŒ updatedBindings ã«å«ã¾ã‚Œã‚‹å ´åˆã¯ã‚¹ã‚­ãƒƒãƒ—ã•ã‚Œã‚‹", () => {
+  it("changeListIndexes ‚ÌƒoƒCƒ“ƒfƒBƒ“ƒO‚ª updatedBindings ‚ÉŠÜ‚Ü‚ê‚éê‡‚ÍƒXƒLƒbƒv‚³‚ê‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|316");
@@ -803,7 +803,7 @@ describe("BindingNodeFor coverage", () => {
     expect(dependentBinding.applyChange).not.toHaveBeenCalled();
   });
 
-  it("changeListIndexes ã®ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãŒ renderable=false ã®å ´åˆã¯ã‚¹ã‚­ãƒƒãƒ—ã•ã‚Œã‚‹", () => {
+  it("changeListIndexes ‚ÌƒoƒCƒ“ƒfƒBƒ“ƒO‚ª renderable=false ‚Ìê‡‚ÍƒXƒLƒbƒv‚³‚ê‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|330");
@@ -823,7 +823,7 @@ describe("BindingNodeFor coverage", () => {
     const rendererAdd = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diffAdd) });
     node.applyChange(rendererAdd);
 
-    // renderable=false ã®ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ã‚’ä½œæˆ
+    // renderable=false ‚ÌƒoƒCƒ“ƒfƒBƒ“ƒO‚ğì¬
     const nonRenderableBinding = { 
       applyChange: vi.fn(),
       bindingNode: { renderable: false }
@@ -848,13 +848,13 @@ describe("BindingNodeFor coverage", () => {
     const renderer = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff) });
     node.applyChange(renderer);
 
-    // renderable=false ã®ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ã¯ã‚¹ã‚­ãƒƒãƒ—ã•ã‚Œã‚‹
+    // renderable=false ‚ÌƒoƒCƒ“ƒfƒBƒ“ƒO‚ÍƒXƒLƒbƒv‚³‚ê‚é
     expect(nonRenderableBinding.applyChange).not.toHaveBeenCalled();
-    // renderable=true ã®ãƒã‚¤ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ã¯å‘¼ã°ã‚Œã‚‹
+    // renderable=true ‚ÌƒoƒCƒ“ƒfƒBƒ“ƒO‚ÍŒÄ‚Î‚ê‚é
     expect(renderableBinding.applyChange).toHaveBeenCalled();
   });
 
-  it("processedRefs ã«å«ã¾ã‚Œã‚‹ updatingRef ã¯ã‚¹ã‚­ãƒƒãƒ—ã•ã‚Œã‚‹", () => {
+  it("processedRefs ‚ÉŠÜ‚Ü‚ê‚é updatingRef ‚ÍƒXƒLƒbƒv‚³‚ê‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|317");
@@ -883,7 +883,7 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(renderer)).not.toThrow();
   });
 
-  it("åˆ¥ãƒ‘ã‚¿ãƒ¼ãƒ³ã® updatingRef ã¯ç„¡è¦–ã•ã‚Œã‚‹", () => {
+  it("•Êƒpƒ^[ƒ“‚Ì updatingRef ‚Í–³‹‚³‚ê‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|318");
@@ -910,7 +910,7 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(renderer)).not.toThrow();
   });
 
-  it("ä¸Šæ›¸ãå‡¦ç†: overwrites ã«ã‚ˆã‚‹è¦ç´ ã®å†æç”»", () => {
+  it("ã‘‚«ˆ—: overwrites ‚É‚æ‚é—v‘f‚ÌÄ•`‰æ", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|314");
@@ -919,7 +919,7 @@ describe("BindingNodeFor coverage", () => {
     container.appendChild(comment);
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-    // åˆæœŸ: 2ä»¶è¿½åŠ 
+    // ‰Šú: 2Œ’Ç‰Á
     const idx2 = createIndexes(2);
     const diff1 = {
       oldListValue: [],
@@ -931,7 +931,7 @@ describe("BindingNodeFor coverage", () => {
     const r1 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff1) });
     node.applyChange(r1);
 
-    // ä¸Šæ›¸ãå‡¦ç†: overwrites ã‚’ä½¿ç”¨
+    // ã‘‚«ˆ—: overwrites ‚ğg—p
     const overwrites = new Set([idx2[0]]);
     const diff2 = {
       oldListValue: [{}, {}],
@@ -946,7 +946,7 @@ describe("BindingNodeFor coverage", () => {
     expect(container.childNodes.length).toBeGreaterThan(1);
   });
 
-  it("overwritesSet ã«å«ã¾ã‚Œã‚‹ BindContent ã¯å†æç”»ã•ã‚Œã‚‹", () => {
+  it("overwritesSet ‚ÉŠÜ‚Ü‚ê‚é BindContent ‚ÍÄ•`‰æ‚³‚ê‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|319");
@@ -993,7 +993,7 @@ describe("BindingNodeFor coverage", () => {
     spy.mockRestore();
   });
 
-  it("ä¸Šæ›¸ãå‡¦ç†: overwrites ã§æœªç™»éŒ²ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã¯ã‚¨ãƒ©ãƒ¼", () => {
+  it("ã‘‚«ˆ—: overwrites ‚Å–¢“o˜^ƒCƒ“ƒfƒbƒNƒX‚ÍƒGƒ‰[", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|315");
@@ -1013,8 +1013,8 @@ describe("BindingNodeFor coverage", () => {
     const rendererAdd = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diffAdd) });
     node.applyChange(rendererAdd);
 
-    // ä¸Šæ›¸ãå‡¦ç†: åŒã˜ListIndexã‚’ä½¿ç”¨ã™ã‚‹ãŒã€bindContentByListIndexã‹ã‚‰å–å¾—ã§ããªã„ã‚ˆã†ã«ã™ã‚‹
-    // åŒã˜ListIndexã‚’ä½¿ã†ï¼ˆ_oldListIndexSetã«å«ã¾ã‚Œã‚‹ï¼‰
+    // ã‘‚«ˆ—: “¯‚¶ListIndex‚ğg—p‚·‚é‚ªAbindContentByListIndex‚©‚çæ“¾‚Å‚«‚È‚¢‚æ‚¤‚É‚·‚é
+    // “¯‚¶ListIndex‚ğg‚¤i_oldListIndexSet‚ÉŠÜ‚Ü‚ê‚éj
     const overwriteIndex = idx[0];
     const diff = {
       oldListValue: [{}],
@@ -1025,8 +1025,8 @@ describe("BindingNodeFor coverage", () => {
     } as any;
     const listPath = binding.bindingState.info.pattern + ".*";
     
-    // bindContentByListIndexã‹ã‚‰æ‰‹å‹•ã§å‰Šé™¤ã—ã¦ã‚¨ãƒ©ãƒ¼ã‚’ç™ºç”Ÿã•ã›ã‚‹
-    // ç›´æ¥ã‚¢ã‚¯ã‚»ã‚¹ã—ã¦WeakMapã‹ã‚‰å‰Šé™¤
+    // bindContentByListIndex‚©‚çè“®‚Åíœ‚µ‚ÄƒGƒ‰[‚ğ”­¶‚³‚¹‚é
+    // ’¼ÚƒAƒNƒZƒX‚µ‚ÄWeakMap‚©‚çíœ
     const nodeAny = node as any;
     nodeAny._bindContentByListIndex.delete(overwriteIndex);
     
@@ -1039,7 +1039,7 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(renderer)).toThrow(/BindContent not found/);
   });
 
-  it("ListDiff ãŒ null ã®å ´åˆã¯ã‚¨ãƒ©ãƒ¼", () => {
+  it("ListDiff ‚ª null ‚Ìê‡‚ÍƒGƒ‰[", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|316");
@@ -1052,26 +1052,26 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(renderer)).toThrow(/ListDiff is null/);
   });
 
-  // Note: ãƒ†ã‚¹ãƒˆã€Œå…¨å‰Šé™¤æ™‚ã® Last BindContent not found ã‚¨ãƒ©ãƒ¼ã€ã¯å‰Šé™¤ã—ã¾ã—ãŸ
-  // æ–°ã—ã„ã‚³ãƒ¼ãƒ‰ã§ã¯ .at(-1) ã§ã¯ãªã [length - 1] ã‚’ä½¿ç”¨ã—ã¦ã„ã‚‹ãŸã‚ã€
-  // Array.prototype.at ã‚’ãƒ¢ãƒƒã‚¯ã—ã¦ã‚‚ã‚¨ãƒ©ãƒ¼ãƒ‘ã‚¹ã«åˆ°é”ã§ãã¾ã›ã‚“ã€‚
-  // ã¾ãŸã€bindContents ãŒç©ºã§ willRemoveAll=true ã«ãªã‚‹çŠ¶æ³ã¯æ­£å¸¸ãƒ•ãƒ­ãƒ¼ã§ã¯ç™ºç”Ÿã—ã¾ã›ã‚“ã€‚
+  // Note: ƒeƒXƒgu‘Síœ‚Ì Last BindContent not found ƒGƒ‰[v‚Ííœ‚µ‚Ü‚µ‚½
+  // V‚µ‚¢ƒR[ƒh‚Å‚Í .at(-1) ‚Å‚Í‚È‚­ [length - 1] ‚ğg—p‚µ‚Ä‚¢‚é‚½‚ßA
+  // Array.prototype.at ‚ğƒ‚ƒbƒN‚µ‚Ä‚àƒGƒ‰[ƒpƒX‚É“’B‚Å‚«‚Ü‚¹‚ñB
+  // ‚Ü‚½AbindContents ‚ª‹ó‚Å willRemoveAll=true ‚É‚È‚éó‹µ‚Í³íƒtƒ[‚Å‚Í”­¶‚µ‚Ü‚¹‚ñB
 
-  it("å…¨å‰Šé™¤æœ€é©åŒ–: ãƒ–ãƒ©ãƒ³ã‚¯ãƒãƒ¼ãƒ‰å‡¦ç†ã§firstNodeãŒnullä»¥å¤–", () => {
+  it("‘SíœÅ“K‰»: ƒuƒ‰ƒ“ƒNƒm[ƒhˆ—‚ÅfirstNode‚ªnullˆÈŠO", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|318");
     const binding = createBindingStub(engine, comment);
     const container = document.createElement("div");
     
-    // å…ˆé ­ã«é€šå¸¸ã®ãƒãƒ¼ãƒ‰ã‚’é…ç½®
+    // æ“ª‚É’Êí‚Ìƒm[ƒh‚ğ”z’u
     const normalNode = document.createElement("span");
     container.appendChild(normalNode);
     container.appendChild(comment);
     
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-    // åˆæœŸ: 1ä»¶è¿½åŠ 
+    // ‰Šú: 1Œ’Ç‰Á
     const idx1 = createIndexes(1);
     const diff1 = {
       oldListValue: [],
@@ -1083,7 +1083,7 @@ describe("BindingNodeFor coverage", () => {
     const r1 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff1) });
     node.applyChange(r1);
 
-    // å…¨å‰Šé™¤: è¦ªãƒãƒ¼ãƒ‰ã«ãã®ä»–ã®ãƒãƒ¼ãƒ‰ãŒã‚ã‚‹ãŸã‚æœ€é©åŒ–ã•ã‚Œãªã„
+    // ‘Síœ: eƒm[ƒh‚É‚»‚Ì‘¼‚Ìƒm[ƒh‚ª‚ ‚é‚½‚ßÅ“K‰»‚³‚ê‚È‚¢
     const diff2 = {
       oldListValue: [{}],
       newListValue: [],
@@ -1094,12 +1094,12 @@ describe("BindingNodeFor coverage", () => {
     const r2 = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff2) });
     node.applyChange(r2);
     
-    // é€šå¸¸ã®å‰Šé™¤å‡¦ç†ãŒå®Ÿè¡Œã•ã‚Œã‚‹ï¼ˆæœ€é©åŒ–ã•ã‚Œãªã„ï¼‰
+    // ’Êí‚Ìíœˆ—‚ªÀs‚³‚ê‚éiÅ“K‰»‚³‚ê‚È‚¢j
     expect(container.childNodes.length).toBeGreaterThan(1);
     expect(container.contains(normalNode)).toBe(true);
   });
 
-  it("å…¨å‰Šé™¤æœ€é©åŒ–ã§ãƒ–ãƒ©ãƒ³ã‚¯ãƒ†ã‚­ã‚¹ãƒˆã‚’æƒé™¤", () => {
+  it("‘SíœÅ“K‰»‚Åƒuƒ‰ƒ“ƒNƒeƒLƒXƒg‚ğ‘|œ", () => {
     setupTemplate();
     const engine = createEngineStub();
     const container = document.createElement("div");
@@ -1138,16 +1138,16 @@ describe("BindingNodeFor coverage", () => {
     expect(container.firstChild).toBe(comment);
   });
 
-  // Note: ãƒ†ã‚¹ãƒˆã€Œreuse åˆ†å²ã§ mountAfter ãŒå‘¼ã°ã‚Œã‚‹ã€ã¯å‰Šé™¤ã—ã¾ã—ãŸ
-  // æ–°ã—ã„ã‚³ãƒ¼ãƒ‰ã§ã¯ã€åŒã˜ListIndexã‚’å†åˆ©ç”¨ã™ã‚‹å ´åˆã€DOMé †åºã®ä¿®æ­£ã¯
-  // _reorderã‚’é€šã˜ã¦ã®ã¿è¡Œã‚ã‚Œã€elementsResult.changesãŒç©ºã§ãªã„ã¨ãã®ã¿å®Ÿè¡Œã•ã‚Œã¾ã™ã€‚
-  // å¤–éƒ¨ã‹ã‚‰DOMã‚’ç›´æ¥æ“ä½œã—ãŸå ´åˆã®ä¿®æ­£ã¯ã‚µãƒãƒ¼ãƒˆã•ã‚Œãªããªã‚Šã¾ã—ãŸã€‚
+  // Note: ƒeƒXƒgureuse •ªŠò‚Å mountAfter ‚ªŒÄ‚Î‚ê‚év‚Ííœ‚µ‚Ü‚µ‚½
+  // V‚µ‚¢ƒR[ƒh‚Å‚ÍA“¯‚¶ListIndex‚ğÄ—˜—p‚·‚éê‡ADOM‡˜‚ÌC³‚Í
+  // _reorder‚ğ’Ê‚¶‚Ä‚Ì‚İs‚í‚êAelementsResult.changes‚ª‹ó‚Å‚È‚¢‚Æ‚«‚Ì‚İÀs‚³‚ê‚Ü‚·B
+  // ŠO•”‚©‚çDOM‚ğ’¼Ú‘€ì‚µ‚½ê‡‚ÌC³‚ÍƒTƒ|[ƒg‚³‚ê‚È‚­‚È‚è‚Ü‚µ‚½B
 
-  // Note: ãƒ†ã‚¹ãƒˆã€ŒchangeIndexes ã§ index 0 ã®ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯ã‚’é€šã‚‹ã€ã¯å‰Šé™¤ã—ã¾ã—ãŸ
-  // æ–°ã—ã„ã‚³ãƒ¼ãƒ‰ã§ã¯ã€_reorderã¯elementsResult.changesãŒç©ºã§ãªã„ã¨ãã®ã¿å®Ÿè¡Œã•ã‚Œã¾ã™ã€‚
-  // calcListDiffã®çµæœã®changeIndexesã¯ä½¿ç”¨ã•ã‚Œãªããªã‚Šã¾ã—ãŸã€‚
+  // Note: ƒeƒXƒguchangeIndexes ‚Å index 0 ‚ÌƒtƒH[ƒ‹ƒoƒbƒN‚ğ’Ê‚év‚Ííœ‚µ‚Ü‚µ‚½
+  // V‚µ‚¢ƒR[ƒh‚Å‚ÍA_reorder‚ÍelementsResult.changes‚ª‹ó‚Å‚È‚¢‚Æ‚«‚Ì‚İÀs‚³‚ê‚Ü‚·B
+  // calcListDiff‚ÌŒ‹‰Ê‚ÌchangeIndexes‚Íg—p‚³‚ê‚È‚­‚È‚è‚Ü‚µ‚½B
 
-  it("oldListValue ãŒ undefined ã®å ´åˆã§ã‚‚ã‚¨ãƒ©ãƒ¼ã«ãªã‚‰ãªã„", () => {
+  it("oldListValue ‚ª undefined ‚Ìê‡‚Å‚àƒGƒ‰[‚É‚È‚ç‚È‚¢", () => {
     setupTemplate();
     const engine = createEngineStub();
     const container = document.createElement("div");
@@ -1167,7 +1167,7 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(renderer)).not.toThrow();
   });
 
-  it("newListValue ãŒ undefined ã§ã‚‚è¿½åŠ å‡¦ç†ã§ãã‚‹", () => {
+  it("newListValue ‚ª undefined ‚Å‚à’Ç‰Áˆ—‚Å‚«‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const container = document.createElement("div");
@@ -1188,7 +1188,7 @@ describe("BindingNodeFor coverage", () => {
     expect(() => node.applyChange(renderer)).not.toThrow();
   });
 
-  it("parentNode.childNodes ãŒç©ºé…åˆ—ã¨ã—ã¦æ‰±ã‚ã‚Œã¦ã‚‚ lastNode ã‚’ null ã«ã§ãã‚‹", () => {
+  it("parentNode.childNodes ‚ª‹ó”z—ñ‚Æ‚µ‚Äˆµ‚í‚ê‚Ä‚à lastNode ‚ğ null ‚É‚Å‚«‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const container = document.createElement("div");
@@ -1228,13 +1228,13 @@ describe("BindingNodeFor coverage", () => {
     arrayFromSpy.mockRestore();
   });
 
-  it("isAllNew ã‹ã¤ isConnected ã®å ´åˆ DocumentFragment ã‚’ä½¿ç”¨ã™ã‚‹", () => {
+  it("isAllNew ‚©‚Â isConnected ‚Ìê‡ DocumentFragment ‚ğg—p‚·‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const container = document.createElement("div");
     const comment = document.createComment("@@|330");
     container.appendChild(comment);
-    // DOMã«æ¥ç¶šã—ã¦isConnectedã‚’trueã«ã™ã‚‹
+    // DOM‚ÉÚ‘±‚µ‚ÄisConnected‚ğtrue‚É‚·‚é
     document.body.appendChild(container);
     
     try {
@@ -1249,7 +1249,7 @@ describe("BindingNodeFor coverage", () => {
         adds: new Set(idx),
         removes: new Set(),
       } as any;
-      // æ–°ã—ã„ã‚³ãƒ¼ãƒ‰ã§ã¯ parentNode.append(workFragment) ã‚’ä½¿ç”¨ã™ã‚‹
+      // V‚µ‚¢ƒR[ƒh‚Å‚Í parentNode.append(workFragment) ‚ğg—p‚·‚é
       const spy = vi.spyOn(container, "append");
       const renderer = createRendererStub({ readonlyState: {}, calcListDiff: vi.fn(() => diff) });
       node.applyChange(renderer);
@@ -1261,7 +1261,7 @@ describe("BindingNodeFor coverage", () => {
     }
   });
 
-  it("inactivate ã¯å…¨ã¦ã® BindContent ã‚’ unmount & inactivate ã—ã€ãƒ—ãƒ¼ãƒ«ã«è¿½åŠ ã™ã‚‹", () => {
+  it("inactivate ‚Í‘S‚Ä‚Ì BindContent ‚ğ unmount & inactivate ‚µAƒv[ƒ‹‚É’Ç‰Á‚·‚é", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|306");
@@ -1292,13 +1292,13 @@ describe("BindingNodeFor coverage", () => {
     expect(unmountSpy).toHaveBeenCalled();
     expect(inactivateSpy).toHaveBeenCalled();
     expect(node.bindContents.length).toBe(0);
-    // ãƒ—ãƒ¼ãƒ«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã¯ 2ï¼ˆ3ä»¶è¿½åŠ å¾Œã€ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹0,1,2ï¼‰
+    // ƒv[ƒ‹ƒCƒ“ƒfƒbƒNƒX‚Í 2i3Œ’Ç‰ÁŒãAƒCƒ“ƒfƒbƒNƒX0,1,2j
     expect((node as any)._bindContentPoolIndex).toBe(2);
 
     document.body.removeChild(container);
   });
 
-  it("GetListIndexesByRefSymbol ãŒ null ã‚’è¿”ã™å ´åˆã®ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯", () => {
+  it("GetListIndexesByRefSymbol ‚ª null ‚ğ•Ô‚·ê‡‚ÌƒtƒH[ƒ‹ƒoƒbƒN", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|401");
@@ -1314,17 +1314,17 @@ describe("BindingNodeFor coverage", () => {
       calcListDiff: vi.fn(),
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => []),
-        [GetListIndexesByRefSymbol]: vi.fn(() => null), // null ã‚’è¿”ã™
+        [GetListIndexesByRefSymbol]: vi.fn(() => null), // null ‚ğ•Ô‚·
       },
     });
 
-    // ã‚¨ãƒ©ãƒ¼ãªãå‡¦ç†ã•ã‚Œã‚‹
+    // ƒGƒ‰[‚È‚­ˆ—‚³‚ê‚é
     expect(() => node.applyChange(renderer)).not.toThrow();
     
     document.body.removeChild(container);
   });
 
-  it("é…åˆ—ã® length ãŒ null/undefined ã®å ´åˆã®ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯", () => {
+  it("”z—ñ‚Ì length ‚ª null/undefined ‚Ìê‡‚ÌƒtƒH[ƒ‹ƒoƒbƒN", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|402");
@@ -1335,7 +1335,7 @@ describe("BindingNodeFor coverage", () => {
 
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
 
-    // length ãŒ null ã‚’è¿”ã™é…åˆ—ã‚’ Proxy ã§ä½œæˆ
+    // length ‚ª null ‚ğ•Ô‚·”z—ñ‚ğ Proxy ‚Åì¬
     const oldArrayProxy = new Proxy([1, 2, 3], {
       get(target, prop) {
         if (prop === 'length') return null;
@@ -1345,7 +1345,7 @@ describe("BindingNodeFor coverage", () => {
     node._oldList = oldArrayProxy;
     node._oldListIndexSet = new Set();
 
-    // length ãŒ undefined ã‚’è¿”ã™é…åˆ—ã‚’ Proxy ã§ä½œæˆ
+    // length ‚ª undefined ‚ğ•Ô‚·”z—ñ‚ğ Proxy ‚Åì¬
     const newArrayProxy = new Proxy([4, 5], {
       get(target, prop) {
         if (prop === 'length') return undefined;
@@ -1362,13 +1362,13 @@ describe("BindingNodeFor coverage", () => {
       },
     });
 
-    // ã‚¨ãƒ©ãƒ¼ãªãå‡¦ç†ã•ã‚Œã‚‹ï¼ˆlength ã¯ 0 ã¨ã—ã¦æ‰±ã‚ã‚Œã‚‹ï¼‰
+    // ƒGƒ‰[‚È‚­ˆ—‚³‚ê‚éilength ‚Í 0 ‚Æ‚µ‚Äˆµ‚í‚ê‚éj
     expect(() => node.applyChange(renderer)).not.toThrow();
     
     document.body.removeChild(container);
   });
 
-  it("_poolBindContents ã§ full pool expansion ãƒ–ãƒ©ãƒ³ãƒï¼ˆpushï¼‰ã‚’é€šã™", () => {
+  it("_poolBindContents ‚Å full pool expansion ƒuƒ‰ƒ“ƒ`ipushj‚ğ’Ê‚·", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|500");
@@ -1379,26 +1379,26 @@ describe("BindingNodeFor coverage", () => {
 
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
 
-    // ç›´æ¥ãƒ—ãƒ¼ãƒ«çŠ¶æ…‹ã‚’è¨­å®šã—ã¦ full pool expansion ãƒ–ãƒ©ãƒ³ãƒã‚’ãƒ†ã‚¹ãƒˆ
-    // poolIndex !== -1 ã‹ã¤ poolSize === poolIndex + 1ï¼ˆæº€æ¯ï¼‰
+    // ’¼Úƒv[ƒ‹ó‘Ô‚ğİ’è‚µ‚Ä full pool expansion ƒuƒ‰ƒ“ƒ`‚ğƒeƒXƒg
+    // poolIndex !== -1 ‚©‚Â poolSize === poolIndex + 1i–”tj
     const mockBindContent1 = { inactivate: vi.fn() };
     const mockBindContent2 = { inactivate: vi.fn() };
     node._bindContentPool = [mockBindContent1, mockBindContent2];
-    node._bindContentPoolSize = 2;
-    node._bindContentPoolIndex = 1; // æº€æ¯: 2 === 1 + 1
+    node._bindContentPool.length = 2;
+    node._bindContentPoolIndex = 1; // –”t: 2 === 1 + 1
 
-    // 2ä»¶è¿½åŠ ï¼ˆ< 1000 ãªã®ã§ push ãƒ–ãƒ©ãƒ³ãƒï¼‰
+    // 2Œ’Ç‰Ái< 1000 ‚È‚Ì‚Å push ƒuƒ‰ƒ“ƒ`j
     const mockNewContents = [{ inactivate: vi.fn() }, { inactivate: vi.fn() }];
     node._poolBindContents(mockNewContents);
 
-    expect(node._bindContentPoolSize).toBe(4); // 2 + 2 = 4
+    expect(node._bindContentPool.length).toBe(4); // 2 + 2 = 4
     expect(node._bindContentPoolIndex).toBe(3); // 1 + 2 = 3
     expect(node._bindContentPool.length).toBe(4);
 
     document.body.removeChild(container);
   });
 
-  it("_poolBindContents ã§ full pool expansion ãƒ–ãƒ©ãƒ³ãƒï¼ˆconcat: > 1000ä»¶ï¼‰ã‚’é€šã™", () => {
+  it("_poolBindContents ‚Å full pool expansion ƒuƒ‰ƒ“ƒ`iconcat: > 1000Œj‚ğ’Ê‚·", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|501");
@@ -1409,24 +1409,24 @@ describe("BindingNodeFor coverage", () => {
 
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
 
-    // ç›´æ¥ãƒ—ãƒ¼ãƒ«çŠ¶æ…‹ã‚’è¨­å®š
+    // ’¼Úƒv[ƒ‹ó‘Ô‚ğİ’è
     const mockBindContent1 = { inactivate: vi.fn() };
     node._bindContentPool = [mockBindContent1];
-    node._bindContentPoolSize = 1;
-    node._bindContentPoolIndex = 0; // æº€æ¯: 1 === 0 + 1
+    node._bindContentPool.length = 1;
+    node._bindContentPoolIndex = 0; // –”t: 1 === 0 + 1
 
-    // 1001ä»¶è¿½åŠ ï¼ˆ> 1000 ãªã®ã§ concat ãƒ–ãƒ©ãƒ³ãƒï¼‰
+    // 1001Œ’Ç‰Ái> 1000 ‚È‚Ì‚Å concat ƒuƒ‰ƒ“ƒ`j
     const mockNewContents = Array.from({ length: 1001 }, () => ({ inactivate: vi.fn() }));
     node._poolBindContents(mockNewContents);
 
-    expect(node._bindContentPoolSize).toBe(1002); // 1 + 1001 = 1002
+    expect(node._bindContentPool.length).toBe(1002); // 1 + 1001 = 1002
     expect(node._bindContentPoolIndex).toBe(1001); // 0 + 1001 = 1001
     expect(node._bindContentPool.length).toBe(1002);
 
     document.body.removeChild(container);
   });
 
-  it("_poolBindContents: availableSpace ãŒååˆ†ãªå ´åˆã®ãƒ–ãƒ©ãƒ³ãƒ", () => {
+  it("_poolBindContents: availableSpace ‚ª\•ª‚Èê‡‚Ìƒuƒ‰ƒ“ƒ`", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|501");
@@ -1437,7 +1437,7 @@ describe("BindingNodeFor coverage", () => {
 
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
 
-    // 10ä»¶è¿½åŠ 
+    // 10Œ’Ç‰Á
     const idx10 = createIndexes(10);
     const renderer1 = createRendererStub({
       readonlyState: {
@@ -1448,7 +1448,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer1);
     expect(node.bindContents.length).toBe(10);
 
-    // å…¨å‰Šé™¤ â†’ 10ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«å…¥ã‚‹ï¼ˆåˆæœŸåŒ–ãƒ–ãƒ©ãƒ³ãƒï¼‰
+    // ‘Síœ ¨ 10Œ‚ªƒv[ƒ‹‚É“ü‚éi‰Šú‰»ƒuƒ‰ƒ“ƒ`j
     const renderer2 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => []),
@@ -1456,10 +1456,10 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer2);
-    expect(node._bindContentPoolIndex).toBe(9); // ãƒ—ãƒ¼ãƒ«ã«10ä»¶ï¼ˆ0-9ï¼‰
-    expect(node._bindContentPoolSize).toBe(10);
+    expect(node._bindContentPoolIndex).toBe(9); // ƒv[ƒ‹‚É10Œi0-9j
+    expect(node._bindContentPool.length).toBe(10);
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰7ä»¶ä½¿ç”¨ â†’ ãƒ—ãƒ¼ãƒ«ã«3ä»¶æ®‹ã‚‹ï¼ˆã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹0-2ï¼‰
+    // ƒv[ƒ‹‚©‚ç7Œg—p ¨ ƒv[ƒ‹‚É3Œc‚éiƒCƒ“ƒfƒbƒNƒX0-2j
     const idx7 = createIndexes(7);
     const renderer3 = createRendererStub({
       readonlyState: {
@@ -1468,10 +1468,10 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer3);
-    expect(node._bindContentPoolIndex).toBe(2); // ãƒ—ãƒ¼ãƒ«ã«3ä»¶æ®‹ã‚Šï¼ˆ0-2ï¼‰
-    expect(node._bindContentPoolSize).toBe(10); // ã‚µã‚¤ã‚ºã¯å¤‰ã‚ã‚‰ãªã„
+    expect(node._bindContentPoolIndex).toBe(2); // ƒv[ƒ‹‚É3Œc‚èi0-2j
+    expect(node._bindContentPool.length).toBe(10); // ƒTƒCƒY‚Í•Ï‚í‚ç‚È‚¢
 
-    // 5ä»¶æ®‹ã™ â†’ 2ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«è¿½åŠ ï¼ˆavailableSpace=7, neededSpace=2 â†’ neededSpace <= availableSpaceï¼‰
+    // 5Œc‚· ¨ 2Œ‚ªƒv[ƒ‹‚É’Ç‰ÁiavailableSpace=7, neededSpace=2 ¨ neededSpace <= availableSpacej
     const idx5 = createIndexes(5);
     const renderer4 = createRendererStub({
       readonlyState: {
@@ -1480,13 +1480,13 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer4);
-    expect(node._bindContentPoolIndex).toBe(4); // 2ä»¶è¿½åŠ ã§ï¼ˆ0-4ï¼‰
-    expect(node._bindContentPoolSize).toBe(10); // ã‚µã‚¤ã‚ºã¯å¤‰ã‚ã‚‰ãªã„
+    expect(node._bindContentPoolIndex).toBe(4); // 2Œ’Ç‰Á‚Åi0-4j
+    expect(node._bindContentPool.length).toBe(10); // ƒTƒCƒY‚Í•Ï‚í‚ç‚È‚¢
 
     document.body.removeChild(container);
   });
 
-  it("_poolBindContents: éƒ¨åˆ†å‰Šé™¤ã§ availableSpace ãŒååˆ†ãªå ´åˆã®ãƒ–ãƒ©ãƒ³ãƒ", () => {
+  it("_poolBindContents: •”•ªíœ‚Å availableSpace ‚ª\•ª‚Èê‡‚Ìƒuƒ‰ƒ“ƒ`", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|503");
@@ -1497,10 +1497,10 @@ describe("BindingNodeFor coverage", () => {
 
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
 
-    // åŒã˜ListIndexã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ä½¿ã„å›ã™ï¼ˆéƒ¨åˆ†å‰Šé™¤ã‚’ç™ºç”Ÿã•ã›ã‚‹ãŸã‚ï¼‰
+    // “¯‚¶ListIndexƒCƒ“ƒXƒ^ƒ“ƒX‚ğg‚¢‰ñ‚·i•”•ªíœ‚ğ”­¶‚³‚¹‚é‚½‚ßj
     const allIndexes = createIndexes(10);
 
-    // 10ä»¶è¿½åŠ 
+    // 10Œ’Ç‰Á
     const renderer1 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 10 }, () => ({}))),
@@ -1510,7 +1510,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer1);
     expect(node.bindContents.length).toBe(10);
 
-    // 7ä»¶ã«éƒ¨åˆ†å‰Šé™¤ â†’ 3ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«å…¥ã‚‹ï¼ˆåˆæœŸåŒ–ãƒ–ãƒ©ãƒ³ãƒï¼‰
+    // 7Œ‚É•”•ªíœ ¨ 3Œ‚ªƒv[ƒ‹‚É“ü‚éi‰Šú‰»ƒuƒ‰ƒ“ƒ`j
     const renderer2 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 7 }, () => ({}))),
@@ -1518,11 +1518,11 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer2);
-    expect(node._bindContentPoolIndex).toBe(2); // 3ä»¶ï¼ˆ0-2ï¼‰
-    expect(node._bindContentPoolSize).toBe(3);
+    expect(node._bindContentPoolIndex).toBe(2); // 3Œi0-2j
+    expect(node._bindContentPool.length).toBe(3);
     expect(node.bindContents.length).toBe(7);
 
-    // 10ä»¶ã«æˆ»ã™ï¼ˆå…ƒã®10ä»¶ï¼‰â†’ ãƒ—ãƒ¼ãƒ«ã‹ã‚‰3ä»¶ä½¿ç”¨ã€ãƒ—ãƒ¼ãƒ«ç©ºã«
+    // 10Œ‚É–ß‚·iŒ³‚Ì10Œj¨ ƒv[ƒ‹‚©‚ç3Œg—pAƒv[ƒ‹‹ó‚É
     const renderer3 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 10 }, () => ({}))),
@@ -1530,11 +1530,11 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer3);
-    expect(node._bindContentPoolIndex).toBe(-1); // ãƒ—ãƒ¼ãƒ«ç©º
-    expect(node._bindContentPoolSize).toBe(3);
+    expect(node._bindContentPoolIndex).toBe(-1); // ƒv[ƒ‹‹ó
+    expect(node._bindContentPool.length).toBe(3);
     expect(node.bindContents.length).toBe(10);
 
-    // 4ä»¶ã«éƒ¨åˆ†å‰Šé™¤ â†’ 6ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«å…¥ã‚‹ï¼ˆåˆæœŸåŒ–ãƒ–ãƒ©ãƒ³ãƒï¼‰
+    // 4Œ‚É•”•ªíœ ¨ 6Œ‚ªƒv[ƒ‹‚É“ü‚éi‰Šú‰»ƒuƒ‰ƒ“ƒ`j
     const renderer4 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 4 }, () => ({}))),
@@ -1542,11 +1542,11 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer4);
-    expect(node._bindContentPoolIndex).toBe(5); // 6ä»¶ï¼ˆ0-5ï¼‰
-    expect(node._bindContentPoolSize).toBe(6);
+    expect(node._bindContentPoolIndex).toBe(5); // 6Œi0-5j
+    expect(node._bindContentPool.length).toBe(6);
     expect(node.bindContents.length).toBe(4);
 
-    // 8ä»¶ã«å¢—ã‚„ã™ï¼ˆãƒ—ãƒ¼ãƒ«ã‹ã‚‰4ä»¶ä½¿ç”¨ï¼‰â†’ ãƒ—ãƒ¼ãƒ«ã«2ä»¶æ®‹ã‚‹
+    // 8Œ‚É‘‚â‚·iƒv[ƒ‹‚©‚ç4Œg—pj¨ ƒv[ƒ‹‚É2Œc‚é
     const renderer5 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 8 }, () => ({}))),
@@ -1554,12 +1554,12 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer5);
-    expect(node._bindContentPoolIndex).toBe(1); // 2ä»¶ï¼ˆ0-1ï¼‰
-    expect(node._bindContentPoolSize).toBe(6);
+    expect(node._bindContentPoolIndex).toBe(1); // 2Œi0-1j
+    expect(node._bindContentPool.length).toBe(6);
     expect(node.bindContents.length).toBe(8);
 
-    // 6ä»¶ã«éƒ¨åˆ†å‰Šé™¤ â†’ 2ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«è¿½åŠ ï¼ˆavailableSpace=4, neededSpace=2 â†’ è¶³ã‚Šã‚‹ï¼‰
-    // ã“ã“ã§ _poolBindContents ã® neededSpace <= availableSpace ãƒ–ãƒ©ãƒ³ãƒãŒé€šã‚‹ï¼
+    // 6Œ‚É•”•ªíœ ¨ 2Œ‚ªƒv[ƒ‹‚É’Ç‰ÁiavailableSpace=4, neededSpace=2 ¨ ‘«‚è‚éj
+    // ‚±‚±‚Å _poolBindContents ‚Ì neededSpace <= availableSpace ƒuƒ‰ƒ“ƒ`‚ª’Ê‚éI
     const renderer6 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 6 }, () => ({}))),
@@ -1567,14 +1567,14 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer6);
-    expect(node._bindContentPoolIndex).toBe(3); // 2ä»¶è¿½åŠ ã§ï¼ˆ0-3ï¼‰
-    expect(node._bindContentPoolSize).toBe(6); // ã‚µã‚¤ã‚ºã¯å¤‰ã‚ã‚‰ãªã„
+    expect(node._bindContentPoolIndex).toBe(3); // 2Œ’Ç‰Á‚Åi0-3j
+    expect(node._bindContentPool.length).toBe(6); // ƒTƒCƒY‚Í•Ï‚í‚ç‚È‚¢
     expect(node.bindContents.length).toBe(6);
 
     document.body.removeChild(container);
   });
 
-  it("_poolBindContents: éƒ¨åˆ†å‰Šé™¤ã§ availableSpace ãŒä¸è¶³ã®å ´åˆã®ãƒ–ãƒ©ãƒ³ãƒ", () => {
+  it("_poolBindContents: •”•ªíœ‚Å availableSpace ‚ª•s‘«‚Ìê‡‚Ìƒuƒ‰ƒ“ƒ`", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|504");
@@ -1585,10 +1585,10 @@ describe("BindingNodeFor coverage", () => {
 
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
 
-    // åŒã˜ListIndexã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã‚’ä½¿ã„å›ã™
+    // “¯‚¶ListIndexƒCƒ“ƒXƒ^ƒ“ƒX‚ğg‚¢‰ñ‚·
     const allIndexes = createIndexes(10);
 
-    // 5ä»¶è¿½åŠ 
+    // 5Œ’Ç‰Á
     const renderer1 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 5 }, () => ({}))),
@@ -1598,7 +1598,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer1);
     expect(node.bindContents.length).toBe(5);
 
-    // å…¨å‰Šé™¤ â†’ 5ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«å…¥ã‚‹ï¼ˆåˆæœŸåŒ–ãƒ–ãƒ©ãƒ³ãƒï¼‰
+    // ‘Síœ ¨ 5Œ‚ªƒv[ƒ‹‚É“ü‚éi‰Šú‰»ƒuƒ‰ƒ“ƒ`j
     const renderer2 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => []),
@@ -1607,9 +1607,9 @@ describe("BindingNodeFor coverage", () => {
     });
     node.applyChange(renderer2);
     expect(node._bindContentPoolIndex).toBe(4);
-    expect(node._bindContentPoolSize).toBe(5);
+    expect(node._bindContentPool.length).toBe(5);
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰4ä»¶ä½¿ç”¨ â†’ ãƒ—ãƒ¼ãƒ«ã«1ä»¶æ®‹ã‚‹ï¼ˆã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹0ï¼‰
+    // ƒv[ƒ‹‚©‚ç4Œg—p ¨ ƒv[ƒ‹‚É1Œc‚éiƒCƒ“ƒfƒbƒNƒX0j
     const renderer3 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 4 }, () => ({}))),
@@ -1618,10 +1618,10 @@ describe("BindingNodeFor coverage", () => {
     });
     node.applyChange(renderer3);
     expect(node._bindContentPoolIndex).toBe(0);
-    expect(node._bindContentPoolSize).toBe(5);
+    expect(node._bindContentPool.length).toBe(5);
     expect(node.bindContents.length).toBe(4);
 
-    // 0ä»¶ã«éƒ¨åˆ†å‰Šé™¤ï¼ˆå…¨å‰Šé™¤ï¼‰â†’ 4ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«è¿½åŠ ï¼ˆavailableSpace=4, neededSpace=4 â†’ ã¡ã‚‡ã†ã©è¶³ã‚Šã‚‹ï¼‰
+    // 0Œ‚É•”•ªíœi‘Síœj¨ 4Œ‚ªƒv[ƒ‹‚É’Ç‰ÁiavailableSpace=4, neededSpace=4 ¨ ‚¿‚å‚¤‚Ç‘«‚è‚éj
     const renderer4 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => []),
@@ -1630,9 +1630,9 @@ describe("BindingNodeFor coverage", () => {
     });
     node.applyChange(renderer4);
     expect(node._bindContentPoolIndex).toBe(4);
-    expect(node._bindContentPoolSize).toBe(5);
+    expect(node._bindContentPool.length).toBe(5);
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰4ä»¶ä½¿ç”¨ â†’ ãƒ—ãƒ¼ãƒ«ã«1ä»¶æ®‹ã‚‹
+    // ƒv[ƒ‹‚©‚ç4Œg—p ¨ ƒv[ƒ‹‚É1Œc‚é
     const renderer5 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 4 }, () => ({}))),
@@ -1643,7 +1643,7 @@ describe("BindingNodeFor coverage", () => {
     expect(node._bindContentPoolIndex).toBe(0);
     expect(node.bindContents.length).toBe(4);
 
-    // ã•ã‚‰ã«1ä»¶ã‚’éƒ¨åˆ†å‰Šé™¤ï¼ˆ3ä»¶ã«ï¼‰ â†’ 1ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«è¿½åŠ ï¼ˆavailableSpace=4, neededSpace=1 â†’ ååˆ†è¶³ã‚Šã‚‹ï¼‰
+    // ‚³‚ç‚É1Œ‚ğ•”•ªíœi3Œ‚Éj ¨ 1Œ‚ªƒv[ƒ‹‚É’Ç‰ÁiavailableSpace=4, neededSpace=1 ¨ \•ª‘«‚è‚éj
     const renderer6 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 3 }, () => ({}))),
@@ -1652,10 +1652,10 @@ describe("BindingNodeFor coverage", () => {
     });
     node.applyChange(renderer6);
     expect(node._bindContentPoolIndex).toBe(1);
-    expect(node._bindContentPoolSize).toBe(5);
+    expect(node._bindContentPool.length).toBe(5);
     expect(node.bindContents.length).toBe(3);
 
-    // ã•ã‚‰ã«2ä»¶ã‚’éƒ¨åˆ†å‰Šé™¤ï¼ˆ1ä»¶ã«ï¼‰ â†’ 2ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«è¿½åŠ ï¼ˆavailableSpace=3, neededSpace=2 â†’ è¶³ã‚Šã‚‹ï¼‰
+    // ‚³‚ç‚É2Œ‚ğ•”•ªíœi1Œ‚Éj ¨ 2Œ‚ªƒv[ƒ‹‚É’Ç‰ÁiavailableSpace=3, neededSpace=2 ¨ ‘«‚è‚éj
     const renderer7 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => [{}]),
@@ -1664,10 +1664,10 @@ describe("BindingNodeFor coverage", () => {
     });
     node.applyChange(renderer7);
     expect(node._bindContentPoolIndex).toBe(3);
-    expect(node._bindContentPoolSize).toBe(5);
+    expect(node._bindContentPool.length).toBe(5);
     expect(node.bindContents.length).toBe(1);
 
-    // æ–°ã—ã„10ä»¶ã‚’è¿½åŠ  â†’ ãƒ—ãƒ¼ãƒ«ã‹ã‚‰1ä»¶ä½¿ç”¨ã€æ–°è¦9ä»¶ç”Ÿæˆ
+    // V‚µ‚¢10Œ‚ğ’Ç‰Á ¨ ƒv[ƒ‹‚©‚ç1Œg—pAV‹K9Œ¶¬
     const renderer8 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 10 }, () => ({}))),
@@ -1677,7 +1677,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer8);
     expect(node.bindContents.length).toBe(10);
 
-    // 5ä»¶ã«éƒ¨åˆ†å‰Šé™¤ â†’ 5ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«è¿½åŠ ï¼ˆãƒ—ãƒ¼ãƒ«ç©ºã ã£ãŸã®ã§åˆæœŸåŒ–ãƒ–ãƒ©ãƒ³ãƒï¼‰
+    // 5Œ‚É•”•ªíœ ¨ 5Œ‚ªƒv[ƒ‹‚É’Ç‰Áiƒv[ƒ‹‹ó‚¾‚Á‚½‚Ì‚Å‰Šú‰»ƒuƒ‰ƒ“ƒ`j
     const renderer9 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 5 }, () => ({}))),
@@ -1686,9 +1686,9 @@ describe("BindingNodeFor coverage", () => {
     });
     node.applyChange(renderer9);
     expect(node._bindContentPoolIndex).toBe(4);
-    expect(node._bindContentPoolSize).toBe(5);
+    expect(node._bindContentPool.length).toBe(5);
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰4ä»¶ä½¿ç”¨ â†’ 1ä»¶æ®‹ã‚‹
+    // ƒv[ƒ‹‚©‚ç4Œg—p ¨ 1Œc‚é
     const renderer10 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 9 }, () => ({}))),
@@ -1699,7 +1699,7 @@ describe("BindingNodeFor coverage", () => {
     expect(node._bindContentPoolIndex).toBe(0);
     expect(node.bindContents.length).toBe(9);
 
-    // 3ä»¶ã«éƒ¨åˆ†å‰Šé™¤ â†’ 6ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«è¿½åŠ ï¼ˆavailableSpace=4, neededSpace=6 â†’ è¶³ã‚Šãªã„ â†’ expand ãƒ–ãƒ©ãƒ³ãƒ!ï¼‰
+    // 3Œ‚É•”•ªíœ ¨ 6Œ‚ªƒv[ƒ‹‚É’Ç‰ÁiavailableSpace=4, neededSpace=6 ¨ ‘«‚è‚È‚¢ ¨ expand ƒuƒ‰ƒ“ƒ`!j
     const renderer11 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 3 }, () => ({}))),
@@ -1708,13 +1708,13 @@ describe("BindingNodeFor coverage", () => {
     });
     node.applyChange(renderer11);
     expect(node._bindContentPoolIndex).toBe(6);
-    expect(node._bindContentPoolSize).toBe(7); // 1 + 6 = 7 ã«æ‹¡å¼µã•ã‚ŒãŸ
+    expect(node._bindContentPool.length).toBe(7); // 1 + 6 = 7 ‚ÉŠg’£‚³‚ê‚½
     expect(node.bindContents.length).toBe(3);
 
     document.body.removeChild(container);
   });
 
-  it("_poolBindContents: availableSpace ãŒä¸è¶³ã§ãƒ—ãƒ¼ãƒ«æ‹¡å¼µã™ã‚‹ãƒ–ãƒ©ãƒ³ãƒ", () => {
+  it("_poolBindContents: availableSpace ‚ª•s‘«‚Åƒv[ƒ‹Šg’£‚·‚éƒuƒ‰ƒ“ƒ`", () => {
     setupTemplate();
     const engine = createEngineStub();
     const comment = document.createComment("@@|502");
@@ -1725,7 +1725,7 @@ describe("BindingNodeFor coverage", () => {
 
     const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
 
-    // 5ä»¶è¿½åŠ 
+    // 5Œ’Ç‰Á
     const idx5 = createIndexes(5);
     const renderer1 = createRendererStub({
       readonlyState: {
@@ -1736,7 +1736,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer1);
     expect(node.bindContents.length).toBe(5);
 
-    // å…¨å‰Šé™¤ â†’ 5ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«å…¥ã‚‹ï¼ˆåˆæœŸåŒ–ãƒ–ãƒ©ãƒ³ãƒï¼‰
+    // ‘Síœ ¨ 5Œ‚ªƒv[ƒ‹‚É“ü‚éi‰Šú‰»ƒuƒ‰ƒ“ƒ`j
     const renderer2 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => []),
@@ -1744,10 +1744,10 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer2);
-    expect(node._bindContentPoolIndex).toBe(4); // ãƒ—ãƒ¼ãƒ«ã«5ä»¶ï¼ˆ0-4ï¼‰
-    expect(node._bindContentPoolSize).toBe(5);
+    expect(node._bindContentPoolIndex).toBe(4); // ƒv[ƒ‹‚É5Œi0-4j
+    expect(node._bindContentPool.length).toBe(5);
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰4ä»¶ä½¿ç”¨ â†’ ãƒ—ãƒ¼ãƒ«ã«1ä»¶æ®‹ã‚‹ï¼ˆã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹0ï¼‰
+    // ƒv[ƒ‹‚©‚ç4Œg—p ¨ ƒv[ƒ‹‚É1Œc‚éiƒCƒ“ƒfƒbƒNƒX0j
     const idx4 = createIndexes(4);
     const renderer3 = createRendererStub({
       readonlyState: {
@@ -1756,10 +1756,10 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer3);
-    expect(node._bindContentPoolIndex).toBe(0); // ãƒ—ãƒ¼ãƒ«ã«1ä»¶æ®‹ã‚Šï¼ˆ0ï¼‰
-    expect(node._bindContentPoolSize).toBe(5);
+    expect(node._bindContentPoolIndex).toBe(0); // ƒv[ƒ‹‚É1Œc‚èi0j
+    expect(node._bindContentPool.length).toBe(5);
 
-    // 1ä»¶æ®‹ã™ â†’ 3ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«è¿½åŠ ï¼ˆavailableSpace=4, neededSpace=3 â†’ ã¡ã‚‡ã†ã©è¶³ã‚Šã‚‹å¢ƒç•Œï¼‰
+    // 1Œc‚· ¨ 3Œ‚ªƒv[ƒ‹‚É’Ç‰ÁiavailableSpace=4, neededSpace=3 ¨ ‚¿‚å‚¤‚Ç‘«‚è‚é‹«ŠEj
     const idx1 = createIndexes(1);
     const renderer4 = createRendererStub({
       readonlyState: {
@@ -1768,10 +1768,10 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer4);
-    expect(node._bindContentPoolIndex).toBe(3); // 3ä»¶è¿½åŠ ã§ï¼ˆ0-3ï¼‰
-    expect(node._bindContentPoolSize).toBe(5); // ã‚µã‚¤ã‚ºã¯å¤‰ã‚ã‚‰ãªã„
+    expect(node._bindContentPoolIndex).toBe(3); // 3Œ’Ç‰Á‚Åi0-3j
+    expect(node._bindContentPool.length).toBe(5); // ƒTƒCƒY‚Í•Ï‚í‚ç‚È‚¢
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰3ä»¶ä½¿ç”¨ â†’ ãƒ—ãƒ¼ãƒ«ã«1ä»¶æ®‹ã‚‹ï¼ˆã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹0ï¼‰
+    // ƒv[ƒ‹‚©‚ç3Œg—p ¨ ƒv[ƒ‹‚É1Œc‚éiƒCƒ“ƒfƒbƒNƒX0j
     const idx4b = createIndexes(4);
     const renderer5 = createRendererStub({
       readonlyState: {
@@ -1780,10 +1780,10 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer5);
-    expect(node._bindContentPoolIndex).toBe(0); // ãƒ—ãƒ¼ãƒ«ã«1ä»¶æ®‹ã‚Šï¼ˆ0ï¼‰
-    expect(node._bindContentPoolSize).toBe(5);
+    expect(node._bindContentPoolIndex).toBe(0); // ƒv[ƒ‹‚É1Œc‚èi0j
+    expect(node._bindContentPool.length).toBe(5);
 
-    // å…¨å‰Šé™¤ â†’ 4ä»¶ãŒãƒ—ãƒ¼ãƒ«ã«è¿½åŠ ï¼ˆavailableSpace=4, neededSpace=4 â†’ ã¡ã‚‡ã†ã©è¶³ã‚Šã‚‹ï¼‰
+    // ‘Síœ ¨ 4Œ‚ªƒv[ƒ‹‚É’Ç‰ÁiavailableSpace=4, neededSpace=4 ¨ ‚¿‚å‚¤‚Ç‘«‚è‚éj
     const renderer6 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => []),
@@ -1791,10 +1791,10 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer6);
-    expect(node._bindContentPoolIndex).toBe(4); // 4ä»¶è¿½åŠ ã§ï¼ˆ0-4ï¼‰
-    expect(node._bindContentPoolSize).toBe(5);
+    expect(node._bindContentPoolIndex).toBe(4); // 4Œ’Ç‰Á‚Åi0-4j
+    expect(node._bindContentPool.length).toBe(5);
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰4ä»¶ä½¿ç”¨ â†’ ãƒ—ãƒ¼ãƒ«ã«1ä»¶æ®‹ã‚‹ï¼ˆã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹0ï¼‰
+    // ƒv[ƒ‹‚©‚ç4Œg—p ¨ ƒv[ƒ‹‚É1Œc‚éiƒCƒ“ƒfƒbƒNƒX0j
     const renderer7 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 4 }, () => ({}))),
@@ -1804,7 +1804,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer7);
     expect(node._bindContentPoolIndex).toBe(0);
 
-    // å…¨å‰Šé™¤ â†’ 4ä»¶è¿½åŠ ï¼ˆavailableSpace=4, neededSpace=4 â†’ è¶³ã‚Šã‚‹ï¼‰
+    // ‘Síœ ¨ 4Œ’Ç‰ÁiavailableSpace=4, neededSpace=4 ¨ ‘«‚è‚éj
     const renderer8 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => []),
@@ -1814,7 +1814,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer8);
     expect(node._bindContentPoolIndex).toBe(4);
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰3ä»¶ä½¿ç”¨ â†’ ãƒ—ãƒ¼ãƒ«ã«2ä»¶æ®‹ã‚‹ï¼ˆã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹0-1ï¼‰
+    // ƒv[ƒ‹‚©‚ç3Œg—p ¨ ƒv[ƒ‹‚É2Œc‚éiƒCƒ“ƒfƒbƒNƒX0-1j
     const idx3 = createIndexes(3);
     const renderer9 = createRendererStub({
       readonlyState: {
@@ -1825,7 +1825,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer9);
     expect(node._bindContentPoolIndex).toBe(1);
 
-    // å…¨å‰Šé™¤ â†’ 3ä»¶è¿½åŠ ï¼ˆavailableSpace=3, neededSpace=3 â†’ è¶³ã‚Šã‚‹ï¼‰
+    // ‘Síœ ¨ 3Œ’Ç‰ÁiavailableSpace=3, neededSpace=3 ¨ ‘«‚è‚éj
     const renderer10 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => []),
@@ -1835,7 +1835,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer10);
     expect(node._bindContentPoolIndex).toBe(4);
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰2ä»¶ä½¿ç”¨ â†’ ãƒ—ãƒ¼ãƒ«ã«3ä»¶æ®‹ã‚‹ï¼ˆã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹0-2ï¼‰
+    // ƒv[ƒ‹‚©‚ç2Œg—p ¨ ƒv[ƒ‹‚É3Œc‚éiƒCƒ“ƒfƒbƒNƒX0-2j
     const idx2 = createIndexes(2);
     const renderer11 = createRendererStub({
       readonlyState: {
@@ -1846,7 +1846,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer11);
     expect(node._bindContentPoolIndex).toBe(2);
 
-    // å…¨å‰Šé™¤ â†’ 2ä»¶è¿½åŠ ï¼ˆavailableSpace=2, neededSpace=2 â†’ è¶³ã‚Šã‚‹ï¼‰
+    // ‘Síœ ¨ 2Œ’Ç‰ÁiavailableSpace=2, neededSpace=2 ¨ ‘«‚è‚éj
     const renderer12 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => []),
@@ -1856,7 +1856,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer12);
     expect(node._bindContentPoolIndex).toBe(4);
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰2ä»¶ä½¿ç”¨ â†’ ãƒ—ãƒ¼ãƒ«ã«3ä»¶æ®‹ã‚‹
+    // ƒv[ƒ‹‚©‚ç2Œg—p ¨ ƒv[ƒ‹‚É3Œc‚é
     const renderer13 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => Array.from({ length: 2 }, () => ({}))),
@@ -1866,7 +1866,7 @@ describe("BindingNodeFor coverage", () => {
     node.applyChange(renderer13);
     expect(node._bindContentPoolIndex).toBe(2);
 
-    // 4ä»¶è¿½åŠ ã§ expandï¼ˆavailableSpace=2, neededSpace=4 â†’ è¶³ã‚Šãªã„ â†’ expand ãƒ–ãƒ©ãƒ³ãƒ!ï¼‰
+    // 4Œ’Ç‰Á‚Å expandiavailableSpace=2, neededSpace=4 ¨ ‘«‚è‚È‚¢ ¨ expand ƒuƒ‰ƒ“ƒ`!j
     const idx6 = createIndexes(6);
     const renderer14 = createRendererStub({
       readonlyState: {
@@ -1876,11 +1876,11 @@ describe("BindingNodeFor coverage", () => {
     });
     node.applyChange(renderer14);
 
-    // ãƒ—ãƒ¼ãƒ«ã‹ã‚‰4ä»¶ä½¿ã†ã€‚bindContentsã¯2â†’6ã¸å¢—åŠ 
-    // å®Ÿéš›ã«ã¯æ–°è¦ç”Ÿæˆã•ã‚Œã‚‹
+    // ƒv[ƒ‹‚©‚ç4Œg‚¤BbindContents‚Í2¨6‚Ö‘‰Á
+    // ÀÛ‚É‚ÍV‹K¶¬‚³‚ê‚é
     expect(node.bindContents.length).toBe(6);
 
-    // å…¨å‰Šé™¤ â†’ 6ä»¶è¿½åŠ ï¼ˆåˆæœŸåŒ–ï¼Ÿï¼‰
+    // ‘Síœ ¨ 6Œ’Ç‰Ái‰Šú‰»Hj
     const renderer15 = createRendererStub({
       readonlyState: {
         [GetByRefSymbol]: vi.fn(() => []),
@@ -1888,15 +1888,15 @@ describe("BindingNodeFor coverage", () => {
       },
     });
     node.applyChange(renderer15);
-    // ãƒ—ãƒ¼ãƒ«ã®çŠ¶æ…‹ç¢ºèª
+    // ƒv[ƒ‹‚Ìó‘ÔŠm”F
     expect(node._bindContentPoolIndex).toBeGreaterThanOrEqual(0);
 
     document.body.removeChild(container);
   });
 
-  describe("_optimizedReplace ãƒ‘ã‚¿ãƒ¼ãƒ³ãƒ†ã‚¹ãƒˆ", () => {
-    // 0->N: ç©ºãƒªã‚¹ãƒˆã‹ã‚‰Nå€‹ã®è¦ç´ ã¸
-    it("0->N: ç©ºãƒªã‚¹ãƒˆã‹ã‚‰3ä»¶è¿½åŠ ï¼ˆisAllNew=trueï¼‰", () => {
+  describe("_optimizedReplace ƒpƒ^[ƒ“ƒeƒXƒg", () => {
+    // 0->N: ‹óƒŠƒXƒg‚©‚çNŒÂ‚Ì—v‘f‚Ö
+    it("0->N: ‹óƒŠƒXƒg‚©‚ç3Œ’Ç‰ÁiisAllNew=truej", () => {
       setupTemplate();
       const spyCreate = vi.spyOn(BindContentMod, "createBindContent");
 
@@ -1908,7 +1908,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // 0->3: ç©ºã‹ã‚‰3ä»¶è¿½åŠ 
+      // 0->3: ‹ó‚©‚ç3Œ’Ç‰Á
       const idx3 = createIndexes(3);
       const renderer = createRendererStub({
         readonlyState: {
@@ -1924,8 +1924,8 @@ describe("BindingNodeFor coverage", () => {
       expect(container.childNodes.length).toBeGreaterThan(1);
     });
 
-    // N->0: Nå€‹ã®è¦ç´ ã‹ã‚‰ç©ºãƒªã‚¹ãƒˆã¸
-    it("N->0: 3ä»¶ã‹ã‚‰ç©ºãƒªã‚¹ãƒˆã¸å‰Šé™¤ï¼ˆwillRemoveAll=trueï¼‰", () => {
+    // N->0: NŒÂ‚Ì—v‘f‚©‚ç‹óƒŠƒXƒg‚Ö
+    it("N->0: 3Œ‚©‚ç‹óƒŠƒXƒg‚ÖíœiwillRemoveAll=truej", () => {
       setupTemplate();
       const engine = createEngineStub();
       const comment = document.createComment("@@|402");
@@ -1935,7 +1935,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // åˆæœŸ: 3ä»¶è¿½åŠ 
+      // ‰Šú: 3Œ’Ç‰Á
       const idx3 = createIndexes(3);
       const renderer1 = createRendererStub({
         readonlyState: {
@@ -1946,7 +1946,7 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer1);
       expect(node.bindContents).toHaveLength(3);
 
-      // 3->0: å…¨å‰Šé™¤
+      // 3->0: ‘Síœ
       const renderer2 = createRendererStub({
         readonlyState: {
           [GetByRefSymbol]: vi.fn(() => []),
@@ -1956,12 +1956,12 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer2);
 
       expect(node.bindContents).toHaveLength(0);
-      expect(container.childNodes.length).toBe(1); // ã‚³ãƒ¡ãƒ³ãƒˆã®ã¿
+      expect(container.childNodes.length).toBe(1); // ƒRƒƒ“ƒg‚Ì‚İ
       expect(container.firstChild).toBe(comment);
     });
 
-    // N->M (N>M): è¦ç´ æ•°ãŒæ¸›å°‘ã€å…¨ã¦æ–°ã—ã„ListIndex
-    it("N->M (N>M): 5ä»¶ã‹ã‚‰2ä»¶ã¸æ¸›å°‘ï¼ˆå…¨ã¦æ–°ã—ã„ListIndexï¼‰", () => {
+    // N->M (N>M): —v‘f”‚ªŒ¸­A‘S‚ÄV‚µ‚¢ListIndex
+    it("N->M (N>M): 5Œ‚©‚ç2Œ‚ÖŒ¸­i‘S‚ÄV‚µ‚¢ListIndexj", () => {
       setupTemplate();
       const spyCreate = vi.spyOn(BindContentMod, "createBindContent");
 
@@ -1973,7 +1973,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // åˆæœŸ: 5ä»¶è¿½åŠ 
+      // ‰Šú: 5Œ’Ç‰Á
       const idx5 = createIndexes(5);
       const renderer1 = createRendererStub({
         readonlyState: {
@@ -1985,8 +1985,8 @@ describe("BindingNodeFor coverage", () => {
       expect(node.bindContents).toHaveLength(5);
       expect(spyCreate).toHaveBeenCalledTimes(5);
 
-      // 5->2: å…¨ã¦æ–°ã—ã„ListIndexã«ç½®æ›ï¼ˆisAllNew=trueï¼‰
-      const newIdx2 = createIndexes(2); // æ–°ã—ã„ListIndex
+      // 5->2: ‘S‚ÄV‚µ‚¢ListIndex‚É’uŠ·iisAllNew=truej
+      const newIdx2 = createIndexes(2); // V‚µ‚¢ListIndex
       const renderer2 = createRendererStub({
         readonlyState: {
           [GetByRefSymbol]: vi.fn(() => [{}, {}]),
@@ -1996,12 +1996,12 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer2);
 
       expect(node.bindContents).toHaveLength(2);
-      // _optimizedReplace ã§ã¯æ—¢å­˜ã®BindContentã‚’å†åˆ©ç”¨ã™ã‚‹ãŸã‚ã€æ–°è¦ä½œæˆã¯å¢—ãˆãªã„
+      // _optimizedReplace ‚Å‚ÍŠù‘¶‚ÌBindContent‚ğÄ—˜—p‚·‚é‚½‚ßAV‹Kì¬‚Í‘‚¦‚È‚¢
       expect(spyCreate).toHaveBeenCalledTimes(5);
     });
 
-    // M->N (M<N): è¦ç´ æ•°ãŒå¢—åŠ ã€å…¨ã¦æ–°ã—ã„ListIndex
-    it("M->N (M<N): 2ä»¶ã‹ã‚‰5ä»¶ã¸å¢—åŠ ï¼ˆå…¨ã¦æ–°ã—ã„ListIndexï¼‰", () => {
+    // M->N (M<N): —v‘f”‚ª‘‰ÁA‘S‚ÄV‚µ‚¢ListIndex
+    it("M->N (M<N): 2Œ‚©‚ç5Œ‚Ö‘‰Ái‘S‚ÄV‚µ‚¢ListIndexj", () => {
       setupTemplate();
       const spyCreate = vi.spyOn(BindContentMod, "createBindContent");
 
@@ -2013,7 +2013,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // åˆæœŸ: 2ä»¶è¿½åŠ 
+      // ‰Šú: 2Œ’Ç‰Á
       const idx2 = createIndexes(2);
       const renderer1 = createRendererStub({
         readonlyState: {
@@ -2025,8 +2025,8 @@ describe("BindingNodeFor coverage", () => {
       expect(node.bindContents).toHaveLength(2);
       expect(spyCreate).toHaveBeenCalledTimes(2);
 
-      // 2->5: å…¨ã¦æ–°ã—ã„ListIndexã«ç½®æ›ï¼ˆisAllNew=trueï¼‰
-      const newIdx5 = createIndexes(5); // æ–°ã—ã„ListIndex
+      // 2->5: ‘S‚ÄV‚µ‚¢ListIndex‚É’uŠ·iisAllNew=truej
+      const newIdx5 = createIndexes(5); // V‚µ‚¢ListIndex
       const renderer2 = createRendererStub({
         readonlyState: {
           [GetByRefSymbol]: vi.fn(() => Array.from({ length: 5 }, () => ({}))),
@@ -2036,12 +2036,12 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer2);
 
       expect(node.bindContents).toHaveLength(5);
-      // æ—¢å­˜2ä»¶ã¯å†åˆ©ç”¨ã€æ–°è¦3ä»¶ãŒè¿½åŠ 
+      // Šù‘¶2Œ‚ÍÄ—˜—pAV‹K3Œ‚ª’Ç‰Á
       expect(spyCreate).toHaveBeenCalledTimes(5);
     });
 
-    // N=N': åŒæ•°ã ãŒå…¨ã¦æ–°ã—ã„ListIndex
-    it("N=N': 3ä»¶ã‹ã‚‰3ä»¶ã¸ç½®æ›ï¼ˆå…¨ã¦æ–°ã—ã„ListIndexï¼‰", () => {
+    // N=N': “¯”‚¾‚ª‘S‚ÄV‚µ‚¢ListIndex
+    it("N=N': 3Œ‚©‚ç3Œ‚Ö’uŠ·i‘S‚ÄV‚µ‚¢ListIndexj", () => {
       setupTemplate();
       const spyCreate = vi.spyOn(BindContentMod, "createBindContent");
 
@@ -2053,7 +2053,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // åˆæœŸ: 3ä»¶è¿½åŠ 
+      // ‰Šú: 3Œ’Ç‰Á
       const idx3 = createIndexes(3);
       const renderer1 = createRendererStub({
         readonlyState: {
@@ -2066,8 +2066,8 @@ describe("BindingNodeFor coverage", () => {
       expect(node.bindContents).toHaveLength(3);
       expect(spyCreate).toHaveBeenCalledTimes(3);
 
-      // 3->3: å…¨ã¦æ–°ã—ã„ListIndexã«ç½®æ›ï¼ˆisAllNew=trueï¼‰
-      const newIdx3 = createIndexes(3); // æ–°ã—ã„ListIndex
+      // 3->3: ‘S‚ÄV‚µ‚¢ListIndex‚É’uŠ·iisAllNew=truej
+      const newIdx3 = createIndexes(3); // V‚µ‚¢ListIndex
       const renderer2 = createRendererStub({
         readonlyState: {
           [GetByRefSymbol]: vi.fn(() => [{}, {}, {}]),
@@ -2077,16 +2077,16 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer2);
 
       expect(node.bindContents).toHaveLength(3);
-      // BindContentã¯åŒã˜ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ãŒå†åˆ©ç”¨ã•ã‚Œã‚‹
+      // BindContent‚Í“¯‚¶ƒCƒ“ƒXƒ^ƒ“ƒX‚ªÄ—˜—p‚³‚ê‚é
       expect(node.bindContents[0]).toBe(originalBindContents[0]);
       expect(node.bindContents[1]).toBe(originalBindContents[1]);
       expect(node.bindContents[2]).toBe(originalBindContents[2]);
-      // createBindContent ã¯å¢—ãˆãªã„
+      // createBindContent ‚Í‘‚¦‚È‚¢
       expect(spyCreate).toHaveBeenCalledTimes(3);
     });
 
-    // 0->0: ç©ºã‹ã‚‰ç©ºï¼ˆã‚¨ãƒƒã‚¸ã‚±ãƒ¼ã‚¹ï¼‰
-    it("0->0: ç©ºã‹ã‚‰ç©ºã¸ã®æ›´æ–°ï¼ˆå¤‰æ›´ãªã—ï¼‰", () => {
+    // 0->0: ‹ó‚©‚ç‹óiƒGƒbƒWƒP[ƒXj
+    it("0->0: ‹ó‚©‚ç‹ó‚Ö‚ÌXVi•ÏX‚È‚µj", () => {
       setupTemplate();
       const engine = createEngineStub();
       const comment = document.createComment("@@|407");
@@ -2096,7 +2096,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // 0->0: ç©ºã®ã¾ã¾
+      // 0->0: ‹ó‚Ì‚Ü‚Ü
       const renderer = createRendererStub({
         readonlyState: {
           [GetByRefSymbol]: vi.fn(() => []),
@@ -2106,11 +2106,11 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer);
 
       expect(node.bindContents).toHaveLength(0);
-      expect(container.childNodes.length).toBe(1); // ã‚³ãƒ¡ãƒ³ãƒˆã®ã¿
+      expect(container.childNodes.length).toBe(1); // ƒRƒƒ“ƒg‚Ì‚İ
     });
 
-    // ãƒ—ãƒ¼ãƒ«å†åˆ©ç”¨ã®æ¤œè¨¼: N->0->M
-    it("ãƒ—ãƒ¼ãƒ«å†åˆ©ç”¨: 3ä»¶è¿½åŠ  -> å…¨å‰Šé™¤ -> 2ä»¶è¿½åŠ ï¼ˆãƒ—ãƒ¼ãƒ«ã‹ã‚‰å†åˆ©ç”¨ï¼‰", () => {
+    // ƒv[ƒ‹Ä—˜—p‚ÌŒŸØ: N->0->M
+    it("ƒv[ƒ‹Ä—˜—p: 3Œ’Ç‰Á -> ‘Síœ -> 2Œ’Ç‰Áiƒv[ƒ‹‚©‚çÄ—˜—pj", () => {
       setupTemplate();
       const spyCreate = vi.spyOn(BindContentMod, "createBindContent");
 
@@ -2122,7 +2122,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters) as any;
 
-      // 1) 3ä»¶è¿½åŠ 
+      // 1) 3Œ’Ç‰Á
       const idx3 = createIndexes(3);
       const renderer1 = createRendererStub({
         readonlyState: {
@@ -2134,7 +2134,7 @@ describe("BindingNodeFor coverage", () => {
       expect(node.bindContents).toHaveLength(3);
       expect(spyCreate).toHaveBeenCalledTimes(3);
 
-      // 2) å…¨å‰Šé™¤ï¼ˆãƒ—ãƒ¼ãƒ«ã«3ä»¶ï¼‰
+      // 2) ‘Síœiƒv[ƒ‹‚É3Œj
       const renderer2 = createRendererStub({
         readonlyState: {
           [GetByRefSymbol]: vi.fn(() => []),
@@ -2143,9 +2143,9 @@ describe("BindingNodeFor coverage", () => {
       });
       node.applyChange(renderer2);
       expect(node.bindContents).toHaveLength(0);
-      expect(node._bindContentPoolIndex).toBe(2); // 0,1,2 ã®3ä»¶
+      expect(node._bindContentPoolIndex).toBe(2); // 0,1,2 ‚Ì3Œ
 
-      // 3) 2ä»¶è¿½åŠ ï¼ˆãƒ—ãƒ¼ãƒ«ã‹ã‚‰å†åˆ©ç”¨ï¼‰
+      // 3) 2Œ’Ç‰Áiƒv[ƒ‹‚©‚çÄ—˜—pj
       const newIdx2 = createIndexes(2);
       const renderer3 = createRendererStub({
         readonlyState: {
@@ -2155,14 +2155,14 @@ describe("BindingNodeFor coverage", () => {
       });
       node.applyChange(renderer3);
       expect(node.bindContents).toHaveLength(2);
-      // createBindContentã¯å¢—ãˆãªã„ï¼ˆãƒ—ãƒ¼ãƒ«ã‹ã‚‰å†åˆ©ç”¨ï¼‰
+      // createBindContent‚Í‘‚¦‚È‚¢iƒv[ƒ‹‚©‚çÄ—˜—pj
       expect(spyCreate).toHaveBeenCalledTimes(3);
-      expect(node._bindContentPoolIndex).toBe(0); // 1ä»¶æ®‹ã‚Š
+      expect(node._bindContentPoolIndex).toBe(0); // 1Œc‚è
     });
 
-    // DocumentFragmentæœ€é©åŒ–ã®æ¤œè¨¼: isConnectedæ™‚
-    it("DocumentFragmentæœ€é©åŒ–: isConnectedæ™‚ã«ä¸€æ‹¬æŒ¿å…¥", () => {
-      // è¤‡æ•°è¦ç´ ã®ãƒ†ãƒ³ãƒ—ãƒ¬ãƒ¼ãƒˆã‚’ä½¿ç”¨ï¼ˆchildNodes.length > 1 ã®æ¡ä»¶ã‚’æº€ãŸã™ãŸã‚ï¼‰
+    // DocumentFragmentÅ“K‰»‚ÌŒŸØ: isConnected
+    it("DocumentFragmentÅ“K‰»: isConnected‚ÉˆêŠ‡‘}“ü", () => {
+      // •¡”—v‘f‚Ìƒeƒ“ƒvƒŒ[ƒg‚ğg—pichildNodes.length > 1 ‚ÌğŒ‚ğ–‚½‚·‚½‚ßj
       const tpl = document.createElement("template");
       tpl.innerHTML = `<div>for-item</div><span>extra</span>`;
       vi.spyOn(registerTemplateMod, "getTemplateById").mockReturnValue(tpl);
@@ -2177,7 +2177,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // åˆæœŸ: 2ä»¶è¿½åŠ 
+      // ‰Šú: 2Œ’Ç‰Á
       const idx2 = createIndexes(2);
       const renderer1 = createRendererStub({
         readonlyState: {
@@ -2187,7 +2187,7 @@ describe("BindingNodeFor coverage", () => {
       });
       node.applyChange(renderer1);
 
-      // 2->5: å…¨ã¦æ–°ã—ã„ListIndexã«ç½®æ›ï¼ˆisAllNew=true, isConnected=trueï¼‰
+      // 2->5: ‘S‚ÄV‚µ‚¢ListIndex‚É’uŠ·iisAllNew=true, isConnected=truej
       const newIdx5 = createIndexes(5);
       const renderer2 = createRendererStub({
         readonlyState: {
@@ -2199,14 +2199,14 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer2);
 
       expect(node.bindContents).toHaveLength(5);
-      // DocumentFragmentã«ã‚ˆã‚‹ä¸€æ‹¬æŒ¿å…¥ãŒè¡Œã‚ã‚Œã‚‹
+      // DocumentFragment‚É‚æ‚éˆêŠ‡‘}“ü‚ªs‚í‚ê‚é
       expect(spyInsert).toHaveBeenCalled();
 
       document.body.removeChild(container);
     });
 
-    // _optimizedReplace ã§ BindContent not found ã‚¨ãƒ©ãƒ¼
-    it("_optimizedReplace: æœªç™»éŒ²ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã§ BindContent not found", () => {
+    // _optimizedReplace ‚Å BindContent not found ƒGƒ‰[
+    it("_optimizedReplace: –¢“o˜^ƒCƒ“ƒfƒbƒNƒX‚Å BindContent not found", () => {
       setupTemplate();
       const engine = createEngineStub();
       const comment = document.createComment("@@|410");
@@ -2216,7 +2216,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // 3ä»¶è¿½åŠ 
+      // 3Œ’Ç‰Á
       const idx3 = createIndexes(3);
       const capture = captureBindContentMap();
       const renderer1 = createRendererStub({
@@ -2229,10 +2229,10 @@ describe("BindingNodeFor coverage", () => {
       const bindContentMap = capture.getMap();
       capture.restore();
 
-      // WeakMapã‹ã‚‰1ã¤å‰Šé™¤ã—ã¦ä¸æ•´åˆçŠ¶æ…‹ã‚’ä½œã‚‹
+      // WeakMap‚©‚ç1‚Âíœ‚µ‚Ä•s®‡ó‘Ô‚ğì‚é
       bindContentMap.delete(idx3[2]);
 
-      // 3->1: æ¸›å°‘ã§ _optimizedReplace ãŒå‘¼ã°ã‚Œã‚‹ãŒã€å‰Šé™¤å¯¾è±¡ã®BindContentãŒè¦‹ã¤ã‹ã‚‰ãªã„
+      // 3->1: Œ¸­‚Å _optimizedReplace ‚ªŒÄ‚Î‚ê‚é‚ªAíœ‘ÎÛ‚ÌBindContent‚ªŒ©‚Â‚©‚ç‚È‚¢
       const newIdx1 = createIndexes(1);
       const renderer2 = createRendererStub({
         readonlyState: {
@@ -2244,8 +2244,8 @@ describe("BindingNodeFor coverage", () => {
       expect(() => node.applyChange(renderer2)).toThrow(/BindContent not found/);
     });
 
-    // getLastNode ãŒ null ã‚’è¿”ã™å ´åˆã®ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯ï¼ˆ_applyChangeï¼‰
-    it("_applyChange: getLastNode ãŒ null ã‚’è¿”ã™å ´åˆ firstNode ã¸ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯", () => {
+    // getLastNode ‚ª null ‚ğ•Ô‚·ê‡‚ÌƒtƒH[ƒ‹ƒoƒbƒNi_applyChangej
+    it("_applyChange: getLastNode ‚ª null ‚ğ•Ô‚·ê‡ firstNode ‚ÖƒtƒH[ƒ‹ƒoƒbƒN", () => {
       setupTemplate();
       const engine = createEngineStub();
       const comment = document.createComment("@@|411");
@@ -2255,7 +2255,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // åˆæœŸ: 2ä»¶è¿½åŠ 
+      // ‰Šú: 2Œ’Ç‰Á
       const idx2 = createIndexes(2);
       const renderer1 = createRendererStub({
         readonlyState: {
@@ -2266,12 +2266,12 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer1);
       expect(node.bindContents).toHaveLength(2);
 
-      // bindContents ã® getLastNode ã‚’ null ã‚’è¿”ã™ã‚ˆã†ã«ãƒ¢ãƒƒã‚¯
+      // bindContents ‚Ì getLastNode ‚ğ null ‚ğ•Ô‚·‚æ‚¤‚Éƒ‚ƒbƒN
       const originalGetLastNode = node.bindContents[0].getLastNode;
       node.bindContents[0].getLastNode = vi.fn(() => null);
 
-      // 2->3: 1ä»¶è¿½åŠ ï¼ˆ_applyChange ãƒ‘ã‚¹ï¼‰
-      // idx2[0], idx2[1] ã¯ä¿æŒã€æ–°ã—ã„ idx ã‚’è¿½åŠ 
+      // 2->3: 1Œ’Ç‰Ái_applyChange ƒpƒXj
+      // idx2[0], idx2[1] ‚Í•ÛAV‚µ‚¢ idx ‚ğ’Ç‰Á
       const idx3 = [...idx2, { index: 2 } as any];
       const renderer2 = createRendererStub({
         readonlyState: {
@@ -2282,12 +2282,12 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer2);
 
       expect(node.bindContents).toHaveLength(3);
-      // getLastNode ãŒ null ã‚’è¿”ã—ã¦ã‚‚æ­£å¸¸ã«å‹•ä½œ
+      // getLastNode ‚ª null ‚ğ•Ô‚µ‚Ä‚à³í‚É“®ì
       node.bindContents[0].getLastNode = originalGetLastNode;
     });
 
-    // getLastNode ãŒ null ã‚’è¿”ã™å ´åˆã®ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯ï¼ˆ_optimizedReplace - lastNodeï¼‰
-    it("_optimizedReplace: getLastNode ãŒ null ã‚’è¿”ã™å ´åˆ firstNode ã¸ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯", () => {
+    // getLastNode ‚ª null ‚ğ•Ô‚·ê‡‚ÌƒtƒH[ƒ‹ƒoƒbƒNi_optimizedReplace - lastNodej
+    it("_optimizedReplace: getLastNode ‚ª null ‚ğ•Ô‚·ê‡ firstNode ‚ÖƒtƒH[ƒ‹ƒoƒbƒN", () => {
       setupTemplate();
       const engine = createEngineStub();
       const comment = document.createComment("@@|412");
@@ -2297,7 +2297,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // åˆæœŸ: 2ä»¶è¿½åŠ 
+      // ‰Šú: 2Œ’Ç‰Á
       const idx2 = createIndexes(2);
       const renderer1 = createRendererStub({
         readonlyState: {
@@ -2308,10 +2308,10 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer1);
       expect(node.bindContents).toHaveLength(2);
 
-      // bindContents[1] ã® getLastNode ã‚’ null ã‚’è¿”ã™ã‚ˆã†ã«ãƒ¢ãƒƒã‚¯
+      // bindContents[1] ‚Ì getLastNode ‚ğ null ‚ğ•Ô‚·‚æ‚¤‚Éƒ‚ƒbƒN
       node.bindContents[1].getLastNode = vi.fn(() => null);
 
-      // 2->4: å…¨ã¦æ–°ã—ã„ListIndexï¼ˆisAllNew=trueï¼‰ã§å¢—åŠ 
+      // 2->4: ‘S‚ÄV‚µ‚¢ListIndexiisAllNew=truej‚Å‘‰Á
       const newIdx4 = createIndexes(4);
       const renderer2 = createRendererStub({
         readonlyState: {
@@ -2324,8 +2324,8 @@ describe("BindingNodeFor coverage", () => {
       expect(node.bindContents).toHaveLength(4);
     });
 
-    // getLastNode ãŒ null ã‚’è¿”ã™å ´åˆã®ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯ï¼ˆ_optimizedReplace - fragmentLastNodeï¼‰
-    it("_optimizedReplace: fragmentLastNode ãƒ•ã‚©ãƒ¼ãƒ«ãƒãƒƒã‚¯ï¼ˆisConnectedæ™‚ï¼‰", () => {
+    // getLastNode ‚ª null ‚ğ•Ô‚·ê‡‚ÌƒtƒH[ƒ‹ƒoƒbƒNi_optimizedReplace - fragmentLastNodej
+    it("_optimizedReplace: fragmentLastNode ƒtƒH[ƒ‹ƒoƒbƒNiisConnectedj", () => {
       setupTemplate();
       const engine = createEngineStub();
       const comment = document.createComment("@@|413");
@@ -2336,7 +2336,7 @@ describe("BindingNodeFor coverage", () => {
 
       const node = createBindingNodeFor("for", [], [])(binding, comment, engine.inputFilters);
 
-      // åˆæœŸ: 2ä»¶è¿½åŠ 
+      // ‰Šú: 2Œ’Ç‰Á
       const idx2 = createIndexes(2);
       const renderer1 = createRendererStub({
         readonlyState: {
@@ -2347,13 +2347,13 @@ describe("BindingNodeFor coverage", () => {
       node.applyChange(renderer1);
       expect(node.bindContents).toHaveLength(2);
 
-      // 2->5: å…¨ã¦æ–°ã—ã„ListIndexï¼ˆisAllNew=trueï¼‰ã§å¢—åŠ ã€isConnected=true
-      // æ–°ã—ãä½œæˆã•ã‚Œã‚‹ BindContent ã® getLastNode ã‚’ null ã‚’è¿”ã™ã‚ˆã†ã«ãƒ¢ãƒƒã‚¯
+      // 2->5: ‘S‚ÄV‚µ‚¢ListIndexiisAllNew=truej‚Å‘‰ÁAisConnected=true
+      // V‚µ‚­ì¬‚³‚ê‚é BindContent ‚Ì getLastNode ‚ğ null ‚ğ•Ô‚·‚æ‚¤‚Éƒ‚ƒbƒN
       const originalCreateBindContent = BindContentMod.createBindContent;
       let createdCount = 0;
       vi.spyOn(BindContentMod, "createBindContent").mockImplementation((...args: any[]) => {
         const bc = originalCreateBindContent(...args);
-        // æ–°è¦ä½œæˆã•ã‚Œã‚‹ã‚‚ã®ã¯ getLastNode ã‚’ null ã«ã™ã‚‹
+        // V‹Kì¬‚³‚ê‚é‚à‚Ì‚Í getLastNode ‚ğ null ‚É‚·‚é
         createdCount++;
         if (createdCount <= 3) {
           bc.getLastNode = vi.fn(() => null);

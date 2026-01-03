@@ -66,6 +66,20 @@ export function createRootNode() {
     return new NodePath("", "", 0);
 }
 const cache = new Map();
+export function findPathNodeByInfo(rootNode, info) {
+    let nodeCache = cache.get(rootNode);
+    if (!nodeCache) {
+        nodeCache = new Map();
+        cache.set(rootNode, nodeCache);
+    }
+    let cachedNode = nodeCache.get(info) ?? null;
+    if (cachedNode) {
+        return cachedNode;
+    }
+    cachedNode = rootNode.find(info.pathSegments);
+    nodeCache.set(info, cachedNode);
+    return cachedNode;
+}
 /**
  * Finds a path node by path string with caching.
  * @param rootNode - Root node to search from
@@ -73,19 +87,8 @@ const cache = new Map();
  * @returns Found node or null if not found
  */
 export function findPathNodeByPath(rootNode, path) {
-    let nodeCache = cache.get(rootNode);
-    if (!nodeCache) {
-        nodeCache = new Map();
-        cache.set(rootNode, nodeCache);
-    }
-    let cachedNode = nodeCache.get(path) ?? null;
-    if (cachedNode) {
-        return cachedNode;
-    }
     const info = getStructuredPathInfo(path);
-    cachedNode = rootNode.find(info.pathSegments);
-    nodeCache.set(path, cachedNode);
-    return cachedNode;
+    return findPathNodeByInfo(rootNode, info);
 }
 /**
  * Adds a path node to the tree, creating parent nodes if necessary.

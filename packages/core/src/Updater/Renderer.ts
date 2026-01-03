@@ -2,7 +2,7 @@ import { IComponentEngine } from "../ComponentEngine/types";
 import { WILDCARD } from "../constants";
 import { IBindContent, IBinding } from "../DataBinding/types";
 import { IListIndex } from "../ListIndex/types";
-import { findPathNodeByPath } from "../PathTree/PathNode";
+import { findPathNodeByInfo } from "../PathTree/PathNode";
 import { IPathNode } from "../PathTree/types";
 import { createReadonlyStateHandler, createReadonlyStateProxy } from "../StateClass/createReadonlyStateProxy";
 import { GetListIndexesByRefSymbol } from "../StateClass/symbols";
@@ -205,7 +205,7 @@ class Renderer implements IRenderer {
         const ref = remainItems[i];
         
         // Find the PathNode for this ref pattern
-        const node = findPathNodeByPath(this._engine.pathManager.rootNode, ref.info.pattern);
+        const node = findPathNodeByInfo(this._engine.pathManager.rootNode, ref.info);
         if (node === null) {
           raiseError({
             code: "PATH-101",
@@ -348,7 +348,7 @@ class Renderer implements IRenderer {
     if (deps) {
       for(const depPath of deps) {
         const depInfo = getStructuredPathInfo(depPath);
-        const depNode = findPathNodeByPath(this._engine.pathManager.rootNode, depInfo.pattern);
+        const depNode = findPathNodeByInfo(this._engine.pathManager.rootNode, depInfo);
         if (depNode === null) {
           raiseError({
             code: "PATH-101",

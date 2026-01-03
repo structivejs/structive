@@ -1825,6 +1825,20 @@ function createRootNode() {
     return new NodePath("", "", 0);
 }
 const cache$1 = new Map();
+function findPathNodeByInfo(rootNode, info) {
+    let nodeCache = cache$1.get(rootNode);
+    if (!nodeCache) {
+        nodeCache = new Map();
+        cache$1.set(rootNode, nodeCache);
+    }
+    let cachedNode = nodeCache.get(info) ?? null;
+    if (cachedNode) {
+        return cachedNode;
+    }
+    cachedNode = rootNode.find(info.pathSegments);
+    nodeCache.set(info, cachedNode);
+    return cachedNode;
+}
 /**
  * Finds a path node by path string with caching.
  * @param rootNode - Root node to search from
@@ -1832,19 +1846,8 @@ const cache$1 = new Map();
  * @returns Found node or null if not found
  */
 function findPathNodeByPath(rootNode, path) {
-    let nodeCache = cache$1.get(rootNode);
-    if (!nodeCache) {
-        nodeCache = new Map();
-        cache$1.set(rootNode, nodeCache);
-    }
-    let cachedNode = nodeCache.get(path) ?? null;
-    if (cachedNode) {
-        return cachedNode;
-    }
     const info = getStructuredPathInfo(path);
-    cachedNode = rootNode.find(info.pathSegments);
-    nodeCache.set(path, cachedNode);
-    return cachedNode;
+    return findPathNodeByInfo(rootNode, info);
 }
 /**
  * Adds a path node to the tree, creating parent nodes if necessary.
@@ -3908,7 +3911,7 @@ class Renderer {
             for (let i = 0; i < remainItems.length; i++) {
                 const ref = remainItems[i];
                 // Find the PathNode for this ref pattern
-                const node = findPathNodeByPath(this._engine.pathManager.rootNode, ref.info.pattern);
+                const node = findPathNodeByInfo(this._engine.pathManager.rootNode, ref.info);
                 if (node === null) {
                     raiseError({
                         code: "PATH-101",
@@ -4041,7 +4044,7 @@ class Renderer {
         if (deps) {
             for (const depPath of deps) {
                 const depInfo = getStructuredPathInfo(depPath);
-                const depNode = findPathNodeByPath(this._engine.pathManager.rootNode, depInfo.pattern);
+                const depNode = findPathNodeByInfo(this._engine.pathManager.rootNode, depInfo);
                 if (depNode === null) {
                     raiseError({
                         code: "PATH-101",
@@ -5161,11 +5164,11 @@ class BindingNodeFor extends BindingNodeBlock {
     _bindContents = [];
     _bindContentByListIndex = new WeakMap();
     _bindContentPool = [];
-    _bindContentPoolSize = 0;
     _bindContentPoolIndex = -1;
     _cacheLoopInfo = undefined;
     _oldListIndexes = [];
     _oldListIndexSet = new Set();
+    _oldIndexByListIndex = new Map();
     /**
      * Returns array of active BindContent instances for each list element.
      *
@@ -5309,12 +5312,11 @@ class BindingNodeFor extends BindingNodeBlock {
         // exhaust pool first
         if (this._bindContentPoolIndex === -1) {
             this._bindContentPool = bindContents;
-            this._bindContentPoolSize = bindContents.length;
-            this._bindContentPoolIndex = this._bindContentPoolSize - 1;
+            this._bindContentPoolIndex = bindContents.length - 1;
             return;
         }
         // full pool expansion
-        if (this._bindContentPoolSize === (this._bindContentPoolIndex + 1)) {
+        if (this._bindContentPool.length === (this._bindContentPoolIndex + 1)) {
             if (bindContents.length > TOO_MANY_BIND_CONTENTS_THRESHOLD) {
                 // large batch, concat for stack overflow safety
                 this._bindContentPool = this._bindContentPool.concat(bindContents);
@@ -5322,11 +5324,10 @@ class BindingNodeFor extends BindingNodeBlock {
             else {
                 this._bindContentPool.push(...bindContents);
             }
-            this._bindContentPoolSize = this._bindContentPool.length;
             this._bindContentPoolIndex += bindContents.length;
             return;
         }
-        const availableSpace = this._bindContentPoolSize - (this._bindContentPoolIndex + 1);
+        const availableSpace = this._bindContentPool.length - (this._bindContentPoolIndex + 1);
         const neededSpace = bindContents.length;
         if (neededSpace <= availableSpace) {
             // enough space available
@@ -5339,14 +5340,13 @@ class BindingNodeFor extends BindingNodeBlock {
             // expand pool
             for (let i = 0; i < bindContents.length; i++) {
                 this._bindContentPoolIndex++;
-                if (this._bindContentPoolIndex >= this._bindContentPoolSize) {
+                if (this._bindContentPoolIndex >= this._bindContentPool.length) {
                     this._bindContentPool.push(bindContents[i]);
                 }
                 else {
                     this._bindContentPool[this._bindContentPoolIndex] = bindContents[i];
                 }
             }
-            this._bindContentPoolSize = this._bindContentPool.length;
         }
     }
     /**
@@ -5468,9 +5468,9 @@ class BindingNodeFor extends BindingNodeBlock {
         const newBindContents = [];
         let lastBindContent = null;
         // Rebuild path: create/reuse BindContents in new order
-        const oldIndexByListIndex = new Map();
+        this._oldIndexByListIndex.clear();
         for (let i = 0; i < oldListIndexes.length; i++) {
-            oldIndexByListIndex.set(oldListIndexes[i], i);
+            this._oldIndexByListIndex.set(oldListIndexes[i], i);
         }
         const changeListIndexes = [];
         for (let i = 0; i < newListIndexes.length; i++) {
@@ -5495,7 +5495,7 @@ class BindingNodeFor extends BindingNodeBlock {
                 if (lastNode?.nextSibling !== bindContent.firstChildNode) {
                     bindContent.mountAfter(parentNode, lastNode);
                 }
-                const oldIndex = oldIndexByListIndex.get(listIndex);
+                const oldIndex = this._oldIndexByListIndex.get(listIndex);
                 if (typeof oldIndex !== "undefined" && oldIndex !== i) {
                     changeListIndexes.push(listIndex);
                 }

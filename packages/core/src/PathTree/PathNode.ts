@@ -1,4 +1,5 @@
 import { getStructuredPathInfo } from "../StateProperty/getStructuredPathInfo";
+import { IStructuredPathInfo } from "../StateProperty/types";
 import { IPathNode } from "./types";
 
 /**
@@ -74,7 +75,23 @@ export function createRootNode(): IPathNode {
   return new NodePath("", "", 0);
 }
 
-const cache = new Map<IPathNode, Map<string, IPathNode | null>>();
+const cache = new Map<IPathNode, Map<IStructuredPathInfo, IPathNode | null>>();
+
+export function findPathNodeByInfo(rootNode: IPathNode, info: IStructuredPathInfo): IPathNode | null {
+  let nodeCache = cache.get(rootNode);
+  if (!nodeCache) {
+    nodeCache = new Map<IStructuredPathInfo, IPathNode | null>();
+    cache.set(rootNode, nodeCache);
+  }
+  let cachedNode = nodeCache.get(info) ?? null;
+  if (cachedNode) {
+    return cachedNode;
+  }
+  cachedNode = rootNode.find(info.pathSegments);
+  nodeCache.set(info, cachedNode);
+  return cachedNode;
+}
+
 /**
  * Finds a path node by path string with caching.
  * @param rootNode - Root node to search from
@@ -82,19 +99,8 @@ const cache = new Map<IPathNode, Map<string, IPathNode | null>>();
  * @returns Found node or null if not found
  */
 export function findPathNodeByPath(rootNode: IPathNode, path: string): IPathNode | null {
-  let nodeCache = cache.get(rootNode);
-  if (!nodeCache) {
-    nodeCache = new Map<string, IPathNode>();
-    cache.set(rootNode, nodeCache);
-  }
-  let cachedNode = nodeCache.get(path) ?? null;
-  if (cachedNode) {
-    return cachedNode;
-  }
   const info = getStructuredPathInfo(path);
-  cachedNode = rootNode.find(info.pathSegments);
-  nodeCache.set(path, cachedNode);
-  return cachedNode;
+  return findPathNodeByInfo(rootNode, info);
 }
 
 /**

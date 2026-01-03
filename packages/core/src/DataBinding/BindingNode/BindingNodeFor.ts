@@ -44,11 +44,11 @@ class BindingNodeFor extends BindingNodeBlock {
   private _bindContents: IBindContent[] = [];
   private _bindContentByListIndex: WeakMap<IListIndex, IBindContent> = new WeakMap();
   private _bindContentPool: (IBindContent | null)[] = [];
-  private _bindContentPoolSize: number = 0;
   private _bindContentPoolIndex: number = -1;
   private _cacheLoopInfo: IStructuredPathInfo | undefined = undefined;
   private _oldListIndexes: IListIndex[] = [];
   private _oldListIndexSet: Set<IListIndex> = new Set();
+  private _oldIndexByListIndex: Map<IListIndex, number> = new Map();
 
   /**
    * Returns array of active BindContent instances for each list element.
@@ -213,23 +213,21 @@ class BindingNodeFor extends BindingNodeBlock {
     // exhaust pool first
     if (this._bindContentPoolIndex === -1) {
       this._bindContentPool = bindContents;
-      this._bindContentPoolSize = bindContents.length;
-      this._bindContentPoolIndex = this._bindContentPoolSize - 1;
+      this._bindContentPoolIndex = bindContents.length - 1;
       return;
     }
     // full pool expansion
-    if (this._bindContentPoolSize === (this._bindContentPoolIndex + 1)) {
+    if (this._bindContentPool.length === (this._bindContentPoolIndex + 1)) {
       if (bindContents.length > TOO_MANY_BIND_CONTENTS_THRESHOLD) {
         // large batch, concat for stack overflow safety
         this._bindContentPool = this._bindContentPool.concat(bindContents);
       } else {
         this._bindContentPool.push(...bindContents);
       }
-      this._bindContentPoolSize = this._bindContentPool.length;
       this._bindContentPoolIndex += bindContents.length;
       return;
     }
-    const availableSpace = this._bindContentPoolSize - (this._bindContentPoolIndex + 1);
+    const availableSpace = this._bindContentPool.length - (this._bindContentPoolIndex + 1);
     const neededSpace = bindContents.length;
     if (neededSpace <= availableSpace) {
       // enough space available
@@ -241,13 +239,12 @@ class BindingNodeFor extends BindingNodeBlock {
       // expand pool
       for(let i = 0; i < bindContents.length; i++) {
         this._bindContentPoolIndex++;
-        if (this._bindContentPoolIndex >= this._bindContentPoolSize) {
+        if (this._bindContentPoolIndex >= this._bindContentPool.length) {
           this._bindContentPool.push(bindContents[i]);
         } else {
           this._bindContentPool[this._bindContentPoolIndex] = bindContents[i];
         }
       }
-      this._bindContentPoolSize = this._bindContentPool.length;
     }
   }
 
@@ -393,9 +390,9 @@ class BindingNodeFor extends BindingNodeBlock {
     let lastBindContent = null;
 
     // Rebuild path: create/reuse BindContents in new order
-    const oldIndexByListIndex = new Map<IListIndex, number>();
+    this._oldIndexByListIndex.clear();
     for(let i = 0; i < oldListIndexes.length; i++) {
-      oldIndexByListIndex.set(oldListIndexes[i], i);
+      this._oldIndexByListIndex.set(oldListIndexes[i], i);
     }
     const changeListIndexes: IListIndex[] = [];
     for(let i = 0; i < newListIndexes.length; i++) {
@@ -419,7 +416,7 @@ class BindingNodeFor extends BindingNodeBlock {
         if (lastNode?.nextSibling !== bindContent.firstChildNode) {
           bindContent.mountAfter(parentNode, lastNode);
         }
-        const oldIndex = oldIndexByListIndex.get(listIndex);
+        const oldIndex = this._oldIndexByListIndex.get(listIndex);
         if (typeof oldIndex !== "undefined" && oldIndex !== i) {
           changeListIndexes.push(listIndex);
         }
